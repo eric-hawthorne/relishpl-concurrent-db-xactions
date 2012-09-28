@@ -1,0 +1,21 @@
+origin   examples.relish.pl2012
+artifact hello_application
+package  hello
+
+"""
+ main.rel
+
+ This file contains the main program for the hello world printing application.
+ Normally, we might think up a better name for this file than main.rel
+ It might seem that there is excessive structure here, what with an artifact
+ and a package, just to print hello, but the mandatory program structure rules
+ should come in very handy the first time you make a real, non-trivial program
+ that requires more than one software package.
+"""
+
+
+main
+"""
+ Prints a greeting on the standard output, then exits.
+"""
+   print "Hello World"

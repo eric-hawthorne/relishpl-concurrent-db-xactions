@@ -1,0 +1,50 @@
+origin   skunkworks.everybitcounts.net2006
+artifact relish_test_suite
+package  web/bar/baz_baz 
+
+""" 
+ dialog.rel
+
+ Test web dialog handling methods.
+"""
+
+import
+   machines/vehicles
+
+
+index > String vehicles.Car
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+
+   => "index.html"
+      car2
+
+
+default > String vehicles.Car
+"""
+ Handles all url paths on this server and port which are not otherwise handled.
+"""
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+
+   => "oops.html"
+      car2      
+
+
+car > String vehicles.Car
+"""
+ First web handler method.
+"""
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+
+   => "foo.html"
+      car2
+
+
+blurb > String String
+"""
+ First image-returning web handler method.
+"""
+   => "IMAGE FILE"
+      "relish_logo4_giant.png"      

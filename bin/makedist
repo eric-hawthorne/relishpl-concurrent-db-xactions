@@ -1,0 +1,61 @@
+#!/bin/bash
+
+#
+# Creates a new release of the relish binary distribution, by copying appropriate files
+# out of your local copy of the source distribution.
+#
+# First, when you are on a given platform, e.g. a Mac, 
+# compile the relish compiler-interpreter program by using
+# go install relish/relish    (assumes your GOPATH env var is set to your relish source distribution directory e.g. to ~/devel/relish)
+# Now you have a relish executable for Mac as ~/devel/relish/bin/relish
+# Now 
+# makedist 1.0.2 darwin_amd64   to produce the binary distribution directory tree ~/devel/relish_dist/relish_1.0.2.darwin_amd64
+#
+# now
+# cd ~/devel/relish_dist relish_1.0.2.darwin_amd64
+# tar -czvf ../relish_1.0.2.darwin_amd64.tar.gz pl
+# which produces
+# ~/devel/relish_dist/relish_1.0.2.darwin_amd64.tar.gz
+#
+# Other platforms to make binary releases on are linux_386 and linux_amd64
+#
+
+
+if [ $# -lt 2 ] ; then
+	echo "usage (by example): makedist 1.0.2 darwin_amd64" ; exit 0
+fi
+
+# 
+# IMPORTANT
+#
+# If you have not set the RELISH_HOME environment variable and don't want to,
+# then edit the following two variable value to match where your relish source distribution working directory is 
+#
+DEFAULT_RELISH_HOME=~/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
+
+# Use the environment variable preferentially, but if not set, use the default above.
+RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}
+
+SRCDIR=$RELISH_HOME     
+DISTDIR=${RELISH_HOME}_dist  
+
+echo $DISTDIR
+
+exit 0
+# Create release directory if does not exist.
+#
+mkdir -p $DISTDIR  
+
+# Read release version and architecture from the command line.
+RELEASE_VERSION=$1         # e.g. 1.0.2
+RELEASE_ARCHITECTURE=$2    # darwin-amd64 | linux_386 | linux_amd64
+
+RELEASEDIR=$DISTDIR/relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}
+
+mkdir -p $RELEASEDIR/pl/bin
+
+cp -p $SRCDIR/bin/relish $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
+
+cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
+
+cp -p $SRCDIR/COPYING* $RELEASEDIR/pl

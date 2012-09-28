@@ -1,0 +1,119 @@
+origin   skunkworks.everybitcounts.net2006
+artifact relish_test_suite
+package  basic_tests 
+
+""" 
+ test_packages.rel
+
+ Test package importing, compiling, loading, linking.
+"""
+
+import
+   machines/vehicles
+   relish.pl2012/things/pkg/physical_objects as phys
+
+// if gt radius MAX_RADIUS
+//    radius = MAX_RADIUS
+
+MAX_RADIUS = 10
+
+
+circleCircumference radius Float > Float
+"""
+ Calculates the circumference of a circle of a given radius.
+"""
+   => times 2 (times phys.PI radius) 
+
+
+circleArea radius Float > Float
+"""
+ Calculates the area of a circle of a given radius.
+"""
+   if gt radius MAX_RADIUS
+      radius = MAX_RADIUS
+   r2 = times radius radius
+   => times phys.PI r2
+
+
+circleProperty radius Float prop String > Float
+"""
+ If prop is "a" calculates the area otherwise the circumference of a circle.
+"""
+   if eq "a" prop
+      => circleArea radius
+   else
+      => circleCircumference radius
+
+
+argTest
+   a Float
+   b String
+   bar Int = 0
+   ...v [] String
+"""
+ Test arguments to functions.
+"""
+   => a
+
+
+spew n Int
+"""
+ Prints the argument number, repeatedly, forever
+"""
+   while 1
+      print n
+
+
+main
+"""
+ Main program.
+"""
+   print circleProperty 9.0 "a"
+   print circleProperty 9.0 "c"
+
+   car1 = vehicles.Car
+   car1.lat = 49.243
+   car1.long = 123.761  // - operator is not handled yet
+   car1.vin = "V0E44R8139WT6214A"
+
+   engine1 = vehicles.Engine
+   engine1.horsepower = 120
+   car1.engine = engine1
+
+   wheel1 = vehicles.Wheel
+   wheel1.num = 1
+   wheel2 = vehicles.Wheel
+   wheel2.num = 2
+   wheel3 = vehicles.Wheel
+   wheel3.num = 3
+   wheel4 = vehicles.Wheel
+   wheel4.num = 4
+
+   car1.wheels += wheel4  // Also NOT HANDLING // comment at beginning of indented line !!!
+   car1.wheels += wheel3  
+
+   dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
+
+   car1.wheels += wheel1  
+   car1.wheels += wheel2  
+
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+
+   print car2.lat
+   print car2.vin
+
+   print "car2.wheels:"
+
+   for i wheel in car2.wheels
+      print "wheel[" i "] =" wheel.num
+
+
+   car2.wheels -= wheel2
+   car2.wheels -= wheel3
+
+   print "After removing wheels 2 and 3 from car2.wheels, car2.wheels is:"
+
+   for i wheel in car2.wheels
+      print "wheel[" i "] =" wheel.num
+
+   ch = Channel of Int   
