@@ -102,6 +102,30 @@ func (db *SqliteDB) EnsureObjectNameTable() {
 	}
 }
 
+
+
+/*
+Adds the table to the database which associates a full name of each code package with a local-site unique
+short name for the package.
+
+Only creates the table if the table does not yet exist.
+Should be called at first use of the db as part of  initializing it.
+
+*/
+func (db *SqliteDB) EnsurePackageTable() {
+	s := `CREATE TABLE IF NOT EXISTS RPackage(
+	       name TEXT PRIMARY KEY,
+           shortName TEXT UNIQUE NOT NULL
+         )`
+	err := db.conn.Exec(s)
+	if err != nil {
+		panic(fmt.Sprintf("conn.Exec(%s): db error: %s", s, err))
+	}
+}
+
+
+
+
 /*
 Ensure that DB tables exist to represent the non-primitive-valued attributes and the relations
 of the type.

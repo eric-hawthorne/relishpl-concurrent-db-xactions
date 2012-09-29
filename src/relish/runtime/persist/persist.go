@@ -58,6 +58,7 @@ func NewDB(dbName string) *SqliteDB {
 
 	db.EnsureObjectTable()
 	db.EnsureObjectNameTable()
+	db.EnsurePackageTable()	
 
 	go db.executeStatements()
 
