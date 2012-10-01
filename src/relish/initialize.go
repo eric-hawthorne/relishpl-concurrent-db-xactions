@@ -1,3 +1,12 @@
+// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
+
+// This package serves as a dependency reduction bridge between other packages that need to
+// use the methods in this package but don't want to depend on the packages that implement
+// these functions.
+
+// Database initialization functions.
+
 package relish
 
 import (

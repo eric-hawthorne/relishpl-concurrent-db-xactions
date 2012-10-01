@@ -1,0 +1,147 @@
+/* Main Styles for HTML Elements */
+html, body
+{
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Verdana, Geneva, "Bitstream Vera Sans", Helvetica, sans-serif;
+  font-size: 103%;
+  /* possibly both of these should be removed */
+  color: #000;
+  background-color: #FFF;
+}
+
+h1
+{
+  font-size: 200%;
+/*  color: #234764; from python */
+ /*  color: #006549; dark green blue */
+  /* color: #436784;  medium blue */
+/* color: #3F6622;   olive green      my color */
+color: #4E6500; /* dark green */
+/* color: #59913F; med green */
+  margin: 0.7em 0 0.7em 0;
+  text-decoration: none;
+}
+
+.trademark 
+{
+   font-size: 40%;
+   vertical-align: top;
+}
+
+#header 
+{
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;	
+	padding-left: 1em;
+	padding-right: 1em;	
+
+/*	background-color: #E3FB71; # light greenish yellow 
+	background-color: #DEFF71; # better light yellow
+*/	
+    background-color: #F9FFE6; 	
+/*  background-color: #E6FFF8; really washed out light blue */	
+/*	background-color: #DDFFDD;	
+*/	
+}
+
+#header h2
+{
+  font-size: 160%;
+  font-style: italic;
+  font-weight: normal;
+  /* color: #006549; dark green blue */
+  color: #436784; /* medium blue */
+
+ /* color: #3F6622; olive green - maybe ok */
+
+  margin: 0.7em 0 0.7em 0;
+  text-decoration: none;
+}
+
+.menubutton 
+{
+   width: 8em;
+   height: 1.5em;
+   /* background-color: #E6FFF8;  light blue */
+   background-color: #3F917A; /* green blue */
+   text-align: center;
+   padding-top:0.6em;
+   color: #EEFFE6;
+   border:1px solid #006549;
+   border-radius:0.5em;
+}
+
+
+
+#tutorials_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 10em;
+}
+
+
+#references_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 19em;
+}
+
+#packages_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 28em;
+}
+
+#download_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 37em;
+}
+
+.contentside 
+{
+   vertical-align: top;	
+}
+
+#content 
+{
+   padding-top: 3em;	
+   padding-left: 2em;
+   padding-right: 2em;
+   padding-bottom: 1em;
+   vertical-align: top;
+}
+
+#content_left
+{	
+   vertical-align: top;
+   padding-right: 2em;
+}
+
+#content_right
+{
+   vertical-align: top;	
+   padding-left: 2em;
+}
+
+#content h3 
+{
+	color: #5A8D3F;
+}
+
+#content dt 
+{
+	padding-top: 0.4em;	
+	line-height: 150%;
+	color: #436784;
+}
+
+#content dd
+{
+	font-size: 90%;
+}

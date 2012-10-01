@@ -52,6 +52,11 @@ exists in the runtime. If not, creates it. Sets the pkg variable of the Generato
 to refer to the package.
 */
 func (g *Generator) GeneratePackage() {
+	
+    relish.EnsureDatabase() 
+    // creates and/or creates a connection to the running artifact's database.
+    // Amongst other things, initializes from db the maps between package names and shortnames in the runtime.
+	
     g.pkg = data.RT.Packages[g.packageName]
     if g.pkg == nil {
 	   g.pkg = data.RT.CreatePackage(g.packageName)  // This should init MMMap from core/builtin package   
@@ -59,6 +64,10 @@ func (g *Generator) GeneratePackage() {
 	g.updatePackageDependenciesAndMultiMethodMap()
 }
 
+/*
+Go through the (already loaded) packages that the newly generated package is dependent on, and update the new package's
+multimethod map to incorporate multimethods and methods from the dependency packages.
+*/
 func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 	imports := g.file.RelishImports  // package specifications
 	for _,importedPackageSpec := range imports {		
@@ -74,7 +83,9 @@ func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 	}
 }
 
-
+/*
+Update the package's multimethod map to incorporate multimethods and methods from a dependency package.
+*/
 func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage) {
    for multiMethodName,multiMethod := range dependencyPackage.MultiMethods {
    	   myMultiMethod := g.pkg.MultiMethods[multiMethodName]
@@ -134,6 +145,7 @@ func (g *Generator) GenerateTypes() {
 		
 	   typeSpec := typeDeclaration.Spec
 	   typeName := g.packagePath + typeSpec.Name.Name
+	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
 	
 	   var parentTypeNames []string
 	
@@ -142,7 +154,7 @@ func (g *Generator) GenerateTypes() {
 	   } 
 		
 	   // Get the type name and the supertype names	
-	   theNewType, err := data.RT.CreateType(typeName, parentTypeNames)
+	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
        if err != nil {
           panic(err)
        }	
@@ -234,7 +246,6 @@ RelEnd
 
         // Now ensure the persistence data model is created for the type.
 
-        relish.EnsureDatabase()
 
 		err = data.RT.DB().EnsureTypeTable(theNewType) 
 		if err != nil {

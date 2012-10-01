@@ -85,14 +85,15 @@ THIS IS OBSOLETE COMMENT
 */
 func (rt *RuntimeEnv) CreatePackage(path string) *RPackage {
 
-	typ, typFound := rt.Types["everybitcounts.net2007/relish/lang/Package"]
+	typ, typFound := rt.Types["relish.pl2012/core/pkg/relish/lang/Package"]
 	var err error
 	if !typFound {
 		// Create the reflection type for packages.
 		// Note: The bad thing here is we're not giving the type its package.
-		typ, err = rt.CreateType("everybitcounts.net2007/relish/lang/Package", []string{})
+		// TODO Make an actual package here for the type to be in?
+		typ, err = rt.CreateType("relish.pl2012/core/pkg/relish/lang/Package", "lang/Package",[]string{})
 		if err != nil {
-			panic(fmt.Sprintf("Unable to define type 'everybitcounts.net2007/relish/lang/Package' : %s", err))
+			panic(fmt.Sprintf("Unable to define type 'relish.pl2012/core/pkg/relish/lang/Package' : %s", err))
 		}
 	}
 	pkg := &RPackage{runit: runit{robject: robject{rtype: typ}},
@@ -106,27 +107,37 @@ func (rt *RuntimeEnv) CreatePackage(path string) *RPackage {
 		panic(fmt.Sprintf("Attempt to redefine package '%s'", pkg.Name))
 	}
 
-	// Create locally unique short name of package
-	uuidAbbrev, err := pkg.EnsureUUIDabbrev()
-	if err != nil {
-		panic(fmt.Sprintf("Unable to create package uuid: %v", err))
-	}
-	candidateShortName := pkg.Name[strings.LastIndex(pkg.Name,"/")+1:]
-	if _, found := rt.Pkgs[candidateShortName]; found {
-		for i := 2; i <= len(uuidAbbrev); i += 2 {
-			candidateShortName = "P" + uuidAbbrev[0:i] + "_" + pkg.Name
-			_, found = rt.Pkgs[candidateShortName]
-			if !found {
-				break
+    shortName := rt.PkgNameToShortName[pkg.Name]
+    if shortName != "" {
+       	pkg.ShortName = shortName
+    } else {
+		// Create locally unique short name of package
+		uuidAbbrev, err := pkg.EnsureUUIDabbrev()
+		if err != nil {
+			panic(fmt.Sprintf("Unable to create package uuid: %v", err))
+		}
+		candidateShortName := pkg.Name[strings.LastIndex(pkg.Name,"/")+1:]
+		if _, found := rt.Pkgs[candidateShortName]; found {
+			for i := 2; i <= len(uuidAbbrev); i += 2 {
+				candidateShortName = "P" + uuidAbbrev[0:i] + "_" + pkg.Name
+				_, found = rt.Pkgs[candidateShortName]
+				if !found {
+					break
+				}
+			}
+			if found {
+				panic(fmt.Sprintf("Unable to make a locally unique short name for package '%s'", pkg.Name))
 			}
 		}
-		if found {
-			panic(fmt.Sprintf("Unable to make a locally unique short name for package '%s'", pkg.Name))
-		}
-	}
-	pkg.ShortName = candidateShortName
+		pkg.ShortName = candidateShortName
+		
+	    rt.DB().RecordPackageName(pkg.Name, pkg.ShortName)
+    	if err != nil {
+		   panic(fmt.Sprintf("Unable to record package name in db: %v", err))
+	    }	
+    }
 
-
+    // Note that this package name is not a legal package name. Maybe that's ok.
     if pkg.Name == "relish.pl2012/core/inbuilt" {
     	rt.InbuiltFunctionsPackage = pkg
     } else {

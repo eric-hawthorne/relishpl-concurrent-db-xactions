@@ -264,6 +264,18 @@ var re3 *regexp.Regexp = regexp.MustCompile(`index ([^ ]+)`)
 var re4 *regexp.Regexp = regexp.MustCompile(`(?:^| )([a-z][A-Za-z0-9]*)`)
 
 func handler(w http.ResponseWriter, r *http.Request) {
+	
+   if (! strings.HasSuffix(r.URL.Path,".ico")) && (strings.LastIndex(r.URL.Path,".") > -1) && (! strings.Contains(r.URL.Path,"?")) {
+	  // Serve static content 
+	
+      // fmt.Fprintln(w, r.URL.Path)
+
+      filePath := webPackageSrcDirPath + "/static" + r.URL.Path      
+      http.ServeFile(w,r,filePath)
+	
+	  return
+   }
+ 	
    pathSegments := strings.Split(r.URL.Path, "/") 
    if len(pathSegments) > 0 && len(pathSegments[0]) == 0 {
       pathSegments = pathSegments[1:]
@@ -422,8 +434,21 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
    switch processingDirective {
 
 	  case "XML":
-       fmt.Println("XML response not implemented yet.")			
-	   fmt.Fprintln(w, "XML response not implemented yet.")		
+	   var xmlContent string
+       if len(results) < 2 {
+         err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
+        return       
+      } else if len(results) == 2 {            
+         xmlContent = string(results[reverseIndex(1,nr)].(String)) 
+         if ! strings.HasPrefix(xmlContent,"<?xml") {
+           err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
+           return      
+         }
+       } else {
+             err = fmt.Errorf("%s XML response has too many return values. Should be 'XML' then an xml-formatted string", methodName) 
+             return               
+       }		
+       fmt.Fprintln(w, xmlContent)		
 	  case "XML FILE":
        var filePath string
        if len(results) < 2 {
@@ -442,8 +467,21 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)		
 	  case "HTML":
-       fmt.Println("HTML response not implemented yet.")			
-	   fmt.Fprintln(w, "HTML response not implemented yet.")		
+	   var htmlContent string
+       if len(results) < 2 {
+         err = fmt.Errorf("%s HTML response requires a html-formatted string as second return value", methodName) 
+        return       
+      } else if len(results) == 2 {            
+         htmlContent = string(results[reverseIndex(1,nr)].(String)) 
+         if ! (strings.HasPrefix(htmlContent,"<html") || strings.HasPrefix(htmlContent,"<HTML") || strings.HasPrefix(htmlContent,"<!DOCTYPE html")) {
+           err = fmt.Errorf("%s HTML response requires a html-formatted string as second return value", methodName) 
+           return      
+         }
+       } else {
+             err = fmt.Errorf("%s HTML response has too many return values. Should be 'HTML' then a html-formatted string", methodName) 
+             return               
+       }		
+       fmt.Fprintln(w, htmlContent)		
 	  case "HTML FILE":
        var filePath string
        if len(results) < 2 {

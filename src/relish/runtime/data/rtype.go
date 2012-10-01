@@ -29,6 +29,7 @@ So far no need for that identified.
 */
 type RType struct {
 	Name                    string
+	shortName               string
 	IsPrimitive             bool
 	Parents                 []*RType
 	Children                []*RType
@@ -146,7 +147,7 @@ FALSE bool
 
 
 */
-func newRType(name string, parents []*RType) *RType {
+func newRType(name string, shortName string, parents []*RType) *RType {
 	var isPrimitive bool
 	switch name {
 	//
@@ -178,7 +179,12 @@ func newRType(name string, parents []*RType) *RType {
 	}
 	Logln(GENERATE_, fmt.Sprintf("END OF UPCHAIN for %s", name))
 
+    if shortName == "" {
+	   shortName = name
+    }
+
 	typ := &RType{Name: name,
+		shortName: shortName,
 		IsPrimitive: isPrimitive,
 		Parents:     parents,
 		Children:    make([]*RType, 0, 5),
@@ -200,19 +206,18 @@ func (t RType) String() string {
 
 /*
 A local runtime and local db unique name for the type.
-THIS IS NOT GOING TO WORK TIL WE GET A PACKAGE FOR THE TYPE
 */
 func (t RType) ShortName() string {
-	return t.Name
-	//return t.Package.ShortName + "." + t.Name
+    return t.shortName
 }
 
 /*
 A universally unique name for the type.
-*/
+
 func (t RType) FullName() string {
 	return t.Package.Name + "/" + t.Name
 }
+*/
 
 /*
    Return the sqlite column type name of a primitive type.
@@ -403,7 +408,7 @@ func (rel *RelationSpec) ShortName() string {
    Returns an error if a type with the name already exists. (What scope?)
    TODO How do we handle incremental compilation that includes redefinitions of types
 */
-func (rt *RuntimeEnv) CreateType(typeName string, parentTypeNames []string) (*RType, error) {
+func (rt *RuntimeEnv) CreateType(typeName string, typeShortName string, parentTypeNames []string) (*RType, error) {
 	if _, found := rt.Types[typeName]; found {
 		return nil, fmt.Errorf("Attempt to redefine type '%s'.", typeName)
 	}
@@ -415,7 +420,7 @@ func (rt *RuntimeEnv) CreateType(typeName string, parentTypeNames []string) (*RT
 			return nil, fmt.Errorf("Defining type '%s' but parent type '%s' does not exist.", typeName, parentTypeName)
 		}
 	}
-	typ := newRType(typeName, parentTypes)
+	typ := newRType(typeName, typeShortName, parentTypes)
 
 	// Make or extend specialization paths.   
 	if len(parentTypes) == 0 {
@@ -493,9 +498,10 @@ func (rt *RuntimeEnv) CreateType(typeName string, parentTypeNames []string) (*RT
 */
 func (rt *RuntimeEnv) getSetType(elementType *RType) (typ *RType, err error) {
 	typeName := "Set_of_" + elementType.Name
+	typeShortName := "Set_of_" + elementType.ShortName()	
 	typ, found := rt.Types[typeName]
 	if !found {
-		typ, err = rt.CreateType(typeName, []string{})
+		typ, err = rt.CreateType(typeName, typeShortName, []string{})
 	}
 	return
 }
@@ -505,9 +511,10 @@ func (rt *RuntimeEnv) getSetType(elementType *RType) (typ *RType, err error) {
 */
 func (rt *RuntimeEnv) getListType(elementType *RType) (typ *RType, err error) {
 	typeName := "List_of_" + elementType.Name
+	typeShortName := "List_of_" + elementType.ShortName()
 	typ, found := rt.Types[typeName]
 	if !found {
-		typ, err = rt.CreateType(typeName, []string{})
+		typ, err = rt.CreateType(typeName, typeShortName, []string{})
 	}
 	return
 }

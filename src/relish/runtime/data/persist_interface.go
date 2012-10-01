@@ -17,6 +17,7 @@ type DB interface {
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)
 	NameObject(obj RObject, name string)
+	RecordPackageName(name string, shortName string)
 	FetchByName(name string, radius int) (obj RObject, err error)
 	Fetch(id int64, radius int) (obj RObject, err error)
 	FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)

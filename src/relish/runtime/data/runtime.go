@@ -44,6 +44,8 @@ type RuntimeEnv struct {
 	MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
 	Packages      map[string]*RPackage     // by package Name
 	Pkgs          map[string]*RPackage     // by package ShortName
+	PkgShortNameToName map[string]string   
+	PkgNameToShortName map[string]string
 	InbuiltFunctionsPackage *RPackage      // shortcut to package containing inbuilt functions
 	RunningArtifact string                 // Full origin-qualified name of the artifact one of whose package main functions was run in relish command
 	TypeTupleTree *TypeTupleTreeNode
@@ -159,10 +161,12 @@ func (gen *IdGenerator) sendID() {
 Still needs SetDB(db) before is valid.
 */
 func NewRuntimeEnv() *RuntimeEnv {
-	return &RuntimeEnv{Types: make(map[string]*RType),
+	rt := &RuntimeEnv{Types: make(map[string]*RType),
 		MultiMethods:  make(map[string]*RMultiMethod),
 		Packages:      make(map[string]*RPackage),
 		Pkgs:          make(map[string]*RPackage),
+		PkgShortNameToName: make(map[string]string),   
+		PkgNameToShortName: make(map[string]string),		
 		TypeTupleTree: &TypeTupleTreeNode{},
 		objects:       make(map[int64]RObject),
 		objectIds:     make(map[RObject]uint64),
@@ -171,6 +175,9 @@ func NewRuntimeEnv() *RuntimeEnv {
 		constants:     make(map[string]RObject),
 		evalContexts:  make(map[RObject]MethodEvaluationContext),
 	}
+	rt.PkgNameToShortName["relish.pl2012/core/inbuilt"] = "inbuilt"
+	rt.PkgShortNameToName["inbuilt"] = "relish.pl2012/core/inbuilt"	
+	return rt
 }
 
 /*

@@ -121,8 +121,58 @@ func (db *SqliteDB) EnsurePackageTable() {
 	if err != nil {
 		panic(fmt.Sprintf("conn.Exec(%s): db error: %s", s, err))
 	}
+	
+	err = db.restorePackageNameMappings()
+    if err != nil {
+	   panic(fmt.Sprintf("restorePackageNameMappings: db error: %s", err))
+   }	
 }
 
+/*
+If packages have been already defined in this database, read the mappings between shortnames
+of packages and full names of packages into the runtime, so they can be re-used during package generation.
+*/
+func (db *SqliteDB) restorePackageNameMappings() (err error) {
+
+	query := "SELECT name,shortName FROM RPackage"
+
+	selectStmt, err := db.conn.Prepare(query)
+	if err != nil {
+		return
+	}
+
+	defer selectStmt.Finalize()
+
+	err = selectStmt.Exec()
+	if err != nil {
+		return
+	}
+
+	for selectStmt.Next() {
+		var name string
+		var shortName string
+		err = selectStmt.Scan(&name,&shortName)
+		if err != nil {
+			return
+		}
+		RT.PkgNameToShortName[name] = shortName
+		RT.PkgShortNameToName[shortName] = name
+	}
+	return
+}
+
+/*
+Record in the db the mapping from the package name to shortName.
+*/
+func (db *SqliteDB)	RecordPackageName(name string, shortName string) {
+
+	// TODO create a map of prepared statements and look up the statement to use.
+
+	stmt := fmt.Sprintf("INSERT INTO RPackage(name,shortName) VALUES('%s','%s')", name, shortName)    
+
+	db.QueueStatements(stmt)
+	return	
+}
 
 
 
@@ -255,6 +305,7 @@ func (db *SqliteDB) EnsureAttributeTable(attr *AttributeSpec) (err error) {
 func (db *SqliteDB) TableNameIfy(typeName string) string {
 	return "[" + typeName + "]" // TODO Implement substitutions as needed.
 }
+
 
 /*
    Make a fully qualified type name from the corresponding table name in sqlite.

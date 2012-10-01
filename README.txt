@@ -14,7 +14,7 @@ This software is just being thrown into version control for the first time and i
 
 - There is no roadmap and issues list to guide development priorities.
 
-- Installation and build and run instructions are missing.
+- Installation and build and run instructions are inadequate and complex, and installer scripts would be handy.
 
 - relish language documentation is missing.
 
