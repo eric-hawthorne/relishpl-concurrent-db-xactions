@@ -11,11 +11,10 @@
 # Now 
 # makedist 1.0.2 darwin_amd64   to produce the binary distribution directory tree ~/devel/relish_dist/relish_1.0.2.darwin_amd64
 #
-# now
-# cd ~/devel/relish_dist relish_1.0.2.darwin_amd64
-# tar -czvf ../relish_1.0.2.darwin_amd64.tar.gz pl
 # which produces
 # ~/devel/relish_dist/relish_1.0.2.darwin_amd64.tar.gz
+#
+# but also leaves around the un-tarred distribution directory.
 #
 # Other platforms to make binary releases on are linux_386 and linux_amd64
 #
@@ -39,9 +38,7 @@ RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}
 SRCDIR=$RELISH_HOME     
 DISTDIR=${RELISH_HOME}_dist  
 
-echo $DISTDIR
 
-exit 0
 # Create release directory if does not exist.
 #
 mkdir -p $DISTDIR  
@@ -59,3 +56,8 @@ cp -p $SRCDIR/bin/relish $RELEASEDIR/pl/bin     # preserve executable mode, time
 cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
 
 cp -p $SRCDIR/COPYING* $RELEASEDIR/pl
+
+cd $RELEASEDIR
+TARBALL=relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}.tar.gz
+tar -czvf ../$TARBALL pl
+echo created $DISTDIR/$TARBALL
