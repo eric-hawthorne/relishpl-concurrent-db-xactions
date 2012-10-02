@@ -59,6 +59,11 @@ color: #4E6500; /* dark green */
   text-decoration: none;
 }
 
+.h2small 
+{
+   font-size: 80%;	
+}
+
 .menubutton 
 {
    width: 8em;
@@ -103,6 +108,20 @@ color: #4E6500; /* dark green */
 	left: 37em;
 }
 
+.contentside 
+{
+   vertical-align: top; 
+}
+
+#content 
+{
+   padding-top: 3em;    
+   padding-left: 2em;
+   padding-right: 2em;
+   padding-bottom: 1em;
+   vertical-align: top;
+}
+
 #index 
 {
    position: fixed;
@@ -125,8 +144,23 @@ color: #4E6500; /* dark green */
    text-decoration: none;
 }
 
-
 #content_left
+{       
+   vertical-align: top;
+   padding-right: 2em;
+}
+
+#content_right
+{
+   vertical-align: top; 
+   padding-left: 2em;
+}
+
+
+
+
+
+#content_manual
 {	
    position: relative;
    left: 8em;
@@ -138,7 +172,13 @@ color: #4E6500; /* dark green */
    vertical-align: top;  
 }
 
-#content_left h3 
+#content_manual h3 
+{
+	color: #5A8D3F;
+}
+
+
+#content h3 
 {
 	color: #5A8D3F;
 }

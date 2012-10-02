@@ -34,7 +34,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h2>relish Syntax and Semantics By Example - From the Inside Out</h2>
+        <h2>relish Syntax and Semantics By Example <span class="h2small">- From the Inside Out</span></h2>
 
       </td>
     </tr>
@@ -59,9 +59,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#constants">Constants</a><br/>	
 	<a href="#DataTypes">Data Types</a><br/>	
 	<a href="#TypeParameters">Type Parameters</a><br/>	
-	<a href="#InbuiltTypes">Inbuilt Data Types</a><br/>				
+	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>				
 </div>  
-<div id="content_left">
+<div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
 
 			<p>
@@ -176,13 +176,13 @@ Note: All single latin-1 capital letters except T denote constants. T,T1,... den
     <code>
     Int32  Float  String  ClosedCurve  BuggyWhipStorageRackClip    	
     </code><br/><br/>
-    Usage in context:<br/><br/>
-    <code>
-    add a Int b Int &gt; Int <br/>
-    """ <br/>
-     A method that adds two integers together and returns the result.
-    """ <br/>
-    </code><br/>
+    Usage in context:<br/>
+<code><pre>
+add a Float b Float &gt; Float
+"""
+ A method that adds two floating-point numbers together and returns the result.
+"""
+</pre></code>
     <p>
     	<b>Syntax:</b>
     </p>
@@ -195,7 +195,7 @@ Note that underscores are not permitted (since they are an alternative to camel-
     <p>
     Data types must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
     Type names are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
-    the constant-defining package, and if the type name has been package-qualified in that use, the type is visible
+    the type-defining package, and if the type name has been package-qualified in that use, the type is visible
     in the package that imports the type-defining package. <span class="future">However, if a data type is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
     </p>
         <p>
@@ -205,27 +205,105 @@ Note that underscores are not permitted (since they are an alternative to camel-
     	Each data object/value in a relish program has a data type. The data type of an object/value determines which methods can accept the object/value as an argument, and which methods can return the object/value as one of the method's return values.
 	</p>
 	<p>
+		Data types in relish can inherit attributes and method compatibility from other data types. A data type can inherit from more than one direct supertype. That is, relish has multiple inheritance.
+	</p>
+	<p>
 		Data types are of three kinds, primitive value types, structured object types, and collection types.
 	</p>
 	<p>
 		Primitive value types are such types as Int and Bool and <span class="future">Rune (unicode character)</span>.
 	</p>
 	<p>
-        Structured object types are like the familiar "object classes" of other languages, with a few notable differences.
+        Structured object types are like the familiar "object classes" of other languages.
         A structured object type is defined by specifying a list of attribute specifications to define the attributes of the object.
-        See "data type definition"
+        See "data type definition" section for details.        
 
     <p>
         Collection types are types such as List of T, Map of T T1, Set of T and have element accessing and iterating syntax support in the language, as well as compact syntax support for adding and deleting elements, if the collection is mutable. 
 		<span class="future">String may be considered an immutable collection type.</span>
 	</p>
 	<p>
-		<span class="future">Generics: - why are generics always "future" :-(  Data types definitions and type specifications may be parameterized; that is the type may be defined as a wrapper or holder of objects/values of one or more other data types. For example, BinaryTreeNode of T T is a parameterized data type where the type parameter T stands for any other data type. Each parameterized data type definition effectively creates a set of possible data types, and each parameterized data type specification accepts a set of possible datatypes.</span>
+		<span class="future">Generics: - why are generics always "future" :-(  Data type definitions and type specifications may be parameterized; that is, the type may be defined as a wrapper or holder of objects/values of one or more other data types. For example, BinaryTreeNode of T T is a parameterized data type where the type parameter T stands for any other data type. Each parameterized data type definition effectively creates a set of possible data types, and each parameterized data type specification accepts a set of possible datatypes.</span>
 	</p>	
+	<p>
+		In general, in relish, a data type (or class) does not "own" a set of methods.
+		It is more accurate to say that an <b>n-tuple</b> (e.g. an ordered-pair, an ordered triple) of data types in relish owns a set of methods; the n-tuple of types conceptually owns those methods whose parameter signature (of all positional-argument input parameters) is that type tuple.</p>
+		<p>
+		Methods do not have a privileged argument object which is known as the receiver of the method call.
+		Rather, all objects that are (required positional) arguments are the receivers of the method call, and relish's dynamic method dispatch will take account of the actual specific data type of each of the positional argument objects supplied to the call, to decide which method has a parameter type-signature that is the most specifically matching the tuple of argument objects.
+     		</p>
+		<p>A data type (or class) in relish can only be said to own 1) unary methods whose only input parameter is specified to be of that type, <span class="future">and also 2) special attribute-setter methods which set the values of attributes of a structured data object.</span>
+	</p>
 
 
 
 
+
+		<a name="TypeParameters"><h3><span class="future">Type Parameters</span></h3></a>		
+	    <code>
+	    <span class="future">T  T1  T2  T3  T4  T5  T6  T7  T8  T9</span>
+	    </code><br/><br/>
+	    <span class="future">Usage in context:<br/></span>
+<code><pre>
+<span class="future">LinkedList of T</span>	   
+</pre></code>
+	    <p>
+	    	<span class="future"><b>Syntax:</b></span>
+	    </p>
+	    <p>
+<span class="future">Relish supports parameterized data types (generics) and
+	only the names above are valid as type parameters in 
+	parameterized type declarations.</span> 	
+	    </p>
+	   
+
+
+			<a name="InbuiltDataTypes"><h3>Inbuilt Data Types</h3></a>	
+			
+			<p>In the following, Type1 &lt;: Type2 denotes that Type1 is a subtype that inherits behaviour from and extends the definition of the supertype Type2</p>	
+		    <code><pre>
+Any                              // (implicit) Abstract supertype of all relish datatypes
+RelishPrimitive &lt;: Any           // Abstract supertype of all inbuilt primitive data types in relish
+
+Numeric &lt;: RelishPrimitive       // Abstract supertype of all primitive number types
+Integer &lt;: Numeric               // Abstract supertype of all integer types
+Int &lt;: Integer                   // 64-bit signed integer
+Int32 &lt;: Integer                 // 32-bit signed integer<span class="future">
+Int16 &lt;: Integer                 // 16-bit signed integer
+Int8 &lt;: Integer                  // 8-bit signed integer</span>
+Uint &lt;: Integer                  // 64-bit unsigned integer
+Uint32 &lt;: Integer                // 32-bit unsigned integer<span class="future">
+Uint16 &lt;: Integer                // 16-bit unsigned integer
+Byte &lt;: Integer                  // 8-bit unsigned integer
+Bit &lt;: Integer                   // 1-bit unsigned integer</span>
+Bool &lt;: RelishPrimitive          // Boolean logical type (TRUE,FALSE)
+Real &lt;: Numeric                  // Abstract supertype of all floating-point numeric types
+Float &lt;: Real                    // 64-bit floating-point number<span class="future">
+Float32 &lt;: Real                  // 32-bit floating-point number
+ComplexNumber &lt;: Numeric         // Abstract supertype of all complex numeric types
+Complex &lt;: ComplexNumber         // Complex number consisting of two 64-bit Float parts
+Complex32 &lt;: ComplexNumber       // Complex number consisting of two 32-bit Float32 parts
+
+Text &lt;: RelishPrimitive          // Abstract supertype of all text data types
+CodePoint &lt;: Text                // A 32-bit unsigned integer representing a Unicode codepoint</span>	 
+String &lt;: Text                   // immutable byte-array representing UTF-8 encoded CodePoints.<span class="future">			
+Callable &lt;: RelishPrimitive      // Abstract supertype of all function types
+MultiMethod &lt;: Callable          // A set of methods in a namespace that share the same name
+Method &lt;: Callable               // An executable function implementation
+
+NonPrimitive &lt;: Any              // Abstract supertype of any type which is not a RelishPrimitive             
+Struct &lt;: Any                    // Abstract supertype of programmer-defined structured object types
+Collection of T &lt;: Any           // Abstract supertype of collection classes e.g. List Set Map
+List of T &lt;: Collection of T     // Collection which maintains elements in a sequence
+Set of T &lt;: Collection of T      // Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 // Map from one data type to another 
+
+InChannel &lt;: Any                 // A channel which can be read from
+OutChannel &lt;: Any                // A channel which can be written to
+Channel &lt;: InChannel OutChannel  // A channel which can be read from and written to</span>
+</pre></code>
+<p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
+		   
 
 
 	
