@@ -103,6 +103,7 @@ func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version int, p
 	   return
     }
 
+    parentPackagePath := packagePath
 	for _,filename := range filenames {
 	
 	    if ! strings.Contains(filename,".") { // discard relish source files and other rubbish in the dir.
@@ -118,7 +119,8 @@ func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version int, p
 			  	  return		       
 	           }
 	       } else if subDirFileInfo.IsDir() {
-               packagePath += "/" + filename
+	
+               packagePath = parentPackagePath + "/" + filename
                   err = ldr.loadPackageTree (originAndArtifactPath , version, packagePath, mustBeFromShared)	
 		       if err != nil {
 			      return

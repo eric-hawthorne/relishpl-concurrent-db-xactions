@@ -1,0 +1,235 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish by example - relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <img src="/relish_logo4_small.png">
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1>relish<span class="trademark">&#8482;</span></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Syntax and Semantics By Example - From the Inside Out</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <div id="tutorials_button" class="menubutton">
+	Tutorials
+  </div>
+  <div id="references_button" class="menubutton">
+	References
+  </div>
+  <div id="packages_button" class="menubutton">
+	Packages
+  </div>
+  <div id="download_button" class="menubutton">
+	DOWNLOAD
+  </div>	
+<div id="index">
+	<a href="#Introduction">Introduction</a><br/>	
+	<a href="#Variables">Variables</a><br/>
+	<a href="#ReservedWords">Reserved Words</a><br/>
+	<a href="#constants">Constants</a><br/>	
+	<a href="#DataTypes">Data Types</a><br/>	
+	<a href="#TypeParameters">Type Parameters</a><br/>	
+	<a href="#InbuiltTypes">Inbuilt Data Types</a><br/>				
+</div>  
+<div id="content_left">
+	<a name="Introduction"><h3>Introduction</h3></a>
+
+			<p>
+			This reference manual shows and explains relish&#8482; programming language constructs, starting from the most basic expressions and statements, and proceeding on to control constructs and beyond. Each construct is shown by one or more examples. Text after or interleaved with the examples explains the syntax rules and the semantics of the construct. <span class="future">language features planned but not yet implemented or enforced by the language compiler-interpreter or runtime environment are shown in text of this colour.</span>
+			</p>
+			<p>
+				relish language constructs have simple syntax rules and minimal use of punctuation and brackets of various kinds. The language also has fewer reserved words than may be typical. However, the language achieves this simplicity and minimalism of expression by means of a trade-off; programmers must adhere to stricter rules than usual as to how and where each language construct is to be written in the program source text.
+			</p>
+			<p>
+				Because of these strict syntax and code layout rules, it is strongly suggested that you begin creating relish programs, when you are first learning the language, by copy-pasting examples of language constructs from tutorials, example programs, code recipes, or from this manual. 
+				The examples will be formatted and laid out correctly, and you can modify the code to your needs from that starting point, and learn the conventions as you go.
+			</p>
+
+	<a name="Variables"><h3>Variables</h3></a>		
+    <code>
+    a  b  c  a1  source240v  amount lineWidth  stateOfPlay  line1Length  bitWidth32  
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    a = 2<br/>
+    lineWidth = a
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Variable names are camel-case latin-1 alphanumeric beginning with a lower case letter.
+Digits count as lower case letters in the camel-case rule, except are not allowed as the first character of the name as
+a whole, nor as the first character of any lower case word after an upper case letter. So theWord2 is allowed but theW2 is not.
+The name as a whole cannot end with an upper case letter. Multiple upper case letters together are not permitted.
+Note that underscores are not permitted (since they are an alternative to camel-case word separation.)    	
+    </p>
+<p>
+Some names of this form may not be used as variable names:
+<ul>
+<li>the relish language's reserved words are excluded,</li>
+<li>the name of any method visible in the scope,</li>
+
+<li> the last name-part of any unaliased imported package,</li> 
+<li> the package alias of any aliased imported package,</li> 
+<li><span class="future">a name of a parameter of the containing method is already implicitly defined as a strictly typed variable in the method so may not be re-assigned to a value-type incompatible with the parameter's type specification.</span></li>	
+</ul>
+</p>
+
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+	A variable is a named value of an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
+	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
+    </p>
+	
+
+	<span class="future">The type of a variable is not stated explicitly when defining the variable. If you assign to a variable in multiple places inside a method body, the known types of the values assigned in the different places must form a type hierarchy. That is, if values of different known types are
+	assigned in different assignment-occurrences, then at least one of those known types must be a common supertype of all the others. The type of the variable is then taken to be that common supertype of the known types of values assigned to it in the various assignment occurrences in the method. 
+    </span>
+
+
+
+
+
+	<a name="ReservedWords"><h3>Reserved Words</h3></a>		
+    <code>
+    if elif else while for break continue of as go func
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>    
+    <p>
+The reserved words may not be used as variable names, method names, or package name parts or aliases. They are reserved for use to define control constructs in the language.
+</p>
+   
+
+
+
+
+	<a name="Constants"><h3>Constants</h3></a>		
+    <code>
+    PI  E  MAX_WIDTH  LIMIT1  DIM1_SIZE 
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    PI = 3.1415926535<br/>
+    DEFAULT_GREETING = "Hello, World!"
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Constant names are all-capitalized latin-1 alphanumeric, with single-underscore word separators permitted.
+They must begin with a latin-1 capital letter.
+Note: All single latin-1 capital letters except T denote constants. T,T1,... denote <span class="future">type parameters (See below.)</span> 	
+    </p>
+    <p>
+    Constants must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
+    Constants are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
+    the constant-defining package, and if the constant name has been package-qualified in that use, the constant is visible
+    in the package that imports the constant-defining package. <span class="future">However, if a constant is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    </p>
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+    	A constant can (and must when introduced) be assigned the value of an expression once, and thenceforth refers to that value.
+    	<span class="future">There must be a restriction on the kind of expressions that can be assigned to constants, due to timing of the execution of the constant assignment statements, but what is that restriction?
+    		When in the code load and generation and initialization sequence does the constant expression get evaluated??? Does this need to be changed to move the execution until all the methods etc are properly loaded into the runtime?</span>
+	</p>
+
+
+
+	<a name="DataTypes"><h3>Data Types</h3></a>		
+    <code>
+    Int32  Float  String  ClosedCurve  BuggyWhipStorageRackClip    	
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    add a Int b Int &gt; Int <br/>
+    """ <br/>
+     A method that adds two integers together and returns the result.
+    """ <br/>
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Type names are camel-case latin-1 alphanumeric beginning with an upper case letter.
+All data type names must begin with at least two letters (upper case followed by lowercase.)
+Other details of the name syntax are the same as for variables except for the initial upper case letter for type names.
+Note that underscores are not permitted (since they are an alternative to camel-case word separation.)	
+    </p>
+    <p>
+    Data types must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
+    Type names are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
+    the constant-defining package, and if the type name has been package-qualified in that use, the type is visible
+    in the package that imports the type-defining package. <span class="future">However, if a data type is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    </p>
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+    	Each data object/value in a relish program has a data type. The data type of an object/value determines which methods can accept the object/value as an argument, and which methods can return the object/value as one of the method's return values.
+	</p>
+	<p>
+		Data types are of three kinds, primitive value types, structured object types, and collection types.
+	</p>
+	<p>
+		Primitive value types are such types as Int and Bool and <span class="future">Rune (unicode character)</span>.
+	</p>
+	<p>
+        Structured object types are like the familiar "object classes" of other languages, with a few notable differences.
+        A structured object type is defined by specifying a list of attribute specifications to define the attributes of the object.
+        See "data type definition"
+
+    <p>
+        Collection types are types such as List of T, Map of T T1, Set of T and have element accessing and iterating syntax support in the language, as well as compact syntax support for adding and deleting elements, if the collection is mutable. 
+		<span class="future">String may be considered an immutable collection type.</span>
+	</p>
+	<p>
+		<span class="future">Generics: - why are generics always "future" :-(  Data types definitions and type specifications may be parameterized; that is the type may be defined as a wrapper or holder of objects/values of one or more other data types. For example, BinaryTreeNode of T T is a parameterized data type where the type parameter T stands for any other data type. Each parameterized data type definition effectively creates a set of possible data types, and each parameterized data type specification accepts a set of possible datatypes.</span>
+	</p>	
+
+
+
+
+
+
+	
+</div>
+
+</body>
+</html>
