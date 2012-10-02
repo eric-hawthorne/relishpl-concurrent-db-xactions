@@ -262,45 +262,45 @@ Note that underscores are not permitted (since they are an alternative to camel-
 			
 			<p>In the following, Type1 &lt;: Type2 denotes that Type1 is a subtype that inherits behaviour from and extends the definition of the supertype Type2</p>	
 		    <code><pre>
-Any                              // (implicit) Abstract supertype of all relish datatypes
-RelishPrimitive &lt;: Any           // Abstract supertype of all inbuilt primitive data types in relish
+Any                              (implicit) Abstract supertype of all relish datatypes
+RelishPrimitive &lt;: Any           Abstract supertype of all inbuilt primitive data types in relish
 
-Numeric &lt;: RelishPrimitive       // Abstract supertype of all primitive number types
-Integer &lt;: Numeric               // Abstract supertype of all integer types
-Int &lt;: Integer                   // 64-bit signed integer
-Int32 &lt;: Integer                 // 32-bit signed integer<span class="future">
-Int16 &lt;: Integer                 // 16-bit signed integer
-Int8 &lt;: Integer                  // 8-bit signed integer</span>
-Uint &lt;: Integer                  // 64-bit unsigned integer
-Uint32 &lt;: Integer                // 32-bit unsigned integer<span class="future">
-Uint16 &lt;: Integer                // 16-bit unsigned integer
-Byte &lt;: Integer                  // 8-bit unsigned integer
-Bit &lt;: Integer                   // 1-bit unsigned integer</span>
-Bool &lt;: RelishPrimitive          // Boolean logical type (TRUE,FALSE)
-Real &lt;: Numeric                  // Abstract supertype of all floating-point numeric types
-Float &lt;: Real                    // 64-bit floating-point number<span class="future">
-Float32 &lt;: Real                  // 32-bit floating-point number
-ComplexNumber &lt;: Numeric         // Abstract supertype of all complex numeric types
-Complex &lt;: ComplexNumber         // Complex number consisting of two 64-bit Float parts
-Complex32 &lt;: ComplexNumber       // Complex number consisting of two 32-bit Float32 parts
+Numeric &lt;: RelishPrimitive       Abstract supertype of all primitive number types
+Integer &lt;: Numeric               Abstract supertype of all integer types
+Int &lt;: Integer                   64-bit signed integer
+Int32 &lt;: Integer                 32-bit signed integer<span class="future">
+Int16 &lt;: Integer                 16-bit signed integer
+Int8 &lt;: Integer                  8-bit signed integer</span>
+Uint &lt;: Integer                  64-bit unsigned integer
+Uint32 &lt;: Integer                32-bit unsigned integer<span class="future">
+Uint16 &lt;: Integer                16-bit unsigned integer
+Byte &lt;: Integer                  8-bit unsigned integer
+Bit &lt;: Integer                   1-bit unsigned integer</span>
+Bool &lt;: RelishPrimitive          Boolean logical type (TRUE,FALSE)
+Real &lt;: Numeric                  Abstract supertype of all floating-point numeric types
+Float &lt;: Real                    64-bit floating-point number<span class="future">
+Float32 &lt;: Real                  32-bit floating-point number
+ComplexNumber &lt;: Numeric         Abstract supertype of all complex numeric types
+Complex &lt;: ComplexNumber         Complex number consisting of two 64-bit Float parts
+Complex32 &lt;: ComplexNumber       Complex number consisting of two 32-bit Float32 parts
 
-Text &lt;: RelishPrimitive          // Abstract supertype of all text data types
-CodePoint &lt;: Text                // A 32-bit unsigned integer representing a Unicode codepoint</span>	 
-String &lt;: Text                   // immutable byte-array representing UTF-8 encoded CodePoints.<span class="future">			
-Callable &lt;: RelishPrimitive      // Abstract supertype of all function types
-MultiMethod &lt;: Callable          // A set of methods in a namespace that share the same name
-Method &lt;: Callable               // An executable function implementation
+Text &lt;: RelishPrimitive          Abstract supertype of all text data types
+CodePoint &lt;: Text                A 32-bit unsigned integer representing a Unicode codepoint</span>	 
+String &lt;: Text                   immutable byte-array representing UTF-8 encoded CodePoints.<span class="future">			
+Callable &lt;: RelishPrimitive      Abstract supertype of all function types
+MultiMethod &lt;: Callable          A set of methods in a namespace that share the same name
+Method &lt;: Callable               An executable function implementation
 
-NonPrimitive &lt;: Any              // Abstract supertype of any type which is not a RelishPrimitive             
-Struct &lt;: Any                    // Abstract supertype of programmer-defined structured object types
-Collection of T &lt;: Any           // Abstract supertype of collection classes e.g. List Set Map
-List of T &lt;: Collection of T     // Collection which maintains elements in a sequence
-Set of T &lt;: Collection of T      // Collection which holds at most one of each value
-Map of T1 T2 &lt;: Collection of T1 // Map from one data type to another 
+NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive             
+Struct &lt;: Any                    Abstract supertype of programmer-defined structured object types
+Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map
+List of T &lt;: Collection of T     Collection which maintains elements in a sequence
+Set of T &lt;: Collection of T      Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 Map from one data type to another 
 
-InChannel &lt;: Any                 // A channel which can be read from
-OutChannel &lt;: Any                // A channel which can be written to
-Channel &lt;: InChannel OutChannel  // A channel which can be read from and written to</span>
+InChannel &lt;: Any                 A channel which can be read from
+OutChannel &lt;: Any                A channel which can be written to
+Channel &lt;: InChannel OutChannel  A channel which can be read from and written to</span>
 </pre></code>
 <p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
 		   

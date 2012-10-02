@@ -179,7 +179,7 @@ func main() {
 	    } else { // RELISH_HOME not defined. Try standard locations.
 			var relishRoots []string
 			if os.IsPathSeparator('/') {
-				relishRoots = []string{"/opt/relish","/usr/local/relish","~/relish","/opt/devel/relish","Library/relish"}
+				relishRoots = []string{"/opt/relish","/usr/local/relish","~/relish","~/devel/relish","/opt/devel/relish","Library/relish"}
 			} else { // Windows? This part is untested	
 				relishRoots = []string{`C:\relish`}	
 			}
