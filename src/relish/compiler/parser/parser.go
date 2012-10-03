@@ -3146,6 +3146,131 @@ func (p *parser) parseIndentedMethodCall(stmt **ast.MethodCall) bool {
 
 
 
+
+
+func (p *parser) parseListConstruction(stmt **ast.ListConstruction) bool {
+    if p.trace {
+       defer un(trace(p, "ListConstruction"))
+    }
+    return p.parseIndentedListConstruction(stmt) || p.parseOneLineListConstruction(stmt)
+}
+
+/*
+[] Car
+["First" "Second" "Third"] String
+[] Car "year > 2010 order by year"
+[1 2 45 6]
+
+*/
+func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
+    if p.trace {
+       defer un(trace(p, "OneLineListConstruction"))
+    }
+
+    var methodName *ast.Ident
+
+    emptyList := false
+    nonEmptyList := false
+
+if p.Match2('[',']') {
+    emptyList = true
+} else if p.Match1('[') {
+	nonEmptyList = true
+} else {
+	return false
+}
+
+
+
+    if ! p.parseMethodName(true,&methodName) {
+	   return false
+    }
+
+    var xs []ast.Expr
+
+    st2 := p.State()
+
+    if p.Space() { // May be arguments
+       if ! (p.parseMultipleOneLineExpressions(&xs, isInsideBrackets) || p.parseSingleOneLineExpression(&xs, isInsideBrackets)) {
+	      p.Fail(st2)
+	   }
+    }
+	
+	// translate
+	*stmt = &ast.MethodCall{Fun:methodName,Args:xs}
+	
+    return true
+}
+
+/*
+
+[
+   "First" 
+   "Second" 
+    "Third"
+] String
+
+   [] Car """
+year > 2010 
+order by year
+"""
+
+[] Car 
+   "year > 2010"
+
+   [] Car
+      """
+year > 2010 
+order by year
+"""
+
+[
+   1
+   2
+   45
+   6
+]
+*/
+func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool {
+    if p.trace {
+       defer un(trace(p, "IndentedListConstruction"))
+    }
+    st := p.State()
+    var methodName *ast.Ident
+
+    if ! p.parseMethodName(true,&methodName) {
+	   return false
+    }
+
+    var xs []ast.Expr
+    var kws map[string]ast.Expr = make(map[string]ast.Expr)
+    var firstAssignmentPos int32 = -1 // position in arg list of first assignment statement. = #positionalArgs
+
+    if ! p.parseIndentedExpressionsOrKeywordParamAssignments(st.RuneColumn, &xs, &firstAssignmentPos, kws ) {
+        if ! p.Space() {
+	       return p.Fail(st)
+	    }
+	    if ! p.parseVerticalExpressionsOrKeywordParamAssignments(p.Col(), &xs, &firstAssignmentPos, kws) {
+	       return p.Fail(st)	
+	    }
+    }
+
+// parseVerticalExpressionsOrKeywordParamAssignments
+
+    // TODO Need to type check the keyword param assignments, but may have to wait til call evaluation time?
+    // Shouldn't have to, because all methods of a given name and # of positional parameters must
+    // have the same set of keyword paramters. <== IMPORTANT RULE
+    // Except what about the special keywords arg declaration.
+
+	*stmt = &ast.MethodCall{Fun:methodName,Args:xs, KeywordArgs:kws, NumPositionalArgs: firstAssignmentPos }
+	
+    return true
+}
+
+
+
+
+
 /*
 AssignmentStatement struct {
 	Lhs    []Expr
