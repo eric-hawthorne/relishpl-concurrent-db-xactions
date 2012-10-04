@@ -14,6 +14,7 @@ import (
 	. "relish/runtime/data"
 	"strconv"
 	"strings"
+	"relish/rterr"
 )
 
 func InitBuiltinFunctions() {
@@ -240,7 +241,7 @@ func builtinLtNum(objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) < float64(obj1.(Int)))
 		default:
-			panic("I don't understand these types.")
+			rterr.Stop("lt is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
@@ -251,7 +252,7 @@ func builtinLtNum(objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) < float64(obj1.(Int32)))
 		default:
-			panic("I don't understand these types.")
+			rterr.Stop("lt is not defined for argument types")
 		}
 	case Float:
 		switch obj2.(type) {
@@ -262,8 +263,9 @@ func builtinLtNum(objects []RObject) []RObject {
 		case Int32:
 			val = Bool(float64(obj1.(Float)) < float64(obj2.(Int32)))
 		default:
-			panic("I don't understand these types.")
+			rterr.Stop("lt is not defined for argument types")
 		}
+	default: rterr.Stop("lt is not defined for argument types")
 	}
 	return []RObject{val}
 }
@@ -304,7 +306,7 @@ func builtinGtNum(objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) > float64(obj1.(Int)))
 		default:
-			panic("I don't understand these types.")
+		rterr.Stop("gt is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
@@ -315,7 +317,7 @@ func builtinGtNum(objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) > float64(obj1.(Int32)))
 		default:
-			panic("I don't understand these types.")
+		rterr.Stop("gt is not defined for argument types")
 		}
 	case Float:
 		switch obj2.(type) {
@@ -326,8 +328,9 @@ func builtinGtNum(objects []RObject) []RObject {
 		case Int32:
 			val = Bool(float64(obj1.(Float)) > float64(obj2.(Int32)))
 		default:
-			panic("I don't understand these types.")
+		rterr.Stop("gt is not defined for argument types")
 		}
+		default: rterr.Stop("gt is not defined for argument types")	
 	}
 	return []RObject{val}
 }
@@ -367,7 +370,7 @@ func builtinTimes(objects []RObject) []RObject {
 		case Float:
 			val = Float(float64(obj2.(Float)) * float64(obj1.(Int)))
 		default:
-			panic("I don't understand these types.")
+		    rterr.Stop("times is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
@@ -378,7 +381,7 @@ func builtinTimes(objects []RObject) []RObject {
 		case Float:
 			val = Float(float64(obj2.(Float)) * float64(obj1.(Int32)))
 		default:
-			panic("I don't understand these types.")
+		    rterr.Stop("times is not defined for argument types")
 		}
 	case Float:
 		switch obj2.(type) {
@@ -389,8 +392,10 @@ func builtinTimes(objects []RObject) []RObject {
 		case Int32:
 			val = Float(float64(obj1.(Float)) * float64(obj2.(Int32)))
 		default:
-			panic("I don't understand these types.")
+		    rterr.Stop("times is not defined for argument types")
 		}
+	default:
+		rterr.Stop("times is not defined for argument types")
 	}
 	return []RObject{val}
 }
@@ -416,7 +421,7 @@ func builtinDub(objects []RObject) []RObject {
 	name := objects[1].String()
 
 	if obj.IsStoredLocally() {
-		panic(fmt.Sprintf("Object %v is already persistent. Cannot re-dub (re-persist) as '%s'.", obj, name))
+		rterr.Stopf("Object %v is already persistent. Cannot re-dub (re-persist) as '%s'.", obj, name)
 	}
 
 	// Ensure that the name is not already used for a persistent object in this database.
@@ -425,7 +430,7 @@ func builtinDub(objects []RObject) []RObject {
 	if err != nil {
 		panic(err)
 	} else if found {
-		panic(fmt.Sprintf("The object name '%s' is already in use.", name))
+		rterr.Stopf("The object name '%s' is already in use.", name)
 	}
 
 	// Ensure that the object is persisted.
@@ -468,6 +473,7 @@ from ch InChannel of T > T
 
 val = from ch
 
+TODO DUMMY Implementation 
 */
 func builtinFrom(objects []RObject) []RObject {
 	name := objects[0].String()
@@ -489,6 +495,8 @@ to
 
 to ch val
 
+
+TODO DUMMY Implementation 
 */
 func builtinTo(objects []RObject) []RObject {
 	name := objects[0].String()

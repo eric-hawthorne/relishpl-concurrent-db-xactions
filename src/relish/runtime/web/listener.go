@@ -17,6 +17,7 @@ import (
     "errors"
 	. "relish/runtime/data"
 	"relish/runtime/interp"
+  "relish/rterr"
   "net/url"
 )
 
@@ -307,7 +308,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    var pkg *RPackage 
    pkg = RT.Packages[pkgName]
    if pkg == nil {
-	  panic("No web package has been defined in " + RT.RunningArtifact)
+	  rterr.Stop("No web package has been defined in " + RT.RunningArtifact)
    }
 
 

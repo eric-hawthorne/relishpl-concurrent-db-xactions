@@ -17,6 +17,7 @@ import (
 	"relish/compiler/token"
 	. "relish/dbg"
 	. "relish/runtime/data"
+	"relish/rterr"
 	"strconv"
 	"net/url"
 )
@@ -58,7 +59,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
     pkg := i.rt.Packages[fullUnversionedPackagePath]
 	mm, found := pkg.MultiMethods[fullUnversionedPackagePath + "/main"]
 	if !found {
-		panic("No main function defined.")
+		rterr.Stop("No main function defined.")
 	}
 	t := i.NewThread()
 
@@ -282,8 +283,8 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Int32(int32(v64))				
 
-	case Int16Type : panic("Parameter type not yet allowed in a web service handler method.")
-	case Int8Type : panic("Parameter type not yet allowed in a web service handler method.")
+	case Int16Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case Int8Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
 	case UintType : 
        var v64 uint64
        v64, err = strconv.ParseUint(valStr, 0, 64)  
@@ -300,9 +301,9 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Uint32(uint32(v64))
 
-	case Uint16Type : panic("Parameter type not yet allowed in a web service handler method.")
-	case ByteType : panic("Parameter type not yet allowed in a web service handler method.")
-	case BitType : panic("Parameter type not yet allowed in a web service handler method.")
+	case Uint16Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case ByteType : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case BitType : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
 	case BoolType : 
        var v bool
        v, err = strconv.ParseBool(valStr)  
@@ -319,7 +320,7 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Float(v64)
 
-	case Float32Type : panic("Parameter type not yet allowed in a web service handler method.")
+	case Float32Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
 	case StringType :
        args[i] = String(valStr)
 
@@ -746,7 +747,7 @@ TODO.
 func (i *Interpreter) Apply(t *Thread, mm *RMultiMethod, args []RObject) {
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
 	if method == nil {
-		panic(fmt.Sprintf("No method '%s' is compatible with %s", mm.Name, typeTuple))
+		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
 	}
 	i.apply1(t, method, args)
 }
@@ -916,13 +917,13 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 		// 1. for i key val in orderedMap  // keyOffset == 2, 1 coll, coll[0] is map		
 
 		if nCollections != 1 {
-			panic("Expecting only one collection, (an ordered map), when there are two more vars than collections.")
+			rterr.Stop("Expecting only one collection, (an ordered map), when there are two more vars than collections.")
 		}
 		if !collection.IsMap() {
-			panic("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
+			rterr.Stop("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
 		}
 		if !collection.IsOrdered() {
-			panic("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
+			rterr.Stop("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
 		}
 
 		// now do the looping
@@ -989,7 +990,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 				// 3. for i val in listOrOrderedSet 
 
 				if !collection.IsOrdered() {
-					panic("Expecting a list or ordered set when construct is 'for i val in listOrOrderedSet'.")
+					rterr.Stop("Expecting a list or ordered set when construct is 'for i val in listOrOrderedSet'.")
 				}
 
 				// now do the looping
@@ -1040,7 +1041,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
 				collection := t.Stack[collPos].(RCollection)
 				if !collection.IsOrdered() {
-					panic("Expecting lists or other ordered collections when construct is 'for i val1 val2 ... in coll1 coll2 ...'.")
+					rterr.Stop("Expecting lists or other ordered collections when construct is 'for i val1 val2 ... in coll1 coll2 ...'.")
 				}
 			}
 
@@ -1137,7 +1138,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
 				collection := t.Stack[collPos].(RCollection)
 				if !collection.IsOrdered() {
-					panic("Expecting lists or other ordered collections when construct is 'for val1 val2 ... in coll1 coll2 ...'.")
+					rterr.Stop("Expecting lists or other ordered collections when construct is 'for val1 val2 ... in coll1 coll2 ...'.")
 				}
 			}
 
@@ -1183,7 +1184,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 		}
 
 	default:
-		panic("too many or too few variables in for statement.")
+		rterr.Stop("too many or too few variables in for statement.")
 	}
 
 	/*	
@@ -1256,7 +1257,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 
 					   case 0:
 					   default: 
-					      panic("More l-values than allowed in for range statement.")	
+					      rterr.Stop("More l-values than allowed in for range statement.")	
 					}
 
 					// Assign to the right variable
@@ -1307,7 +1308,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			   case *rset:
 			   // TODO: maps
 			   default:
-				  panic("Argument to 'for var(s) in collection(s)' is not a collection.")
+				  rterr.Stop("Argument to 'for var(s) in collection(s)' is not a collection.")
 
 			}
 			for i,val := range 
@@ -1409,7 +1410,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			}
 
 		default:
-			panic("I only handle simple variable or attribute assignments currently. Not indexed ones.")
+			rterr.Stop("I only handle simple variable or attribute assignments currently. Not indexed ones.")
 
 		}
 	}

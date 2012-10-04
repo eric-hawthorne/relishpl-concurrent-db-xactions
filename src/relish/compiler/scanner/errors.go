@@ -160,7 +160,7 @@ func (h *ErrorVector) Error(pos token.Position, msg string) {
 
 	if h.StopOnFirstError {
 		PrintError(os.Stdout, h.GetErrorList(Raw))
-		panic("Stopped parsing upon error.")
+		os.Exit(1)
 	}
 }
 

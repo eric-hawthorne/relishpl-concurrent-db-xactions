@@ -785,16 +785,16 @@ func (p *parser) parseListTypeSpec(collectionTypeSpec **ast.CollectionTypeSpec) 
     }
 
 	// TODO Have to do < and <attr and <foo
-	var isOrdered, isAscending bool
+	var isSorting, isAscending bool
 	var orderFunc string
 	
 	if p.Match("<") {
 		isAscending = true
-		isOrdered = true
+		isSorting = true
 	} else if p.Match(">") {
-        isOrdered = true		
+        isSorting = true		
 	}
-    if isOrdered {
+    if isSorting {
 	   _,orderFunc = p.ScanVarName() 
     }
 
@@ -803,7 +803,7 @@ func (p *parser) parseListTypeSpec(collectionTypeSpec **ast.CollectionTypeSpec) 
     }	
     end := p.Pos()
 
-    *collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isOrdered,isAscending,orderFunc}
+    *collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
 
     return true
 }
@@ -821,16 +821,16 @@ func (p *parser) parseSetTypeSpec(collectionTypeSpec **ast.CollectionTypeSpec) b
     }
 
 	// TODO Have to do < and <attr and <foo
-	var isOrdered, isAscending bool
+	var isSorting, isAscending bool
 	var orderFunc string
 	
 	if p.Match("<") {
 		isAscending = true
-		isOrdered = true
+		isSorting = true
 	} else if p.Match(">") {
-        isOrdered = true		
+        isSorting = true		
 	}
-    if isOrdered {
+    if isSorting {
        _,orderFunc = p.ScanVarName() 
     }
 	
@@ -839,7 +839,7 @@ func (p *parser) parseSetTypeSpec(collectionTypeSpec **ast.CollectionTypeSpec) b
     }
     end := p.Pos()
 
-    *collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isOrdered,isAscending,orderFunc}
+    *collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isSorting,isAscending,orderFunc}
 
     return true		
 }
@@ -3156,10 +3156,22 @@ func (p *parser) parseListConstruction(stmt **ast.ListConstruction) bool {
 }
 
 /*
-[] Car
-["First" "Second" "Third"] String
-[] Car "year > 2010 order by year"
+Note, somehow, these have to be prevented from being standalone statements. Can only appear in expression context.
+
+[]Car
+["First" "Second" "Third"]String
+[]Car "year > 2010 order by year"
 [1 2 45 6]
+
+  TypeSpec struct {
+    Doc            *CommentGroup       // associated documentation; or nil
+    Name           *Ident              // type name (or type variable name)
+    Type           Expr                // *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
+    Comment        *CommentGroup       // line comments; or nil
+    Params         []*TypeSpec         // Type parameters (egh)
+    SuperTypes     []*TypeSpec         // Only valid if this is a type variable (egh)
+    CollectionSpec *CollectionTypeSpec // nil or a collection specification
+  }
 
 */
 func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
@@ -3167,18 +3179,87 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
        defer un(trace(p, "OneLineListConstruction"))
     }
 
-    var methodName *ast.Ident
+    var typeSpec *ast.TypeSpec
+
+    var collectionTypeSpec *ast.CollectionTypeSpec
+
+    var elementExprs []ast.Expr    
 
     emptyList := false
     nonEmptyList := false
+    hasType := false
+    
+    st := p.State()
+    pos := p.Pos()
+    var end token.Pos
 
-if p.Match2('[',']') {
-    emptyList = true
-} else if p.Match1('[') {
-	nonEmptyList = true
-} else {
-	return false
+    if p.Match2('[',']') {
+        end = p.Pos()
+        emptyList = true
+    } else if p.Match1('[') {
+    	  nonEmptyList = true
+
+        // Get the list of expressions inside the list literal square-brackets
+        isInsideBrackets := false  // this refers to round brackets
+        if ! (p.parseMultipleOneLineExpressions(&elementExprs, isInsideBrackets) || p.parseSingleOneLineExpression(&elementExprs, isInsideBrackets)) {
+           return p.Fail(st)
+        }
+        p.required(p.Match1(']'), "closing square-bracket ]")   
+        end = p.Pos()            
+    } else { 
+	     return false // Did not match a list-specifying square-bracket
+    }
+
+    if p.parseTypeSpec(true,false,false,false,&typeSpec) {
+       hasType = true 
+    }
+
+    if ! hasType { 
+       if emptyList { // Oops - no way to infer the element-type constraint
+          p.stop("An empty list literal must specify its element type. e.g. []Widget")
+          return false // superfluous when parser is in single-error mode as now
+       }
+
+       // Try to infer the element-type constraint from the statically known types of the arguments.
+
+       // TODO TODO TODO !!!!!!!!!
+       // Once we are doing static type inference and type checking of variables and expressions
+       // we will be able to do this properly when element types are not all the same.  
+       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
+          p.stop("Cannot infer element-type constraint of list. Specify element type. e.g. []Widget")
+       } 
+    }
+
+    isSorting := false // TODO allow sorting-list specifications in list constructions!!!!
+    isAscending := false 
+    orderFunc := "" 
+    collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
+
+                                                
+
+type CollectionTypeSpec struct {
+  Kind        token.Token
+  LDelim      token.Pos
+  RDelim      token.Pos
+  IsSorting   bool
+  IsAscending bool
+  OrderFunc   string
 }
+
+
+    typeSpec.CollectionSpec = collectionTypeSpec
+
+
+
+
+
+
+
+
+if p.parseTypeSpec(true,false,false,false,&typeSpec) {
+   emptyList = true
+   hasType = true
+}  
 
 
 
@@ -3203,22 +3284,37 @@ if p.Match2('[',']') {
 }
 
 /*
+If it can, uses the preliminary compile-time type information about the element expressions to 
+infer the typespec which is to be the element-type constraint of the collection. Sets the typeSpec argument to
+point to the element type constraint type spec that it creates.
+
+Currently is very crude, and can only work on elementExprs which are some kinds of RelishPrimitive literals e.g. 
+String and various Numeric literals, maybe also Bool
+
+If it cannot decide the typespec based on this crude assessment, it returns false and does not create a TypeSpec.
+*/
+func (p *Parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec) bool {
+
+}
+
+
+/*
 
 [
    "First" 
    "Second" 
     "Third"
-] String
+]String
 
-   [] Car """
+   []Car """
 year > 2010 
 order by year
 """
 
-[] Car 
+[]Car 
    "year > 2010"
 
-   [] Car
+   []Car
       """
 year > 2010 
 order by year
@@ -3230,6 +3326,8 @@ order by year
    45
    6
 ]
+
+"one or more expressions - the elements of the list - or the closing bracket ]"
 */
 func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool {
     if p.trace {
@@ -5710,7 +5808,7 @@ func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
 }
 
 func (p *parser) makeExpr(s ast.Stmt) ast.Expr {
-	if s == nil {
+	if s == nil {re
 		return nil
 	}
 	if es, isExpr := s.(*ast.ExprStmt); isExpr {

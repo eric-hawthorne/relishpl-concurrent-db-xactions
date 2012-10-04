@@ -26,6 +26,7 @@ import (
 	"fmt"
 	. "relish/dbg"
 	. "relish/runtime/data"
+	"relish/rterr"
 	"strconv"
 	"strings"
 )
@@ -277,7 +278,7 @@ func (db *SqliteDB) persistRemoteObject(obj RObject) (err error) {
 			return
 		}
 		if found {
-			panic("Can't store remote object locally because of db id conflict.") // Chance of this is extremely small. Two 64 bit int random ids had to be present twice. 
+			rterr.Stop("Can't store remote object locally because of db id conflict.") // Chance of this is extremely small. Two 64 bit int random ids had to be present twice. 
 		}
 	}
 	db.insert(obj, dbid, dbid2)
@@ -340,7 +341,7 @@ func (db *SqliteDB) exists(id int64) (found bool, err error) {
 		if n >= 1 {
 			found = true
 			if n > 1 {
-				panic("More than one object with same id in sqlite db!")
+				rterr.Stop("More than one object with same id in sqlite db!")
 			}
 		}
 	} else {

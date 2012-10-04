@@ -397,6 +397,13 @@ type (
 		NumPositionalArgs int32 // -1 if not known. Will be known if there are keyword args
 	}
 
+	// EGH A ListConstruction node represents a list constructor invocation, which may be a list literal, a new empty list of a type, or
+	// a list with a db sql query where clause specified as the source of list members.
+	ListConstruction struct {
+        Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a List.
+		Query     Expr     // must be an expression evaluating to a String, or nil
+	}	
+
 	// A StarExpr node represents an expression of the form "*" Expression.
 	// Semantically it could be a unary "*" expression, or a pointer type.
 	//
@@ -513,6 +520,7 @@ func (x *SliceExpr) Pos() token.Pos      { return x.X.Pos() }
 func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
 func (x *TypeAssertion) Pos() token.Pos  { return x.Type.Pos() }
 func (x *MethodCall) Pos() token.Pos     { return x.Fun.Pos() }
+func (x *ListConstruction) Pos() token.Pos     { return x.Type.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 func (x *StarExpr) Pos() token.Pos       { return x.Star }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
@@ -558,6 +566,12 @@ func (x *MethodCall) End() token.Pos {
 	}
 	return x.Fun.End()
 }
+func (x *ListConstruction) End() token.Pos     { 
+	if  x.Query != nil {
+		return x.Query.End() 
+	}
+	return x.Type.End()
+}
 
 func (x *StarExpr) End() token.Pos     { return x.X.End() }
 func (x *UnaryExpr) End() token.Pos    { return x.X.End() }
@@ -595,6 +609,7 @@ func (x *TypeAssertExpr) exprNode() {}
 func (x *TypeAssertion) exprNode()  {}
 func (x *CallExpr) exprNode()       {}
 func (x *MethodCall) exprNode()     {}
+func (x *ListConstruction) exprNode()     {}
 func (x *StarExpr) exprNode()       {}
 func (x *UnaryExpr) exprNode()      {}
 func (x *BinaryExpr) exprNode()     {}

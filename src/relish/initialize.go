@@ -12,6 +12,7 @@ package relish
 import (
 	. "relish/runtime/data"
 	. "relish/runtime/persist"	
+   "relish/rterr"
 )	
 	
 func DatabaseURI() string {
@@ -22,7 +23,7 @@ func SetDatabaseURI(uri string) {
    if RT.DB() == nil {	
       RT.DatabaseURI = uri
    } else if uri != RT.DatabaseURI {
-   	   panic("Cannot rename database after connection to database has been initialized.")
+   	   rterr.Stop("Cannot rename database after connection to database has been initialized.")
    }
 }	
 
