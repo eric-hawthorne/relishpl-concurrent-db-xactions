@@ -3235,31 +3235,9 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
     orderFunc := "" 
     collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
 
-                                                
-
-type CollectionTypeSpec struct {
-  Kind        token.Token
-  LDelim      token.Pos
-  RDelim      token.Pos
-  IsSorting   bool
-  IsAscending bool
-  OrderFunc   string
-}
-
-
     typeSpec.CollectionSpec = collectionTypeSpec
 
 
-
-
-
-
-
-
-if p.parseTypeSpec(true,false,false,false,&typeSpec) {
-   emptyList = true
-   hasType = true
-}  
 
 
 
@@ -3293,8 +3271,52 @@ String and various Numeric literals, maybe also Bool
 
 If it cannot decide the typespec based on this crude assessment, it returns false and does not create a TypeSpec.
 */
-func (p *Parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec) bool {
+func (p *parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec) bool {
+	
+	var primitiveTypes map[token.Token]bool 
+	primitiveTypes = make(map[token.Token]bool)
+	
+	var pos token.Pos
+	pos = token.NoPos
+	for _,elementExpr := range elementExprs {
+	   switch elementExpr.(type) {
+		  case *ast.BasicLit :
+			 lit := elementExpr.(*ast.BasicLit)
+		     primitiveTypes[lit.Kind] = true     
+		     if pos == token.NoPos {
+			    pos = lit.Pos
+		     }       	
+		  default : 
+		     return false // Not a RelishPrimitive literal. Can't handle here.
+	   }
+	}
 
+
+
+    // TODO Not handling TRUE FALSE (which should be true false) here
+    // There needs to be a BasicLit which is of tok.BOOL
+    var typeName *ast.Ident
+    var typName string
+    if len(primitiveTypes) == 1 {
+        for tok,_ := range primitiveTypes {
+	       typName = strings.Title(tok.String())
+           typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}	
+        }
+    } else if len(primitiveTypes) == 2 { // See if types are all Numeric, else Choose RelishPrimitive
+	   if primitiveTypes[token.INT] && primitiveTypes[token.FLOAT] {
+		   typName = "Numeric"
+	   } else {
+	      typName = "RelishPrimitive"	
+	   }
+    } else { // has to be RelishPrimitive
+	  typName = "RelishPrimitive"
+    }
+    
+    typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}
+	
+	*typeSpec = &ast.TypeSpec{Name: typeName}
+	
+    return true
 }
 
 
