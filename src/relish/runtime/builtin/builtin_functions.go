@@ -523,3 +523,28 @@ func builtinStringContains(objects []RObject) []RObject {
 	val = Bool( strings.Contains(string(s), string(substr)) )
 	return []RObject{val}
 }
+
+/*
+TODO IMPORTANT
+
+Implement a variadic builtin function called fill which is used for python/go style string variable substitution.
+e.g.
+
+s = fill "Hello, my name is %s %s and I am %d years old." firstName lastName 19
+
+
+   s = fill """
+"""
+Hello!
+
+My name is %s %s 
+and I am %d years old.
+"""
+            firstName
+            lastName
+            19 
+
+Also, should provide a template builtin function
+
+result = template templateString singleArgObject
+*/

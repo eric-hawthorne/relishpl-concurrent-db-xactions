@@ -61,7 +61,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	if !found {
 		rterr.Stop("No main function defined.")
 	}
-	t := i.NewThread()
+	t := i.NewThread(nil)
 
 	args := []RObject{}
 	
@@ -108,7 +108,7 @@ func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValu
 	defer Un(Trace(INTERP_TR, "RunServiceMethod", fmt.Sprintf("%s", mm.Name)))	
 
 
-	t := i.NewThread()
+	t := i.NewThread(nil)
 	
 	
 	method := i.dispatcher.GetSingletonMethod(mm)
@@ -345,7 +345,7 @@ func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultOb
 	defer Un(Trace(INTERP_TR, "RunMultiMethod", fmt.Sprintf("%s", mm.Name)))	
 
 
-	t := i.NewThread()
+	t := i.NewThread(nil)
 	
 	
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
@@ -807,7 +807,7 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 	case *ast.BlockStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecBlock(t, stmt.(*ast.BlockStatement))
 	case *ast.GoStatement:
-		i.ExecGoStatement(stmt.(*ast.GoStatement))		
+		i.ExecGoStatement(t, stmt.(*ast.GoStatement))		
 //	case *ast.DeferStatement:
 //		breakLoop, continueLoop, returnFrom = i.ExecDeferStatement(t, stmt.(*ast.DeferStatement))		
 		
@@ -835,8 +835,8 @@ func (i *Interpreter) ExecIfStatement(t *Thread, stmt *ast.IfStatement) (breakLo
 /*
    Execute the MethodCall in a new go thread, with a new Relish stack. (A "Thread" is an object representing a relish stack)
 */
-func (i *Interpreter) ExecGoStatement(stmt *ast.GoStatement) {
-	t := i.NewThread()
+func (i *Interpreter) ExecGoStatement(parent *Thread, stmt *ast.GoStatement) {
+	t := i.NewThread(parent)
 	go i.ExecMethodCall(t, stmt.Call)	
 }
 
@@ -1427,13 +1427,25 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 	}
 }
 
-func (i *Interpreter) NewThread() *Thread {
+/*
+If parent is nil, something else must take care of initializing 
+the ExecutingMethod and ExecutingPackage attributes of the new thread.
+*/
+func (i *Interpreter) NewThread(parent *Thread) *Thread {
 	defer Un(Trace(INTERP_TR, "NewThread"))
-	return newThread(DEFAULT_STACK_DEPTH, i)
+	return newThread(DEFAULT_STACK_DEPTH, i, parent)
 }
 
-func newThread(initialStackDepth int, i *Interpreter) *Thread {
+/*
+If parent is nil, something else must take care of initializing 
+the ExecutingMethod and ExecutingPackage attributes of the new thread.
+*/
+func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil}
+	if parent != nil {
+		t.ExecutingMethod = parent.ExecutingMethod
+		t.ExecutingPackage = parent.ExecutingPackage
+	}
 	t.EvalContext = &methodEvaluationContext{i, t}
 	return t
 }

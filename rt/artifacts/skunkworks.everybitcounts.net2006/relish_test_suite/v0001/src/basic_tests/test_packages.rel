@@ -50,10 +50,25 @@ argTest
    b String
    bar Int = 0
    ...v [] String
+> 
+   Float   
 """
  Test arguments to functions.
 """
    => a
+
+
+listTest
+   a Int
+   b Int
+   c Int
+>
+   [] Int
+"""
+ Puts some items in a list and returns the list.
+"""   
+   theList = [a b c]Int
+   => theList
 
 
 spew n Int
@@ -117,3 +132,11 @@ main
       print "wheel[" i "] =" wheel.num
 
    ch = Channel of Int   
+
+   go spew 1
+
+   go spew 2
+
+   go spew 3
+
+   spew 4

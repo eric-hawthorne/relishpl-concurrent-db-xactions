@@ -31,7 +31,7 @@ type Generator struct {
 
 func NewGenerator(file *ast.File, fileNameRoot string) *Generator {
 	interpreter := interp.NewInterpreter(data.RT)
-	thread := interpreter.NewThread()
+	thread := interpreter.NewThread(nil)
 	return &Generator{file,interpreter,thread,file.Name.Name,file.Name.Name + "/",nil,fileNameRoot}
 }
 

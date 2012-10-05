@@ -401,7 +401,9 @@ type (
 	// a list with a db sql query where clause specified as the source of list members.
 	ListConstruction struct {
         Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a List.
-		Query     Expr     // must be an expression evaluating to a String, or nil
+		Elements  []Expr    // explicitly listed elements; or nil        
+		Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
+		                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
 	}	
 
 	// A StarExpr node represents an expression of the form "*" Expression.

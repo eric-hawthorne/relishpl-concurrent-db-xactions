@@ -428,7 +428,6 @@ func (p *parser) parseFileComment() bool {
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
-	   println("How the hell did I get here after a required?")
        return p.Fail(st)
    }
    st2 := p.State()
@@ -642,7 +641,6 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
-	   println("How the hell did I get here after a required?")
        return p.Fail(st)
    }
    st2 := p.State()
@@ -688,7 +686,6 @@ func (p *parser) parseTypeComment(col int, typeDecl *ast.TypeDecl) bool {
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
-	   println("How the hell did I get here after a required?")
        return p.Fail(st)
    }
    st2 := p.State()
@@ -2211,7 +2208,36 @@ func (p *parser) parseIndentedReturnArgSignature(col int, funcType *ast.FuncType
     if p.trace {
        defer un(trace(p, "IndentedReturnArgSignature"))
     }	
-    return false
+
+    st := p.State()
+
+    if ! p.Match1('>') {
+       return false
+    }
+
+    if ! p.Indent(col) {
+        return p.Fail(st)
+    }
+
+    var returnArgDecls []*ast.ReturnArgDecl
+
+    if ! p.parseReturnArgDecl(&returnArgDecls) {
+       return p.Fail(st)
+    }
+
+    st2 := p.State()
+    for p.Indent(col) {
+
+       if ! p.parseReturnArgDecl(&returnArgDecls) {
+            p.Fail(st2)
+            funcType.Results = returnArgDecls              
+            return true
+       }     
+       st2 = p.State()
+    }
+
+    funcType.Results = returnArgDecls  
+    return true
 }
 
 
@@ -2519,30 +2545,41 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
 	   return true
     }
 
-    // if isInsideBrackets can't have a method call of any kind. 
+    // if isInsideBrackets can't have a method call of any kind nor a constructor invocation of any kind. 
 
     if ! isInsideBrackets {
 	
 	   if isOneOfMultiple { // need a bracketed method call
 	       var mcs *ast.MethodCall
+         var lcs *ast.ListConstruction         
 	       
 	       if p.Match1('(') {
 	
-	          p.required(p.parseOneLineMethodCall(&mcs,true),"a subroutine call") 
+	          p.required(p.parseOneLineMethodCall(&mcs,true) || p.parseOneLineListConstruction(&lcs,true),"a subroutine call or constructor invocation") 
 		
-		      p.required(p.Match1(')'),")")
+		        p.required(p.Match1(')'),")")
 		
-		      // translate
-		      *x = mcs
-		      return true
+		        // translate
+            if mcs == nil {
+              *x = lcs
+            } else {
+		          *x = mcs
+            } 
+		        return true
 	       }
-       } else {
+     } else { // not one of multiple
 	       var mcs *ast.MethodCall
 	       if p.parseOneLineMethodCall(&mcs,false) {
 		      // translate
 		      *x = mcs
 		      return true
-	       }	
+	       }
+         var lcs *ast.ListConstruction
+         if p.parseOneLineListConstruction(&lcs,false) {
+          // translate
+          *x = lcs
+          return true
+         }           
        }
     }
 
@@ -2588,6 +2625,13 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
 	   // translate
 	   *x = mcs	
 	   return true
+    }
+
+    var lcs *ast.ListConstruction
+    if p.parseIndentedListConstruction(&lcs) {
+     // translate
+     *x = lcs 
+     return true
     }
 
     return false
@@ -3152,7 +3196,7 @@ func (p *parser) parseListConstruction(stmt **ast.ListConstruction) bool {
     if p.trace {
        defer un(trace(p, "ListConstruction"))
     }
-    return p.parseIndentedListConstruction(stmt) || p.parseOneLineListConstruction(stmt)
+    return p.parseIndentedListConstruction(stmt) || p.parseOneLineListConstruction(stmt, false)
 }
 
 /*
@@ -3174,10 +3218,13 @@ Note, somehow, these have to be prevented from being standalone statements. Can 
   }
 
 */
-func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
+func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isInsideBrackets bool) bool {
     if p.trace {
        defer un(trace(p, "OneLineListConstruction"))
     }
+
+    pos := p.Pos()
+    var end token.Pos
 
     var typeSpec *ast.TypeSpec
 
@@ -3186,24 +3233,18 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
     var elementExprs []ast.Expr    
 
     emptyList := false
-    nonEmptyList := false
     hasType := false
     
-    st := p.State()
-    pos := p.Pos()
-    var end token.Pos
-
     if p.Match2('[',']') {
         end = p.Pos()
         emptyList = true
     } else if p.Match1('[') {
-    	  nonEmptyList = true
 
         // Get the list of expressions inside the list literal square-brackets
-        isInsideBrackets := false  // this refers to round brackets
-        if ! (p.parseMultipleOneLineExpressions(&elementExprs, isInsideBrackets) || p.parseSingleOneLineExpression(&elementExprs, isInsideBrackets)) {
-           return p.Fail(st)
-        }
+
+        p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
+                   "zero or more list-element expressions on the same line as [, followed by closing square-bracket ]")
+
         p.required(p.Match1(']'), "closing square-bracket ]")   
         end = p.Pos()            
     } else { 
@@ -3237,87 +3278,28 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.MethodCall) bool {
 
     typeSpec.CollectionSpec = collectionTypeSpec
 
+    
 
-
-
-
-    if ! p.parseMethodName(true,&methodName) {
-	   return false
-    }
-
-    var xs []ast.Expr
+    var queryStringExprs []ast.Expr  // there is only allowed to be one query string
+    var queryStringExpr ast.Expr
 
     st2 := p.State()
 
     if p.Space() { // May be arguments
-       if ! (p.parseMultipleOneLineExpressions(&xs, isInsideBrackets) || p.parseSingleOneLineExpression(&xs, isInsideBrackets)) {
-	      p.Fail(st2)
-	   }
+       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
+          queryStringExpr = queryStringExprs[0]
+       } else {
+	        p.Fail(st2)
+	     }
     }
 	
-	// translate
-	*stmt = &ast.MethodCall{Fun:methodName,Args:xs}
+	  // translate
+	  *stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
 	
     return true
 }
 
-/*
-If it can, uses the preliminary compile-time type information about the element expressions to 
-infer the typespec which is to be the element-type constraint of the collection. Sets the typeSpec argument to
-point to the element type constraint type spec that it creates.
 
-Currently is very crude, and can only work on elementExprs which are some kinds of RelishPrimitive literals e.g. 
-String and various Numeric literals, maybe also Bool
-
-If it cannot decide the typespec based on this crude assessment, it returns false and does not create a TypeSpec.
-*/
-func (p *parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec) bool {
-	
-	var primitiveTypes map[token.Token]bool 
-	primitiveTypes = make(map[token.Token]bool)
-	
-	var pos token.Pos
-	pos = token.NoPos
-	for _,elementExpr := range elementExprs {
-	   switch elementExpr.(type) {
-		  case *ast.BasicLit :
-			 lit := elementExpr.(*ast.BasicLit)
-		     primitiveTypes[lit.Kind] = true     
-		     if pos == token.NoPos {
-			    pos = lit.Pos
-		     }       	
-		  default : 
-		     return false // Not a RelishPrimitive literal. Can't handle here.
-	   }
-	}
-
-
-
-    // TODO Not handling TRUE FALSE (which should be true false) here
-    // There needs to be a BasicLit which is of tok.BOOL
-    var typeName *ast.Ident
-    var typName string
-    if len(primitiveTypes) == 1 {
-        for tok,_ := range primitiveTypes {
-	       typName = strings.Title(tok.String())
-           typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}	
-        }
-    } else if len(primitiveTypes) == 2 { // See if types are all Numeric, else Choose RelishPrimitive
-	   if primitiveTypes[token.INT] && primitiveTypes[token.FLOAT] {
-		   typName = "Numeric"
-	   } else {
-	      typName = "RelishPrimitive"	
-	   }
-    } else { // has to be RelishPrimitive
-	  typName = "RelishPrimitive"
-    }
-    
-    typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}
-	
-	*typeSpec = &ast.TypeSpec{Name: typeName}
-	
-    return true
-}
 
 
 /*
@@ -3356,34 +3338,145 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
        defer un(trace(p, "IndentedListConstruction"))
     }
     st := p.State()
-    var methodName *ast.Ident
+    pos := p.Pos()
+    var end token.Pos
 
-    if ! p.parseMethodName(true,&methodName) {
-	   return false
+    var typeSpec *ast.TypeSpec
+
+    var collectionTypeSpec *ast.CollectionTypeSpec
+
+    var elementExprs []ast.Expr    
+
+    emptyList := false
+    hasType := false
+    
+
+
+    if p.Match2('[',']') {
+        end = p.Pos()
+        emptyList = true
+    } else if p.Match1('[') {
+
+        // Get the list of expressions inside the list literal square-brackets
+
+        if p.parseIndentedExpressions(st.RuneColumn, &elementExprs) {
+            p.required(p.Below(st.RuneColumn) && p.Match1(']'), "closing square-bracket ] aligned exactly below opening [")   
+        } else {
+           p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
+                   "zero or more list-element expressions, followed by closing square-bracket ]")  
+           p.required(p.Match1(']'), "closing square-bracket ]")              
+        }
+        end = p.Pos()            
+    } else { 
+       return false // Did not match a list-specifying square-bracket
     }
 
-    var xs []ast.Expr
-    var kws map[string]ast.Expr = make(map[string]ast.Expr)
-    var firstAssignmentPos int32 = -1 // position in arg list of first assignment statement. = #positionalArgs
-
-    if ! p.parseIndentedExpressionsOrKeywordParamAssignments(st.RuneColumn, &xs, &firstAssignmentPos, kws ) {
-        if ! p.Space() {
-	       return p.Fail(st)
-	    }
-	    if ! p.parseVerticalExpressionsOrKeywordParamAssignments(p.Col(), &xs, &firstAssignmentPos, kws) {
-	       return p.Fail(st)	
-	    }
+    if p.parseTypeSpec(true,false,false,false,&typeSpec) {
+       hasType = true 
     }
 
-// parseVerticalExpressionsOrKeywordParamAssignments
+    if ! hasType { 
+       if emptyList { // Oops - no way to infer the element-type constraint
+          p.stop("An empty list literal must specify its element type. e.g. []Widget")
+          return false // superfluous when parser is in single-error mode as now
+       }
 
-    // TODO Need to type check the keyword param assignments, but may have to wait til call evaluation time?
-    // Shouldn't have to, because all methods of a given name and # of positional parameters must
-    // have the same set of keyword paramters. <== IMPORTANT RULE
-    // Except what about the special keywords arg declaration.
+       // Try to infer the element-type constraint from the statically known types of the arguments.
 
-	*stmt = &ast.MethodCall{Fun:methodName,Args:xs, KeywordArgs:kws, NumPositionalArgs: firstAssignmentPos }
+       // TODO TODO TODO !!!!!!!!!
+       // Once we are doing static type inference and type checking of variables and expressions
+       // we will be able to do this properly when element types are not all the same.  
+       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
+          p.stop("Cannot infer element-type constraint of list. Specify element type. e.g. []Widget")
+       } 
+    }
+
+    isSorting := false // TODO allow sorting-list specifications in list constructions!!!!
+    isAscending := false 
+    orderFunc := "" 
+    collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
+
+    typeSpec.CollectionSpec = collectionTypeSpec
+
+
+
+
+    var queryStringExprs []ast.Expr  // there is only allowed to be one query string
+    var queryStringExpr ast.Expr
+
+    st2 := p.State()
+
+
+    if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
+       if len(queryStringExprs) == 1 {
+           queryStringExpr = queryStringExprs[0]
+       } else {
+          p.stop("Only one argument is allowed after a list constructor - a String containing SQL-formatted selection criteria")
+       }
+    } else if ! p.isLower(st,st2) {
+        return p.Fail(st)  // Sorry, after all that, it is not a multiLine list construction
+    }    
+
+    // translate
+    *stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}  
 	
+    return true
+}
+
+
+/*
+If it can, uses the preliminary compile-time type information about the element expressions to 
+infer the typespec which is to be the element-type constraint of a collection. Sets the typeSpec argument to
+point to the element type constraint type spec that it creates.
+
+Currently is very crude, and can only work on elementExprs which are some kinds of RelishPrimitive literals e.g. 
+String and various Numeric literals, maybe also Bool <- TODO not yet!!
+
+If it cannot decide the typespec based on this crude assessment, it returns false and does not create a TypeSpec.
+*/
+func (p *parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec) bool {
+  
+  var primitiveTypes map[token.Token]bool 
+  primitiveTypes = make(map[token.Token]bool)
+  
+  var pos token.Pos
+  pos = token.NoPos
+  for _,elementExpr := range elementExprs {
+     switch elementExpr.(type) {
+      case *ast.BasicLit :
+       lit := elementExpr.(*ast.BasicLit)
+         primitiveTypes[lit.Kind] = true     
+         if pos == token.NoPos {
+          pos = lit.Pos()
+         }        
+      default : 
+         return false // Not a RelishPrimitive literal. Can't handle here.
+     }
+  }
+
+    // TODO Not handling TRUE FALSE (which should be true false) here
+    // There needs to be a BasicLit which is of tok.BOOL
+    var typeName *ast.Ident
+    var typName string
+    if len(primitiveTypes) == 1 {
+        for tok,_ := range primitiveTypes {
+         typName = strings.Title(tok.String())
+           typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}  
+        }
+    } else if len(primitiveTypes) == 2 { // See if types are all Numeric, else Choose RelishPrimitive
+     if primitiveTypes[token.INT] && primitiveTypes[token.FLOAT] {
+       typName = "Numeric"
+     } else {
+        typName = "RelishPrimitive" 
+     }
+    } else { // has to be RelishPrimitive
+    typName = "RelishPrimitive"
+    }
+    
+    typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}
+  
+  *typeSpec = &ast.TypeSpec{Name: typeName}
+  
     return true
 }
 
@@ -5830,7 +5923,7 @@ func (p *parser) parseBranchStmt(tok token.Token) *ast.BranchStmt {
 }
 
 func (p *parser) makeExpr(s ast.Stmt) ast.Expr {
-	if s == nil {re
+	if s == nil {
 		return nil
 	}
 	if es, isExpr := s.(*ast.ExprStmt); isExpr {
