@@ -416,7 +416,10 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 		}
 	case *ast.SelectorExpr:
 		i.EvalSelectorExpr(t, expr.(*ast.SelectorExpr))
+	case *ast.ListConstruction:
+		i.EvalListConstruction(t, expr.(*ast.ListConstruction))		
 	}
+
 }
 
 /*
@@ -621,6 +624,110 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 	t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
 	return
 }
+
+
+func (i *Interpreter) CreateList(elementType *ast.TypeSpec) RCollection, err {
+	// Find the type
+   typ, typFound := i.rt.Types[elementType.Name.Name]
+   if ! typFound {
+      rterr.Stopf("List Element Type '%s' not found.",elementType.Name.Name)	
+   }
+   var sortWith *sortOp  // TODO sorting lists
+   return i.rt.Newrlist(typ, 0, -1, nil, sortWith)
+}
+
+
+/*
+// EGH A ListConstruction node represents a list constructor invocation, which may be a list literal, a new empty list of a type, or
+// a list with a db sql query where clause specified as the source of list members.
+
+ListConstruction struct {
+    Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a List.
+	Elements  []Expr    // explicitly listed elements; or nil        
+	Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
+	                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
+}
+*/
+func (i *Interpreter) EvalListConstructionl(t *Thread, listConstruction *ast.ListConstruction) {
+	defer Un(Trace(INTERP_TR, "EvalListConstruction"))
+
+    list, err := i.CreateList(listConstruction.Type)
+    if err != nil {
+	   panic(err)
+    }
+    t.Push(list)
+
+   nElem := len(listConstruction.Elements)
+   if nElem > 0 {
+		for _, expr := range listConstruction.Elements {
+			i.EvalExpr(t, expr)
+		}	
+		
+       err = i.rt.ExtendCollectionTypeChecked(list, t.TopN(nElem), t,EvalContext) 	
+       if err != nil {
+	      rterr.Stop(err)
+       }		
+
+       t.PopN(nElem)
+	
+   } else if listConstruction.Query != nil { // Database select query to fill the list
+	  // TODO
+   }
+
+	// NOTE NOTE !!
+	// At some point, when leaving this context, we may want to also push just above this the offset into the method's code
+	// where we left off. We might wish to leave a space on the stack for that, and make initial variableOffset 3 instead of 2
+
+	for _, expr := range call.Args {
+		i.EvalExpr(t, expr)
+	}
+	// 
+	// TODO We are going to have to handle varargs differently here. Basically, eval and push only the non-variable
+	// args here, then, below, reserve space for one list (of varargs) then reserve space for the local vars, 
+	// and finally, just before apply1, eval and push the extra args onto the stack, then remove them into the list.
+	// Or do we just use the stack itself as the list of extra args?s???????? TODO !!!!!
+	//
+
+	t.SetBase(newBase) // Now we're in the context of the newly called function.
+
+	// Put this back here!!!
+	//defer t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
+
+	var method *RMethod
+	var typeTuple *RTypeTuple
+	switch meth.(type) {
+	case *RMultiMethod:
+		mm := meth.(*RMultiMethod)
+		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(len(call.Args))) // len call.Args is WRONG! Use Type.Param except vararg
+		if method == nil {
+			panic(fmt.Sprintf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple))
+		}
+		Logln(INTERP_, "Multi-method dispatched to ", method)
+	case *RMethod:
+		method = meth.(*RMethod)
+	default:
+		panic("Expecting a Method or MultiMethod.")
+	}
+
+	// put currently executing method on stack in reserved parking place
+	t.Stack[newBase+1] = method
+
+	t.ExecutingMethod = method       // Shortcut for dispatch efficiency
+	t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
+
+	t.Reserve(method.NumLocalVars)
+
+	i.apply1(t, method, t.TopN(len(call.Args))) // Puts results on stack BELOW the current stack frame.	
+
+	t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
+	return
+}
+
+
+
+
+
+
 
 ///// From here to next ///// is special purpose code
 /*

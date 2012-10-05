@@ -14,7 +14,7 @@ import (
 Prints the error message on os.Stdout, prefixed with the phrase: Runtime Error: 
 then exits the relish process with status 1 (meaning abnormal exit as opposed to status 0 which would mean an exit with success.)
 */
-func Stop(errorMessage string) {
+func Stop(errorMessage interface{}) {
 	fmt.Fprintln(os.Stdout, "Runtime Error:", errorMessage)
 	os.Exit(1)
 }
