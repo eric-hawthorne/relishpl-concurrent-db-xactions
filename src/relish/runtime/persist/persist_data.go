@@ -73,10 +73,11 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 }
 
 /*
-   Store the object (known not to be stored in local db already) in the local sqlite database for the first time.
+   Store the object  in the local sqlite database for the first time.
+   If object is stored in local db already, does nothing.
    The object may already have a uuid, in which case it was a remote object (or an object whose persisting failed), 
    or it may not, in which case it is a new object that has only lived in memory in this process.
-   Asynchronous. DB errors will not happen and be reported til later.
+   Asynchronous. DB errors will not happen and be reported til later. <- to be true eventually
    NOT HAPPY WITH THE UNCERTAINTY OF STORAGE IN THE FLAG VALUE !!!
 */
 func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {

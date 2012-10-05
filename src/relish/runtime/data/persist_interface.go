@@ -21,5 +21,13 @@ type DB interface {
 	FetchByName(name string, radius int) (obj RObject, err error)
 	Fetch(id int64, radius int) (obj RObject, err error)
 	FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
+
+	/*
+	Converts object and object-attribute query language expressions to SQL queries.
+
+	e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where speed > 60"
+	*/
+	OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err Error)
+
 	Close()
 }

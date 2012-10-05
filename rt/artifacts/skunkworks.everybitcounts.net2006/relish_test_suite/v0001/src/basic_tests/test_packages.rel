@@ -133,10 +133,6 @@ main
 
    ch = Channel of Int   
 
-   go spew 1
+   spares = [wheel1 wheel2 wheel3]vehicles.Wheel
 
-   go spew 2
-
-   go spew 3
-
-   spew 4
+   print "spares[1] =" spares[1].num
