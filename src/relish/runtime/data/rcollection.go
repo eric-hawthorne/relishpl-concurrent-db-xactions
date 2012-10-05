@@ -106,6 +106,7 @@ type RemovableCollection interface {
 
 type OrderedCollection interface {
 	Index(obj RObject, start int) int
+	At(i int) RObject	
 }
 
 /*
@@ -116,7 +117,6 @@ type List interface {
 	AddableCollection
 	RemovableCollection
 	OrderedCollection
-	At(i int) RObject
 	Vector() *RVector
 	AsSlice() []RObject
 }
@@ -776,6 +776,7 @@ func (s *rlist) ClearInMemory() {
 		s.v = s.v.Resize(0, s.v.Cap())
 	}
 }
+
 
 /*
    Constructor

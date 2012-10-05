@@ -358,20 +358,26 @@ func (rt *RuntimeEnv) ExtendCollectionTypeChecked(coll RCollection, vals []RObje
 func (rt *RuntimeEnv) AddToCollectionTypeChecked(coll RCollection, val RObject, context MethodEvaluationContext) (err error) {
 
 	if !val.Type().LessEq(coll.ElementType()) {
-		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
+		err = fmt.Errorf("Cannot add a value of type '%v' to a collection with element-type constraint '%v'.", val.Type(),coll.ElementType())
 		return
 	}
 	
 	addColl := coll.(AddableCollection)     // Will throw an exception if collection type does not implement Add(..)
-	added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
+	
+	// Re-enable when we implement persisting of independent collections.
+	// added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
 
-Need to decide how to persit collections and check if persisted and handle persisting add
+	addColl.Add(val, context) // returns false if is a set and val is already a member.	
 
-	/* TODO figure out efficient persistence of collection updates
-	 */
+/*
+Need to decide how to persist collections and check if persisted and handle persisting add
+
+	TODO figure out efficient persistence of collection updates
+	
 	//fmt.Printf("added=%v\n",added)
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
+    // This part is COPYITIS from AddToAttrTypeChecked method.
 	if added && obj.IsStoredLocally() {
 		var insertIndex int
 		if objColl.(RCollection).IsSorting() {
@@ -382,6 +388,8 @@ Need to decide how to persit collections and check if persisted and handle persi
 		}
 		rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
 	}
+
+	*/
 
 	return
 }
