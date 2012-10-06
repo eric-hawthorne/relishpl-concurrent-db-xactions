@@ -27,7 +27,7 @@ type DB interface {
 
 	e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where speed > 60"
 	*/
-	OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err Error)
+	OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err error)
 
 	Close()
 }

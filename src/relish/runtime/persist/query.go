@@ -10,7 +10,7 @@ package persist
 
 import (
 	"fmt"
-	. "relish/dbg"
+//	. "relish/dbg"
 	. "relish/runtime/data"
 )
 
@@ -19,7 +19,7 @@ import (
 
 	e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where speed > 60"
 	*/
-func (db *SqliteDB) OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err Error) {
+func (db *SqliteDB) OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err error) {
 
    // 1. Parse the OQL into an ast?
 
@@ -34,6 +34,7 @@ func (db *SqliteDB) OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sq
    // 6. select from a join of the needed tables based on the attributes.	
 
    // Do we do this lazy or all in one?
+	return
 }
 
 /*
@@ -41,7 +42,7 @@ Given a type, and a set of attribute names that are included in where clause cri
 a map from table names to table aliases, and a map from attribute names to table-alias-qualified attribute names
 Returns an error if an attribute name is not found as a primitive-valued attribute in the type or its supertypes.
 */
-func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err Error) {
+func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
    tableNamesToAliases = make(map[string]string)
    attrNamesToAliasedAttrNames =  make(map[string]string)
    aliasNum := 1
@@ -53,7 +54,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool) (tab
 		          if attr.Part.Name == attrName {
 		          	 alias = fmt.Sprintf("t%v",aliasNum)
 		          	 aliasNum ++
-		          	 tableNamesToAliases[tableNameIfy(typ.ShortName())] = alias
+		          	 tableNamesToAliases[db.TableNameIfy(typ.ShortName())] = alias
 	                 attrNamesToAliasedAttrNames[attrName] = alias + "." + attrName
 		          	 continue QueryAttributeLoop
 		          }
@@ -65,13 +66,17 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool) (tab
 			          if attr.Part.Name == attrName {
 			          	 alias = fmt.Sprintf("t%v",aliasNum)
 			          	 aliasNum ++
-			          	 tableNamesToAliases[tableNameIfy(superType.ShortName())] = alias
+			          	 tableNamesToAliases[db.TableNameIfy(superType.ShortName())] = alias
 		                 attrNamesToAliasedAttrNames[attrName] = alias + "." + attrName
 			          	 continue QueryAttributeLoop
 			          }
 			      }
 			  }	       	
-	       }	   
+	       }
+
+           // attribute name from query was not matched by a primitive-valued attribute of the type or its supertypes.
+	       err = fmt.Errorf("'%s' is not a primitive-valued attribute of type %v or its supertypes",attrName,typ)
+	       return	   
 	   }
 	return
 }
