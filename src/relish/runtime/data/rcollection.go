@@ -119,6 +119,7 @@ type List interface {
 	OrderedCollection
 	Vector() *RVector
 	AsSlice() []RObject
+    ReplaceContents(objs []RObject)	
 }
 
 /*
@@ -583,6 +584,11 @@ func (s *rlist) Vector() *RVector {
 	return s.v
 }
 
+func (s *rlist) ReplaceContents(objs []RObject) {
+	var rv RVector = RVector(objs)
+	s.v = &rv
+}
+
 func (s *rlist) AsSlice() []RObject {
 	return []RObject(*(s.v))
 }
@@ -781,7 +787,7 @@ func (s *rlist) ClearInMemory() {
 /*
    Constructor
 */
-func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll RCollection, err error) {
+func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll List, err error) {
 	typ, err := rt.getListType(elementType)
 	if err != nil {
 		return nil, err

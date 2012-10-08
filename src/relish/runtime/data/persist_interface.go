@@ -23,11 +23,14 @@ type DB interface {
 	FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
 
 	/*
-	Converts object and object-attribute query language expressions to SQL queries.
+	
+	Given an object type and an OQL selection criteria clause in a string, set the argument collection to contain 
+	the matching objects from the the database.
 
-	e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where speed > 60"
+	e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 	*/
-	OQLWhereToSQLSelect(typ *RType, oqlWhereCriteria string) (sqlSelectQuery String, err error)
+	
+    FetchN(typ *RType, oqlSelectionCriteria string, radius int, lazy bool, objs *[]RObject) (err error) 
 
 	Close()
 }

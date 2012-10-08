@@ -20,6 +20,7 @@ import (
 	"relish/rterr"
 	"strconv"
 	"net/url"
+	"strings"
 )
 
 const DEFAULT_STACK_DEPTH = 50 // DEFAULT INITIAL STACK DEPTH PER THREAD
@@ -688,7 +689,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 }
 
 
-func (i *Interpreter) CreateList(elementType *ast.TypeSpec) (RCollection, error) {
+func (i *Interpreter) CreateList(elementType *ast.TypeSpec) (List, error) {
 	// Find the type
    typ, typFound := i.rt.Types[elementType.Name.Name]
    if ! typFound {
@@ -738,6 +739,48 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 	
    } else if listConstruction.Query != nil { // Database select query to fill the list
 	  // TODO
+	
+	
+	  // TODO Why can't we do this query syntax transformation at generation time, so we only do it
+	  // once per occurrence in the program text, as long as it is a literal string.
+	  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	  //
+			
+	  i.EvalExpr(t, listConstruction.Query)
+	
+	  qExpr := t.Pop()	
+	
+	  qS,isString := qExpr.(String)
+	  if ! isString {
+	     rterr.Stop("Query expression used in list construction must evaluate to a String.")	
+	  }
+	  query := string(qS)
+	  lazy := false
+	  if strings.HasPrefix(query, "lazy: ") {
+		 query = query[6:]
+	     lazy = true	 
+	  }
+
+	
+	  objs := []RObject{} // TODO Use the existing List's RVector somehow
+	
+	  // objs := list.Vector().(*[]RObject)
+	
+//	  rv := list.Vector()
+//      objs := (*[]RObject)(rv)
+
+
+	
+	  radius := 0
+      err = i.rt.DB().FetchN(list.ElementType(), query, radius, lazy, &objs)		
+      if err != nil {
+	      rterr.Stop(err)
+      }	
+
+      list.ReplaceContents(objs)
+
+      // fmt.Println(len(*objs))
+
    }
 	return
 }

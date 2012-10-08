@@ -245,6 +245,8 @@ func main() {
 	      fmt.Println("Usage: relish [-log n] [-web 80] originAndArtifact [version] path/to/package")
 	      return
 	   }		
+	
+
 		
 	} else if packagePath == "" {
 		
@@ -259,6 +261,14 @@ func main() {
 	         fmt.Println("Usage (when in a package directory): relish [-log n] [-web 80]")
 	         return
        }		
+    }
+
+
+	if strings.HasSuffix(originAndArtifact,"/") {  // Strip trailing / if present
+	   originAndArtifact = originAndArtifact[:len(originAndArtifact)-1]	
+	}
+    if strings.HasSuffix(packagePath,"/") {  // Strip trailing / if present
+       packagePath = packagePath[:len(packagePath)-1]	
     }
 
     fullPackagePath := fmt.Sprintf("%s/v%04d/pkg/%s",originAndArtifact,version, packagePath)

@@ -569,6 +569,141 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 	return
 }
 
+
+
+
+/*
+   TODO Retrieve a list of objects stored in the database.
+
+   TODO THIS METHOD NEEDS TO HAVE A MUTEX LOCK!!!!!!!
+
+   TODO THIS METHOD NEEDS TO FLUSH THE SQL STATEMENT QUEUE BEFORE IT RUNS THE SELECT QUERY!!!!!!!
+*/
+func (db *SqliteDB) fetchMultipleEager(query string, radius int, numPrimitiveAttrs int, errSuffix string, checkCache bool, objs *[]RObject) (err error) {
+
+	Logln(PERSIST_, query)
+
+	selectStmt, err := db.conn.Prepare(query)
+	if err != nil {
+		return
+	}
+
+	defer selectStmt.Finalize()
+
+	err = selectStmt.Exec()
+	if err != nil {
+		return
+	}
+	for selectStmt.Next() {
+	
+	    var obj RObject
+	
+		var id int64
+		var id2 int64
+		var flags int
+		var typeName string
+
+		attrValsBytes1 := make([][]byte, numPrimitiveAttrs)
+
+		attrValsBytes := make([]interface{}, numPrimitiveAttrs + 4)
+
+        attrValsBytes[0] = &id
+        attrValsBytes[1] = &id2
+        attrValsBytes[2] = &flags
+        attrValsBytes[3] = &typeName
+
+ 		for i := 0; i < len(attrValsBytes1); i++ {
+			attrValsBytes[i+4] = &attrValsBytes1[i]
+		}
+
+
+		err = selectStmt.Scan(attrValsBytes...)
+		
+		if err != nil {
+			return
+		}
+		
+		if checkCache {
+			dbid := DBID(id, id2, flags)
+
+			var found bool
+			obj, found = RT.GetObject(dbid)
+			if found {
+	        	*objs = append(*objs, obj)				
+				continue    // to next object in the resultset
+			}
+		}
+
+		obj, err = RT.NewObject(typeName)
+		if err != nil {
+			return
+		}
+
+		// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
+
+		//   unit := obj.(*runit)
+		//   (&(unit.robject)).RestoreIdsAndFlags(id,id2,flags)
+
+		ob := obj.(Persistable)
+		ob.RestoreIdsAndFlags(id, id2, flags)
+
+		Logln(PERSIST2_, "id:", id, ", id2:", id2, ", flags:", flags, ", typeName:", typeName)
+
+		oid, oid2 := obj.UUIDuint64s()
+
+		Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
+
+		// Now restore the values of the unary primitive attributes of the object.
+		// These attribute values are stored in the db rows that represent the object in the db.
+		// The object in the db consists of a single row in each of several database tables.
+		// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
+		// and a single row in each such table identified by the object's dbid.
+		
+	    objTyp := obj.Type()
+	    attrValsBytes = attrValsBytes[4:]
+        db.restoreAttrs(obj, objTyp, attrValsBytes)		
+
+		// Have to set this here before confirmed in order to avoid attribute or relation reference loops causing
+		// infinite looping during fetching. 
+		// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
+
+		obj.SetStoredLocally()
+
+		// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
+		// Maybe this should be fully lazy. Wait until the attribute value is asked for.
+
+		// TODO
+
+		// THIS NEEDS TO DEPEND ON DEPTH
+
+		// TODO
+    
+		if radius > 0 {
+			err = db.fetchUnaryNonPrimitiveAttributeValues(id, obj, radius-1)
+			if err != nil {
+				return
+			}
+
+			err = db.fetchMultiValuedNonPrimitiveAttributeValues(id, obj, radius-1)
+			if err != nil {
+				return
+			}
+
+			err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj, radius-1)
+			if err != nil {
+				return
+			}
+		}
+		
+		*objs = append(*objs, obj)
+
+    }
+
+	return
+}
+
+
+
 /*
 Fetch from db and set unary primitive-valued attributes of an object.
 */
@@ -660,6 +795,8 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 	if err != nil {
 		return
 	}
+	
+/* REPLACED BY CALL TO RESTOREATTRS BELOW	
 
 	// Now go through the attrValsBytes and interpret each according to the datatype of each primitive
 	// attribute, and set the primitive attributes using the runtime SetAttrVal method.
@@ -688,9 +825,47 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 			}
 		}
 	}
+*/
+    db.restoreAttrs(obj, objTyp, attrValsBytes)
 
 	return
 }
+
+/*
+Given the result of a scan of a select result row, restore object attribute values for an object in the runtime.
+*/
+func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []interface{}) {
+
+	// Now go through the attrValsBytes and interpret each according to the datatype of each primitive
+	// attribute, and set the primitive attributes using the runtime SetAttrVal method.
+
+	i := 0
+	var val RObject
+
+	for _, attr := range objTyp.Attributes {
+		if attr.Part.Type.IsPrimitive {
+			valByteSlice := *(attrValsBytes[i].(*[]byte))
+			if convertAttrVal(valByteSlice, attr, &val) {
+				RT.RestoreAttr(obj, attr, val)
+			}
+			i++
+		}
+	}
+
+	for _, typ := range objTyp.Up {
+		for _, attr := range typ.Attributes {
+			if attr.Part.Type.IsPrimitive {
+				valByteSlice := *(attrValsBytes[i].(*[]byte))
+				if convertAttrVal(valByteSlice, attr, &val) {
+					RT.RestoreAttr(obj, attr, val)
+				}
+				i++
+			}
+		}
+	}
+}
+
+
 
 /*
 Fetch from the db the values of non-primitive-typed unary attributes of the object.
