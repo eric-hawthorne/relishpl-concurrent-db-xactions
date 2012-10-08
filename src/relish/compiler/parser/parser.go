@@ -2612,7 +2612,7 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
        defer un(trace(p, "IndentedExpression"))
     }
 
-    if p.parseIndentedLiteral(x) {
+    if p.parseMultilineLiteral(x) {
        return true	
     }
 
@@ -4280,9 +4280,10 @@ func (p *parser) parseConstantDeclaration(constDecls *[]*ast.ConstantDecl) bool 
     	return p.Fail(st)
     }
 
-   
-    if ! p.required(p.parseConstExpr(&expr),"a constant expression (a literal, or a function of literals and constants)") {
-    	return p.Fail(st)	
+    if p.Space() {
+	    p.required(p.parseConstExpr(&expr) || (p.Indent(st.RuneColumn) && p.parseConstExpr(&expr)),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
+    } else {
+	    p.required(p.Indent(st.RuneColumn) && p.parseConstExpr(&expr),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
     }
 
     constDecl := &ast.ConstantDecl{Name:constant,Value:expr}
@@ -4336,6 +4337,7 @@ func (p *parser) parseConstExpr(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "ConstExpr"))
     }
+    
     return p.parseLiteral(x)
 }
 
@@ -4345,7 +4347,7 @@ func (p *parser) parseLiteral(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "Literal"))
     }
-    return (p.Space() && p.parseOneLineLiteral(x)) || p.parseIndentedLiteral(x) 
+    return p.parseMultilineLiteral(x) || p.parseOneLineLiteral(x) 
 }
 
 func (p *parser) parseOneLineLiteral(x *ast.Expr) bool {
@@ -4386,12 +4388,58 @@ func (p *parser) parseStringLiteral(x *ast.Expr) bool {
 }
 
 
-func (p *parser) parseIndentedLiteral(x *ast.Expr) bool {
+func (p *parser) parseMultilineLiteral(x *ast.Expr) bool {
 	if p.trace {
-       defer un(trace(p, "IndentedLiteral"))
+       defer un(trace(p, "MultilineLiteral"))
     }
-    return false // TODO
+    return  p.parseMultilineStringLiteral(x)
 }
+
+func (p *parser) parseMultilineStringLiteral(x *ast.Expr) bool {
+	if p.trace {
+       defer un(trace(p, "MultilineStringLiteral"))
+    }
+    pos := p.Pos()
+	if ! ( p.Match(`"""`) &&
+	       p.required(p.BlankToEOL(),`nothing on line after """`) ) {
+	    return false
+	}
+    p.required(p.Below(1) && p.Match(`"""`), `""" at beginning of line`)
+    p.required(p.BlankToEOL(),`nothing on line after """`)
+    var ch rune
+    ch = p.Ch()	
+    if ch < 0 {
+	   p.stop(`Multiline string not terminated. Expecting terminating """ at column 1`)
+	   return false
+    }
+	p.Next()
+	st2 := p.State()
+	startOffset := st2.Offset
+   	
+    
+    found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,1)
+    if ! found {
+	  p.stop(`Multiline string not terminated. Expecting terminating """ at column 1`)	
+	  return false
+	}
+    p.required(p.BlankToEOL(),`nothing on line after """`) 
+
+    lit := p.Substring(startOffset, contentEndOffset) 
+      	
+    fmt.Printf("String literal \"%s\"\n",lit)
+
+    *x = &ast.BasicLit{pos,token.STRING,lit}
+    return true
+}
+
+
+
+
+
+
+
+
+
 
 
 /*
