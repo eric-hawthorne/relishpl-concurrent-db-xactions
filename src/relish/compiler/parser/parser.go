@@ -148,6 +148,9 @@ func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode uin
        "continue": true,
        "break": true,
        "go": true,
+       "true": true,
+       "false": true,
+       "nil": true,
    }	
 }
 
@@ -4354,7 +4357,7 @@ func (p *parser) parseOneLineLiteral(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "OneLineLiteral"))
     }
-    return p.parseNumberLiteral(x) || p.parseStringLiteral(x)
+    return p.parseNumberLiteral(x) || p.parseStringLiteral(x) || p.parseBooleanLiteral(x) || p.parseNilLiteral(x)
 }
 
 func (p *parser) parseNumberLiteral(x *ast.Expr) bool {
@@ -4371,6 +4374,46 @@ func (p *parser) parseNumberLiteral(x *ast.Expr) bool {
     *x = &ast.BasicLit{pos,tok,lit}
     return true
 }
+
+func (p *parser) parseBooleanLiteral(x *ast.Expr) bool {
+	if p.trace {
+       defer un(trace(p, "BooleanLiteral"))
+    }
+    pos := p.Pos()
+    var lit string
+    if p.MatchWord("true") {
+	   lit = "true"
+    } else if p.MatchWord("false") {
+	   lit = "false"
+    } else {
+	   return false
+    }
+
+    tok := token.BOOL
+    fmt.Printf("%s '%s'\n",tok,lit)
+
+    *x = &ast.BasicLit{pos,tok,lit}
+    return true
+}
+
+func (p *parser) parseNilLiteral(x *ast.Expr) bool {
+	if p.trace {
+       defer un(trace(p, "NilLiteral"))
+    }
+    pos := p.Pos()
+    var lit string
+    if p.MatchWord("nil") {
+	   lit = "nil"
+    }
+	return false
+
+    tok := token.NIL
+    fmt.Printf("%s '%s'\n",tok,lit)
+
+    *x = &ast.BasicLit{pos,tok,lit}
+    return true
+}
+
 
 func (p *parser) parseStringLiteral(x *ast.Expr) bool {
 	if p.trace {

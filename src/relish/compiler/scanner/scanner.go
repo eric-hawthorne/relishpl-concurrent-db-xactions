@@ -1022,6 +1022,22 @@ func (S *Scanner) ScanVarName() (bool, string) {
 	return true, string(S.src[st.Offset:S.offset])
 }
 
+/*
+True if the identifier in the source matches the word. 
+Note, if the identifier is longer than the word, does not match the word.
+*/
+func (S *Scanner) MatchWord(word string) bool {
+	st := S.State()
+	found,ident := S.ScanVarName()
+	if ! found {
+		return false
+	}
+    if ident != word {
+	   return S.Fail(st)
+    }
+    return true
+}
+
 func (S *Scanner) ScanConstName() (bool, string) {
 	st := S.State()
 	couldBeTypeVar := false

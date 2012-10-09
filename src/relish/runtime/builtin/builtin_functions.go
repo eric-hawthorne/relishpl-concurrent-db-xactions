@@ -184,6 +184,13 @@ func builtinEq(objects []RObject) []RObject {
 	obj2 := objects[1]
 	var val RObject
 	switch obj1.(type) {
+	case Bool:
+		switch obj2.(type) {
+		case Bool:
+			val = Bool(obj1.(Bool) == obj2.(Bool))	
+		default:
+			val = Bool(false)			
+		}			
 	case Int:
 		switch obj2.(type) {
 		case Int:
