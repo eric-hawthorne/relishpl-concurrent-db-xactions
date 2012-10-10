@@ -353,9 +353,19 @@ Processes the RelationDecls list of a ast.File object (which has been created by
 Generates the runtime environment's objects for relations between datatypes, and also ensures 
 that db tables exist for these.
 */
-func (g *Generator) GenerateRelationss() {
+func (g *Generator) GenerateRelations() {
+/*
 	for _,relationDeclaration := range g.file.RelationDecls {
 		
+       end1Spec := relationDeclaration.End1
+       end2Spec := relationDeclaration.End2 
+
+
+
+
+
+       
+
 	   typeSpec := typeDeclaration.Spec
 	   typeName := g.packagePath + typeSpec.Name.Name
 	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
@@ -417,7 +427,7 @@ func (g *Generator) GenerateRelationss() {
 	           }	
           }
 
-
+*/
 /*	type CollectionTypeSpec struct {
 	   Kind token.Token
 	   LDelim token.Pos
@@ -427,7 +437,7 @@ func (g *Generator) GenerateRelationss() {
 	   OrderFunc string
 	}
 */	
- 
+ /*
           attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
 
           
@@ -439,7 +449,7 @@ RelEnd
 
    OrderMethod *RMultiMethod
 */
-
+/*
 
 	      _,err = data.RT.CreateAttribute(typeName,
 									 	 attributeTypeName,
@@ -472,6 +482,8 @@ RelEnd
 		      panic(err)
 		}
     }
+
+*/    
 }
 
 

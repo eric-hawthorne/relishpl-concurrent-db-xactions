@@ -752,17 +752,90 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
 	   p.Fail(st)		
 	}
 	
+  // Generate relation-end "attribute" names from (properly pluralized as needed) end-type names, if
+  // end attribute names have been omitted from the relation declaration. 
+  
 	if rel1EndName == nil {
-		end1Name := strings.ToLower(rel1TypeName.Name[0:1]) + rel1TypeName.Name[1:]
-		rel1EndName = &ast.Ident{pos, end1Name, nil, kind, -1}
+		 end1Name := strings.ToLower(rel1TypeName.Name[0:1]) + rel1TypeName.Name[1:]
+     if arity1Spec.MaxCard != 1 {
+        if strings.HasSuffix(end1Name,"s") {
+           end1Name += "es"
+        } else {
+           end1Name += "s"
+        }
+     }
+		 rel1EndName = &ast.Ident{pos, end1Name, nil, token.VAR, -99}
 	}
-	/*
-	NamePos token.Pos   // identifier position
-	Name    string      // identifier name
-	Obj     *Object     // denoted object; or nil
-	Kind    token.Token // CONST,VAR,TYPE,PACKAGE,FUNC,TYPEVAR	
-	Offset  int         // if a local var or parameter, the stack offset in the current frame
-*/
+
+  if rel2EndName == nil {
+     end2Name := strings.ToLower(rel2TypeName.Name[0:1]) + rel2TypeName.Name[1:]
+     if arity2Spec.MaxCard != 1 {
+        if strings.HasSuffix(end2Name,"s") {
+           end2Name += "es"
+        } else {
+           end2Name += "s"
+        }
+     }
+     rel2EndName = &ast.Ident{pos, end2Name, nil, token.VAR, -99}
+  }
+
+
+  // Here we have to create a proper type specification for each end, considering
+  // whether we have a collectionTypeSpec already, and also considering the arity.MaxCard of each end.
+  // If arity.MaxCard == 1, we should I suppose not create a collection type spec for that end.
+
+  if arity1Spec.MaxCard == 1 { 
+     if collection1Spec != nil {
+        // Check for explicit [] or {} collection spec for an end that
+        // has been declared max card 1, and forbid these.      
+        p.stop("Cannot specify a relation-end collection type when max cardinality = 1")
+     }
+  } else { // max-arity of end1 is more than 1  
+     if collection1Spec == nil {  // create a Set CollectionTypeSpec as a default
+        collection1Spec = &ast.CollectionTypeSpec{token.SET,pos,pos+1,false,false,""}
+     }
+  }    
+
+  // Create the end-type spec. Note that the CollectionSpec may be nil
+  type1Spec := &ast.TypeSpec{CollectionSpec: collection1Spec, Name: rel1TypeName}
+  
+
+
+  if arity2Spec.MaxCard == 1 { 
+     if collection2Spec != nil {
+        // Check for explicit [] or {} collection spec for an end that
+        // has been declared max card 1, and forbid these.      
+        p.stop("Cannot specify a relation-end collection type when max cardinality = 1")
+     }
+  } else { // max-arity of end2 is more than 1  
+     if collection2Spec == nil {  // create a Set CollectionTypeSpec as a default
+        collection2Spec = &ast.CollectionTypeSpec{token.SET,pos,pos+1,false,false,""}
+     }
+  }
+
+  // Create the end-type spec. Note that the CollectionSpec may be nil
+  type2Spec := &ast.TypeSpec{CollectionSpec: collection2Spec, Name: rel2TypeName}
+
+
+
+
+  // But hold on, wouldn't it be simpler to always create a set if there's a missing collection spec,
+  // even if the MaxCard is 1 ? Then we don't have to special-case card=1 relations.
+  //
+  // To decide this, we have to review how relations were to be represented in the DB.
+  //
+
+
+
+    end1Decl := &ast.AttributeDecl{Name:rel1EndName, Arity:arity1Spec, Type:type1Spec}
+
+    end2Decl := &ast.AttributeDecl{Name:rel2EndName, Arity:arity2Spec, Type:type2Spec}
+
+    relDecl := &ast.RelationDecl{end1Decl, end2Decl}
+
+    *relDecls = append(*relDecls,relDecl)
+    return true
+
 }	
 
 /*
@@ -859,7 +932,7 @@ func (p *parser) parseSetTypeSpec(collectionTypeSpec **ast.CollectionTypeSpec) b
 
 /*
 1 means 1 1 
-N  means 0 N 
+N  means 1 N 
 Gobbles the single space after the second number.
 
 minCard int64
@@ -882,7 +955,7 @@ func (p *parser) parseAritySpec(aritySpec **ast.AritySpec) bool {
 
 
 	if p.Match2('N',' ') {
-		minCard = 0
+		minCard = 1
 		maxCard = -1
 	    end = p.Pos() - 1		
 		goto Translate
@@ -945,6 +1018,10 @@ func (p *parser) parseAritySpec(aritySpec **ast.AritySpec) bool {
     }	   	
 
   Translate:
+
+    if maxCard == 0 {
+       p.stop("Maximum cardinality of a multi-valued attribute or relation-end cannot be zero")
+    }
     *aritySpec = &ast.AritySpec{minCard,maxCard,pos,end}
     
     fmt.Println("successful arity spec parse.")
