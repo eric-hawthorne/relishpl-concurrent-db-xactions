@@ -489,6 +489,7 @@ func (rt *RuntimeEnv) CreateType(typeName string, typeShortName string, parentTy
 		}
 	}
 	rt.Types[typeName] = typ
+	rt.Typs[typ.ShortName()] = typ
 	return typ, nil
 
 }
@@ -501,7 +502,7 @@ func (rt *RuntimeEnv) getSetType(elementType *RType) (typ *RType, err error) {
 	typeShortName := "Set_of_" + elementType.ShortName()	
 	typ, found := rt.Types[typeName]
 	if !found {
-		typ, err = rt.CreateType(typeName, typeShortName, []string{})
+		typ, err = rt.CreateType(typeName, typeShortName, []string{"Set"})
 	}
 	return
 }
@@ -514,7 +515,7 @@ func (rt *RuntimeEnv) getListType(elementType *RType) (typ *RType, err error) {
 	typeShortName := "List_of_" + elementType.ShortName()
 	typ, found := rt.Types[typeName]
 	if !found {
-		typ, err = rt.CreateType(typeName, typeShortName, []string{})
+		typ, err = rt.CreateType(typeName, typeShortName, []string{"List"})
 	}
 	return
 }

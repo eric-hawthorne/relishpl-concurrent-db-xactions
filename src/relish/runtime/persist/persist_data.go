@@ -504,7 +504,9 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		}
 	}
 
-	obj, err = RT.NewObject(typeName)
+    fullTypeName := RT.Typs[typeName].Name
+
+	obj, err = RT.NewObject(fullTypeName)
 	if err != nil {
 		return
 	}
@@ -634,7 +636,9 @@ func (db *SqliteDB) fetchMultipleEager(query string, radius int, numPrimitiveAtt
 			}
 		}
 
-		obj, err = RT.NewObject(typeName)
+        fullTypeName := RT.Typs[typeName].Name
+
+	    obj, err = RT.NewObject(fullTypeName)
 		if err != nil {
 			return
 		}

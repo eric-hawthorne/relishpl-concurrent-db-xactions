@@ -40,7 +40,8 @@ import (
    relish source files which deal specifically with other kinds of runtime entities.
 */
 type RuntimeEnv struct {
-	Types         map[string]*RType        // map from type name to RType object. NOTE NOTE NOTE THIS SHOULD BE TYPE.SHORTNAME()!!!!!!!!!!! Locally Unique
+	Types         map[string]*RType        // map from type name to RType object. 
+	Typs          map[string]*RType        // map from type.ShortName() to RType object. 
 	MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
 	Packages      map[string]*RPackage     // by package Name
 	Pkgs          map[string]*RPackage     // by package ShortName
@@ -162,6 +163,7 @@ Still needs SetDB(db) before is valid.
 */
 func NewRuntimeEnv() *RuntimeEnv {
 	rt := &RuntimeEnv{Types: make(map[string]*RType),
+		Typs: make(map[string]*RType),
 		MultiMethods:  make(map[string]*RMultiMethod),
 		Packages:      make(map[string]*RPackage),
 		Pkgs:          make(map[string]*RPackage),

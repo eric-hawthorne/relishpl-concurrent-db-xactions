@@ -557,6 +557,12 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 		t.Push(Float(f))
 	case token.STRING:
 		t.Push(String(lit.Value))
+	case token.BOOL:
+		b, err := strconv.ParseBool(lit.Value)
+		if err != nil {
+			panic(err)
+		}
+		t.Push(Bool(b))				
 	default:
 		panic("I don't know how to interpret this kind of literal yet.")
 	}

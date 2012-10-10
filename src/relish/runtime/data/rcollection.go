@@ -162,6 +162,8 @@ type rcollection struct {
 	sortWith *sortOp // Which attribute of a member, or which unary func of member or which less function to sort with. May be nil.
 }
 
+
+
 /*
 Only one of the attr or unaryFunction will be non-nil.
 If attr or unaryFunction is non-nil, then lessFunction must be the "lt" multiMethod.
@@ -339,6 +341,10 @@ func (s rset) IsList() bool    { return false }
 func (s rset) IsOrdered() bool { return false } // This may change!! Actually, need an rsortedset type
 func (s rset) IsSorting() bool { return false } // This may change!! Depends on presence of an ordering function in rsortedset
 func (s rset) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+
+func (o rset) IsZero() bool {
+	return o.Length() == 0
+}
 
 /*
 A sorted set of relish objects constrained to be of some type.
@@ -545,6 +551,10 @@ func (s rsortedset) IsList() bool    { return false }
 func (s rsortedset) IsOrdered() bool { return true } // This may change!! Actually, need an rsortedset type
 func (s rsortedset) IsSorting() bool { return true } // This may change!! Depends on presence of an ordering function in rsortedset
 func (s rsortedset) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+
+func (o rsortedset) IsZero() bool {
+	return o.Length() == 0
+}
 
 /*
 A list of relish objects constrained to be of some type.
@@ -799,14 +809,18 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	return
 }
 
-func (s rlist) Length() int64   { return int64(s.v.Len()) }
-func (s rlist) Cap() int64      { return int64(s.v.Cap()) }
+func (s rlist) Length() int64   { if s.v == nil { return 0};  return int64(s.v.Len()) }
+func (s rlist) Cap() int64      { if s.v == nil { return 0}; return int64(s.v.Cap()) }
 func (s rlist) IsMap() bool     { return false }
 func (s rlist) IsSet() bool     { return false }
 func (s rlist) IsList() bool    { return true }
 func (s rlist) IsOrdered() bool { return true } // This may change!! Depends on presence of an ordering function
 func (s rlist) IsSorting() bool { return s.sortWith != nil }
 func (s rlist) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+
+func (o rlist) IsZero() bool {
+	return o.Length() == 0
+}
 
 type rstringmap struct {
 	rcollection
@@ -837,6 +851,10 @@ func (s rstringmap) IsList() bool    { return false }
 func (s rstringmap) IsOrdered() bool { return false } // This may change!! Need an rorderedstringmap
 func (s rstringmap) IsSorting() bool { return false } // This may change!! Depends on presence of an ordering function in rorderedstringmap
 func (s rstringmap) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+func (o rstringmap) IsZero() bool {
+	return o.Length() == 0
+}
+
 
 func (s *rstringmap) Get(key RObject) (val RObject, found bool) {
 	k := string(key.(String))
@@ -872,6 +890,9 @@ func (s ruint64map) IsList() bool    { return false }
 func (s ruint64map) IsOrdered() bool { return false } // This may change!! Need an rordereduintmap
 func (s ruint64map) IsSorting() bool { return false } // This may change!! Depends on presence of an ordering function in rorderedstringmap
 func (s ruint64map) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+func (o ruint64map) IsZero() bool {
+	return o.Length() == 0
+}
 
 func (s *ruint64map) Get(key RObject) (val RObject, found bool) {
 	k := uint64(key.(Uint))
@@ -910,6 +931,9 @@ func (s rint64map) IsList() bool    { return false }
 func (s rint64map) IsOrdered() bool { return false } // This may change!! Depends on presence of an ordering function
 func (s rint64map) IsSorting() bool { return false } // This may change!! Depends on presence of an ordering function in rorderedstringmap
 func (s rint64map) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+func (o rint64map) IsZero() bool {
+	return o.Length() == 0
+}
 
 func (s *rint64map) Get(key RObject) (val RObject, found bool) {
 	k := int64(key.(Int))
@@ -945,6 +969,9 @@ func (s rpointermap) IsList() bool    { return false }
 func (s rpointermap) IsOrdered() bool { return false } // This may change!! Depends on presence of an ordering function
 func (s rpointermap) IsSorting() bool { return false } // This may change!! Depends on presence of an ordering function in rorderedstringmap
 func (s rpointermap) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+func (o rpointermap) IsZero() bool {
+	return o.Length() == 0
+}
 
 func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
 	unit := key.(*runit)

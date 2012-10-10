@@ -154,6 +154,17 @@ type RObject interface {
 	*/
 	IsTransient() bool
 
+    /*
+    zero is defined more widely than just for numbers. This is similar to languages like
+    Go and Python and Lisp.
+    Empty lists, sets, and maps are zero.
+    nil is zero.
+    0 is zero
+    0.0 is zero
+    false is zero
+
+    zero-ness is what is tested for in ifs, whiles, and by the and, or, not functions.
+    */
 	IsZero() bool
 }
 

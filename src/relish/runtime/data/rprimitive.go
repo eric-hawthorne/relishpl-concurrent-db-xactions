@@ -71,6 +71,9 @@ var AnyType *RType
 var NonPrimitiveType *RType
 var StructType *RType
 var CollectionType *RType
+var SetType *RType
+var ListType *RType
+var MapType *RType
 
 var InChannelType *RType
 var OutChannelType *RType
@@ -111,7 +114,10 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	NonPrimitiveType, _ = rt.CreateType("NonPrimitive", "", []string{})
 	StructType, _ = rt.CreateType("Struct", "", []string{})
 	CollectionType, _ = rt.CreateType("Collection", "", []string{})
-	
+	SetType, _ = rt.CreateType("Set", "", []string{"Collection"})	
+	ListType, _ = rt.CreateType("List", "", []string{"Collection"})	
+	MapType, _ = rt.CreateType("Map", "", []string{"Collection"})	
+
 	// Do a need Iterable and InChannel <: Iterable, Collection <: Iterable
 	
 	InChannelType, _ = rt.CreateType("InChannel", "", []string{})

@@ -107,7 +107,8 @@ main
    car1.wheels += wheel4  // Also NOT HANDLING // comment at beginning of indented line !!!
    car1.wheels += wheel3  
 
-   dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
+   if not exists "JSS 994"
+      dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
 
    car1.wheels += wheel1  
    car1.wheels += wheel2  
@@ -150,4 +151,38 @@ multi-line string in relish!!
 
    print a
 
+   if not 0
+      print "0 is zero"
+   else
+      print "0 is non-zero"
 
+   print not bigWheels
+
+   smallWheels = []vehicles.Wheel
+
+   print not smallWheels
+
+   print "Length 18-byte string =" (len "Well how big am I?")
+   print "len bigWheels =" (len bigWheels)
+   print "len smallWheels =" (len smallWheels)
+   print "len car2.wheels =" (len car2.wheels)
+
+   last = and 2 "three" true "five"
+   print last
+
+   first = or 0 0.0 "" "this one" "is true"
+   print first
+
+   print plus 2 2
+
+   print plus 2 2.3
+
+   print minus 2.3 2
+
+   print minus 3 2
+
+   print div 8 3
+
+   print div 8 3.0
+
+   print mod 7 3
