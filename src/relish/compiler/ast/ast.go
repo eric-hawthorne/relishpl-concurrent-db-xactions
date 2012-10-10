@@ -61,7 +61,20 @@ type Decl interface {
 
 // egh
 type RelationDecl struct {
+	End1 *AttributeDecl
+	End2 *AttributeDecl
 }
+
+/*
+type AttributeDecl struct {
+	Name  *Ident     // attribute name	
+	Arity *AritySpec // Can be nil - if so, means the type is either not a collection or that the collection is not owned by object
+	// that has the attribute.
+	Type                                                                                                  *TypeSpec
+	PublicReadable, PackageReadable, SubtypeReadable, PublicWriteable, PackageWriteable, SubtypeWriteable bool
+	Reassignable, CollectionMutable, Mutable, DeeplyMutable                                               bool
+}
+*/
 
 type TypeDecl struct {
 	Spec *TypeSpec
@@ -114,7 +127,7 @@ type ReturnArgDecl struct {
 
 // EGH?
 type AttributeDecl struct {
-	Name  *Ident     // input parameter name	
+	Name  *Ident     // attribute name	
 	Arity *AritySpec // Can be nil - if so, means the type is either not a collection or that the collection is not owned by object
 	// that has the attribute.
 	Type                                                                                                  *TypeSpec

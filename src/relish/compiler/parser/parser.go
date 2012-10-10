@@ -735,12 +735,12 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
        defer un(trace(p, "RelationDeclaration"))
     }	
 	st := p.State()	
-	
+	pos := p.Pos()
 	var rel1TypeName, rel2TypeName, rel1EndName, rel2EndName *ast.Ident
 	var arity1Spec, arity2Spec *ast.AritySpec
 	var collection1Spec,collection2Spec *ast.CollectionTypeSpec
 	
-	return (p.parseTypeName(true, &rel1TypeName) && p.Space() &&
+	if ! (p.parseTypeName(true, &rel1TypeName) && p.Space() &&
 	p.optional(p.parseCollectionTypeSpec(&collection1Spec) && p.Space()) &&
 	p.parseAritySpec(&arity1Spec) &&
 	p.optional(p.parseRelEndName(&rel1EndName) && p.Space()) &&
@@ -748,8 +748,21 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
 	p.optional(p.parseRelEndName(&rel2EndName) && p.Space()) && 	
 	p.parseAritySpec(&arity2Spec) &&	
 	p.optional(p.parseCollectionTypeSpec(&collection2Spec) && p.Space()) &&
-	p.parseTypeName(true, &rel2TypeName) ) ||
-	p.Fail(st)
+	p.parseTypeName(true, &rel2TypeName) ) {
+	   p.Fail(st)		
+	}
+	
+	if rel1EndName == nil {
+		end1Name := strings.ToLower(rel1TypeName.Name[0:1]) + rel1TypeName.Name[1:]
+		rel1EndName = &ast.Ident{pos, end1Name, nil, kind, -1}
+	}
+	/*
+	NamePos token.Pos   // identifier position
+	Name    string      // identifier name
+	Obj     *Object     // denoted object; or nil
+	Kind    token.Token // CONST,VAR,TYPE,PACKAGE,FUNC,TYPEVAR	
+	Offset  int         // if a local var or parameter, the stack offset in the current frame
+*/
 }	
 
 /*

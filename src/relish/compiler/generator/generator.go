@@ -44,6 +44,9 @@ func (g *Generator) GenerateCode() {
    g.GenerateTypes()
    g.GenerateMethods()		
    g.GenerateConstants()
+   g.GenerateRelations() 
+
+   
 }
 
 /*
@@ -342,6 +345,152 @@ func (g *Generator) TestWalk() {
 	p := &NodePrinter{}
 	ast.Walk(p, g.file)
 }
+
+
+
+/*
+Processes the RelationDecls list of a ast.File object (which has been created by the parser.)
+Generates the runtime environment's objects for relations between datatypes, and also ensures 
+that db tables exist for these.
+*/
+func (g *Generator) GenerateRelationss() {
+	for _,relationDeclaration := range g.file.RelationDecls {
+		
+	   typeSpec := typeDeclaration.Spec
+	   typeName := g.packagePath + typeSpec.Name.Name
+	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
+	
+	   var parentTypeNames []string
+	
+	   for _,parentTypeSpec := range typeSpec.SuperTypes {
+		  parentTypeNames = append(parentTypeNames, g.qualifyTypeName(parentTypeSpec.Name.Name))
+	   } 
+		
+	   // Get the type name and the supertype names	
+	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
+       if err != nil {
+          panic(err)
+       }	
+
+	   for _,attrDecl := range typeDeclaration.Attributes {
+		  var minCard int32 = 1
+		  var maxCard int32 = 1
+		  
+          attributeName := attrDecl.Name.Name
+          multiValuedAttribute := (attrDecl.Arity != nil)
+          if multiValuedAttribute {
+	         minCard = int32(attrDecl.Arity.MinCard)
+	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
+          }
+          
+          var collectionType string 
+
+          var orderFuncOrAttrName string = ""
+          var isAscending bool 
+
+          if attrDecl.Type.CollectionSpec != nil {
+              switch attrDecl.Type.CollectionSpec.Kind {
+	             case token.SET:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedset"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending		
+		            } else {
+			           collectionType = "set"			
+		            }		
+		         case token.LIST:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedlist"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
+		            } else {
+			           collectionType = "list"			
+		            }
+			     case token.MAP:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedmap"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
+		            } else {
+			           collectionType = "map"			
+		            }				
+	           }	
+          }
+
+
+/*	type CollectionTypeSpec struct {
+	   Kind token.Token
+	   LDelim token.Pos
+	   RDelim token.Pos
+	   IsSorting bool
+	   IsAscending bool
+	   OrderFunc string
+	}
+*/	
+ 
+          attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
+
+          
+/*"vector"
+RelEnd
+   ...
+   CollectionType string // "list", "sortedlist","set", "sortedset", "map", "stringmap", "sortedmap","sortedstringmap",""
+   OrderAttrName string   // which primitive attribute of other is it ordered by when retrieving? "" if none
+
+   OrderMethod *RMultiMethod
+*/
+
+
+	      _,err = data.RT.CreateAttribute(typeName,
+									 	 attributeTypeName,
+										 attributeName,
+										 minCard,
+										 maxCard,   // Is the -1 meaning N respected in here???? TODO
+										 collectionType,
+				                         orderFuncOrAttrName,
+				                         isAscending,
+										 false,
+										 g.Interp.Dispatcher())
+		   if err != nil {
+		      panic(err)
+		   }
+
+        }
+
+        // Now ensure the persistence data model is created for the type.
+
+
+		err = data.RT.DB().EnsureTypeTable(theNewType) 
+		if err != nil {
+		      panic(err)
+		}
+		
+		// ... and for the type's attributes and relations
+
+		err = data.RT.DB().EnsureAttributeAndRelationTables(theNewType) 
+		if err != nil {
+		      panic(err)
+		}
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type NodePrinter struct {
 }

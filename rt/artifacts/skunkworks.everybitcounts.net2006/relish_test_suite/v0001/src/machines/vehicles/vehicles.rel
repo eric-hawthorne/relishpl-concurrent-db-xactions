@@ -10,6 +10,7 @@ package  machines/vehicles
 
 import
    relish.pl2012/things/pkg/physical_objects as phys 
+   people
  
 
 ManufacturedObject
@@ -52,4 +53,10 @@ Car <: Automobile
 """
    engine Engine
    wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
+
+
+Automobile 0 1 vehicle -- driver 0 1 people.Person
+
+Automobile 0 1 vehicle -- passengers 0 N people.Person
+
 

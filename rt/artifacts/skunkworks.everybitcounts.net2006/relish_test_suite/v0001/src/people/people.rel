@@ -1,0 +1,21 @@
+origin   skunkworks.everybitcounts.net2006
+artifact relish_test_suite
+package  people
+
+""" 
+ people.rel
+
+ People.
+"""
+
+import
+   relish.pl2012/things/pkg/physical_objects as phys
+
+
+Person <: phys.SelfLocomotive
+"""
+ A human person.
+"""
+   firstName String
+
+   lastName String
