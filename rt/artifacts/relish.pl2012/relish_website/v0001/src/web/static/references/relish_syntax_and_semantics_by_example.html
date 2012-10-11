@@ -56,10 +56,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#Introduction">Introduction</a><br/>	
 	<a href="#Variables">Variables</a><br/>
 	<a href="#ReservedWords">Reserved Words</a><br/>
-	<a href="#constants">Constants</a><br/>	
+	<a href="#Constants">Constants</a><br/>	
 	<a href="#DataTypes">Data Types</a><br/>	
 	<a href="#TypeParameters">Type Parameters</a><br/>	
-	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>				
+	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>			
+  <a href="#LiteralValues">Literal Values</a><br/>   	
+  <a href="#AssignmentStatements">Assignment Statements</a><br/>    
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -125,17 +127,14 @@ Some names of this form may not be used as variable names:
 
 	<a name="ReservedWords"><h3>Reserved Words</h3></a>		
     <code>
-    if elif else while for break continue of as go func
+    if elif else while for in as break continue of go func true false nil
     </code><br/>
     <p>
     	<b>Syntax:</b>
     </p>    
     <p>
-The reserved words may not be used as variable names, method names, or package name parts or aliases. They are reserved for use to define control constructs in the language.
+The reserved words may not be used as variable names, method names, or package name parts or aliases. They are reserved for use to define control constructs and literal values in the language.
 </p>
-   
-
-
 
 
 	<a name="Constants"><h3>Constants</h3></a>		
@@ -305,6 +304,187 @@ Channel &lt;: InChannel OutChannel  A channel which can be read from and written
 <p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
 		   
 
+
+
+
+
+
+  <a name="LiteralValues"><h3>Literal Values</h3></a>    
+
+<h4>Integer literals</h4>
+    <code>
+    42<br/>
+0600<br/>
+0xBadFace<br/>
+170141183460469231731687303715884105727</br>  
+<span class="future">-42<br/>
+-0600<br/>
+-0xBadFace<br/>
+-170141183460469231731687303715884105727</br></span>
+    </code><br/>
+    Usage in context:<br/><br/>
+    <code>
+    a = 42<br/>
+    color = 0xFFCADD<br/>
+    <span class="future">n = plus -42 260<br/></span>
+    </code>
+    <p>
+An integer literal is a sequence of digits representing an integer constant. An optional prefix sets a non-decimal base: 0 for octal, 0x or 0X for hexadecimal. In hexadecimal literals, letters a-f and A-F represent values 10 through 15. An optional negation prefix - (which if present must come before the non-decimal base prefix) negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0
+    </p>
+
+
+<h4>Floating-point number literals</h4>
+
+<code><pre>
+0.
+0.0
+72.40
+072.40  // == 72.40
+2.71828
+1.e+0
+6.67428e-11
+1E6
+.25
+.12345E+5
+<span class="future">-72.40
+-072.40  // == -72.40
+-2.71828
+-1.e+0
+-6.67428e-11
+-1E6
+-.25
+-.12345E+5</span>
+</pre></code>
+    Usage in context:<br/><br/>
+    <code>
+    PI = 3.14159265357989<br/>
+    r = 6.67428e-2<br/>
+    <span class="future">p = -1.7<br/></span>
+    </code>
+    <p>
+A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, a fractional part, and an exponent part. The integer and fractional part comprise decimal digits; the exponent part is an e or E followed by an optionally signed decimal exponent. One of the integer part or the fractional part may be elided; one of the decimal point or the exponent may be elided.  An optional negation prefix - negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0.
+</p>
+
+<h4>Boolean literals</h4>
+
+<code><pre>
+true  false
+</pre></code>
+Usage in context:<br/>
+<code><pre>
+DEBUG = false
+
+while true
+   doSomethingForever
+</pre></code>
+    <p>
+Boolean literals represent the boolean logic values true and false, which are the only two values of inbuilt data type Bool. 
+false is the zero-value of the Bool type.  
+</p>
+<p>
+NOTE: In relish, the zero-value of any data type is considered false-equivalent in logical tests (as in "<b>if</b>" "<b>while</b>" "<b>for</b>") and is also considered false-equivalent in the Boolean logic operator functions "<b>and</b>" "<b>or</b>" and "<b>not</b>". nil (non-present non-primitive object) is also considered false.
+</p>
+So values that test false or act as false in boolean operator functions are:
+<pre>
+0
+0.
+false
+[]   // empty list
+{}   // empty set
+{=>} // empty map
+""   // empty string
+nil
+</pre>
+All other values of any data type test non-false, and act non-false in boolean operator functions.
+</p>
+
+
+<h4>String literals</h4>
+
+<code><pre>
+"Hello, world!\n"  
+"\n"
+""
+"日本語"
+"\u65e5本\U00008a9e"
+"\xff\u00FF"
+"\uD800"       // illegal: surrogate half
+"\U00110000"   // illegal: invalid Unicode code point
+
+These examples all represent the same string:
+
+"日本語"                                 // UTF-8 input text
+"\u65e5\u672c\u8a9e"                    // the explicit Unicode code points
+"\U000065e5\U0000672c\U00008a9e"        // the explicit Unicode code points
+"\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e"  // the explicit UTF-8 bytes
+
+A multi-line raw string:
+
+      """
+"""   
+It was a dark and stormy night.
+I had a premonition that I should not keep
+writing this long, overwrought, badly formatted, 
+and turgidly melodramatic story,
+but I couldn't help myself. "Damn!", I said to myself,
+this is the end.
+"""
+</pre></code>
+    Usage in context:<br/>
+<code><pre>
+   firstName = "Jeremiah"
+   aphorism = """
+"""
+No matter where you go,
+There you are!
+And notice that where I am
+is starting at the first column
+of the source code file.
+But then notice that indentation resumes after me, as if I
+weren't present in the source file.
+"""
+   lastName = "Jones"
+   truism = """
+"""
+Stupid is as
+stupid does.
+"""   
+   age = 9
+
+</pre></code>
+    <p>
+Strings in relish (currently) exhibit and behave much as string values do in Go, because their underlying implementation is a Go string. 
+</p>
+<p>
+A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and multi-line raw String literals.
+</p>
+<p>
+Interpreted String literals are character sequences between double quotes "". The text between the quotes, which may not contain newlines, forms the value of the literal, with backslash escapes interpreted as they are in rune literals (except that \' is illegal and \" is legal), with the same restrictions. The three-digit octal (\nnn) and two-digit hexadecimal (\xnn) escapes represent individual bytes of the resulting string; all other escapes represent the (possibly multi-byte) UTF-8 encoding of individual characters. Thus inside a string literal \377 and \xFF represent a single byte of value 0xFF=255, while ÿ, \u00FF, \U000000FF and \xc3\xbf represent the two bytes 0xc3 0xbf of the UTF-8 encoding of character U+00FF.
+</p>
+<p>
+Multi-line raw String literals are character sequences between triple-doublequote delimiters. 
+Within the delimiters, any character is legal. The value of a raw string literal is the string composed of the uninterpreted (implicitly UTF-8-encoded) characters between the delimiters; in particular, backslashes have no special meaning and the string may contain newlines. Carriage returns inside raw string literals are discarded from the raw string value.
+</p>
+<p>
+Because of the heavily indentation-dependent nature of relish source code, multi-line raw string literals are first introduced
+in their proper indented location, by a single """. On the following line, there must be another """ at the beginning of the line.
+The actual raw string value begins on the next line; the one after the second """. 
+The raw string continues until the next (third) """, which must again occur at the beginning of a line of the source code file.
+So raw strings are always multi-line. Raw string literal values do not include the initial newline character, but do include the last newline character.
+The shortest possible multi-line raw string is 
+<pre>
+   s = """
+"""
+"""
+</pre>
+Which is equivalent to the interpreted string literal "\n". 
+</p>
+</p>
+<p>
+One peculiarity of Go strings is that their index operator returns a byte at the ith byte position, whereas the string is fundamentally supposed to be a 
+sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can occupy multiple bytes of the string. Also, disturbingly, the len function of a Go string returns the number of bytes, not the number of unicode codepoints in the string. I don't really like these split-personality
+grudgingly unicode behaviours of Go strings, but relish Strings are stuck with them for now.
+</p>
 
 	
 </div>

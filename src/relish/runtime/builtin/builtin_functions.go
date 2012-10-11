@@ -132,6 +132,12 @@ func InitBuiltinFunctions() {
 	}
 	modMethod.PrimitiveCode = builtinMod	
 
+	negMethod, err := RT.CreateMethod("","neg", []string{"p1"}, []string{"Numeric"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	negMethod.PrimitiveCode = builtinNeg		
+
 
 
     ///////////////////////////////////////////////////////////
@@ -756,6 +762,32 @@ func builtinMod(objects []RObject) []RObject {
 	}
 	return []RObject{val}
 }
+
+
+
+/*
+Numeric negation operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
+subtype of numeric depending on the argument types.
+*/
+func builtinNeg(objects []RObject) []RObject {
+	obj1 := objects[0]
+	var val RObject
+	switch obj1.(type) {
+	case Int:
+			val = Int(-int64(obj1.(Int)))
+	case Int32:
+			val = Int32(-int32(obj1.(Int32)))
+	case Float:
+			val = Float(-float64(obj1.(Float)))
+	default:
+		    rterr.Stop("neg is not defined for argument type")
+	}
+	return []RObject{val}
+}
+
+
+
+
 
 
 

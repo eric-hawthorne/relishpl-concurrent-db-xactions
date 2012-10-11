@@ -145,6 +145,7 @@ func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode uin
        "for": true,
        "in": true,
        "as": true,
+       "of": true,       
        "continue": true,
        "break": true,
        "go": true,
@@ -749,7 +750,7 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
 	p.parseAritySpec(&arity2Spec) &&	
 	p.optional(p.parseCollectionTypeSpec(&collection2Spec) && p.Space()) &&
 	p.parseTypeName(true, &rel2TypeName) ) {
-	   p.Fail(st)		
+	   return p.Fail(st)		
 	}
 	
   // Generate relation-end "attribute" names from (properly pluralized as needed) end-type names, if
