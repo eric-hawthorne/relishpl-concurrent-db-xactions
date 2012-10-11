@@ -64,6 +64,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#AssignmentStatements">Assignment Statements</a><br/>    
   <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
   <a href="#ControlStatements">Control Statements</a><br/>   
+  <a href="#MethodCalls">Method Calls</a><br/>    
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -700,7 +701,281 @@ test expression is evaluated again, and so on.
 A while conditional can optionally include alternative clauses (elif,else). The alternative clauses are tested/invoked only if the while condition is false initially (i.e. if the loop is not entered).
 </p>
 
-	
+  <h4>"break" statement</h4>
+  <p>
+    A "break" statement may occur inside the statement sequence body of a "while" loop or "for" loop. If it is executed, the break statement
+    causes execution to immediately resume at the first statement after the "while" or "for" loop.
+  </p>
+  <p>
+    The break statement accepts one optional positive integer argument, which is the number of containing loops to break out of.
+    If the argument is omitted, it is equivalent to "break 1".
+  </p>
+  <code><pre>
+while true
+   while someOtherCondition
+      if tired
+         break 2
+      doMoreWork
+   print "Hello"
+print "Finally done."
+
+// If the tired condition becomes non-false, execution resumes outside both loops, 
+// and "Finally done." is printed without another "Hello"   
+  </pre></code>
+
+  <h4>"continue" statement</h4>
+  <p>
+    A "continue" statement may occur inside the statement sequence body of a "while" loop or "for" loop. If it is executed, the continue statement
+    causes execution to skip over the rest of the statements in the statement sequence body of the loop, and return to the top of the loop; that is, the next thing to execute will be the "while"'s test again, or the "for"'s increment statement or increment-then-test.
+  </p>
+  <p>
+    The continue statement accepts one optional positive integer argument, which is the number of containing loops to jump to the top of the next iteration of.
+    If the argument is omitted, it is equivalent to "continue 1".
+  </p>	
+  <code><pre>
+while someCondition
+   print "Hello"
+   while someOtherCondition
+      if tired
+         continue 2
+      doMoreWork
+      print "Working on the railroad."
+   print "Goodbye"
+print "Finally done."
+
+// If the tired condition becomes non-false, execution resumes at the next test of someCondition 
+// and if that is non-false, "Hello" is printed before another "Working on the railroad." and before another "Goodbye"  
+  </pre></code>  
+
+
+<h4>"for" loop</h4>
+    <code><pre>
+
+// "for" forms that iterate over a collection <span class="future">or map</span>, 
+// setting an index<span class="future">/key</span> variable and/or an element value variable 
+// to refer successively to each (position and) element in the collection<span class="future">/map</span>.
+
+for i val in someList<span class="future">OrOrderedSet</span>
+   statement
+   statement
+
+for i val        
+   in 
+      someList<span class="future">OrOrderedSet</span>
+   statement
+   statement
+<span class="future">
+for key val in someMap  
+   statement
+   statement
+
+for key val        
+   in 
+      someMap
+   statement
+   statement   
+</span>
+for val in someList<span class="future">OrSet</span>
+   statement
+   statement
+<span class="future">
+for key in someMap  
+   statement
+   statement   
+
+for i key val in someOrderedMap  
+   statement
+   statement
+
+// for an ordered map, the val is the key in this case</span>
+for i val1 val2 in someList<span class="future">OrOrderedSetOrOrderedMap</span> someOtherList<span class="future">OrOrderedSetOrOrderedMap</span> 
+   statement
+   statement
+
+<span class="future">// The val variables are assigned the zero-value of the type 
+// when their collection is exhausted before other collection(s).</span>
+
+for i val1 val2 val3                             
+   in 
+      someList<span class="future">OrOrderedSetOrOrderedMap</span>       
+      someOtherList<span class="future">OrOrderedSetOrOrderedMap</span>   
+      someThirdList<span class="future">OrOrderedSetOrOrderedMap</span>
+   statement
+   statement
+
+
+for val1 val2 in someList<span class="future">OrOrderedSetOrOrderedMap</span> someOtherList<span class="future">OrOrderedSetOrOrderedMap</span>
+   statement
+   statement      
+
+
+<span class="future">      
+// Traditional C-style "for" loop incrementing and testing index variables
+
+for i = 0 
+    less i n
+    i += 1
+   statement
+   statement
+
+for i j =
+       min a b
+       min c d
+    and less i m
+        less j n
+    i += 1
+    j = calcJ i
+   statement
+   statement
+
+for i = 0   less i n   i += 1  // one-line 3-spaces-separated form allowed if a single index-variable
+   statement
+   statement</span>
+    </pre></code>
+<p>
+<b>Semantics: "for" iteration over one or more Collections/Maps</b>
+</p>
+<p>
+Iteration proceeds from the lowest-indexed to highest-indexed element of an ordered collection or ordered map. The single-variable form of "for" can iterate over an unordered set (or unordered map), and returns the elements (keys) in unspecified order.
+</p>
+<p>
+IMPORTANT NOTE: "for" iteration is <b>not thread-safe</b>. <span class="future">You need to lock explicitly to ensure exclusive access while iterating, if multiple go-routines may modify the collection/map.</span>  
+</p>
+<p>
+IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are being modified (by the same or another go-routine) during the iteration is <b>undefined</b>. That means you should never attempt it. It may or may not cause a panic, but even if it does not, the execution sequence and index and value variable settings are undefined and cannot be relied on.</span>  
+</p>
+<p>
+<b> <span class="future">Semantics: "for" with index incrementing and test expressions</span></b>
+</p>
+<p>
+   <span class="future">TBD</span> 
+  </p>
+
+
+  <a name="MethodCalls"><h3>Method Calls</h3></a>   
+    <code><pre>
+<span class="subtle">1.</span> foo 19 "fast" body.arm[1].elbow.angle[2]
+
+<span class="subtle">2.</span> foo (bar 253 c d[2] a.b) "fast" (calculateAngle opp adj)
+
+<span class="subtle">3.</span> positionAndStamp envelope 
+                    rubberStamp
+
+<span class="subtle">4.</span> positionAndStamp
+      envelope
+      fetchAppropriateStamp rubberStampBox "PAID"                
+
+<span class="subtle">5.</span> positionAndStamp
+      envelope
+      fetchAppropriateStamp 
+         rubberStampBox 
+         "PAID"        
+
+<span class="subtle">6.</span> print times 2 PI
+
+<span class="subtle">7.</span> print times 2 
+               PI
+
+<span class="subtle">8.</span> print times
+            2
+            PI
+
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+Method names have the same syntax as variable names, method-parameter names, structured-object attribute names<span class="future">, and relation-end names</span>. In relish, you must use contextual information (where they appear in the program, how they are juxtaposed with other program elements, and whether a variable or parameter or attribute <span class="future">or relation-end</span> name has been explicitly defined in the scope) to distinguish the two. <b>Aside on Language philosophy:</b> This conflation of the names of named values (e.g. variables, attributes) and the names of functions, which supply values, is deliberate. It promotes object-oriented data hiding, in that the syntax for getting and setting the values of object attributes is identical to the syntax for calling getter and setter methods. The syntax for calling a unary function of an object is also identical to the syntax for getting the value of an attribute of the object. Therefore, the implementor of the object's data type (class) is free to substitute a computed function for an explicitly stored attribute, or vice versa, without requiring change in code that uses the object.
+</p>
+<p>
+A method call consists of the name of the method followed by zero or more argument expressions. There are three allowed spatial configurations of the arguments in the source code:
+<ul>
+<li>The first configuration is in-line on the same line as the method name, as shown in examples 1. and 2. above. In this configuration, if there are multiple argument expressions, they must be simple so it is not ambiguous where one expression ends and the next begins. Each of the multiple expressions on the line must be one of a) a simple literal, b) a variable name, c) an index expression, dot-notation expression, or combination thereof, or d) a one-line method call which itself has only simple literals, variable names, index expressions, or dot-notation expressions as arguments. </li>
+<li>The second configuration is multiple argument expressions stacked one below the other, starting with the first right-side expression in its normal in-line position one space to the right method name, as shown in example 3. above. </li>
+<li>The third configuration is one or more argument expressions stacked one below the other, starting on the line following the method name, as shown in examples 4. and 5. above. In this case, the argument expressions must all be indented one indent level from the indent position of the beginning of the method call as a whole. </li>
+</ul>
+There is one concession to concise expression of a common case; that where a method's single argument is another method call that consumes all remaining arguments. See examples 6., 7., and 8.
+In this case, the argument method call can be expressed without being surrounded by round brackets or indented onto the next line.
+This form is not allowed if the top-level method requires another argument beyond the value(s) the argument method call returns. 
+</p>
+
+
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A method call first evaluates all of its argument expressions, in left-to-right order. Multiple methods may share the same method name, so multiple dispatch (multimethod dispatch) is performed to choose which method to execute. Once a method is chosen, the argument values are assigned to the method parameters, and the method body statements are executed in sequence until the end of the statement block is reached or a return statement ( "=>" statement in relish ) is encountered. The number of values specified in the method's declaration are returned to the calling context, which may assign those values in an assignment statement, may use them as arguments to another expression or statement, or may discard them. All methods sharing a name (within a package import hierarchy) must be declared to return the same number of values, which may be from 0 to 9 return values.  
+</p>
+<p>
+    <code><pre>
+radius theta = polar x y</pre></code>
+The polar method (more precisely the polar multimethod i.e. the set of methods sharing that name) has been declared to return 2 values, which are assigned to the radius and theta variables in the calling context.
+</p>   
+<p>
+    <code><pre>
+x1 y1 = cartesian polar x y</pre></code>
+The cartesian multimethod has been declared to accept two arguments, which the polar method call supplies.
+</p>
+<p>
+    <code><pre>
+<span class="future">radius _ = polar x y</span></pre></code>
+<span class="future">The calling context only cares about the radius return value and ignores the angle return value by assigning it to the anonymous dummy variable _ .</span>
+</p> 
+<p>
+    <code><pre>
+send "message"</pre></code>
+The send multimethod, we will suppose, has been declared to return an error status value, but the programmer of the calling context, unwisely, has chosen to silently ignore it.
+</p> 
+
+
+
+
+
+
+<h4>Multiple Dispatch</h4>
+<blockquote>
+Multiple dispatch or multimethods or function overloading is the feature of some object-oriented programming languages in which a function or method can be dynamically dispatched based on the run time (dynamic) type of more than one of its arguments. This is an extension of single dispatch polymorphism where a method call is dynamically dispatched based on the actual derived type of the object on which the method has been called. Multiple dispatch generalizes the dynamic dispatching to work with a combination of two or more objects. -- <em>Wikipedia</em>
+</blockquote>
+
+<p>
+  In a relish package, a given method name may be the name of multiple methods, which may be defined in the current package, in a package directly imported by the current package, or in a package imported directly or indirectly by a directly imported package. The set of such methods, as seen from within a given package, is called the multimethod (of a given name.)
+</p>
+<p>
+When there is a method call, a single method (of the multimethod) must be chosen by the relish runtime environment as the method that will be applied to the arguments and executed. This choice is made by a process of pattern matching the parameter type signature of each method against the run time (dynamic) type of each required positional argument that has been supplied in the method call. 
+</p>
+<p>
+ The following is a description of the multi-argument dynamic method dispatch process used by relish.
+ Bear in mind when informally assessing its performance that the full dispatch process is only executed once per program-run
+ for a given type-tuple of arguments applied to a given method. Subsequent calls with the same tuple of types of arguments
+ take advantage of a type-signature-match cache which selects the method using a single hashtable lookup. 
+</p>
+<p>
+  <ul>
+   <li>Find those method implementations of the multimethod whose parameter-type
+   signature is the same as or a generalization of the type-tuple of run time (dynamic) types of the actual argument objects/values.
+   </li>
+   <li>Select from the type-signature-compatible methods the one whose parameter type signature is the minimal Euclidean distance
+   (in multi-dimensional type specialization space) from the type-tuple of the run time (dynamic) types
+   of the actual argument objects. That is, select the method having the parameter-type-signature that is compatible with and minimally different in types from the argument run time (dynamic) types. Here the <em>method parameter type signature</em> and the <em>list of run-time (dynamic) types of arguments</em> are considered vectors (of length = the method arity) in multi-dimensional type-specialization space.</li>
+  <li>If more than one method is equally close in type signature to the
+   argument types (measuring Euclidean distance down the specialization paths),
+   then the tie is broken by selecting the method whose signature is most specific
+   in types compared to the top types in the ontology of data types in the program.</li>
+   <li>If there is still a tie, the method which was encountered first (in the multimethod's
+   list of methods of a particular arity) is chosen. This last choice is somewhat arbitrary but should almost never need to be invoked as ties in both the first matching criterion (type-tuple Euclidian distance from argument types) and second criterion (absolute specialization-lattice depth of method signature type-tuples) ought to be exceedingly rare.</li>
+ </ul>
+</p>
+
+
+
+
+
+
+
+
+
+
+
 </div>
 
 </body>

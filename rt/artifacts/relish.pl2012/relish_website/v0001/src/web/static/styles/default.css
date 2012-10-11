@@ -177,6 +177,11 @@ color: #4E6500; /* dark green */
 	color: #5A8D3F;
 }
 
+.subtle
+{
+  color: #999999;
+}
+
 #content_manual h4
 {
   font-size: 120%;  
@@ -195,6 +200,11 @@ color: #4E6500; /* dark green */
 	font-size: 90%;
 }
 
+#content_manual blockquote
+{
+  color: #333333;
+  font-size: 90%;
+}
 
 #content h3 
 {
