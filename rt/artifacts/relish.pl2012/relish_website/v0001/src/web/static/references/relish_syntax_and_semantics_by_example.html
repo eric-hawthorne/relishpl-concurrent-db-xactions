@@ -950,6 +950,16 @@ When there is a method call, a single method (of the multimethod) must be chosen
  take advantage of a type-signature-match cache which selects the method using a single hashtable lookup. 
 </p>
 <p>
+  The elevator-pitch version of the multiple dispatch process:
+  <ul>
+   <li>Find methods of the multimethod whose parameter type signature is compatible with (same as or a generalization of) the run time (dynamic) types of the actual arguments in the method call.</li>
+   <li>From those, choose the method whose parameter type signature is closest in types to the types of the arguments.</li>
+   <li>If there is a tie, assess the type signatures of the candidate methods against each other, to determine which method's type signature is
+    more specific in an absolute sense in the type-lattice (the ontology) of data types in the program. Pick that method.</li>
+ </ul>
+</p>
+<p>
+  Here is the lengthier, more precise description of the multiple dispatch process:
   <ul>
    <li>Find those method implementations of the multimethod whose parameter-type
    signature is the same as or a generalization of the type-tuple of run time (dynamic) types of the actual argument objects/values.
@@ -969,8 +979,27 @@ When there is a method call, a single method (of the multimethod) must be chosen
 
 
 
-
-
+<h4><span class="future">"dot-notation" for calling single-parameter (unary) methods</span></h4>
+<p>
+<span class="future">Subroutines which accept only a single positional argument can (optionally) be called with "dot-notation" syntax:</span>
+</p>
+<code><pre>
+<span class="future">a.foo</span></pre></code>
+<span class="future">is equivalent to</span> 
+<code><pre>
+<span class="future">foo a</span></pre></code>
+<span class="future">That is, call method foo on the argument a</span>
+</p>
+<p>
+<span class="future">The dot-notation version can be used in some contexts where prefix calling is not allowed:
+It can increase the depth of subroutine-call nesting allowed in a single-line subroutine call.</span>
+<code><pre>
+<span class="future">
+bar a.b.c.foo "frap" d.e.baz</span></pre></code>
+<p>
+<span class="future">The dot-notation version of unary-method calling provides syntactic equivalence between object attribute access and getter-function
+call and unary function call, allowing for object-oriented data encapsulation (data-hiding) without syntactic baggage.</span>
+</p>
 
 
 
