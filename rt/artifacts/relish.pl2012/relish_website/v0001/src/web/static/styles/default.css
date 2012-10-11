@@ -183,6 +183,17 @@ color: #4E6500; /* dark green */
   color: #436784;
 }
 
+#content_manual dt 
+{
+	padding-top: 0.4em;	
+	line-height: 150%;
+	color: #436784;
+}
+
+#content_manual dd
+{
+	font-size: 90%;
+}
 
 
 #content h3 

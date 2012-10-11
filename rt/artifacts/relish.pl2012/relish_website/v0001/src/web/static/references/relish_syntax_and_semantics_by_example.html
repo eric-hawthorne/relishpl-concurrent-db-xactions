@@ -62,6 +62,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>			
   <a href="#LiteralValues">Literal Values</a><br/>   	
   <a href="#AssignmentStatements">Assignment Statements</a><br/>    
+  <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
+  <a href="#ControlStatements">Control Statements</a><br/>   
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -112,7 +114,7 @@ Some names of this form may not be used as variable names:
     	<b>Semantics:</b>
     </p>
     <p>
-	A variable is a named value of an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
+	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
 	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
     </p>
 	
@@ -275,7 +277,7 @@ Uint32 &lt;: Integer                32-bit unsigned integer<span class="future">
 Uint16 &lt;: Integer                16-bit unsigned integer
 Byte &lt;: Integer                  8-bit unsigned integer
 Bit &lt;: Integer                   1-bit unsigned integer</span>
-Bool &lt;: RelishPrimitive          Boolean logical type (TRUE,FALSE)
+Bool &lt;: RelishPrimitive          Boolean logical type (true,false)
 Real &lt;: Numeric                  Abstract supertype of all floating-point numeric types
 Float &lt;: Real                    64-bit floating-point number<span class="future">
 Float32 &lt;: Real                  32-bit floating-point number
@@ -316,11 +318,11 @@ Channel &lt;: InChannel OutChannel  A channel which can be read from and written
     42<br/>
 0600<br/>
 0xBadFace<br/>
-170141183460469231731687303715884105727</br>  
+170141183460469231731687303715884105727<br/>  
 <span class="future">-42<br/>
 -0600<br/>
 -0xBadFace<br/>
--170141183460469231731687303715884105727</br></span>
+-170141183460469231731687303715884105727<br/></span>
     </code><br/>
     Usage in context:<br/><br/>
     <code>
@@ -484,6 +486,218 @@ Which is equivalent to the interpreted string literal "\n".
 One peculiarity of Go strings is that their index operator returns a byte at the ith byte position, whereas the string is fundamentally supposed to be a 
 sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can occupy multiple bytes of the string. Also, disturbingly, the len function of a Go string returns the number of bytes, not the number of unicode codepoints in the string. I don't really like these split-personality
 grudgingly unicode behaviours of Go strings, but relish Strings are stuck with them for now.
+</p>
+
+
+	<a name="AssignmentStatements"><h3>Assignment Statements</h3></a>		
+    <code><pre>
+a = 9
+
+bigBigVariableName = 
+   "A very very very very very very very very very long value might have to be on the next line, indented."
+
+a b c = d "something" f
+
+a b c = 9432
+        "a string"
+        d 
+
+a b c =
+   d
+   143.65
+   f    
+
+obj1.obj2.obj3.a = 143.65
+
+myList[3].myMap["Joe Bloggs"].a[i] = "3155 Kent Street"
+
+coord[0].lat = 49.5
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+An assignment statement consists of one or more assignable left-side-expressions, followed by the assignment operator "=" followed by one or more expressions that (collectively) must produce the <em>same number</em>** of values as the number of assignable left-side expressions. The "=" must be preceded by a single space. If the right-side expressions are on or begin on the same line as the "=", the ""=" must be followed by a single space, which is followed by the beginning of first right-side expression.
+</p>
+<p>
+The left-side expressions must be simple enough to fit on one-line. The second and subsequent left-side expressions, if any, must be separated from their predecessor by a single space. A Left-side expression must be one of:
+<ol>
+	<li>A local variable or method parameter in a method body.</li>
+	<li>An attribute of a structured object.  
+	<li>An indexed position in an ordered collection or a map, specified by <expr>[i] or <expr>[key].
+	<li>A path of expressions separated by the infix "." operator. The first expression must be a local variable, method parameter, or an indexed position in a collection/map-valued variable or parameter.  Each subsequent expression in the path may be the name of a unary function, an attribute, or an attribute-getter-function, or may be an indexed position in the value returned by one of these. 
+</ol>
+</p>
+<p>
+The right-side expressions may appear in several spatial configurations in the source code file.
+<ul>
+<li>The first configuration is in-line on the same line as the left side and the " = ". In this configuration, if there are multiple expressions, they must be simple so it is not ambiguous where one expression ends and the next begins. Each of the multiple expressions on the line must be one of a) a simple literal, b) a variable name, c) an index expression, dot-notation expression, or combination thereof, or d) a method call enclosed in brackets (foo a "b"), where the method call itself has only simple literals, variable names, index expressions, or dot-notation expressions as arguments. </li>
+<li>The second configuration is multiple right side expressions stacked one below the other, starting with the first right-side expression in its normal in-line position one space to the right of the "=" operator. </li>
+<li>The third configuration is one or more right-side expressions stacked one below the other, starting on the line following the left-side expressions and " =". In this case, the right-side expressions must all be indented one indent level from the indent position of the beginning of the assignment statement as a whole. </li>
+</ul>
+</p>
+<p>
+**There is one exception to the rule that the right-side expressions must produce the same number of values as the number of l-expressions. The right-side may consist of a single expression which evaluates to an ordered collection (e.g. a list or ordered set) containing exactly the same number of elements as the number of l-expressions. 
+</p>
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+
+
+
+<p>
+<span class="future">Restrictions apply that limit which assignments are legal, based on type compatibility considerations and on writeability permissions of object attributes and collections. </span>
+</p>
+<p>
+<span class="future"><em>In the following, the term "the statically known type" of an expression refers to the most specific data type that it can be assumed applies to the expression, based on compile-time type information, lexical program structure, and type inference.</em> </span>
+</p>
+<dl>
+<dt>Assigning to a local variable</dt>
+<dd><span class="future">Inside a method body, you can assign a value to a variable. The first encountered assignment implicitly creates the variable. There may be multiple lexical occurrences of assignment to the same variable in the method body. The variable is (implicitly) assigned a type constraint; the (most general) statically known type of the values assigned to it among the different lexical assignment occurrences.
+<br/>
+	There is a type restriction on assignments to the same variable within a method body: There must exist a statically known type among those of the values assigned to the variable which is a supertype of (or the same as) all of the other statically known types of values assigned to the variable in the method body. </span></dd>	
+<dt>Assigning to a parameter of a method</dt>
+<dd><span class="future">Inside a method body, you can assign a new value to a parameter of the method. Method parameters are declared with a data type specification. The value you assign to the parameter must be compatible with (same as or a subtype of) the type specified for the parameter.</span></dd>
+
+<dt>Assigning to an attribute of a structured object</dt>
+<dd><span class="future">You can assign a value to an attribute of an object. Object attributes are declared with a data type specification. The value you assign to the attribute must be compatible with (same as or a subtype of) the type specified for the attribute. 
+<br/>
+<!-- Some attributes are flagged as not writeable, or not writeable in certain contexts. Blah blah blah. -->
+</span></dd>
+
+<dt>Assigning to an indexed position in a collection or map</dt>
+<dd><span class="future">You can assign a value to a position in a mutable ordered collection or a mutable map, or to a position in an ordered multi-valued attribute. Collections, maps, and multi-valued attributes are declared with an element data-type specification. The value you assign to the position in the collection/map/multi-valued attribute must be compatible with (same as or a subtype of) the element data-type specification. 
+<br/>
+<!-- Some collections are immutable. Blah blah blah. -->
+</span></dd>
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+	<a name="ConstantDeclarations"><h3>Constant Declarations</h3></a>	
+<!-- PI Float32 = 3.14159265357989 -->		
+    <code><pre>
+PI = 3.14159265357989
+
+E = 2.17  // or roughly anyway
+
+MAX_WIDTH = 1024
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+A constant declaration consists of a constant name, followed by the assignment operator "=" followed by an expression. The "=" must be preceded by a single space. If the right-side expression is on or begins on the same line as the "=", the ""=" must be followed by a single space, which is followed by the beginning of the right-side expression.
+</p>
+<p>
+The right-side expression may appear in several spatial configurations in the source code file.
+<ul>
+<li>The first configuration is in-line on the same line as the left side and the " = ".  </li>
+<li>The second configuration has the right-side expression starting on the line following the constant name and " =". In this case, the right-side expression must all be indented one indent level from the indent position of the beginning of the constant declaration. </li>
+</ul>
+</p>
+<p>
+A constant declaration can only appear at the top-level lexical scope in a source code file. That is, it must begin in the 1st column of the source code file. It may not occur inside a method body or type declaration.
+</p>
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A constant can only be assigned a value once, at its declaration. The name then represents that value and can be used as the value in an expression.
+Constant names are exported from the package in which they occur <span class="future">unless they are declared within the __private__ section of a source code file, in which case they are only visible within the package.</span>
+</p>
+
+
+
+	<a name="ControlStatements"><h3>Control Statements</h3></a>	
+	
+	<h4>"if" conditional</h4>
+    <code><pre>
+	
+if lt x 0
+   x = neg x
+
+if lt x 0
+   x = 0
+else
+   x = 1
+	
+if some
+      condition
+      expression
+   statement
+   statement
+elif another condition
+             expression
+   statement
+   statement
+   statement
+elif aThird condition expression
+   statement
+else
+   statement
+   statement
+    </pre></code>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+If the test expression evaluates to any non-false value, the immediately following indented clause (statement sequence) is	executed,
+otherwise control passes to the next elif test if present, or to an else clause if only that is present, or to the statement following the "if", if neither another elif or an else are present.
+If none of the if or elif tests pass, and an else is present, its indented clause (statement sequence) is executed.
+</p>
+<p>
+"if" is a statement but not an expression. It does not return a value.
+</p>
+
+	<h4>"while" loop</h4>
+    <code><pre>
+while neq (location cows) home
+   herd cows	
+   sleepRough
+   drink COWBOY_COFFEE
+	
+while some
+         condition
+         expression
+   statement
+   if condition
+      break
+   elif condition2
+      continue
+   statement
+elif another condition
+             expression
+   statement
+   statement
+elif aThird condition expression
+   statement
+else
+   statement
+   statement
+    </pre></code>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+While the test expression evaluates to any non-false value, the immediately following indented clause (statement sequence) is executed, then the 
+test expression is evaluated again, and so on.
+</p>
+<p>
+"while" is a statement but not an expression. It does not return a value.
+</p>
+<p>
+A while conditional can optionally include alternative clauses (elif,else). The alternative clauses are tested/invoked only if the while condition is false initially (i.e. if the loop is not entered).
 </p>
 
 	
