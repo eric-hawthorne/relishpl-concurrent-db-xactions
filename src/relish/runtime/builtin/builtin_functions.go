@@ -373,6 +373,8 @@ func builtinEq(objects []RObject) []RObject {
 			val = Bool(obj1.(Int) == obj2.(Int))
 		case Int32:
 			val = Bool(int64(obj1.(Int)) == int64(obj2.(Int32)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) == float64(obj1.(Int)))			
 		case String:
 			val = Bool(string(obj2.(String)) == strconv.FormatInt(int64(obj1.(Int)), 10))
 		default:
@@ -384,11 +386,25 @@ func builtinEq(objects []RObject) []RObject {
 			val = Bool(obj1.(Int32) == obj2.(Int32))
 		case Int:
 			val = Bool(int64(obj1.(Int32)) == int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) == float64(obj1.(Int32)))			
 		case String:
 			val = Bool(string(obj2.(String)) == strconv.Itoa(int(obj1.(Int32))))
 		default:
 			val = Bool(false)
 		}
+	case Float:
+		switch obj2.(type) {
+		case Int32:
+			val = Bool(float64(obj1.(Float)) == float64(obj2.(Int32)))		
+		case Int:
+			val = Bool(float64(obj1.(Float)) == float64(obj2.(Int)))	
+		case Float:
+			val = Bool(float64(obj2.(Float)) == float64(obj1.(Float)))			
+		case String:
+			val = Bool(string(obj2.(String)) == strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64) 
+		default:
+			val = Bool(false)		
 	case String:
 		switch obj2.(type) {
 		case String:
@@ -397,6 +413,8 @@ func builtinEq(objects []RObject) []RObject {
 			val = Bool(string(obj1.(String)) == strconv.FormatInt(int64(obj2.(Int)), 10))
 		case Int32:
 			val = Bool(string(obj1.(String)) == strconv.Itoa(int(obj2.(Int32))))
+		case Float:
+			val = Bool(string(obj1.(String)) == strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64) 		
 		default:
 			val = Bool(false)
 		}

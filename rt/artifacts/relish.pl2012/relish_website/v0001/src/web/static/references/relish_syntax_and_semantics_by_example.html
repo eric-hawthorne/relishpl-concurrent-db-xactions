@@ -65,6 +65,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
   <a href="#ControlStatements">Control Statements</a><br/>   
   <a href="#MethodCalls">Method Calls</a><br/>    
+  <a href="#MethodDeclarations">Method Declarations</a><br/> 
+  <a href="#BuiltinMethods">Built-in Methods</a><br/> 
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -1001,6 +1003,187 @@ bar a.b.c.foo "frap" d.e.baz</span></pre></code>
 call and unary function call, allowing for object-oriented data encapsulation (data-hiding) without syntactic baggage.</span>
 </p>
 
+
+
+
+
+
+
+	<a name="MethodDeclarations"><h3>Method Declarations</h3></a>		
+    <code>
+    a  b  c  a1  source240v  amount lineWidth  stateOfPlay  line1Length  bitWidth32  
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    a = 2<br/>
+    lineWidth = a
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Variable names are camel-case latin-1 alphanumeric beginning with a lower case letter.
+Digits count as lower case letters in the camel-case rule, except are not allowed as the first character of the name as
+a whole, nor as the first character of any lower case word after an upper case letter. So theWord2 is allowed but theW2 is not.
+The name as a whole cannot end with an upper case letter. Multiple upper case letters together are not permitted.
+Note that underscores are not permitted (since they are an alternative to camel-case word separation.)    	
+    </p>
+<p>
+Some names of this form may not be used as variable names:
+<ul>
+<li>the relish language's reserved words are excluded,</li>
+<li>the name of any method visible in the scope,</li>
+
+<li> the last name-part of any unaliased imported package,</li> 
+<li> the package alias of any aliased imported package,</li> 
+<li><span class="future">a name of a parameter of the containing method is already implicitly defined as a strictly typed variable in the method so may not be re-assigned to a value-type incompatible with the parameter's type specification.</span></li>	
+</ul>
+</p>
+
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
+	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
+    </p>
+	
+
+	<span class="future">The type of a variable is not stated explicitly when defining the variable. If you assign to a variable in multiple places inside a method body, the known types of the values assigned in the different places must form a type hierarchy. That is, if values of different known types are
+	assigned in different assignment-occurrences, then at least one of those known types must be a common supertype of all the others. The type of the variable is then taken to be that common supertype of the known types of values assigned to it in the various assignment occurrences in the method. 
+    </span>
+
+
+
+
+		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
+		<p>
+			relish currently comes with a small but growing number of standard built-in methods. These methods are available from within any package without having to import a package containing the methods. The general plan is that a small number of these methods, the most general purpose, will remain implicitly-imported, but that others will migrate into relish standard library packages, and will have to be imported and their names package-qualified to be used. The plan is to (eventually) lift many of Go's standard libraries into relish, using shallow wrapper methods.
+			</p>
+			<p>
+				Here is the current list of built-in standard methods.
+		</p>	
+	    <code><pre>
+		
+// Comparison operators
+		
+eq RelishPrimitive RelishPrimitive > Bool
+"""
+ Returns whether two primitive-type values are equal in value.
+ Currently, applies to Numeric,String,Bool.
+ Converts between numeric types if necessary before testing for numeric equality, 
+ and converts a number to its string representation to compare with a string.
+"""
+
+lt a Numeric b Numeric > Bool 
+"""
+ Numeric less-than operator.
+"""
+
+lt s1 String s2 String > Bool
+"""
+ Lexicographical less-than operator. Compares two strings.
+"""
+
+gt a Numeric b Numeric > Bool
+"""
+ Numeric greater-than operator.
+"""
+
+gt s1 String s2 String > Bool
+"""
+ Lexicographical greater-than operator. Compares two strings.
+"""
+
+
+// Boolean logic operators
+
+not a Any > Bool
+"""
+ Boolean logical negation operator. Any non-false object/value passed in results in false.
+ Any false-equivalent object/value passed in results in true.
+"""
+
+and ...a Any > Any
+"""
+ Boolean logical and operator. If any of its arguments are false-equivalent, returns false,
+ otherwise returns the last argument.
+ All arguments are evaluated, unlike LISP's lazy and operator.
+"""
+
+or ...a Any > Any		
+"""
+ Boolean logical or operator. Returns the left-most of its arguments which is non-false.
+ If all arguments are false-equivalent, returns false.
+ All arguments are evaluated, unlike LISP's lazy or operator.
+"""
+		
+		
+// Arithmetic operators		
+		
+times a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+div a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+mod a Integer b Integer > Integer
+""" 
+ Return value type is covariant with argument types.
+"""
+
+plus a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+minus a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+neg a Numeric > Numeric
+""" 
+ Return value type is covariant with (same as) argument type.
+"""
+
+		
+// Collection methods		
+		
+len c Collection > Int
+"""
+ Returns the number of elements in the collection <span class="future">or map</span>.
+"""
+
+
+// I/O Methods
+
+print ...a Any
+"""
+ Prints a representation of the argument object/value(s) on the standard output, with a space separating each printed object/value.
+"""	
+
+
+// String methods
+	
+len s String > Int
+"""
+ Returns the number of bytes in the String. This is not the number of unicode codepoints, which may be fewer.
+"""	
+
+contains s String substr String > Bool 
+"""
+ Returns whether s contains the substring substr.
+"""
+	
+</pre></code>	
+<p>
+	Three more built-in methods, dub, summon, and exists, are explained fully in the next section, which explains relish's support for data persistence.
+</p>
 
 
 
