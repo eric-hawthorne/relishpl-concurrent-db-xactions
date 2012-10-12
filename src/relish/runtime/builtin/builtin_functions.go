@@ -402,9 +402,10 @@ func builtinEq(objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) == float64(obj1.(Float)))			
 		case String:
-			val = Bool(string(obj2.(String)) == strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64) 
+			val = Bool(string(obj2.(String)) == strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64)) 
 		default:
-			val = Bool(false)		
+			val = Bool(false)	
+		}	
 	case String:
 		switch obj2.(type) {
 		case String:
@@ -414,7 +415,7 @@ func builtinEq(objects []RObject) []RObject {
 		case Int32:
 			val = Bool(string(obj1.(String)) == strconv.Itoa(int(obj2.(Int32))))
 		case Float:
-			val = Bool(string(obj1.(String)) == strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64) 		
+			val = Bool(string(obj1.(String)) == strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 		
 		default:
 			val = Bool(false)
 		}

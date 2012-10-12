@@ -67,6 +67,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#MethodCalls">Method Calls</a><br/>    
   <a href="#MethodDeclarations">Method Declarations</a><br/> 
   <a href="#BuiltinMethods">Built-in Methods</a><br/> 
+  <a href="#DataPersistence">Data Persistence</a><br/>   
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -1010,50 +1011,132 @@ call and unary function call, allowing for object-oriented data encapsulation (d
 
 
 	<a name="MethodDeclarations"><h3>Method Declarations</h3></a>		
-    <code>
-    a  b  c  a1  source240v  amount lineWidth  stateOfPlay  line1Length  bitWidth32  
-    </code><br/><br/>
-    Usage in context:<br/><br/>
-    <code>
-    a = 2<br/>
-    lineWidth = a
-    </code><br/>
+    <code><pre>
+foo a Int b Int > Int
+"""
+ Adds a to b.
+ The => is the return statement. It returns the value(s) of the expression(s) after it.
+"""
+   => add a b
+
+
+divide a Int b Int > dividend Float err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ If one return argument is named, all must be named for consistency.
+ <span class="future">If return arguments have been named, the return statement can
+ occur without any expressions after it, and will cause execution to
+ return from the function immediately. return arguments should already
+ have been assigned to by this time, or they default to the zero/nil value 
+ of their type.</span>
+"""
+   if eq b 0
+      err = Error "Divide by zero!"   <span class="future">=>  // Three spaces precede in-line return statement</span>
+   dividend = div a b
+
+
+foo a Vehicle b Vehicle 
+> Bool er.Error
+"""
+ This is a declaration of a method's interface, with no implementation.
+ <span class="future">This is allowed, and results in a requirement that there exist 
+ a method with an implementation to handle each possible subtype combination of the 
+ input argument types.</span>
+ This example was put here to show the variation in layout of the return values specification.
+"""
+
+
+divide a Int b Int 
+> 
+   dividend Float 
+   err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ Again, just an interface declaration with no method body statements, put here
+ just to show the variation in layout of the return values specification.
+"""
+
+
+divide 
+   a Int 
+   b Int 
+> 
+   dividend Float 
+   err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ This example shows vertically indented input argument specifications.
+"""
+   err = zeroCheck b
+   if err
+      => nil
+         err
+   dividend = div a b
+   => dividend
+      nil
+
+stamp p Passport
+"""
+ Stamps the passport with an entry stamp.
+ This example shows the declaration of
+ a method that does not return any values.
+"""
+   position p
+   open p
+   bangStamp p
+
+doTheHokeyPokey
+"""
+ This method just does something. It has no input arguments or results returned. 
+ Because it takes no arguments, it requires
+ an implementation because being abstract does not make sense for it.
+"""
+   putInFoot "Left"
+   putInFoot "Right"   
+
+
+doTheHokeyPokey firstFoot String
+"""
+ This method just does something. It has 1 argument and no outputs. 
+"""
+   if eq firstFoot "left"
+      secondFoot = "right"
+   else
+      secondFoot = "left"
+   putInFoot firstFoot
+   putInFoot secondFoot
+    </pre></code><br/>
     <p>
     	<b>Syntax:</b>
     </p>
     <p>
-Variable names are camel-case latin-1 alphanumeric beginning with a lower case letter.
-Digits count as lower case letters in the camel-case rule, except are not allowed as the first character of the name as
-a whole, nor as the first character of any lower case word after an upper case letter. So theWord2 is allowed but theW2 is not.
-The name as a whole cannot end with an upper case letter. Multiple upper case letters together are not permitted.
-Note that underscores are not permitted (since they are an alternative to camel-case word separation.)    	
-    </p>
-<p>
-Some names of this form may not be used as variable names:
-<ul>
-<li>the relish language's reserved words are excluded,</li>
-<li>the name of any method visible in the scope,</li>
-
-<li> the last name-part of any unaliased imported package,</li> 
-<li> the package alias of any aliased imported package,</li> 
-<li><span class="future">a name of a parameter of the containing method is already implicitly defined as a strictly typed variable in the method so may not be re-assigned to a value-type incompatible with the parameter's type specification.</span></li>	
-</ul>
-</p>
-
-        <p>
-    	<b>Semantics:</b>
+Method declarations start with the method name, which must occur at the top-level scope in a source code file. 
+That is, the method name must be at column 1 of the file.	
     </p>
     <p>
-	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
-	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
+The method name can be followed by zero or more input parameter declarations. Each input parameter declaration is a variable name, followed by a type specification. Input parameter declarations, if the type specifications are simple, can be laid out in-line on the same line as the method name, separated from each other by a space. Or they can be laid out one below the other, starting on the line below the method name, indented one level. This form allows for complex multi-line parameter type specifications.
     </p>
-	
-
-	<span class="future">The type of a variable is not stated explicitly when defining the variable. If you assign to a variable in multiple places inside a method body, the known types of the values assigned in the different places must form a type hierarchy. That is, if values of different known types are
-	assigned in different assignment-occurrences, then at least one of those known types must be a common supertype of all the others. The type of the variable is then taken to be that common supertype of the known types of values assigned to it in the various assignment occurrences in the method. 
-    </span>
-
-
+    <p>
+      Following the input parameter declarations if any, there may occur the return value(s) declaration. This begins with a &gt;. If the return value(s) declaration is to be on the same line as the method name, the &gt; must follow the last input parameters declaration (or method name if no input parameters) by one space. In this case the return value declaration(s) must follow the &gt; after a space, and be single-space-separated from each other. Each return value declaration consists of an optional variable name then (space separated) a type specification.
+    </p>
+    <p>
+      The return values specification may also occur on the line following the method name or the end of the input parameters, whichever is later.
+      In this case, the &gt; must occur in column 1 of the file. The return value declaration(s) may then follow in-line on that line as described above,
+      or may appear one below the other, starting on the line following the &gt; and indented one level from the &gt;.
+    </p>
+    <p>
+      On the next line below the lowest of the method name, the input parameter declaration(s), or the return value declaration(s), there must appear a method header comment. This comment begins with """ at column 1 of the source code file, and continues until a terminating """ also at column 1 of the
+      file. The text content of the comment must be indented by 1 space from column 1 of the file. i.e. The first comment line must begin at column 2, and subsequent text lines of the comment must begin at column 2 or greater.
+    </p>
+    <p>
+      On the line following the method header comment, the method body statements must begin, if present. A method can be declared as just its commented header i.e. its interface declaration. Implementing methods must exist elsewhere to cover all subtype combinations of the declared input parameter types.
+    </p>  
+    <p>
+      Method body statements must be laid out, one below the other, indented one level (3 spaces) from the column position of the method name and header comment.
+    </p>
+    <p>
+       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 method body statements at the top level of the method body. Nested constructs (ifs, loops) can each also contain up to 9 statements in each clause.</span>
+    </p>
 
 
 		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
@@ -1182,8 +1265,125 @@ contains s String substr String > Bool
 	
 </pre></code>	
 <p>
-	Three more built-in methods, dub, summon, and exists, are explained fully in the next section, which explains relish's support for data persistence.
+	Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, which explains relish's support for data persistence.
 </p>
+
+
+
+<a name="DataPersistence"><h3>Data Persistence</h3></a>   
+    <code><pre>
+car1 = Car  // Construct a Car object and assign it to variable car1
+car1.odometerReading = 182430
+engine1 = Engine
+engine1.horsePower = 120
+belt = TimingBelt
+car1.engine = engine1 
+
+dub car1 "FEC 092"  // Make the car object persistent in the local database, 
+                    // using the license plate# as the official, canonical name
+                    // of the persistent object. Directly and indirectly associated 
+                    // objects are automatically made persistent too. 
+
+belt.dateOfManufacture = "2012/07/24"  // This TimingBelt is not yet persistent.
+engine1.timingBelt = belt  // But now it is!
+car1.odometerReading = 194729
+    </pre></code><br/>
+    <p>
+      Now, in a separate run of a relish program that uses the same local database...
+    </p>
+    <code><pre>
+myCar = <span class="future">Car:</span> summon "FEC 092"
+print myCar.engine.timingBelt.dateOfManufacture  // prints 2012/07/24
+print myCar.engine.horsePower  // prints 120
+print myCar.odometerReading  // prints 194729
+person = Person
+person.firstName = "Eric"
+myCar.owner = person
+    </pre></code><br/>
+    <p>
+      Now, in yet another run of a relish program that uses the same local database...
+    </p>
+<code><pre>
+if exists "FEC 092"
+   myCar = <span class="future">Car:</span> summon "FEC 092"
+else
+   myCar = Car
+   dub myCar "FEC 092"
+
+myCar.maxSpeed = 130    
+
+joesCar = Car
+dub joesCar "552 LVH"
+joesCar.odometerReading = 253016
+joesCar.maxSpeed = 170   
+person = Person
+person.firstName = "Joe"
+joesCar.owner = person
+
+bobsCar = Car
+dub bobsCar "NKL 288"
+bobsCar.odometerReading = 78210
+bobsCar.maxSpeed = 105   
+person = Person
+person.firstName = "Bob"
+bobsCar.owner = person
+
+alicesCar = Car
+dub alicesCar "089 SFR"
+alicesCar.odometerReading = 43978
+alicesCar.maxSpeed = 140   
+person = Person
+person.firstName = "Alice"
+alicesCar.owner = person
+</pre></code>
+<p>
+  Finally, in yet another run of a relish program using that database, lets
+  fetch from the database the fast cars that are not quite yet on their deathbed.</p>
+<code><pre>
+viableFastCars = []Car "odometerReading < 200000 and maxSpeed > 110 order by maxSpeed desc"
+for car in viableFastCars
+   print car.owner.firstName
+
+// prints
+// Alice
+// Eric 
+
+</pre></code>
+<h4>Overview of relish's data persistence mechanism</h4>
+<p>
+  relish's local data persistence mechanism currently uses a sqlite database to store data objects.
+  Transaction control (deferral of commit) is not yet implemented, but is in the language roadmap.
+  relish's local persistence mechanism MAY be extended to work with other rdbms systems, and these
+  would most likely be done in the order postgresql, mysql, ...?
+</p>
+<p>
+  relish's persistence mechanism is transparent (also known as orthogonal). This means that once
+  you have dubbed a data object with an official (canonical) name, to make it persistent, the object's state
+  is automatically saved to the database at that point, and is automatically re-saved whenever its
+  state changes. Other objects reachable in the object's attribute or relation network are also
+  infected with persistence by their reachability from the newly persistent object, and are similarly
+  automatically saved to the database when their state is updated. 
+</p>
+<p>
+There are three ways to retrieve data objects from the database into memory in a new instance
+of a relish program. 
+<ul>
+<li>The first is to summon the object by its official canonical name.</li>
+<li> The second is to follow the chain of reference from a retrieved persisted object, to find associated objects. You just use ordinary object attribute accessing notation in the programming language to do this (e.g. car.owner) and the associated object is automatically fetched into memory from the database.</li>
+<li>The third retrieval method is to construct a list of the type of object you want e.g. cars = []Car but to include a String argument after the []Car list constructor. The argument String should contain SQL selection criteria (i.e. the tests that occur in a WHERE clause) and can also have a SQL order by clause.
+  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause. IMPORTANT NOTE: The current implementation of SELECT-style object retrieval is not polymorphic. You must currently construct a list of a most-specific data type which has no subtypes. This restriction should disappear. 
+  </li>
+</ul>
+</p>
+<p>
+  Currently, only a structured object can be dubbed with an official name to make it persistent.
+  However, primitive values and collections which are reachable by reference from that object 
+  are also persisted along with it.
+</p>
+
+
+
+
 
 
 
