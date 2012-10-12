@@ -68,6 +68,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#MethodDeclarations">Method Declarations</a><br/> 
   <a href="#BuiltinMethods">Built-in Methods</a><br/> 
   <a href="#DataPersistence">Data Persistence</a><br/>   
+  <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>    
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -1135,9 +1136,56 @@ The method name can be followed by zero or more input parameter declarations. Ea
       Method body statements must be laid out, one below the other, indented one level (3 spaces) from the column position of the method name and header comment.
     </p>
     <p>
-       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 method body statements at the top level of the method body. Nested constructs (ifs, loops) can each also contain up to 9 statements in each clause.</span>
+       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence. Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
     </p>
 
+<h4>"Return" statements</h4>
+<p>
+A return statement <b>=&gt;</b> causes a return from the currently executing method.
+It may also specify the value(s) to return from the method.
+    <code><pre>
+   => "SUCCESS"
+
+   => times 2 b  // returns the value of the times method-call.
+  </pre></code>
+If a method specified two return arguments, and did not name the return arguments (they were specified
+with a type only), then the following form of return statement must be used:
+    <code><pre>
+   => a nil  // return two values, as long as a is a variable and not the name of a method that takes an argument.
+
+   => a
+      nil 
+
+ <span class="future">//... or the following more vertically separated form, which looks better after a nested statement:
+
+   doSomething
+      someArg
+      someOtherArg
+   =>                 
+      attr1
+      98.6</span>
+  </pre></code>
+A method which specifies names for its return arguments cannot use the form of return statement that has arguments.
+Instead, if a return value is to be set, the return argument must be assigned to within the 
+subroutine body. Named return values which are not assigned to default to the nil/zero-value of the data type. 
+Note that this zero-value defaulting ONLY works for named return args.
+
+  <span class="future">If you want to specify an early return from a subroutine with named return args or no return args, 
+you should use the =&gt; statement with no arguments. In this case only, the =&gt; statement may
+appear on the same line as the end of the previous statement, separated from it by 3 spaces.</span>
+    <code><pre>
+<span class="future">
+   if weNeedToGetOutOfThisMethod
+      doSomeFinalCleanup arg   =>  // ...and exit
+   moreMethodStuff here
+
+   // or...
+
+   if weReallyNeedToGetOutOfThisMethod
+      doSomeFinalCleanup arg  
+      =>  // ...and exit
+   moreMethodStuff here</span> 
+ </pre></code>
 
 		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
 		<p>
@@ -1351,7 +1399,7 @@ for car in viableFastCars
 </pre></code>
 <h4>Overview of relish's data persistence mechanism</h4>
 <p>
-  relish's local data persistence mechanism currently uses a sqlite database to store data objects.
+  relish's local data persistence mechanism currently uses a sqlite3 database to store data objects.
   Transaction control (deferral of commit) is not yet implemented, but is in the language roadmap.
   relish's local persistence mechanism MAY be extended to work with other rdbms systems, and these
   would most likely be done in the order postgresql, mysql, ...?
@@ -1371,7 +1419,7 @@ of a relish program.
 <li>The first is to summon the object by its official canonical name.</li>
 <li> The second is to follow the chain of reference from a retrieved persisted object, to find associated objects. You just use ordinary object attribute accessing notation in the programming language to do this (e.g. car.owner) and the associated object is automatically fetched into memory from the database.</li>
 <li>The third retrieval method is to construct a list of the type of object you want e.g. cars = []Car but to include a String argument after the []Car list constructor. The argument String should contain SQL selection criteria (i.e. the tests that occur in a WHERE clause) and can also have a SQL order by clause.
-  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause. IMPORTANT NOTE: The current implementation of SELECT-style object retrieval is not polymorphic. You must currently construct a list of a most-specific data type which has no subtypes. This restriction should disappear. 
+  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><em>IMPORTANT NOTE: The current implementation of SELECT-style object retrieval is not polymorphic. You must currently construct a list of a most-specific data type which has no subtypes. This restriction should disappear.</em> 
   </li>
 </ul>
 </p>
@@ -1380,9 +1428,67 @@ of a relish program.
   However, primitive values and collections which are reachable by reference from that object 
   are also persisted along with it.
 </p>
+<h4>Data Persistence Implementation Details</h4>
+<p>
+Under the hood, relish's persistence mechanism stores data objects using multiple-table inheritance-mapping. Each object is represented by a row in the RObject table, and also by a row in perhaps several other tables; Each datatype declared in a relish program has a corresponding database table. An object occurs as a row in each type-table that corresponds to a data type in the object's type lattice.
+The object's RObject table row holds the object's full universally unique id, the object's data type, and some status flags. The object's row in each type table holds the the object's id, and the values of whichever primitive-value attributes of the object are defined in that type.
+</p>
+<p>
+  A query to fetch an object's state therefore is a join query on the id of the object, across the RObject table and the type tables applicable to the object.
+</p>
+<p>
+  A data-type attribute which refers to another structured object is represented in the database by an association table (also known as a join table).
+  The association table contains rows with the id of the first object and the id of the attribute-value object.
+  Association tables are also used to represent multi-valued attributes (collections) and to represent relish's first-class relations between data types.
+</p>
+<p>
+  You can view a relish sqlite3 database using a properly functioning sqlite browser/manager tool, or with the sqlite3 command-line interface.
+  Note that the popular free "Sqlite Database Browser" and "Sqliteman" tools are buggy with respect to complex database table names so do not work with relish databases. MesaSqlite for Mac (shareware) works well as does the Firefox Sqlite Browser Plug-in. It is inadvisable to modify a relish sqlite database with a database tool, and completely insane to do so while a relish program is running on it.
+</p>
 
 
 
+
+
+
+  <a name="DataTypeDeclarations"><h3>Data Type Declarations</h3></a>   
+
+
+<h4>Declarations of data types that inherit from other Data Types</h4>
+<code><pre>
+
+Lollipop &lt;: Candy  
+"""
+ A lollipop is a subtype of candy which has a stick
+ and a ball of coloured sugar.
+ The lollipop inherits attributes and relations from its supertype, Candy, 
+ such as price and a relationship with a CandyStore.
+"""
+   stick PaperCylinder
+
+   ball SugaryMass
+
+
+Polygon &lt;: Shape2D ClosedCurve  // Only if all types are simple single word (non-parameterized)
+"""
+ A polygon is a closed curve - a sequence of line-segments joined end-to-end to form a ring.
+"""
+   ...rest of type declaration omitted in example...
+
+
+Polygon 
+&lt;:
+   Shape2D
+   ClosedCurve
+"""
+ A polygon is a closed curve - a sequence of line-segments joined end-to-end to form a ring.
+"""
+   ...rest of type declaration omitted in example...
+</pre></code><br/>
+
+<p>
+  NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
+</p>
 
 
 
