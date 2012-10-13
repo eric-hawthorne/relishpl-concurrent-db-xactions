@@ -61,6 +61,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#TypeParameters">Type Parameters</a><br/>	
 	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>			
   <a href="#LiteralValues">Literal Values</a><br/>   	
+  <a href="#ListsSetsMaps">Lists, Sets, and Maps</a><br/>  
   <a href="#AssignmentStatements">Assignment Statements</a><br/>    
   <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
   <a href="#ControlStatements">Control Statements</a><br/>   
@@ -493,7 +494,242 @@ sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can
 grudgingly unicode behaviours of Go strings, but relish Strings are stuck with them for now.
 </p>
 
+<a name="ListsSetsMaps"><h3>Lists, Sets, and Maps</h3></a>		
 
+<h4>List literals</h4>
+
+<code><pre>
+[]Car  // An empty list whose elements must be a Car or subtype of Car
+
+["First" "Second" "Third"]String
+
+[1 2 45 6]  // A list's element-type constraint can be inferred if the statically known types of elements
+            // in the literal are all the same or related by a single common closest supertype.. 
+
+[
+   "First" 
+   second
+   "Third"
+]String
+
+[
+   1
+   2
+   45
+   6
+]	
+</pre></code><br/>
+Usage in context:
+<code><pre>
+aList = ["Mercury" "Venus"]
+
+anotherList = [
+                 "Mercury"
+                 "Venus"
+                 "Earth"
+                 "Mars"
+              ]
+
+home = Planet "Earth"  // Construct a Planet
+solarSystem = [
+                 Planet "Mercury" 
+                 Planet "Venus" 
+                 home 
+                 Planet "Mars" 
+                 Star "Sol"
+              ]SolarSystemObject
+
+
+aFinalList = 
+   [
+      "What's in it"
+      "For me?"
+      "I don't know!"
+   ]	
+</pre></code><br/>
+
+
+<h4>List element selector expression</h4>
+
+<code><pre>
+b = aList[4]
+
+a = aList[
+            expr
+               like 
+               this
+         ].b
+
+aList[4] = "do it"
+
+aList[
+        expr
+           like 
+           this
+     ] = s
+</pre></code><br/>
+
+<h4>Operators to Append and Remove List Elements</h4>
+
+<code><pre>
+aList += "Mars"
+
+aList -= "Venus"
+</pre></code><br/>
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+List literals are enclosed in square brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of list elements.
+</p>
+<p>
+If expressed on one line, the brackets must immediately surround the list element expressions, with no spaces just inside the brackets.
+If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
+</p>
+<p>
+If expressed on multiple lines, the closing square bracket must fall directly below the opening square bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening square bracket.
+	</p>
+	<p>
+List element selector expressions are also enclosed in square brackets immediately following the variable/attribute name that refers to the list. They must follow the same horizontal or vertical layout rules as a list construction literal, as described just above.
+	</p>
+	<p>
+		<span class="future">A List element selector expression can be used as an l-value (an assignable storage location) provided the list is mutable.</span>
+	</p>
+<p>
+	<b>Semantics:</b>
+</p>
+<p>
+Lists are ordered, indexable, typed collections of elements. By default they are mutable, and they grow as needed to accommodate appended elements. They are indexed by an integer index beginning at index 0 for the first element of the list. An attempt to use an index out of range will cause a panic <span class="future">(should be a runtime error)</span>.
+</p>
+<p>
+	<span class="future">The += operator appends the value of its right-side expression on as the last element of the list. The -= operator removes its right-side value from the list if found in the list, otherwise it does nothing and does not complain.</span>
+</p>	
+<p>
+<span class="future">Lists can be specified when constructed to maintain their elements in a sorted order according to a) the natural order of their elements (which depends on the element type), or b) the natural order of a specified attribute of elements, or c) the natural order of a supplied unary function of elements, or d) an order-comparison method that is supplied.</span>
+</p>
+
+
+<h4><span class="future">Set literals</span></h4>
+<code><pre>
+<span class="future">aSet = {"Mercury" "Venus"}
+
+anotherSet = {
+                "Mercury"
+                "Venus"
+                "Earth"
+                "Mars"
+             }
+
+aFinalSet = 
+   {
+      19
+      17
+      36
+   }</span>
+</pre></code>
+
+
+<p>
+	<b><span class="future">Syntax:</span></b>
+</p>
+<p>
+<span class="future">Set literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of set elements.</span>
+</p>
+<p>
+<span class="future">If expressed on one line, the brackets must immediately surround the set element expressions, with no spaces just inside the brackets.
+If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.</span>
+</p>
+<p>
+<span class="future">If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.</span>
+	</p>
+	<p>
+<span class="future">Sorted-set element selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the sorted set. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.</span>
+	</p>
+	<p>
+		<span class="future">A sorted-set element selector expression cannot be used as an l-value (an assignable storage location).</span>
+	</p>
+<p>
+	<b><span class="future">Semantics:</span></b>
+</p>
+<p>
+	<span class="future">Sets are typed collections of elements, which can only have each object/value once in the collection. By default they are mutable, and they grow as needed to accommodate added elements. There are sorted sets, where the sorting criterion is specified at construction of the Set, in the same manner as for sorted lists. Sorted sets are indexed by an integer index beginning at index 0 for the first element of the list. An attempt to use an index out of range will cause a panic (should be a runtime error)</span>.
+</p>
+<p>
+	<span class="future">The += operator adds the value of its right-side expression to the set if it is not already there, and does not complain if it is. The -= operator removes its right-side value from the set if found in the set, otherwise it does nothing and does not complain.</span>
+</p>
+
+
+<h4><span class="future">Map literals</span></h4>
+<code><pre>
+<span class="future">aMap = {"Mercury"=>1 "Venus"=>2 "Earth"=>3}
+
+anotherMap = {
+                "Mercury" => 1
+                "Venus"   => 2
+                "Earth"   => 3
+                "Mars"    => 4
+             }
+
+aFinalMap = 
+   {
+      "Mercury" => 1
+      "Venus"   => 2
+      "Earth"   => 3
+      "Mars"    => 4
+   }</span>
+</pre></code>
+
+
+<h4><span class="future">Map element selector expression</span></h4>
+<code><pre>
+<span class="future">a = aMap["Earth"] 
+
+a = aMap[
+           expr
+              like 
+              this
+        ].b
+
+aMap["Earth"] = 3
+
+aMap[
+       expr
+          like 
+          this
+    ] = s</span>
+</pre></code><br/>
+
+
+<p>
+	<b><span class="future">Syntax:</span></b>
+</p>
+<p>
+<span class="future">Map literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of keys and values.</span>
+</p>
+<p>
+<span class="future">Map literals are comprised of brackets surrounding a sequence of mapped-pairs. Each mapped pair is a key expression followed by "=>" followed by a value expression.</span>	
+</p>
+<p>
+<span class="future">If expressed on one line, the brackets must immediately surround the mapped-pair expressions, with no spaces just inside the brackets.
+If on one line, the mapped-pair expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.</span>
+</p>
+<p>
+<span class="future">If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The mapped-pairs must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.</span>
+	</p>
+	<p>
+<span class="future">Map value selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the map. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.</span>
+	</p>
+	<p>
+		<span class="future">A map value selector expression can be used as an l-value (an assignable storage location), provided the map is mutable.</span>
+	</p>
+<p>
+	<b><span class="future">Semantics:</span></b>
+</p>
+<p>
+	<span class="future">Maps are typed sets of mapped-pairs. By default they are mutable, and they grow as needed to accommodate added key-value pairs. There are sorted maps, where the sorting criterion is specified at construction of the Map, in the same manner as for sorted lists. Is it key sorting or value sorting????? Sorted maps are indexed by an integer index beginning at index 0 for the first element of the map. An attempt to use an index out of range will cause a panic (should be a runtime error)</span>.
+</p>
+
+<br/>
 	<a name="AssignmentStatements"><h3>Assignment Statements</h3></a>		
     <code><pre>
 a = 9
@@ -1136,7 +1372,7 @@ The method name can be followed by zero or more input parameter declarations. Ea
       Method body statements must be laid out, one below the other, indented one level (3 spaces) from the column position of the method name and header comment.
     </p>
     <p>
-       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence. Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
+       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence (excluding assignment statements). Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements  (excluding assignments) in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
     </p>
 
 <h4>"Return" statements</h4>
@@ -1453,8 +1689,31 @@ The object's RObject table row holds the object's full universally unique id, th
 
   <a name="DataTypeDeclarations"><h3>Data Type Declarations</h3></a>   
 
+<h4>Data types that have attributes</h4>
+<code><pre>
+Car 
+"""
+ A vehicle that carries a small number of passengers and travels on roads.
+"""
+   make Company  
 
-<h4>Declarations of data types that inherit from other Data Types</h4>
+   model String  
+
+   sizeClass VehicleClass
+
+   year Int
+
+   engine Engine
+
+   maxSpeed Int
+
+   vin String
+  
+</pre></code><br/>
+
+
+
+<h4>Data types that inherit attributes and behaviour from other Data Types</h4>
 <code><pre>
 
 Lollipop &lt;: Candy  
@@ -1485,6 +1744,72 @@ Polygon
 """
    ...rest of type declaration omitted in example...
 </pre></code><br/>
+
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+A Data Type Declaration begins with the name of the data type being defined. This is followed by an optional list of supertypes (prefixed with subtype operator <b>&lt;:</b>), and then a mandatory data type header comment. 
+Both the data type name and the header comment must begin at column 1 of the source code file. The combination of the type name, the supertypes, and the header comment are collectively called the type header. A type header MAY be followed by a list of attribute declarations. If so, attribute declarations must be placed one directly below the other, each indented one level (3 spaces) in from beginning of the type name.	
+    </p>
+<p>
+	Each attribute declaration consists of an attribute name followed by a data type specification.
+	</p>
+	<p>The attribute name's syntax must conform to variable name syntax with the additional stipulation that an attribute name may not be one of the SQL reserved words: <b><code>and or not null in order by desc asc select from where join like</code></b> nor one of the standard object persistence implementation attribute names: <b><code>id id2 flags typeName</code></b>
+	</p>
+	<p>
+		The simplest form of data type specification is simply a data type name, package-qualified data type name, or a list or set or map type specification. <span class="future">More complex forms will exist in later versions of relish that will specify parameterized types.</span>
+		</p>
+
+	    <p>
+	    	<b>Semantics:</b>
+	    </p>
+	    <p>
+	A data type in relish has five key characteristics; 
+	<ol>
+		<li>its position in the multiple-inheritance type-specialization lattice.</li> 	
+		<li>Its behaviours, defined by the set of methods which accept an argument of that type or a supertype
+		<li>Its relations with other data types, as defined in relation declarations in the program. 	
+		<li>Its structure, comprising a list of attributes.</li>
+		<li><span class="future">Its type-invariant predicate</span> 
+			</ol>
+	    </p>
+
+<dl>
+	<dt>A data type's position in the type-specialization lattice</dt>
+	<dd>The meaning of an object/value in relish is largely determined by its data type. And a data type inherits all of the characteristics specified in all of its direct and indirect supertypes, as well as possibly specifying its own additional characteristics. A datatype inherits compatibility with all behaviour (methods) defined for all of its supertypes. A datatype inherits all of the attributes defined for all of its supertypes combined. A datatype inherits expected participation in whatever relations with other objects are specified for any of its supertypes. <span class="future">And a datatype instance, in order to be valid, must satisfy the type-invariant predicate of the datatype as well as the type-invariant predicate of all of the supertypes.</span><br/>	
+The relationship between a data type and its supertypes is an is-a relationship. An object which is an instance of a data type is also implicitly an instance of all of the supertypes of the data type.</dd>
+
+<dt>A data type's defined behaviours</dt>
+	<dd>The behaviours (behavioral capabilities) of an object/value of a data type in relish are specified by the set of all methods declared to accept that data type, or any of its supertypes, as a parameter of the method in any required positional parameter position. Note that some of these behaviours (methods) are defined in the package that defines the data type or in (directly or indirectly) imported packages of the type-defining package. These could be considered to be the defining behaviours of the type, since all instances (objects/values) of the data type in all program contexts are capable of these behaviours. Other methods may also be defined to accept a parameter of the type or a supertype, but those methods are defined in a package on which the type's package is not dependent. Those methods must be thought of as incidental behaviours of the type, as they are only defined in certain contexts, and cannot be considered essential to the identity or nature of an instance of the data type. Methods that are declared to accept a required positional parameter whose type must be a subtype of the data type (but do not declare another required positional parameter of the data type in question or a supertype) are NOT part of the behaviour of the data type. They are part of the behaviour of the particular subtype.</dd>
+<dt>A data type's relations with other data types</dt>
+	<dd>
+		As will be detailed in a subsequent section of this reference document, relish provides language constructs for specifying required or discretionary relationships that objects of one data type have with objects of another data type. That is, relish allows the expression of an entity-relationship-diagram (ERD) in programming language statements. The declared relations with other data types form an important part of the meaning of a data type and its objects/values. An object/value of a datatype can be expected to be participating in the kinds of relationships (associations) specified for that data type as well as in those kinds of relationships specified for any of the supertypes of the datatype. The relish language provides convenient syntactic support (and persistence management support) for the creation, maintenance, and navigation of relationship (i.e. association) networks of objects. 
+	</dd>
+<dt>A data type's structure of attributes</dt> 
+	<dd>Some  but not all datatypes are defined to have a structure, comprising a list of attributes. Each attribute is either a primitive-type value (such as a Numeric, String, or Bool), a collection of primitive-type values, a reference to a structured object, or a collection of references to structured objects. The attributes can be viewed as the components/parts of the structured object being defined by the data type.<br/>
+<span class="future">Attributes which refer to a structured object can be defined to be optional or required. An optional attribute is allowed to be a nil reference. A required attribute (the default) is not.</span><br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+<dt><span class="future">A data type's type-invariant predicate</span></dt>
+	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd>
+<dt><span class="future">The "valid" test</span></dt>
+	<dd><span class="future">
+		relish has a built-in method called "valid" which accepts any object/value as its argument, and returns a boolean status and a String error message. The "valid" function returns true, and an empty error String if the object/value it is passed is currently a valid, fully constructed, and fully-connected instance of its data type. If the object is not currently valid, the valid function returns false and an error message stipulating the general type of invalidity. The valid method checks validity of the object with respect to its datatype and all supertypes of that type. The valid method invokes the type-invariant predicate of all types in the object's type lattice which define an <b>invariant</b> method.
+		<br/>
+		<br/>
+		When an object is invalid, the valid method will return false and one of the following error messages: 
+		<br/>
+		<br/>
+		"MISSING REQUIRED RELATION - relationName - TYPE full/type/Name"<br/>
+		"RELATION CARDINALITY VIOLATION - relationName - TYPE full/type/Name "<br/>
+		"MISSING REQUIRED ATTRIBUTE - attributeName - TYPE full/type/Name"<br/>
+		"TYPE INVARIANT CONDITION VIOLATED - TYPE full/type/Name"<br/>
+	</span></dd>
+	
+</dl>
+
+
+
+
 
 <p>
   NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
