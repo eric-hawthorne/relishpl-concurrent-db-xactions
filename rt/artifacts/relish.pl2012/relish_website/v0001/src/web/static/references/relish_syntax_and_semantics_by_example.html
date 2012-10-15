@@ -69,7 +69,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#MethodDeclarations">Method Declarations</a><br/> 
   <a href="#BuiltinMethods">Built-in Methods</a><br/> 
   <a href="#DataPersistence">Data Persistence</a><br/>   
-  <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>    
+  <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>  
+  <a href="#Attributes">Attributes</a><br/>    
+  <a href="#ObjectConstructors">Object Constructors</a><br/>  
+  <a href="#Relations">Relations</a><br/> 
+  <a href="#Concurrency">Concurrency</a><br/> 
+  <a href="#Packages">Packages</a><br/> 
+  <a href="#SoftwareArtifacts">Software Artifacts</a><br/> 
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -84,7 +90,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 				Because of these strict syntax and code layout rules, it is strongly suggested that you begin creating relish programs, when you are first learning the language, by copy-pasting examples of language constructs from tutorials, example programs, code recipes, or from this manual. 
 				The examples will be formatted and laid out correctly, and you can modify the code to your needs from that starting point, and learn the conventions as you go.
 			</p>
-
+<br/>
 	<a name="Variables"><h3>Variables</h3></a>		
     <code>
     a  b  c  a1  source240v  amount lineWidth  stateOfPlay  line1Length  bitWidth32  
@@ -123,16 +129,12 @@ Some names of this form may not be used as variable names:
 	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
 	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
     </p>
-	
-
+<p>
 	<span class="future">The type of a variable is not stated explicitly when defining the variable. If you assign to a variable in multiple places inside a method body, the known types of the values assigned in the different places must form a type hierarchy. That is, if values of different known types are
 	assigned in different assignment-occurrences, then at least one of those known types must be a common supertype of all the others. The type of the variable is then taken to be that common supertype of the known types of values assigned to it in the various assignment occurrences in the method. 
     </span>
-
-
-
-
-
+</p>
+<br/>
 	<a name="ReservedWords"><h3>Reserved Words</h3></a>		
     <code>
     if elif else while for in as break continue of go func true false nil
@@ -143,8 +145,7 @@ Some names of this form may not be used as variable names:
     <p>
 The reserved words may not be used as variable names, method names, or package name parts or aliases. They are reserved for use to define control constructs and literal values in the language.
 </p>
-
-
+<br/>
 	<a name="Constants"><h3>Constants</h3></a>		
     <code>
     PI  E  MAX_WIDTH  LIMIT1  DIM1_SIZE 
@@ -176,9 +177,7 @@ Note: All single latin-1 capital letters except T denote constants. T,T1,... den
     	<span class="future">There must be a restriction on the kind of expressions that can be assigned to constants, due to timing of the execution of the constant assignment statements, but what is that restriction?
     		When in the code load and generation and initialization sequence does the constant expression get evaluated??? Does this need to be changed to move the execution until all the methods etc are properly loaded into the runtime?</span>
 	</p>
-
-
-
+<br/>
 	<a name="DataTypes"><h3>Data Types</h3></a>		
     <code>
     Int32  Float  String  ClosedCurve  BuggyWhipStorageRackClip    	
@@ -241,11 +240,7 @@ Note that underscores are not permitted (since they are an alternative to camel-
      		</p>
 		<p>A data type (or class) in relish can only be said to own 1) unary methods whose only input parameter is specified to be of that type, <span class="future">and also 2) special attribute-setter methods which set the values of attributes of a structured data object.</span>
 	</p>
-
-
-
-
-
+<br/>
 		<a name="TypeParameters"><h3><span class="future">Type Parameters</span></h3></a>		
 	    <code>
 	    <span class="future">T  T1  T2  T3  T4  T5  T6  T7  T8  T9</span>
@@ -262,9 +257,7 @@ Note that underscores are not permitted (since they are an alternative to camel-
 	only the names above are valid as type parameters in 
 	parameterized type declarations.</span> 	
 	    </p>
-	   
-
-
+<br/>
 			<a name="InbuiltDataTypes"><h3>Inbuilt Data Types</h3></a>	
 			
 			<p>In the following, Type1 &lt;: Type2 denotes that Type1 is a subtype that inherits behaviour from and extends the definition of the supertype Type2</p>	
@@ -316,7 +309,7 @@ Channel &lt;: InChannel OutChannel  A channel which can be read from and written
 
 
 
-
+<br/>
   <a name="LiteralValues"><h3>Literal Values</h3></a>    
 
 <h4>Integer literals</h4>
@@ -815,15 +808,7 @@ The right-side expressions may appear in several spatial configurations in the s
 </dl>
 
 
-
-
-
-
-
-
-
-
-
+<br/>
 	<a name="ConstantDeclarations"><h3>Constant Declarations</h3></a>	
 <!-- PI Float32 = 3.14159265357989 -->		
     <code><pre>
@@ -859,7 +844,7 @@ Constant names are exported from the package in which they occur <span class="fu
 </p>
 
 
-
+<br/>
 	<a name="ControlStatements"><h3>Control Statements</h3></a>	
 	
 	<h4>"if" conditional</h4>
@@ -1091,7 +1076,7 @@ IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are
    <span class="future">TBD</span> 
   </p>
 
-
+<br/>
   <a name="MethodCalls"><h3>Method Calls</h3></a>   
     <code><pre>
 <span class="subtle">1.</span> foo 19 "fast" body.arm[1].elbow.angle[2]
@@ -1241,12 +1226,7 @@ bar a.b.c.foo "frap" d.e.baz</span></pre></code>
 call and unary function call, allowing for object-oriented data encapsulation (data-hiding) without syntactic baggage.</span>
 </p>
 
-
-
-
-
-
-
+<br/>
 	<a name="MethodDeclarations"><h3>Method Declarations</h3></a>		
     <code><pre>
 foo a Int b Int > Int
@@ -1422,7 +1402,7 @@ appear on the same line as the end of the previous statement, separated from it 
       =>  // ...and exit
    moreMethodStuff here</span> 
  </pre></code>
-
+<br/>
 		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
 		<p>
 			relish currently comes with a small but growing number of standard built-in methods. These methods are available from within any package without having to import a package containing the methods. The general plan is that a small number of these methods, the most general purpose, will remain implicitly-imported, but that others will migrate into relish standard library packages, and will have to be imported and their names package-qualified to be used. The plan is to (eventually) lift many of Go's standard libraries into relish, using shallow wrapper methods.
@@ -1553,7 +1533,7 @@ contains s String substr String > Bool
 </p>
 
 
-
+<br/>
 <a name="DataPersistence"><h3>Data Persistence</h3></a>   
     <code><pre>
 car1 = Car  // Construct a Car object and assign it to variable car1
@@ -1683,10 +1663,7 @@ The object's RObject table row holds the object's full universally unique id, th
 </p>
 
 
-
-
-
-
+<br/>
   <a name="DataTypeDeclarations"><h3>Data Type Declarations</h3></a>   
 
 <h4>Data types that have attributes</h4>
@@ -1708,6 +1685,12 @@ Car
    maxSpeed Int
 
    vin String
+
+   wheels 3 4 Wheel  // A set of 3 or 4 Wheels
+
+   bucketSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 bucket seats
+
+   cupHolders {} CupHolder  // A set of an undetermined nuber of cup-holders
   
 </pre></code><br/>
 
@@ -1760,6 +1743,14 @@ Both the data type name and the header comment must begin at column 1 of the sou
 	<p>
 		The simplest form of data type specification is simply a data type name, package-qualified data type name, or a list or set or map type specification. <span class="future">More complex forms will exist in later versions of relish that will specify parameterized types.</span>
 		</p>
+<p>
+	  A multi-valued attribute may be declared by specifying:  
+	<ul>
+		<li>a cardinality specification ( e.g. <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated onjects/values,</li>
+		<li>a List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
+		<li>or both. If the List/Set specifier is omitted, it defaults to Set. If [] or {} is present but cardinality constraints are missing, cardinality can be zero or more.</li>
+   </ul>		
+</p>
 
 	    <p>
 	    	<b>Semantics:</b>
@@ -1815,10 +1806,358 @@ The relationship between a data type and its supertypes is an is-a relationship.
   NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
 </p>
 
+<br/>
+  <a name="Attributes"><h3>Attributes</h3></a>   
+
+<h4>Obtaining the value of an object attribute</h4>
+<code><pre>
+print car1.year
+
+print lenosGarage.wing[3].floor[2].parkingSpot[19].car.year
+
+inflateTire car1.wheels[0]
+
+for wheel in car1.wheels
+   inflateTire wheel
+</pre></code>
+
+<h4>Setting the value of an object attribute</h4>
+<code><pre>
+car1.vin = "V0E44R8139WT6214A"
+
+car1.engine = engine1
+
+lenosGarage.wing[3].floor[2].parkingSpot[19].car = car1
+
+car1.wheels[1] = wheel2
+</pre></code>
+
+<h4>Adding an element to a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels += wheel3
+</pre></code>
+
+<h4>Removing an element from a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels -= wheel1
+</pre></code>
 
 
+<br/>
+
+  <a name="ObjectConstructors"><h3>Object Constructors</h3></a>   
+
+<h4>Constructor Calls</h4>
+<code><pre>
+car1 = Car
+
+<span class="future">car2 = Car
+          make = Company 
+                    name = "General Motors" 
+          model = "Chevrolet Aveo"
+          sizeClass = VehicleClass 
+                         name = "Subcompact"
+          year = 2011</span>
+
+</pre></code>
+<h4><span class="future">Constructor Declarations</span></h4>
+<p>
+	relish implicitly defines the constructor methods that take no arguments, <span class="future">and also all constructor methods that accept only keyword arguments corresponding to (all or a subset of) the attributes of the data type and its supertypes.</span>
+	</p>
+	<p><span class="future">The implicitly defined constructors can be overridden by explicitly defining a method in the package in which the type is defined. Such a method must be named according to the pattern init&lt;TypeName&gt; e.g. initCar. If an init&lt;TypeName&gt; method's parameter signature matches the arguments which have been supplied to a &lt;TypeName&gt; constructor call, the init&lt;TypeName&gt; method is invoked automatically to initialize state, after the barebones object has been constructed.</span></p>
+<code><pre>
+
+<span class="future">initCar 
+   c Car 
+   make Company
+   model String
+"""
+ Initializes a Car object.
+"""
+   initVehicle c someArg
+   c.make = make
+   ...</span>
+</pre></code>
+<p>
+<span class="future">	init&lt;TypeName&gt; methods can also be defined that accept arguments other than keyword arguments that correspond to data type attributes. Whichever init... function best matches the arguments supplied in the call will be invoked.</span>
+</p>
+<p>
+<span class="future">	When a constructor call occurs, that is, a use of the type name in method-name position in a call statement, a search is made automatically for an init&lt;TypeName&gt; method whose second and subsequent parameter signature matches the constructor call arguments. If found, then first a raw, uninitialized newly allocated object of the type is constructed, and then the init... function is called passing the new object as first argument.</span>
+	</p>
+<p>
+<span class="future">An init&lt;TypeName&gt; method should explicitly call init... methods for direct supertypes of the type, if init... methods other than those that would be called by default are needed.</span>
+</p>
+<p>
+<span class="future">	An init&lt;TypeName&gt; method can also be called explicitly, in case re-initialization is desired for a pre-existing object, for example, in a scheme that re-uses objects rather than allocating new ones.</span>
+</p>
+
+<br/>
+  <a name="Relations"><h3><span class="future">Relations</span></h3></a>   
+<div style="padding-left: 3em">
+<img src="ERD_example.png">
+</div>
+<br/>
+<br/>
+<h4><span class="future">Relation declarations</span></h4>
+<code><pre>
+<span class="future">
+Cart 0 1 cart -- horses {&lt;age} 0 N Horse
+
+Student 1 500 enrollees -- courses 1 8 Course
 
 
+Cart 1 -- {&lt;age} N Horse         // 1 means 1 1, N means 1 N
+
+Student 500 enrollees -- 1 8 Course       // 500 means 500 500 - silly case
+
+
+Cart 1 -- {&lt;age} N Horse         // relation-end names omitted
+
+Student 1 500 enrollees -- [] 1 8 Course       // Use a List to collect the courses 
+
+Student 1 500 enrollees -- {&lt;name} 1 8 Course   // Use a Set that orders by Course.name
+
+Student 1 500 enrollees -- {&lt;} 1 8 name=>Course      
+"""
+ Use a Map of courses that you can access by Course.name. Also sorts by course.name.
+"""
+
+Student 1 500 enrollees -- {&lt;} 1 8 String=>Course
+"""
+ This one is a sorted Map, but you give a String key to each course as you add the
+ course into the relation. The map is ordered by the values of its keys when iterated over.
+"""
+	
+</span>
+</pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+	A relation declaration is meant to look like (the text version of) a single relation line joining two Entity types in an Entity-Relation-Diagram (ERD). The name at one end of a relation is the name of that relation from the perspective of the object at the <u>other</u> end. The cardinality constraint at one end of a relation is the number of those objects at that end that can be associated with each individual object at the <u>other</u> end.
+</p>
+<p>
+relation-end names can be omitted. In this case, the relation-end name defaults to the lower-case-initial-letter version of the name of the expected datatype at that end of the relation. If the cardinality specification specifies that there may be N more than 1 of the objects of that type associated with each object of the other type, then an "s" or an "es" is added to the defaulted relation-end name. For example, if the relation is Cart 0 1 -- 1 N Horse, then the relation-end names "cart" and "horses" are defined by default. The implicit attribute horse.cart becomes defined by default to access the cart from a horse, and the implicit attribute cart.horses becomes defined by default to access the horses associated with the cart. 
+</p>
+<p>
+A multi-valued relation-end defaults to being represented in memory by an (unordered, unsorted) Set collection type, if the collection type is not specified. A List collection may be specified instead by using [] at the N-cardinality end of the relation. Automatic sorting can be specified for an N-cardinality end of a relation, by specifying something like this horses {&gt;birthYear} Horse, which will return the 1 year olds followed by the 2 year olds etc. when iterated through. A List collection can also be specified to be sorted e.g. children [&lt;birthDate] Person. This allows access to parent.children[0], the eldest, parent.children[1] the next-oldest, etc. 
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A relation declaration in relish is used to define how objects of two data types relate to each other. Each relation declaration specifies a particular relation between two data types. That relation has two names; one name from the point of view of the object of one data type, and the other name the name of the relation from the point of view of the object of the other data type. A relation declaration specifies the type of the object expected to be at either end of the relationship. It also specifies how many objects of the second type an object of the first type is expected to be related to in this relationship, and vice versa. These are known as the cardinality constraints of the relation.
+</p>
+<p>
+A Horse follows its "cart" relation to find its associated Cart. A Cart follows its "horses" relation to find its associated Horse. These are inverse viewpoints on the same relation.
+</p>
+<p>The relation-end name for the B end of a relation becomes the A object's implicit attribute name for the relation, via which the B object can be accessed from the A object. And the relation-end name for the A end of a relation becomes the B object's implicit attribute name for accessing an A via the relation.
+</p>
+<p>
+A set of relation declarations in relish is equivalent to an Entity-Relation-Diagram (ERD); a model-description convention used in the field of data modelling. If you are unfamiliar with ERDs and data models, it is suggested that you look for an explanation and examples with Google/Wikipedia. The set of data types (the Entity types) and relations between data types are typically used as a data model of a domain in the world. <b>Aside:</b> However, if the part/aspects of the world represented by some relish data types and relations is thought of as the "problem domain", other relish data types and relations can also be used to model the "solution domain"; that is, to model the abstract processes and abstract objects (inserted on top of the  problem-domain model) which are part of a computer program solution to "problem domain" problems. relish data types and relations can be used to represent the "business logic" as well as the controllers and the views of a computer application.
+</p>
+<p>
+	Two data types can be related in several different ways to each other. So the same pair of data types can appear together in multiple relation declarations, so long as the relation-end names are different in the different relation declarations. 
+</p>
+<p>
+As explained in the "Semantics of Data Types" section of this manual, relish can check objects with a "valid" method which among other things, checks that the object is currently related to the right number of other objects of the right type via the right relations.
+</p>
+<p>
+	The other benefit that relish relations convey is that they ensure that if a relation with an object b is established from the point of view of one object a, that the inverse relation is simultaneously established. The a object will be able to access the b object via the A type's implicit attribute name for the relation. But the b object will also be able to access the a object via the B type's implicit attribute name for the relation. Relish relations are always bi-directionally accessible in this manner. 
+</p>
+<p>
+	<b>Etymology:</b> Language and runtime-environment support for relations as first-class, primitive concepts is what gives "relish" its name. That and that it is hoped that after the initial learning curve, programmers will "enjoy greatly" how quickly they can get down to focussing on their domain problems and solutions (and not focussing on low-level data-structure and persistence mechanics) when programming in this language.
+</p>
+
+<h4><span class="future">Relation maintenance</span></h4>
+<code><pre>
+<span class="future">cart.driver = Person "Slim Pickens"	
+horse1 = Horse "Seattle Slew"	
+horse2 = Horse "Secretariat"
+cart.horses += horse1
+cart.horses += horse2
+cart.horses += Horse "Big Ben"
+cart.horses -= horse2</span>
+</pre></code>
+
+<h4><span class="future">Relation traversal</span></h4>
+<code><pre>
+<span class="future">for horse in cart.horses
+   print horse.name
+
+// Prints
+// Seattle Slew
+// Big Ben
+// ...except the order will be random, if an unsorted set, or determined by insertion order, 
+//    if a List, or determined by the declared sorting criteria.
+
+print horse1.cart.driver.name  // prints Slim Pickens 	
+
+print horse2.cart  // prints &lt;nil>
+
+print student1.courses[2].name  // Prints Biology 101 assuming courses is a List relation-end 
+                                // therefore indexable.</span>
+</pre></code>
+
+
+<br/>
+  <a name="Concurrency"><h3>Concurrency</h3></a>
+<code><pre>
+go foo arg1 arg2
+
+go foo arg1
+       arg2
+
+go foo
+      arg1
+      arg2
+
+<span class="future">ch = Channel of Car 
+
+ch2 = Channel of Car 
+		cap = 100
+
+
+to ch car1
+
+// ... and in a different, concurrent go-routine...
+
+car2 = from ch</span>
+</pre></code>
+<p>
+<b>Semantics</b>
+</p>
+<p>
+Concurrency support in relish is patterned after the <a href="http://golang.org" target="_blank">Go programming language</a>. Go is the implementation language for Relish, and Relish concurrency constructs and capabilities are thin wrappers around the underlying Go constructs and concurrency implementation. The go statement creates a new concurrent go-routine and executes the method call in that go-routine. The go statement immediately returns, after launching the new go-routine. A go-routine is a "light-weight" separate thread of execution, with its own method-call stack. Go-routines may be mapped onto separate operating-system threads (true concurrency) but the mapping is unlikely to be 1-to-1. Instead, many go-routines may be mapped (multiplexed) onto the same OS thread. The Go runtime environment ensures sharing of processor cycles between go-routines, and facilitates data communication between go-routines by means of channels. Because the mapping of go-routines to OS threads is not 1 to 1, it is fine in Go to create hundreds thousands of concurrent go-routines in a program. relish, being interpreted, and maintaining its own stack per go-routine, will have more memory and processing overhead for go-routine creation, but should still be able to take substantial advantage of Go's light-weight concurrency facilities.
+</p>
+<h4><span class="future">relish wrapping of Go channels as Channel, InChannel, OutChannel data types</span></h4>
+<code><pre>
+<span class="future">ChannelBase
+"""
+ Abstract base type for channels. Defines the channel buffer capacity.
+"""
+   cap Int = 0  // capacity of the channel's buffer - 0 means unbuffered channel
+
+
+InChannel of T
+&lt;:
+   ChannelBase
+"""
+ An abstract channel type, from which data can be received.
+"""
+
+
+from 
+   ch InChannel of T
+>
+   T
+"""
+ Returns the next value from the channel. Blocks until a sender puts something into the channel, if the
+ channel capacity is zero. If the channel is buffered, blocks if there is no value available in the channel, 
+ until there is. 
+"""
+
+
+OutChannel of T
+&lt;: 
+   ChannelBase
+"""
+ An abstract channel type, to which data can be sent.
+"""
+
+
+to 
+   ch OutChannel of T
+   val T
+"""
+ Puts a value into a channel. Blocks until a receiver is ready to take the value from the channel, if
+ the channel capacity is zero. If the channel is buffered, blocks if the channel is full to capacity, 
+ until it is no longer full.
+"""       
+
+
+Channel of T 
+&lt;:
+   InChannel of T
+   OutChannel of T
+"""
+ A channel capable of accepting and supplying data objects/values. All channels instantiated
+ (constructed) must be of this type. A method may specify however, that it accepts an 
+ InChannel parameter, in which case code inside the method body can only receive from the channel. 
+ Or if a method specifies an OutChannel parameter, code inside the method body can only send to the 
+ channel.
+ Or an attribute may be declared to be of type InChannel, meaning that code
+ accessing that channel via the object attribute can only receive from the channel. Or an
+ attribute may be declared to be of type OutChannel, in which case code using the
+ channel via the object attribute can only send to the channel.
+"""
+</span>
+</pre></code>
+
+
+<br/>
+  <a name="Packages"><h3>Packages</h3></a>
+<code><pre>
+origin   elvisoft.com2012
+artifact cool_new_game	
+package  game/players
+	
+import 
+   game/physics/geometry as geom   
+   generous.opensource.developer.org2011/game_naive_physics/pkg/phys_obj/gravity
+</pre></code>
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+	Every relish source code file must be located in a package directory under a version directory of a software artifact directory.
+	Source code files, which must be called some_name.rel, must begin with an origin, artifact, and package declaration, which
+	identifies which package of which software artifact from which code-originating organization this file is part of.
+</p>
+<p>
+	A source code file can use data types, methods, and constants from other packages, provided those other packages are
+	imported into the file, as shown in the import example above.</p>
+	<p>The first import line above shows an import of
+	a package from the same software artifact as the current package. This package, whose name inside this source file
+	would normally be geometry, as in geometry.Polygon, is aliased so that it is known in this source file as geom, as
+	in geom.Polygon. 
+</p>
+<p>
+	The second import line above shows an import of a package from a different software artifact. The other software
+	artifact's originating organization is called generous.opensource.developer.org2011 . The relish software artifact they
+	developed is called game_naive_physics, presumably a code library of physics objects and calculation methods.
+	The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to
+	in this source code file. As in gravity.G 
+	</p>
+<br/>
+  <a name="SoftwareArtifacts"><h3>Software Artifacts</h3></a>
+<p>
+relish code must be organized into coherent units called relish software artifacts. The software artifact is the unit of code that
+is distributed; the unit that is released in a sequence of versions. A relish software artifact can represent a software application,
+a software library, or a software framework.
+</p>
+<p>
+Each software artifact must be stated to come from a software originating organization.
+An originating organization must be identified by a domain name suffixed by the first year in which the organization owned
+the domain name. Third-level or fourth-level domain names may be used. e.g. generous.opensource.developer.org2011
+</p>	
+<p>
+	The full name of a relish software artifact is the originating organization name as described above, followed by
+	a slash and one or more name parts, slash-separated e.g. generous.opensource.developer.org2011/game_naive_physics
+	or generous.opensource.developer.org2011/energy_apps/cool_app
+</p>
+<p>
+	relish software artifacts must be released in sequentially numbered versions, each resident in a subdirectory of the artifact directory, beginning with the v0001 directory e.g. generous.opensource.developer.org2011/energy_apps/cool_app/v0001
+</p>
+<p>
+	Below the version directory must reside the software packages that make up the software artifact. Each software package must reside in a directory whose path below the version directory corresponds to the full package name, which must consist of package name parts like phys_obj or gravity, separated by slashes.
+	</p>
+	<p>
+		In addition to its version directories, each with their packages, a relish software artifact must have a metadata.txt file in the artifact directory. This file, examples of which are included in the relish distribution, gives the name of the originating organization and the name of the artifact, its current release version number, its latest date of release, some standard and some optional classifying tags, and a text description of the context of use, purpose, and functionality of the artifact.
+		</p>
+<p>
+	relish insists on this discipline of software organization to ensure that relish software artifacts and packages are, and will remain over long software lifecycles, globally interoperable. <span class="future">The mandatory code organization conventions are used as the basis for a version-sensitive Internet code fetching and loading system. The relish code fetching and loading system should allow a relish program to find and load its dependencies, in the proper version required, automatically over the Internet, provided the dependencies are named fully and correctly in the dependent code.</span>
+	</p>
 </div>
 
 </body>
