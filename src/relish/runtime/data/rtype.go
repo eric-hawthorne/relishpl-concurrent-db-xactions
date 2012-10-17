@@ -523,18 +523,23 @@ func (rt *RuntimeEnv) getListType(elementType *RType) (typ *RType, err error) {
 /*
 Each type should have a list (map from opposite end name?) of forwardRels (I am end 0) and backRels (where I am end 1)
 */
-func (rt *RuntimeEnv) createRelation(typeName1 string,
+func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 	endName1 string,
 	arityLow1 int32,
 	arityHigh1 int32,
 	collectionType1 string,
+	orderFuncOrAttrName1 string,
+	isAscending1 bool,	
 	typeName2 string,
 	endName2 string,
 	arityLow2 int32,
 	arityHigh2 int32,
 	collectionType2 string,
-	isTransient bool) (rel *RelationSpec, err error) {
-
+	orderFuncOrAttrName2 string,
+	isAscending2 bool,	
+	isTransient bool,
+	dispatcher Dispatcher) (rel *RelationSpec, err error) {
+				
 	typ1, found := rt.Types[typeName1]
 	if !found {
 		err = fmt.Errorf("Type '%s' not found.", typeName1)
@@ -542,9 +547,94 @@ func (rt *RuntimeEnv) createRelation(typeName1 string,
 	}
 	typ2, found := rt.Types[typeName2]
 	if !found {
-		err = fmt.Errorf("Type '%s' not found.", typeName1)
+		err = fmt.Errorf("Type '%s' not found.", typeName2)
 		return
 	}
+
+	var orderAttr1 *AttributeSpec
+	var attrFound1 bool
+	var orderMethod1 *RMultiMethod
+
+	// TODO Find out which of attribute or method it is. How????
+	// Should be along the lines of: 
+	// If there is a method of that name defined which takes only typ2 as arg signature, then use that function,
+	// Otherwise could check if there is an attribute of that name on typ2 or its supertypes, and if not,
+	// throw a type compatibility panic.
+
+	var orderMethod1Arity int32 = 0
+
+	if orderFuncOrAttrName1 != "" {
+		orderMethod1, methodFound1 := rt.MultiMethods[orderFuncOrAttrName1]
+
+		if methodFound1 {
+
+			// Find out if there is an arity 1 method
+			unaryMethod1, _ := dispatcher.GetMethodForTypes(orderMethod1, typ1)
+			// Find out if there is an arity 2 method
+			binaryMethod1, _ := dispatcher.GetMethodForTypes(orderMethod1, typ1, typ1)
+
+			if unaryMethod1 != nil && binaryMethod1 != nil {
+				panic(fmt.Sprintf("Can't order collection because ambiguous unary and binary method '%s'.", orderFuncOrAttrName1))
+			}
+
+			if unaryMethod1 != nil {
+				orderMethod1Arity = 1
+			} else if binaryMethod1 != nil {
+				orderMethod1Arity = 2
+			} else {
+				panic(fmt.Sprintf("Can't order collection. No unary or binary method '%s' found.", orderFuncOrAttrName1))
+			}
+		} else {
+			orderAttr1, attrFound1 = typ1.GetAttribute(orderFuncOrAttrName1)
+			if !attrFound1 {
+				panic(fmt.Sprintf("Can't order collection. No method or attribute '%s' found.", orderFuncOrAttrName1))
+			}
+		}
+	}
+
+
+	var orderAttr2 *AttributeSpec
+	var attrFound2 bool
+	var orderMethod2 *RMultiMethod
+
+	// TODO Find out which of attribute or method it is. How????
+	// Should be along the lines of: 
+	// If there is a method of that name defined which takes only typ2 as arg signature, then use that function,
+	// Otherwise could check if there is an attribute of that name on typ2 or its supertypes, and if not,
+	// throw a type compatibility panic.
+
+	var orderMethod2Arity int32 = 0
+
+	if orderFuncOrAttrName2 != "" {
+		orderMethod2, methodFound2 := rt.MultiMethods[orderFuncOrAttrName2]
+
+		if methodFound2 {
+
+			// Find out if there is an arity 1 method
+			unaryMethod2, _ := dispatcher.GetMethodForTypes(orderMethod2, typ2)
+			// Find out if there is an arity 2 method
+			binaryMethod2, _ := dispatcher.GetMethodForTypes(orderMethod2, typ2, typ2)
+
+			if unaryMethod2 != nil && binaryMethod2 != nil {
+				panic(fmt.Sprintf("Can't order collection because ambiguous unary and binary method '%s'.", orderFuncOrAttrName2))
+			}
+
+			if unaryMethod2 != nil {
+				orderMethod2Arity = 1
+			} else if binaryMethod2 != nil {
+				orderMethod2Arity = 2
+			} else {
+				panic(fmt.Sprintf("Can't order collection. No unary or binary method '%s' found.", orderFuncOrAttrName2))
+			}
+		} else {
+			orderAttr2, attrFound2 = typ2.GetAttribute(orderFuncOrAttrName2)
+			if !attrFound2 {
+				panic(fmt.Sprintf("Can't order collection. No method or attribute '%s' found.", orderFuncOrAttrName2))
+			}
+		}
+	}
+
+
 
 	rel = &RelationSpec{[2]RelEnd{RelEnd{
 		Name:           endName1,
@@ -552,6 +642,10 @@ func (rt *RuntimeEnv) createRelation(typeName1 string,
 		ArityLow:       arityLow1,
 		ArityHigh:      arityHigh1,
 		CollectionType: collectionType1,
+		OrderAttr:        orderAttr1,
+		OrderMethod:      orderMethod1,
+		OrderMethodArity: orderMethod1Arity, // 1 or 2
+		IsAscending:      isAscending1,		
 	},
 		RelEnd{
 			Name:           endName2,
@@ -559,6 +653,10 @@ func (rt *RuntimeEnv) createRelation(typeName1 string,
 			ArityLow:       arityLow2,
 			ArityHigh:      arityHigh2,
 			CollectionType: collectionType2,
+			OrderAttr:        orderAttr2,
+			OrderMethod:      orderMethod2,
+			OrderMethodArity: orderMethod2Arity, // 1 or 2
+			IsAscending:      isAscending2,			
 		},
 	},
 		isTransient,

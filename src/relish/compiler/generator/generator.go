@@ -354,80 +354,129 @@ Generates the runtime environment's objects for relations between datatypes, and
 that db tables exist for these.
 */
 func (g *Generator) GenerateRelations() {
-/*
+
 	for _,relationDeclaration := range g.file.RelationDecls {
 		
-       end1Spec := relationDeclaration.End1
-       end2Spec := relationDeclaration.End2 
+       end1 := relationDeclaration.End1
+       end2 := relationDeclaration.End2 
 
 
+	   var minCard1 int32 = 1
+	   var maxCard1 int32 = 1
+	  
+       attributeName1 := end1.Name.Name
+       multiValuedAttribute1 := (end1.Arity != nil)
+       if multiValuedAttribute1 {
+          minCard1 = int32(end1.Arity.MinCard)
+          maxCard1 = int32(end1.Arity.MaxCard)  // -1 means N
+       }
+        
+        var collectionType1 string 
 
+        var orderFuncOrAttrName1 string = ""
+        var isAscending1 bool 
 
+        if end1.Type.CollectionSpec != nil {
+            switch end1.Type.CollectionSpec.Kind {
+            case token.SET:
+	        if end1.Type.CollectionSpec.IsSorting {
+	           collectionType1 = "sortedset"
+                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+                     isAscending1 = end1.Type.CollectionSpec.IsAscending		
+            } else {
+	           collectionType1 = "set"			
+            }		
+         case token.LIST:
+	        if end1.Type.CollectionSpec.IsSorting {
+	           collectionType1 = "sortedlist"
+                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
+            } else {
+	           collectionType1 = "list"			
+            }
+	     case token.MAP:
+	        if end1.Type.CollectionSpec.IsSorting {
+	           collectionType1 = "sortedmap"
+                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
+            } else {
+	           collectionType1 = "map"			
+            }				
+          }	
+        }
 
-       
+	   var minCard2 int32 = 1
+	   var maxCard2 int32 = 1
+	  
+       attributeName2 := end2.Name.Name
+       multiValuedAttribute2 := (end2.Arity != nil)
+       if multiValuedAttribute2 {
+          minCard2 = int32(end2.Arity.MinCard)
+          maxCard2 = int32(end2.Arity.MaxCard)  // -1 means N
+       }
+        
+        var collectionType2 string 
 
-	   typeSpec := typeDeclaration.Spec
-	   typeName := g.packagePath + typeSpec.Name.Name
-	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
-	
-	   var parentTypeNames []string
-	
-	   for _,parentTypeSpec := range typeSpec.SuperTypes {
-		  parentTypeNames = append(parentTypeNames, g.qualifyTypeName(parentTypeSpec.Name.Name))
-	   } 
-		
-	   // Get the type name and the supertype names	
-	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
+        var orderFuncOrAttrName2 string = ""
+        var isAscending2 bool 
+
+        if end2.Type.CollectionSpec != nil {
+            switch end2.Type.CollectionSpec.Kind {
+            case token.SET:
+	        if end2.Type.CollectionSpec.IsSorting {
+	           collectionType2 = "sortedset"
+                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+                     isAscending2 = end2.Type.CollectionSpec.IsAscending		
+            } else {
+	           collectionType2 = "set"			
+            }		
+         case token.LIST:
+	        if end2.Type.CollectionSpec.IsSorting {
+	           collectionType2 = "sortedlist"
+                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
+            } else {
+	           collectionType2 = "list"			
+            }
+	     case token.MAP:
+	        if end2.Type.CollectionSpec.IsSorting {
+	           collectionType2 = "sortedmap"
+                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
+            } else {
+	           collectionType2 = "map"			
+            }				
+          }	
+        }
+
+        typename1 := g.qualifyTypeName(end1.Type.Name.Name)
+        typename2 := g.qualifyTypeName(end2.Type.Name.Name)
+
+        relSpec, err := CreateRelation( typeName1,
+	                                    attributeName1,
+	                                    arityLow1,
+										arityHigh1,
+										collectionType1,
+										orderFuncOrAttrName1,
+										isAscending1,	
+										typeName2,
+										endName2,
+										arityLow2,
+										arityHigh2,
+										collectionType2,
+										orderFuncOrAttrName2,
+										isAscending2,	
+										false,
+										g.Interp.Dispatcher()) 
        if err != nil {
-          panic(err)
-       }	
+           panic(err)
+       }
 
-	   for _,attrDecl := range typeDeclaration.Attributes {
-		  var minCard int32 = 1
-		  var maxCard int32 = 1
-		  
-          attributeName := attrDecl.Name.Name
-          multiValuedAttribute := (attrDecl.Arity != nil)
-          if multiValuedAttribute {
-	         minCard = int32(attrDecl.Arity.MinCard)
-	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
-          }
-          
-          var collectionType string 
+   }
+}
 
-          var orderFuncOrAttrName string = ""
-          var isAscending bool 
 
-          if attrDecl.Type.CollectionSpec != nil {
-              switch attrDecl.Type.CollectionSpec.Kind {
-	             case token.SET:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedset"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending		
-		            } else {
-			           collectionType = "set"			
-		            }		
-		         case token.LIST:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedlist"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
-		            } else {
-			           collectionType = "list"			
-		            }
-			     case token.MAP:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedmap"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
-		            } else {
-			           collectionType = "map"			
-		            }				
-	           }	
-          }
 
-*/
 /*	type CollectionTypeSpec struct {
 	   Kind token.Token
 	   LDelim token.Pos
