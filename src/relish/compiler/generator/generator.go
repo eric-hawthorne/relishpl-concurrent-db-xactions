@@ -241,6 +241,8 @@ RelEnd
 				                         orderFuncOrAttrName,
 				                         isAscending,
 										 false,
+										 false,
+										 false,
 										 g.Interp.Dispatcher())
 		   if err != nil {
 		      panic(err)
@@ -461,7 +463,7 @@ func (g *Generator) GenerateRelations() {
         typeName1 := g.qualifyTypeName(end1.Type.Name.Name)
         typeName2 := g.qualifyTypeName(end2.Type.Name.Name)
 
-        _, err := data.RT.CreateRelation( typeName1,
+        err := data.RT.CreateRelation( typeName1,
 	                                    attributeName1,
 	                                    minCard1,
 										maxCard1,
@@ -477,9 +479,15 @@ func (g *Generator) GenerateRelations() {
 										isAscending2,	
 										false,
 										g.Interp.Dispatcher()) 
+
+
+
        if err != nil {
            panic(err)
        }
+
+
+
 
    }
 }
