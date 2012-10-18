@@ -229,19 +229,67 @@ func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, fo
 }
 
 /*
+   Return the value of the specified attribute for the specified object.
+   Does not currently distinguish between multi-value attributes and single-valued.
+   If it is a multi-valued attribute, returns the RCollection which implements
+   the multi-value attribute.
+   What does it return if no value has been defined? How about a found boolean
+*/
+func (rt *RuntimeEnv) RelVal(obj RObject, rel *RelationSpec, isForward bool) (val RObject, found bool) {
+	attrVals, found := rt.attributes[attr]
+	if found {
+		val, found = attrVals[obj]
+		if found {
+			return
+		}
+	}
+
+	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
+	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
+	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
+	if obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
+		var err error
+		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
+		if err != nil {
+			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
+			panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", attr.Part.Name, obj, err))
+		}
+		if val != nil {
+			Logln(PERSIST2_, "AttrVal (fetched) =", val)
+			found = true
+		}
+	}
+	return
+}
+
+
+
+/*
 Version to be used in template execution.
+
+Note: Now checks relations as well as attributes.
 */
 func (rt *RuntimeEnv) AttrValByName(obj RObject, attrName string) (val RObject, err error) {
 
 	attr, found := obj.Type().GetAttribute(attrName)
-	if !found {
-		err = fmt.Errorf("Attribute %s not found in type %v or supertypes.", attrName, obj.Type())
-		return
+	if found {
+	   val, _ = RT.AttrVal(obj, attr)		
+	} else { // No attribute found, is it a relation?
+		
+        rel, found, isForward := obj.Type().GetRelation(attrName) 		
+        if !found {
+		   err = fmt.Errorf("Attribute or relation %s not found in type %v or supertypes.", attrName, obj.Type())
+		   return
+		}
+	    val, _ := RT.RelVal(obj, rel, isForward)			
 	}
-
-	val, _ = RT.AttrVal(obj, attr)
 	return
 }
+
+
+
+
+
 
 /*
 Untypechecked assignment. Assumes type has been statically checked.

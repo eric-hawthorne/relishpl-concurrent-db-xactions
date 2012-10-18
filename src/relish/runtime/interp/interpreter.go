@@ -499,14 +499,26 @@ func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
 	// (from which type) to use. TODO TODO TODO. In this usage, in lhs of an assignment,
 	// it has to be an attribute or it's an error.
 	//
+	var val RObject
+	
 	attr, found := obj.Type().GetAttribute(selector.Sel.Name)
-	if !found {
-		panic(fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, obj.Type()))
-	}
+	if found {
+		val, found := RT.AttrVal(obj, attr)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj, selector.Sel.Name))
+		}
+	} else { // No attribute found, is it a relation?		
+		
+        rel, found, isForward := obj.Type().GetRelation(selector.Sel.Name)		
 
-	val, found := RT.AttrVal(obj, attr)
-	if !found {
-		panic(fmt.Sprintf("Object %v has no value for attribute %s", obj, selector.Sel.Name))
+	    if !found {		
+		    panic(fmt.Sprintf("Attribute or relation %s not found in type %v or supertypes.", selector.Sel.Name, obj.Type()))
+    	}
+
+		val, found := RT.RelVal(obj, rel, isForward)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for relation %s", obj, selector.Sel.Name))
+		}
 	}
 
 	t.Push(val)

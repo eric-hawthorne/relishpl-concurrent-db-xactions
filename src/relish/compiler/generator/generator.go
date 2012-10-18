@@ -41,12 +41,11 @@ Assumes imported packages have already been loaded; thus the objects defined in 
 */
 func (g *Generator) GenerateCode() {	
    g.GeneratePackage()
-   g.GenerateTypes()
+   types := g.GenerateTypes()
    g.GenerateMethods()		
    g.GenerateConstants()
    g.GenerateRelations() 
-
-   
+   g.ensureAttributeAndRelationTables(types)
 }
 
 /*
@@ -143,7 +142,9 @@ Processes the TypeDecls list of a ast.File object (which has been created by the
 Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
 TODO prefix the g.packagePath onto the name of the type.!!!!!!!!!!!!!!
 */
-func (g *Generator) GenerateTypes() {
+func (g *Generator) GenerateTypes() []*data.RType {
+	
+	var types []*data.RType 
 	for _,typeDeclaration := range g.file.TypeDecls {
 		
 	   typeSpec := typeDeclaration.Spec
@@ -255,13 +256,21 @@ RelEnd
 		      panic(err)
 		}
 		
-		// ... and for the type's attributes and relations
+       types = append(types, theNewType)		
+    }
 
-		err = data.RT.DB().EnsureAttributeAndRelationTables(theNewType) 
+    return types
+}
+
+func (g *Generator) ensureAttributeAndRelationTables(types []*data.RType) {
+	for _,typ := range types {
+		// ensure the persistence data model is created for  the type's attributes and relations
+
+		err := data.RT.DB().EnsureAttributeAndRelationTables(typ) 
 		if err != nil {
 		      panic(err)
-		}
-    }
+		}		
+	}
 }
 
 /*
@@ -449,20 +458,20 @@ func (g *Generator) GenerateRelations() {
           }	
         }
 
-        typename1 := g.qualifyTypeName(end1.Type.Name.Name)
-        typename2 := g.qualifyTypeName(end2.Type.Name.Name)
+        typeName1 := g.qualifyTypeName(end1.Type.Name.Name)
+        typeName2 := g.qualifyTypeName(end2.Type.Name.Name)
 
-        relSpec, err := CreateRelation( typeName1,
+        _, err := data.RT.CreateRelation( typeName1,
 	                                    attributeName1,
-	                                    arityLow1,
-										arityHigh1,
+	                                    minCard1,
+										maxCard1,
 										collectionType1,
 										orderFuncOrAttrName1,
 										isAscending1,	
 										typeName2,
-										endName2,
-										arityLow2,
-										arityHigh2,
+										attributeName2,
+										minCard2,
+										maxCard2,
 										collectionType2,
 										orderFuncOrAttrName2,
 										isAscending2,	
@@ -533,7 +542,7 @@ RelEnd
     }
 
 */    
-}
+
 
 
 

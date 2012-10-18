@@ -317,6 +317,41 @@ func (t *RType) GetAttribute(attrName string) (attr *AttributeSpec, found bool) 
 	return
 }
 
+
+/*
+This is a HIGHLY UNOPTIMIZED way of getting the attribute spec from the type given the attribute name.
+It searches the type's AttributesByName hashtable, and if not found there, traverses the type's Up chain
+of supertypes, searching each's  AttributesByName hashtable in turn until an attribute of the specified name
+is found. Returns nil if not found
+
+We have to see how we can cache this dispatch, similar to how we cache multi-method dispatch. TODO TODO
+*/
+func (t *RType) GetRelation(relName string) (rel *RelationSpec, found bool, isForward bool) {
+	rel, found = t.ForwardRelationsByName[relName]
+	if !found {
+		for _, supertype := range t.Up {
+			attr, found = supertype.ForwardRelationsByName[attrName]
+			if found {
+				isForward = true
+				return
+			}
+		}
+	}
+	
+	rel, found = t.ReverseRelationsByName[relName]
+	if !found {
+		for _, supertype := range t.Up {
+			attr, found = supertype.ReverseRelationsByName[attrName]
+			if found {
+				return
+			}
+		}
+	}	
+	
+	return
+}
+
+
 /*
 A specification of a type of object having an attribute whose value is a given allowable number of a given type
 of objects.
