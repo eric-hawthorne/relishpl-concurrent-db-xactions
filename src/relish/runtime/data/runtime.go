@@ -17,6 +17,7 @@ import (
 	"fmt"
 	. "relish/dbg"
 	"sync"
+	"strings"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,30 +203,7 @@ func (rt *RuntimeEnv) SetDB(db DB) {
    What does it return if no value has been defined? How about a found boolean
 */
 func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, found bool) {
-	attrVals, found := rt.attributes[attr]
-	if found {
-		val, found = attrVals[obj]
-		if found {
-			return
-		}
-	}
-
-	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
-	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
-	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
-	if obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
-		var err error
-		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
-		if err != nil {
-			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
-			panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", attr.Part.Name, obj, err))
-		}
-		if val != nil {
-			Logln(PERSIST2_, "AttrVal (fetched) =", val)
-			found = true
-		}
-	}
-	return
+	return rt.AttrValue(obj, attr, true, true)
 }
 
 /*
@@ -235,24 +213,35 @@ func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, fo
    the multi-value attribute.
    What does it return if no value has been defined? How about a found boolean
 */
-func (rt *RuntimeEnv) RelVal(obj RObject, rel *RelationSpec, isForward bool) (val RObject, found bool) {
+func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool) (val RObject, found bool) {
 	attrVals, found := rt.attributes[attr]
 	if found {
 		val, found = attrVals[obj]
 		if found {
 			return
+		} else if (! checkPersistence) && (! allowNoValue) {
+			panic(fmt.Sprintf("Error: attribute %s.%s does not exist.", attr.Part.Name, obj))			
 		}
 	}
 
 	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
-	if obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
+	if checkPersistence && obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
 		var err error
 		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
 		if err != nil {
 			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
-			panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", attr.Part.Name, obj, err))
+			
+            if strings.Contains(err.Error(), "has no value for attribute") {
+	           if allowNoValue {
+		          return
+		       } else {			
+			      panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
+		       }
+		    } else {
+		       panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
+			}
 		}
 		if val != nil {
 			Logln(PERSIST2_, "AttrVal (fetched) =", val)
@@ -264,25 +253,21 @@ func (rt *RuntimeEnv) RelVal(obj RObject, rel *RelationSpec, isForward bool) (va
 
 
 
+
+
 /*
 Version to be used in template execution.
 
-Note: Now checks relations as well as attributes.
+Note: Now checks relations as well as one-way attributes.
 */
 func (rt *RuntimeEnv) AttrValByName(obj RObject, attrName string) (val RObject, err error) {
 
 	attr, found := obj.Type().GetAttribute(attrName)
-	if found {
-	   val, _ = RT.AttrVal(obj, attr)		
-	} else { // No attribute found, is it a relation?
-		
-        rel, found, isForward := obj.Type().GetRelation(attrName) 		
-        if !found {
-		   err = fmt.Errorf("Attribute or relation %s not found in type %v or supertypes.", attrName, obj.Type())
-		   return
-		}
-	    val, _ := RT.RelVal(obj, rel, isForward)			
-	}
+	if ! found {
+       err = fmt.Errorf("Attribute or relation %s not found in type %v or supertypes.", attrName, obj.Type())		
+	   return	
+	}	
+	val, _ = RT.AttrVal(obj, attr)
 	return
 }
 
@@ -293,11 +278,13 @@ func (rt *RuntimeEnv) AttrValByName(obj RObject, attrName string) (val RObject, 
 
 /*
 Untypechecked assignment. Assumes type has been statically checked.
-*/
-func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject) {
+
+func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, , context MethodEvaluationContext, isInverse bool) {
 
 	attrVals, found := rt.attributes[attr]
-	if !found {
+	if found {
+		_, found = attrVals[obj]
+	} else {
 		attrVals = make(map[RObject]RObject)
 		rt.attributes[attr] = attrVals
 	}
@@ -305,8 +292,13 @@ func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject) {
 	if obj.IsStoredLocally() {
 		rt.db.PersistSetAttr(obj, attr, val, found)
 	}
+	
+    if ! isInverse && attr.Inverse != nil {
+	   err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
+    }	
 	return
 }
+*/
 
 /*
 Untypechecked assignment. Used in restoration (summoning) of an object from persistent storage.
@@ -324,23 +316,29 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject, attr *AttributeSpec, val RObject)
 }
 
 /*
-Typechecked assignment.
+Typechecked assignment. Never used in inverse.
 */
-func (rt *RuntimeEnv) SetAttrTypeChecked(obj RObject, attr *AttributeSpec, val RObject) (err error) {
+func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
 
-	if !val.Type().LessEq(attr.Part.Type) {
+	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
 		return
 	}
 	attrVals, found := rt.attributes[attr]
-	if !found {
+	if found {
+		_, found = attrVals[obj]
+	} else {
 		attrVals = make(map[RObject]RObject)
 		rt.attributes[attr] = attrVals
-	}
+	} 
 	attrVals[obj] = val
 	if obj.IsStoredLocally() {
 		rt.db.PersistSetAttr(obj, attr, val, found)
 	}
+	
+	if ! isInverse && attr.Inverse != nil {
+		err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
+	}	
 	return
 }
 
@@ -355,9 +353,10 @@ Create the collection on demand.
 context is a context for evaluating a sorting comparison operator on the collection.
 
 */
-func (rt *RuntimeEnv) AddToAttrTypeChecked(obj RObject, attr *AttributeSpec, val RObject, context MethodEvaluationContext) (err error) {
+func (rt *RuntimeEnv) AddToAttr(obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
 
-	if !val.Type().LessEq(attr.Part.Type) {
+    
+	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
 		return
 	}
@@ -375,19 +374,42 @@ func (rt *RuntimeEnv) AddToAttrTypeChecked(obj RObject, attr *AttributeSpec, val
 	//fmt.Printf("added=%v\n",added)
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
-	if added && obj.IsStoredLocally() {
-		var insertIndex int
-		if objColl.(RCollection).IsSorting() {
-			orderedColl := objColl.(OrderedCollection)
-			insertIndex = orderedColl.Index(val, 0)
-		} else {
-			insertIndex = newLen - 1
+	if added {
+	    if obj.IsStoredLocally() {
+			var insertIndex int
+			if objColl.(RCollection).IsSorting() {
+				orderedColl := objColl.(OrderedCollection)
+				insertIndex = orderedColl.Index(val, 0)
+			} else {
+				insertIndex = newLen - 1
+			}
+			rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
 		}
-		rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
+		if ! isInverse && attr.Inverse != nil {
+			err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
+		}
 	}
 
 	return
 }
+
+/*
+   Used to make val the value or a value of the attribute of obj. 
+   If the attribute is multi-valued, val will be added to the collection of values.
+   If the attribute is single-valued, val will be set as the value of the attribute. 
+*/
+func (rt *RuntimeEnv) SetOrAddToAttr(obj RObject, attr *AttributeSpec, val RObject, context MethodEvaluationContext, isInverse bool) (err error) {
+	
+   if attr.Part.CollectionType == "" {	
+      err = rt.SetAttr(obj, attr, val, false, context, isInverse) 
+   } else {	
+      err = rt.AddToAttr(obj, attr, val, false, context, isInverse)
+   }	
+   return
+}
+
+
+
 
 /*
 TODO Optimize this  to add all at once with a slice copy or similar, then persist in fewer
@@ -557,7 +579,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 /*
 Removes val from the multi-valued attribute if val is in the collection. Does nothing and does not complain if val is not in the collection.
 */
-func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject) (err error) {
+func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, isInverse bool) (err error) {
 	objColl, foundCollection := rt.AttrVal(obj, attr)
 
 	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute		
@@ -567,12 +589,56 @@ func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObje
 	collection := objColl.(RemovableCollection) // Will throw an exception if collection type does not implement Remove(..)
 	removed, removedIndex := collection.Remove(val)
 
-	if removed && obj.IsStoredLocally() {
-		rt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	if removed  {
+	   if obj.IsStoredLocally() {
+	    	rt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	   }
+	
+	   if ! isInverse && attr.Inverse != nil {
+	   	  err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true)
+	   }
 	}
 
 	return
 }
+
+/*
+
+Unsets the attribute. Used when setting to nil.
+Deletes the corresponding row from the attribute database table if it exists.
+Ok to call this even if attribute had no value.
+*/
+func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool) (err error) {
+	attrVals, found := rt.attributes[attr]
+	if found {
+		val, found := attrVals[obj]
+		if found {
+		   delete(attrVals,obj)
+           if obj.IsStoredLocally() {
+   	          err = rt.db.PersistRemoveAttr(obj, attr) 	 
+           }
+
+           if ! isInverse && attr.Inverse != nil {
+	           err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true)
+           }
+        }		
+	}
+    return
+}
+
+/*
+If the attribute is multi-valued, removes the val from it, otherwise
+if single valued, unsets the attribute.
+*/
+func (rt *RuntimeEnv) RemoveAttrGeneral(obj RObject, attr *AttributeSpec, val RObject, isInverse bool) (err error) {
+   if attr.Part.CollectionType == "" {	
+	  err = rt.UnsetAttr(obj, attr, isInverse)
+   } else {
+      err = rt.RemoveFromAttr(obj, attr, val, isInverse)	
+   }
+   return
+}
+
 
 /*
 type AttributeSpec struct {

@@ -40,11 +40,12 @@ Given a Relish intermediate-code file node tree, create objects in the runtime f
 Assumes imported packages have already been loaded; thus the objects defined in files of the imported packages have been generated.
 */
 func (g *Generator) GenerateCode() {	
+   types := make(map[*data.RType]bool)	
    g.GeneratePackage()
-   types := g.GenerateTypes()
+   g.GenerateTypes(types)
    g.GenerateMethods()		
    g.GenerateConstants()
-   g.GenerateRelations() 
+   g.GenerateRelations(types) 
    g.ensureAttributeAndRelationTables(types)
 }
 
@@ -142,9 +143,8 @@ Processes the TypeDecls list of a ast.File object (which has been created by the
 Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
 TODO prefix the g.packagePath onto the name of the type.!!!!!!!!!!!!!!
 */
-func (g *Generator) GenerateTypes() []*data.RType {
-	
-	var types []*data.RType 
+func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
+	 
 	for _,typeDeclaration := range g.file.TypeDecls {
 		
 	   typeSpec := typeDeclaration.Spec
@@ -258,14 +258,12 @@ RelEnd
 		      panic(err)
 		}
 		
-       types = append(types, theNewType)		
+       types[theNewType] = true	
     }
-
-    return types
 }
 
-func (g *Generator) ensureAttributeAndRelationTables(types []*data.RType) {
-	for _,typ := range types {
+func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool) {
+	for typ := range types {
 		// ensure the persistence data model is created for  the type's attributes and relations
 
 		err := data.RT.DB().EnsureAttributeAndRelationTables(typ) 
@@ -364,7 +362,7 @@ Processes the RelationDecls list of a ast.File object (which has been created by
 Generates the runtime environment's objects for relations between datatypes, and also ensures 
 that db tables exist for these.
 */
-func (g *Generator) GenerateRelations() {
+func (g *Generator) GenerateRelations(types map[*data.RType]bool) {
 
 	for _,relationDeclaration := range g.file.RelationDecls {
 		
@@ -463,7 +461,7 @@ func (g *Generator) GenerateRelations() {
         typeName1 := g.qualifyTypeName(end1.Type.Name.Name)
         typeName2 := g.qualifyTypeName(end2.Type.Name.Name)
 
-        err := data.RT.CreateRelation( typeName1,
+        type1, type2, err := data.RT.CreateRelation(typeName1,
 	                                    attributeName1,
 	                                    minCard1,
 										maxCard1,
@@ -487,8 +485,8 @@ func (g *Generator) GenerateRelations() {
        }
 
 
-
-
+       types[type1] = true	
+       types[type2] = true	
    }
 }
 

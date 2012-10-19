@@ -55,10 +55,10 @@ Car <: Automobile
    wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
 
 
-Automobile 0 1 vehicle -- driver 0 1 people.Person
+Automobile 0 1 vehicleDriven -- driver 0 1 people.Person
 
-Automobile 0 1 vehicle -- passengers 0 N {<firstName} people.Person
+Automobile 0 1 vehicleRiddenIn -- passengers 0 N {<firstName} people.Person
 
-Automobile 0 1 vehicle -- tailgaters 0 N [] people.Person
+Automobile 0 1 vehicleHungOnTo -- tailgaters 0 N [] people.Person
 
 

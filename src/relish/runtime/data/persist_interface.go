@@ -13,6 +13,7 @@ type DB interface {
 	PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
 	PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
 	PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
+    PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
 	EnsurePersisted(obj RObject) (err error)
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)

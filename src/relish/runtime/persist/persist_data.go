@@ -62,10 +62,38 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 
 			// TODO create a map of prepared statements and look up the statement to use.
 
-			stmt = fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v", table, obj.DBID(), val.DBID()) // Ensure DBID?                                       
+			stmt = fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v", table, val.DBID(), obj.DBID()) // Ensure DBID?                                       
 		} else {
 			stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?   
 		}
+	}
+	db.QueueStatements(stmt)
+	return
+
+}
+
+
+/*
+   Persist the setting of an attribute to nil.
+   Only applies to single-valued attributes.
+   Assumes that the the obj is already persisted.
+   Ok to call this even if there is no value of the attribute for the object.
+*/
+func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) {
+
+	var stmt string
+
+	if attr.Part.Type.IsPrimitive {
+
+		table := db.TableNameIfy(attr.WholeType.ShortName())
+		stmt = fmt.Sprintf("UPDATE %s SET %s=NULL WHERE id=%v", table, attr.Part.Name, obj.DBID()) // EnsureDBID
+	} else { // non-primitive value type
+
+		table := db.TableNameIfy(attr.ShortName())
+
+		// TODO create a map of prepared statements and look up the statement to use.
+
+		stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, obj.DBID()) // Ensure DBID?                                       
 	}
 	db.QueueStatements(stmt)
 	return
@@ -123,7 +151,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 			table := db.TableNameIfy(attr.ShortName())
 
-			val, found := RT.AttrVal(obj, attr)
+			val, found := RT.AttrValue(obj, attr, false, true)
 			if !found {
 				break
 			}

@@ -247,6 +247,7 @@ func (t *RType) DbColumnType() (sqlType string) {
 	return
 }
 
+// DEPRECATED
 func (t *RType) addForwardRelation(rel *RelationSpec) (err error) {
 	_, found := t.ForwardRelationsByName[rel.End[1].Name]
 	if found {
@@ -258,6 +259,7 @@ func (t *RType) addForwardRelation(rel *RelationSpec) (err error) {
 	return
 }
 
+// DEPRECATED
 func (t *RType) addReverseRelation(rel *RelationSpec) (err error) {
 	_, found := t.ReverseRelationsByName[rel.End[0].Name]
 	if found {
@@ -277,13 +279,23 @@ func (t *RType) addReverseRelation(rel *RelationSpec) (err error) {
    how do we combine the application of the getter/setters?
 */
 func (t *RType) addAttribute(attr *AttributeSpec) (err error) {
-	if len(t.Attributes) == 10 {
+/*	if len(t.Attributes) == 10 {
 		err = fmt.Errorf("A type '%s' cannot have more than 10 attributes.", t.Name)
 		return
 	}
-	_, found := t.AttributesByName[attr.Part.Name]
+*/
+
+    existingAttr, found := t.GetAttribute(attr.Part.Name)
+
+// fmt.Printf("=== adding Attribute %s to type %s. Already found = %v\n",attr.Part.Name,t.Name,found)
+
+//	_, found := t.AttributesByName[attr.Part.Name]
 	if found {
-		err = fmt.Errorf("Attempt to redefine attribute '%s' of type '%s'.", attr.Part.Name, t.Name)
+		if existingAttr.WholeType == t {
+		   err = fmt.Errorf("Attempt to redefine attribute '%s' of type '%s'.", attr.Part.Name, t.Name)			
+		} else {
+		   err = fmt.Errorf("Can't add attribute '%s' to type '%s'. Supertype '%s' has an attribute or relation of same name.", attr.Part.Name, t.Name, existingAttr.WholeType.Name)
+	    }
 		return
 	}
 	t.Attributes = append(t.Attributes, attr)
@@ -319,6 +331,8 @@ func (t *RType) GetAttribute(attrName string) (attr *AttributeSpec, found bool) 
 
 
 /*
+DEPRECATED
+
 This is a HIGHLY UNOPTIMIZED way of getting the attribute spec from the type given the attribute name.
 It searches the type's AttributesByName hashtable, and if not found there, traverses the type's Up chain
 of supertypes, searching each's  AttributesByName hashtable in turn until an attribute of the specified name
@@ -330,7 +344,7 @@ func (t *RType) GetRelation(relName string) (rel *RelationSpec, found bool, isFo
 	rel, found = t.ForwardRelationsByName[relName]
 	if !found {
 		for _, supertype := range t.Up {
-			attr, found = supertype.ForwardRelationsByName[attrName]
+			rel, found = supertype.ForwardRelationsByName[relName]
 			if found {
 				isForward = true
 				return
@@ -341,7 +355,7 @@ func (t *RType) GetRelation(relName string) (rel *RelationSpec, found bool, isFo
 	rel, found = t.ReverseRelationsByName[relName]
 	if !found {
 		for _, supertype := range t.Up {
-			attr, found = supertype.ReverseRelationsByName[attrName]
+			rel, found = supertype.ReverseRelationsByName[relName]
 			if found {
 				return
 			}
@@ -422,6 +436,9 @@ func (attr *AttributeSpec) ShortName() string {
 }
 
 /*
+
+DEPRECATED
+
 A specification of a relationship between two types.
 Note that probably it is constrained to have set or sortedset as the collectiontype (why not list with order manually managed?)
 
@@ -568,6 +585,7 @@ func (rt *RuntimeEnv) getListType(elementType *RType) (typ *RType, err error) {
 }
 
 /*
+Deprecated comment:
 Each type should have a list (map from opposite end name?) of forwardRels (I am end 0) and backRels (where I am end 1)
 */
 func (rt *RuntimeEnv) CreateRelation(typeName1 string,
@@ -585,11 +603,11 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 	orderFuncOrAttrName2 string,
 	isAscending2 bool,	
 	isTransient bool,
-	dispatcher Dispatcher) (err error) {
+	dispatcher Dispatcher) (type1 *RType, type2 *RType,err error) {
 				
 
 
-	forwardRelAttr,err := data.RT.CreateAttribute(typeName1,
+	forwardRelAttr,err := rt.CreateAttribute(typeName1,
 									 	 typeName2,
 										 endName2,
 										 arityLow2,
@@ -600,13 +618,13 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 										 isTransient,
 										 true,
 										 false,
-										 g.Interp.Dispatcher())
+										 dispatcher)
 
    if err != nil {
        return
    }
 
-   reverseRelAttr,err := data.RT.CreateAttribute(typeName2,
+   reverseRelAttr,err := rt.CreateAttribute(typeName2,
 								 	 typeName1,
 									 endName1,
 									 arityLow1,
@@ -617,7 +635,7 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 									 isTransient,
 									 false,
 									 true,
-									 g.Interp.Dispatcher())
+									 dispatcher)
 
 
    if err != nil {
@@ -626,6 +644,9 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 
    forwardRelAttr.Inverse = reverseRelAttr
    reverseRelAttr.Inverse = forwardRelAttr
+
+   type1 = forwardRelAttr.WholeType
+   type2 = reverseRelAttr.WholeType
 
    return
 }
@@ -661,6 +682,7 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		err = fmt.Errorf("Type '%s' not found.", typeName1)
 		return
 	}
+	
 	typ2, found := rt.Types[typeName2]
 	if !found {
 		err = fmt.Errorf("Type '%s' not found.", typeName2)
@@ -721,8 +743,11 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 			IsAscending:      isAscending,
 		},
 		isTransient,
+		isForwardRelation,
+		isReverseRelation,
+		nil,
 	}
-	typ1.addAttribute(attr)
+	err = typ1.addAttribute(attr)
 
 	return
 }
