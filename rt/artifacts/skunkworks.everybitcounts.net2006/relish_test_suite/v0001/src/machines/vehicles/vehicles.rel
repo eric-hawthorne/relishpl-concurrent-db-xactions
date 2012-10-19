@@ -57,7 +57,7 @@ Car <: Automobile
 
 Automobile 0 1 vehicleDriven -- driver 0 1 people.Person
 
-Automobile 0 1 vehicleRiddenIn -- passengers 0 N {<firstName} people.Person
+Automobile 0 1 vehicleRiddenIn -- passengers 0 N {<lastName} people.Person
 
 Automobile 0 1 vehicleHungOnTo -- tailgaters 0 N [] people.Person
 

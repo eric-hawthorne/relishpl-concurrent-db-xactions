@@ -11,6 +11,7 @@ package  basic_tests
 import
    machines/vehicles
    relish.pl2012/things/pkg/physical_objects as phys
+   people
 
 // if gt radius MAX_RADIUS
 //    radius = MAX_RADIUS
@@ -186,3 +187,26 @@ multi-line string in relish!!
    print div 8 3.0
 
    print mod 7 3
+
+
+   driver1 = people.Person
+   driver1.firstName = "Joe"
+   driver1.lastName = "Armstrong"
+
+   passenger1 = people.Person
+   passenger1.firstName = "Alice"
+   passenger1.lastName = "Wong"
+
+   passenger2 = people.Person
+   passenger2.firstName = "Ernie"
+   passenger2.lastName = "Kovacs"
+
+   car2.driver = driver1
+   car2.passengers += passenger1
+   car2.passengers += passenger2
+
+   for person in car2.passengers
+      print person.firstName person.lastName
+
+   car3 = passenger2.vehicleRiddenIn
+   print car3.vin     

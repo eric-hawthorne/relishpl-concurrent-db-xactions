@@ -431,7 +431,90 @@ func (s *rsortedset) Len() int {
 func (s *rsortedset) Less(i, j int) bool {
 	// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
 
-	return false
+	if s.sortWith == nil { // Not a sorted list. So sorting is an (expensive) no-op.
+		return i < j
+	}
+
+	var evalContext MethodEvaluationContext
+	//var isLess RObject
+
+	if s.sortWith.attr != nil {
+
+		// Get attr value of both list members
+
+		obj1 := s.At(i)
+		val1, found := RT.AttrVal(obj1, s.sortWith.attr)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
+		}
+
+		obj2 := s.At(j)
+		val2, found := RT.AttrVal(obj2, s.sortWith.attr)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
+		}
+
+		// Use the "less" multimethod to compare them.
+
+		evalContext = RT.GetEvalContext(s)
+
+		// Assumes that the sortWith has been given the "less" multimethod. TODO!
+		// 
+		isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})
+
+		if s.sortWith.descending {
+			return isLess.IsZero()
+		}
+		return !isLess.IsZero()
+
+	} else if s.sortWith.unaryFunction != nil {
+
+		// Evaluate the unary function separately on both list members
+
+		evalContext = RT.GetEvalContext(s)
+
+		obj1 := s.At(i)
+		val1 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj1})
+
+		obj2 := s.At(j)
+		val2 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj2})
+
+		// Use the "less" multimethod to compare them.
+
+		evalContext := RT.GetEvalContext(s)
+
+		// Assumes that the sortWith has been given the "less" multimethod. TODO!
+		//
+		isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})
+
+		if s.sortWith.descending {
+			return isLess.IsZero()
+		}
+		return !isLess.IsZero()
+
+		// Use the inbuilt "less" multimethod to compare the function return values.
+
+	}
+	// else ... lessFunction
+
+	// Apply the multi-method to the two list members. It may be just the "less" multimethod.
+
+	// Get attr value of both list members
+
+	obj1 := s.At(i)
+
+	obj2 := s.At(j)
+
+	// Use the multimethod to compare them.
+
+	evalContext = RT.GetEvalContext(s)
+
+	isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{obj1, obj2})
+
+	if s.sortWith.descending {
+		return isLess.IsZero()
+	}
+	return !isLess.IsZero()
 
 }
 
