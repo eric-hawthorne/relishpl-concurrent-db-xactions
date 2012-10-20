@@ -435,11 +435,12 @@ func builtinEq(objects []RObject) []RObject {
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
-			val = Bool(Time(obj1.(RTime)).Equals(Time(obj2.(RTime))))				
+			val = Bool(Time(obj1.(RTime)).Equal(Time(obj2.(RTime))))				
 //		case String:
 // Add a Parse of an ISO8601 time string, and allow String, RTime combination as well
 		default:
-			val = Bool(false)		
+			val = Bool(false)	
+		}	
 		
 	}
 	return []RObject{val}
@@ -494,6 +495,25 @@ func builtinLtNum(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
+/*
+Less-than operator for time types.
+*/
+func builtinLtTime(objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	var val RObject
+	switch obj1.(type) {
+	case RTime:
+		switch obj2.(type) {
+		case RTime:
+			val = Bool(Time(obj1.(RTime)).Before(Time(obj2.(RTime))))
+		default:
+			rterr.Stop("lt is not defined for argument types")
+		}
+	default: rterr.Stop("lt is not defined for argument types")
+	}
+	return []RObject{val}
+}
 
 
 /*
@@ -555,6 +575,26 @@ func builtinGtNum(objects []RObject) []RObject {
 		rterr.Stop("gt is not defined for argument types")
 		}
 		default: rterr.Stop("gt is not defined for argument types")	
+	}
+	return []RObject{val}
+}
+
+/*
+Greater-than operator for time types.
+*/
+func builtinGtTime(objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	var val RObject
+	switch obj1.(type) {
+	case RTime:
+		switch obj2.(type) {
+		case RTime:
+			val = Bool(Time(obj1.(RTime)).After(Time(obj2.(RTime))))
+		default:
+			rterr.Stop("gt is not defined for argument types")
+		}
+	default: rterr.Stop("gt is not defined for argument types")
 	}
 	return []RObject{val}
 }

@@ -29,6 +29,7 @@ import (
 	"relish/rterr"
 	"strconv"
 	"strings"
+	. "time"
 )
 
 /*
@@ -45,7 +46,14 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 		table := db.TableNameIfy(attr.WholeType.ShortName())
 
 		if val.Type() == StringType {
-			stmt = fmt.Sprintf("UPDATE %s SET %s='%v' WHERE id=%v", table, attr.Part.Name, val, obj.DBID()) // EnsureDBID
+			stmt = fmt.Sprintf("UPDATE %s SET %s='%v' WHERE id=%v", table, attr.Part.Name, val, obj.DBID()) 
+		} else if val.Type() == TimeType {
+			attrName := attr.Part.Name
+			attrLocName := attrName + "_loc"
+			t := Time(val.(RTime))
+			timeString := t.Format("2006-01-02 15:04:05.999")
+			locationName := t.Location().String()
+			stmt = fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()) 					
 		} else {
 			stmt = fmt.Sprintf("UPDATE %s SET %s=%v WHERE id=%v", table, attr.Part.Name, val, obj.DBID())
 		}
@@ -86,7 +94,14 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
 	if attr.Part.Type.IsPrimitive {
 
 		table := db.TableNameIfy(attr.WholeType.ShortName())
-		stmt = fmt.Sprintf("UPDATE %s SET %s=NULL WHERE id=%v", table, attr.Part.Name, obj.DBID()) // EnsureDBID
+		
+		if attr.Part.Type == TimeType {
+		   attrName := attr.Part.Name
+		   attrLocName := attrName + "_loc"			
+		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL,%s=NULL WHERE id=%v", table, attrName, attrLocName, obj.DBID())
+        } else	{
+		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL WHERE id=%v", table, attr.Part.Name, obj.DBID()) 
+	    }
 	} else { // non-primitive value type
 
 		table := db.TableNameIfy(attr.ShortName())
@@ -1080,7 +1095,12 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 				case Int:
 					s += strconv.FormatInt(int64(val.(Int)), 10)
 				//case Uint:
-				//   s += strconv.Itoa64(int64(val.(Uint)))
+				//   s += strconv.Itoa64(int64(val.(Uint)))		
+				case RTime:
+					t := Time(val.(RTime))
+					timeString := t.Format("2006-01-02 15:04:05.999")
+					locationName := t.Location().String()
+					s += "'" + timeString + "','" + locationName + "'"															
 				case String:
 					s += "'" + SqlStringValueEscqpe(string(val.(String))) + "'"
 				case Float:

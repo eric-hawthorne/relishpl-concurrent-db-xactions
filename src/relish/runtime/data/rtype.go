@@ -145,6 +145,7 @@ FALSE bool
 		func (w word) int32() int32 { return int32(w) } 
 		func (w word) uint32() uint32 { return uint32(w) }
 
+TODO The {} and [] names are not correct. These types are called List_of_Float,Set_of_Float etc.
 
 */
 func newRType(name string, shortName string, parents []*RType) *RType {
@@ -164,6 +165,10 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 	case "[]Float", "[]Float32", "[]Complex", "[]Complex32":
 		fallthrough
 	case "{}Float", "{}Float32", "{}Complex", "{}Complex32":
+		fallthrough		
+	case "Time":
+		fallthrough		
+	case "{}Time", "[]Time":		
 		fallthrough
 	case "String":
 		isPrimitive = true
@@ -413,6 +418,8 @@ type RelEnd struct {
 func (end RelEnd) DbColumnDef() (colDef string) {
 	if end.Type == ComplexType {
 		colDef = end.Name + "_r DOUBLE,\n" + end.Name + "_i DOUBLE"
+	} else if end.Type == TimeType {
+		colDef = end.Name + " TEXT,\n" + end.Name + "_loc TEXT"
 	} else {
 		colDef = end.Name + " "
 		if end.ArityHigh == 1 {
