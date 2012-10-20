@@ -210,3 +210,5 @@ multi-line string in relish!!
 
    car3 = passenger2.vehicleRiddenIn
    print car3.vin     
+
+   print car2.passengers[1].firstName

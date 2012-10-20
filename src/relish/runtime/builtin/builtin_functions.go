@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"relish/rterr"
+	. "time"
 )
 
 func InitBuiltinFunctions() {
@@ -73,6 +74,12 @@ func InitBuiltinFunctions() {
 	}
 	ltNumMethod.PrimitiveCode = builtinLtNum
 
+	ltTimeMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"Time","Time"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	ltTimeMethod.PrimitiveCode = builtinLtTime	
+
 	ltStrMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"String", "String"}, 1, 0, false)
 	if err != nil {
 		panic(err)
@@ -84,6 +91,12 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	gtNumMethod.PrimitiveCode = builtinGtNum
+
+	gtTimeMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Time", "time"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	gtTimeMethod.PrimitiveCode = builtinGtTime	
 
 	gtStrMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"String", "String"}, 1, 0, false)
 	if err != nil {
@@ -419,6 +432,15 @@ func builtinEq(objects []RObject) []RObject {
 		default:
 			val = Bool(false)
 		}
+	case RTime:
+		switch obj2.(type) {
+		case RTime:
+			val = Bool(Time(obj1.(RTime)).Equals(Time(obj2.(RTime))))				
+//		case String:
+// Add a Parse of an ISO8601 time string, and allow String, RTime combination as well
+		default:
+			val = Bool(false)		
+		
 	}
 	return []RObject{val}
 }

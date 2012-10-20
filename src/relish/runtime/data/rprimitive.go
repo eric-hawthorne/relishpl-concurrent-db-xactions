@@ -9,6 +9,7 @@ package data
 import ( 
 	     "strconv"
          "errors"
+         . "time"
 )
 
 //"fmt"
@@ -61,6 +62,7 @@ var ComplexType *RType
 var Complex32Type *RType
 var TextType *RType
 var StringType *RType
+var TimeType *RType
 var ProxyType *RType
 
 var CallableType *RType
@@ -103,6 +105,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	ComplexType, _ = rt.CreateType("Complex", "", []string{"ComplexNumber"})
 	Complex32Type, _ = rt.CreateType("Complex32", "", []string{"ComplexNumber"})
 	StringType, _ = rt.CreateType("String", "", []string{"Text"})
+	TimeType, _ = rt.CreateType("Time", "", []string{"RelishPrimitive"})
 	ProxyType, _ = rt.CreateType("Proxy", "", []string{})
 
 	CallableType, _ = rt.CreateType("Callable", "", []string{"Text"})
@@ -255,6 +258,141 @@ func (p Channel) IsTransient() bool { return true }
 func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
+
+
+
+
+
+
+type RTime Time
+
+func (p RTime) IsZero() bool {
+	return Time(p).IsZero()
+}
+
+func (p RTime) Type() *RType {
+	return TimeType
+}
+
+func (p RTime) This() RObject {
+	return p
+}
+
+func (p RTime) IsUnit() bool {
+	return true
+}
+
+func (p RTime) IsCollection() bool {
+	return false
+}
+
+func (p RTime) String() string {
+	return Time(p).String() // TODO May want to change this: Formats as: "2006-01-02 15:04:05.999999999 -0700 MST"
+}
+
+func (p RTime) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p RTime) UUID() []byte {
+	panic("An RTime cannot have a UUID.")
+	return nil
+}
+
+func (p RTime) DBID() int64 {
+	panic("An RTime cannot have a DBID.")
+	return 0
+}
+
+func (p RTime) EnsureUUID() (theUUID []byte, err error) {
+	panic("An RTime cannot have a UUID.")
+	return
+}
+
+func (p RTime) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("An RTime cannot have a UUID.")
+	return
+}
+
+func (p RTime) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("An RTime cannot have a UUID.")
+	return
+}
+
+func (p RTime) UUIDstr() string {
+	panic("An RTime cannot have a UUID.")
+	return ""
+}
+
+func (p RTime) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("An RTime cannot have a UUID.")
+	return
+}
+
+func (p RTime) UUIDabbrev() string {
+	panic("An RTime cannot have a UUID.")
+	return ""
+}
+
+func (p RTime) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("An RTime cannot have a UUID.")
+	return
+}
+
+func (p RTime) RemoveUUID() {
+	panic("An RTime does not have a UUID.")
+	return
+}
+
+func (p RTime) Flags() int8 {
+	panic("An RTime has no Flags.")
+	return 0
+}
+
+func (p RTime) IsDirty() bool {
+	return false
+}
+func (p RTime) SetDirty() {
+}
+func (p RTime) ClearDirty() {
+}
+
+func (p RTime) IsIdReversed() bool {
+	return false
+}
+
+func (p RTime) SetIdReversed() {}
+
+func (p RTime) ClearIdReversed() {}
+
+func (p RTime) IsLoadNeeded() bool {
+	return false
+}
+
+func (p RTime) SetLoadNeeded()   {}
+func (p RTime) ClearLoadNeeded() {}
+
+func (p RTime) IsValid() bool { return true }
+func (p RTime) SetValid()     {}
+func (p RTime) ClearValid()   {}
+
+func (p RTime) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p RTime) SetStoredLocally()     {}
+func (p RTime) ClearStoredLocally()   {}
+
+func (p RTime) IsProxy() bool { return false }
+
+func (p RTime) IsTransient() bool { return false }
+
+func (p RTime) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+
+
 
 
 
