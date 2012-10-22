@@ -299,7 +299,7 @@ func (g *Generator) GenerateMethods() {
 	   var parameterTypes []string
 	   for _,inputArgDecl := range methodDeclaration.Type.Params {
 		  parameterNames = append(parameterNames, inputArgDecl.Name.Name)
-		  parameterTypes = append(parameterTypes, inputArgDecl.Type.Name.Name)
+		  parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
 	   }
 	
 	   numReturnArgs := len(methodDeclaration.Type.Results)

@@ -71,7 +71,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
 
 	if method == nil {
-		panic(fmt.Sprintf("No method '%s' is compatible with %s", mm.Name, typeTuple))
+		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
 	}
 	t.Push(method)
 	t.Reserve(1) // For code offset pointer within method bytecode (future)
@@ -689,7 +689,19 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 		mm := meth.(*RMultiMethod)
 		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(constructorArg + len(call.Args))) // len call.Args is WRONG! Use Type.Param except vararg
 		if method == nil {
-			panic(fmt.Sprintf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple))
+			if isTypeConstructor && len(call.Args) == 0 {  // There is no other-argless init<TypeName> method.
+               // Unsetup the aborted constructor method call.
+	           // TODO This is really inefficient!! Do something else for simple no-method constructions.
+	           t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO   
+	           t.PopN(nReturnArgs) // Get rid of space reserved for return args of aborted constructor method call.     
+               t.Push(newObject)  // Again, this time under the base of the alleged but no found constructor.
+	           nReturnArgs = 1     
+               return                       // Just return the uninitialized object.
+            }
+
+            // This is actually a no-compatible method found dynamic-dispatch error (i.e. a runtime-detected type compatibility error).
+			//
+			rterr.Stopf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
 		}
 		Logln(INTERP_, "Multi-method dispatched to ", method)
 	case *RMethod:
@@ -708,7 +720,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 
 	i.apply1(t, method, t.TopN(constructorArg + len(call.Args))) // Puts results on stack BELOW the current stack frame.	
 
-	t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
+	t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO
 	return
 }
 

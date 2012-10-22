@@ -12,8 +12,8 @@ package interp
 
 
 import (
-   "fmt"
    . "relish/runtime/data"
+   . "relish/dbg"
 )
 
 
@@ -123,7 +123,9 @@ func (d *dispatcher) GetMethodForTypes(mm *RMultiMethod, types ...*RType) (*RMet
 func (d *dispatcher) dynamicDispatch(mm *RMultiMethod, argTypeTuple *RTypeTuple) *RMethod {
    candidateMethods,found := mm.Methods[len(argTypeTuple.Types)]
    if ! found {
-      fmt.Printf("No '%s' method has arity %v.",mm.Name,len(argTypeTuple.Types))
+
+      
+      Log(INTERP2_, "No '%s' method has arity %v.\n",mm.Name,len(argTypeTuple.Types))      
       return nil
    }
    

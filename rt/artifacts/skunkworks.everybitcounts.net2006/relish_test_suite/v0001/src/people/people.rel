@@ -21,3 +21,13 @@ Person <: phys.SelfLocomotive
    lastName String
 
    dateOfBirth Time
+
+
+initPerson p Person firstName String lastName String dob Time > Person
+"""
+ Person constructor.
+"""
+   p.firstName = firstName
+   p.lastName = lastName
+   p.dateOfBirth = dob
+   => p
