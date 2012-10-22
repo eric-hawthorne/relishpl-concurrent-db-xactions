@@ -192,6 +192,9 @@ multi-line string in relish!!
    driver1 = people.Person
    driver1.firstName = "Joe"
    driver1.lastName = "Armstrong"
+   driver1.dateOfBirth = Time "1983-09-25T22:13:45.875Z"
+
+   print driver1.dateOfBirth
 
    passenger1 = people.Person
    passenger1.firstName = "Alice"
@@ -212,3 +215,9 @@ multi-line string in relish!!
    print car3.vin     
 
    print car2.passengers[1].firstName
+
+
+   pssngrs = []people.Person "dateOfBirth > '1982-09-23'"
+
+   for person in pssngrs
+      print person.firstName person.lastName

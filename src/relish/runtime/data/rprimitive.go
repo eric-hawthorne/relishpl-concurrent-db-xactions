@@ -10,6 +10,7 @@ import (
 	     "strconv"
          "errors"
          . "time"
+         "fmt"
 )
 
 //"fmt"
@@ -1165,9 +1166,291 @@ func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 type Float32 float32
 type Byte byte
 type Bit byte
-type CodePoint uint32
+type CodePoint uint32  // Should we call it Rune ?? Probably not. CodePoint is unambiguous, if boring.
+
+
+
 type Complex complex128
+
+func (p Complex) IsZero() bool {
+	return p == 0
+}
+
+func (p Complex) Type() *RType {
+	return ComplexType
+}
+
+func (p Complex) This() RObject {
+	return p
+}
+
+func (p Complex) IsUnit() bool {
+	return true
+}
+
+func (p Complex) IsCollection() bool {
+	return false
+}
+
+func (p Complex) String() string {
+    return fmt.Sprintf("%G",complex128(p))	
+}
+
+func (p Complex) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Complex) UUID() []byte {
+	panic("A Complex cannot have a UUID.")
+	return nil
+}
+
+func (p Complex) DBID() int64 {
+	panic("A Complex cannot have a DBID.")
+	return 0
+}
+
+func (p Complex) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Complex cannot have a UUID.")
+	return
+}
+
+func (p Complex) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Complex cannot have a UUID.")
+	return
+}
+
+func (p Complex) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Complex cannot have a UUID.")
+	return
+}
+
+func (p Complex) UUIDstr() string {
+	panic("A Complex cannot have a UUID.")
+	return ""
+}
+
+func (p Complex) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Complex cannot have a UUID.")
+	return
+}
+
+func (p Complex) UUIDabbrev() string {
+	panic("A Complex cannot have a UUID.")
+	return ""
+}
+
+func (p Complex) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Complex cannot have a UUID.")
+	return
+}
+
+func (p Complex) RemoveUUID() {
+	panic("A Complex does not have a UUID.")
+	return
+}
+
+func (p Complex) Flags() int8 {
+	panic("A Complex has no Flags.")
+	return 0
+}
+
+func (p Complex) IsDirty() bool {
+	return false
+}
+func (p Complex) SetDirty() {
+}
+func (p Complex) ClearDirty() {
+}
+
+func (p Complex) IsIdReversed() bool {
+	return false
+}
+
+func (p Complex) SetIdReversed() {}
+
+func (p Complex) ClearIdReversed() {}
+
+func (p Complex) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Complex) SetLoadNeeded()   {}
+func (p Complex) ClearLoadNeeded() {}
+
+func (p Complex) IsValid() bool { return true }
+func (p Complex) SetValid()     {}
+func (p Complex) ClearValid()   {}
+
+func (p Complex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Complex) SetStoredLocally()     {}
+func (p Complex) ClearStoredLocally()   {}
+
+func (p Complex) IsProxy() bool { return false }
+
+func (p Complex) IsTransient() bool { return false }
+
+func (p Complex) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+
+
 type Complex32 complex64
+
+func (p Complex32) IsZero() bool {
+	return p == 0
+}
+
+func (p Complex32) Type() *RType {
+	return Complex32Type
+}
+
+func (p Complex32) This() RObject {
+	return p
+}
+
+func (p Complex32) IsUnit() bool {
+	return true
+}
+
+func (p Complex32) IsCollection() bool {
+	return false
+}
+
+func (p Complex32) String() string {
+    return fmt.Sprintf("%G",complex64(p))	
+}
+
+func (p Complex32) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Complex32) UUID() []byte {
+	panic("A Complex32 cannot have a UUID.")
+	return nil
+}
+
+func (p Complex32) DBID() int64 {
+	panic("A Complex32 cannot have a DBID.")
+	return 0
+}
+
+func (p Complex32) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Complex32 cannot have a UUID.")
+	return
+}
+
+func (p Complex32) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Complex32 cannot have a UUID.")
+	return
+}
+
+func (p Complex32) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Complex32 cannot have a UUID.")
+	return
+}
+
+func (p Complex32) UUIDstr() string {
+	panic("A Complex32 cannot have a UUID.")
+	return ""
+}
+
+func (p Complex32) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Complex32 cannot have a UUID.")
+	return
+}
+
+func (p Complex32) UUIDabbrev() string {
+	panic("A Complex32 cannot have a UUID.")
+	return ""
+}
+
+func (p Complex32) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Complex32 cannot have a UUID.")
+	return
+}
+
+func (p Complex32) RemoveUUID() {
+	panic("A Complex32 does not have a UUID.")
+	return
+}
+
+func (p Complex32) Flags() int8 {
+	panic("A Complex32 has no Flags.")
+	return 0
+}
+
+func (p Complex32) IsDirty() bool {
+	return false
+}
+func (p Complex32) SetDirty() {
+}
+func (p Complex32) ClearDirty() {
+}
+
+func (p Complex32) IsIdReversed() bool {
+	return false
+}
+
+func (p Complex32) SetIdReversed() {}
+
+func (p Complex32) ClearIdReversed() {}
+
+func (p Complex32) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Complex32) SetLoadNeeded()   {}
+func (p Complex32) ClearLoadNeeded() {}
+
+func (p Complex32) IsValid() bool { return true }
+func (p Complex32) SetValid()     {}
+func (p Complex32) ClearValid()   {}
+
+func (p Complex32) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Complex32) SetStoredLocally()     {}
+func (p Complex32) ClearStoredLocally()   {}
+
+func (p Complex32) IsProxy() bool { return false }
+
+func (p Complex32) IsTransient() bool { return false }
+
+func (p Complex32) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 type String string
 

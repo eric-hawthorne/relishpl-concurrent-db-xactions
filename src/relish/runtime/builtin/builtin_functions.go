@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"relish/rterr"
-	. "time"
+    "time"
 )
 
 func InitBuiltinFunctions() {
@@ -92,7 +92,7 @@ func InitBuiltinFunctions() {
 	}
 	gtNumMethod.PrimitiveCode = builtinGtNum
 
-	gtTimeMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Time", "time"}, 1, 0, false)
+	gtTimeMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Time", "Time"}, 1, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -336,8 +336,32 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	stringLenMethod.PrimitiveCode = builtinStringLen	
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Type init functions
+
+	timeInit1Method, err := RT.CreateMethod("","initTime", []string{"t","timeString"}, []string{"Time","String"}, 2, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeInit1Method.PrimitiveCode = builtinInitTimeParse    
 	
+	timeInit2Method, err := RT.CreateMethod("","initTime", []string{"t","timeString","layout"}, []string{"Time","String","String"}, 2, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeInit2Method.PrimitiveCode = builtinInitTimeParse	
+
+	timeInit3Method, err := RT.CreateMethod("","initTime", []string{"t","year","month","day","hour","min","sec","nsec","loc"}, []string{"Time","Int","Int","Int","Int","Int","Int","Int","String"}, 2, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeInit3Method.PrimitiveCode = builtinInitTimeDate	
 }
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -435,7 +459,7 @@ func builtinEq(objects []RObject) []RObject {
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
-			val = Bool(Time(obj1.(RTime)).Equal(Time(obj2.(RTime))))				
+			val = Bool(time.Time(obj1.(RTime)).Equal(time.Time(obj2.(RTime))))				
 //		case String:
 // Add a Parse of an ISO8601 time string, and allow String, RTime combination as well
 		default:
@@ -506,7 +530,7 @@ func builtinLtTime(objects []RObject) []RObject {
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
-			val = Bool(Time(obj1.(RTime)).Before(Time(obj2.(RTime))))
+			val = Bool(time.Time(obj1.(RTime)).Before(time.Time(obj2.(RTime))))
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
@@ -590,7 +614,7 @@ func builtinGtTime(objects []RObject) []RObject {
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
-			val = Bool(Time(obj1.(RTime)).After(Time(obj2.(RTime))))
+			val = Bool(time.Time(obj1.(RTime)).After(time.Time(obj2.(RTime))))
 		default:
 			rterr.Stop("gt is not defined for argument types")
 		}
@@ -1115,3 +1139,141 @@ Also, should provide a template builtin function
 
 result = template templateString singleArgObject
 */
+
+
+
+/* ISO 8601 format as in W3C
+
+t err = Time "2012-09-23T14:23Z"
+
+t err = Time "2012-09-23T14:23:00Z"
+
+t err = Time "2012-09-23T14:23:00.000Z"
+
+t err = Time "2012-09-23 14:23 UTC"
+
+t err = Time "2012-09-23 14:23:00 America/New York"
+
+t err = Time "2012-09-23 14:23:00.000 Local" 
+
+t err = Time "2012-09-23 14:23:00.000 " "2006-01-02 15:04:05.999 "
+
+
+
+
+initTime t0 Time location String > t Time err String
+
+initTime t0 Time location String > t Time err String
+
+initTime t0 Time inKey String location String > t Time err String
+
+*/
+
+func builtinInitTimeParse(objects []RObject) []RObject {
+	if len(objects) == 1 {
+		return initTimeParse1(objects[0].String())
+	} 
+	return initTimeParse2(objects[0].String(),objects[1].String())
+}
+
+func initTimeParse1(timeString string) []RObject {
+
+   layout := "2006-01-02T15:04Z"		
+	
+   t, err := time.Parse(layout, timeString)
+   if err != nil {
+      layout = "2006-01-02T15:04:05Z"
+      t, err = time.Parse(layout, timeString)	
+	  if err != nil {
+	     layout = "2006-01-02T15:04:05.999Z"
+	     t, err = time.Parse(layout, timeString)
+	     if err != nil {
+             pieces := strings.SplitN(timeString, " " , 3) 
+             if len(pieces) < 3 {
+			    var tZero time.Time 
+			    t := RTime(tZero)
+		        return []RObject{t, String("Invalid date-time string format - see relish language reference")}	
+             }
+             timeString = pieces[0] + " " + pieces[1]
+		     locationName := pieces[2]
+		     loc, err := time.LoadLocation(locationName) 
+		     if err != nil {
+			    var tZero time.Time 
+			    t := RTime(tZero)
+		        return []RObject{t, String(err.Error())}	
+		     }	
+
+	         layout = "2006-01-02 15:04"	
+             tUtc, err := time.Parse(layout, timeString)		
+		     if err != nil {
+	            layout = "2006-01-02 15:04:05"				
+                tUtc, err = time.Parse(layout, timeString)		
+		        if err != nil {			
+	               layout = "2006-01-02 15:04:05.999"
+                   tUtc, err = time.Parse(layout, timeString)					
+		           if err != nil {				  
+			          var tZero time.Time 
+			          t := RTime(tZero)
+		              return []RObject{t, String(err.Error())}	
+		           }
+		        }
+		     }
+		     y := tUtc.Year()
+		     m := tUtc.Month()
+		     d := tUtc.Day()
+		     hh := tUtc.Hour()
+		     mm := tUtc.Minute()
+		     ss := tUtc.Second()
+		     ns := tUtc.Nanosecond() 
+
+		     t = time.Date(y, m, d, hh, mm, ss, ns, loc) 
+	     }		  
+	  }  
+   }
+   return []RObject{RTime(t),String("")}
+}
+
+
+func initTimeParse2(timeString string, layout string) []RObject {
+   t, err := time.Parse(layout, timeString)
+   if err != nil {
+	  var tZero time.Time 
+	  t := RTime(tZero)
+      return []RObject{t, String(err.Error())}	
+   }		
+   return []RObject{RTime(t),String("")}
+}
+
+
+
+/*
+t err = Time 2012 12 30 18 36 29 0 "UTC"
+
+initTime t0 Time year Int month Int day Int hour Int min Int sec Int nsec Int location String > t Time err String
+*/
+func builtinInitTimeDate(objects []RObject) []RObject {
+
+   // ignore first time argument
+  
+   year := int(objects[1].(Int))
+   monthInt := int(objects[2].(Int))
+   month := time.Month(monthInt)
+   day := int(objects[3].(Int))
+   hour := int(objects[4].(Int))
+   min := int(objects[5].(Int))
+   sec := int(objects[6].(Int))
+   nsec := int(objects[7].(Int))
+   locationName := objects[8].String()
+   loc, err := time.LoadLocation(locationName) 
+   if err != nil {
+	  var tZero time.Time 
+	  t := RTime(tZero)
+      return []RObject{t, String(err.Error())}	
+   }
+
+   t := time.Date(year, month, day, hour, min, sec, nsec, loc) 
+
+   return []RObject{RTime(t),String("")}
+}
+
+

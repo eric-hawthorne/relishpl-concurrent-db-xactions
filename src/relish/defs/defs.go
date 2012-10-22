@@ -31,6 +31,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Complex" : true,
 "Complex32" : true,
 "String" : true,
+"Time" : true,
 "Proxy" : true,
 "Callable" : true,
 "MultiMethod" : true,

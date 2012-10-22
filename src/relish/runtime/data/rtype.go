@@ -418,6 +418,8 @@ type RelEnd struct {
 func (end RelEnd) DbColumnDef() (colDef string) {
 	if end.Type == ComplexType {
 		colDef = end.Name + "_r DOUBLE,\n" + end.Name + "_i DOUBLE"
+	} else if end.Type == Complex32Type {
+		colDef = end.Name + "_r DOUBLE,\n" + end.Name + "_i DOUBLE"		
 	} else if end.Type == TimeType {
 		colDef = end.Name + " TEXT,\n" + end.Name + "_loc TEXT"
 	} else {

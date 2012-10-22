@@ -50,7 +50,7 @@ e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where s
 If lazy is true, the select statement selects only ids.
 If false, it selects everything from all tables: the type and all of its supertypes
 */
-func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, lazy bool) (sqlSelectQuery string, numPrimitiveAttrs int, err error) {
+func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, lazy bool) (sqlSelectQuery string, numPrimAttributeColumns int, err error) {
 
    // 1. Parse the OQL into an ast?
 
@@ -116,30 +116,41 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
     } else {
 
 		sqlSelectQuery = "SELECT ro.id,id2,flags,typeName"
-		sep := ","
+		sep := ","		
+		
 		for _, attr := range objType.Attributes {
 			if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
-				sqlSelectQuery += sep + attr.Part.Name
+				if attr.Part.Type == TimeType {
+				   sqlSelectQuery += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+				   numPrimAttributeColumns += 2							
+				} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+				   sqlSelectQuery += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+				   numPrimAttributeColumns += 2
+				} else {
+				   sqlSelectQuery += sep + attr.Part.Name
+				   numPrimAttributeColumns ++
+			    }
 				sep = ","
 			}
-		}
+		}		
 		
-		// TODO TODO TODO Not sure can use NumPrimitiveAttributes here because
-		// we have the possibility of multi-valued primitive-type attributes !!!!!!!!
-		
-	    numPrimitiveAttrs = objType.NumPrimitiveAttributes		
-
 		for _, typ := range objType.Up {
-			
-		    numPrimitiveAttrs += typ.NumPrimitiveAttributes			
 			for _, attr := range typ.Attributes {
-				if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
-					sqlSelectQuery += sep + attr.Part.Name
-					sep = ","
+					if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
+					if attr.Part.Type == TimeType {
+					   sqlSelectQuery += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+					   numPrimAttributeColumns += 2							
+					} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+					   sqlSelectQuery += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+					   numPrimAttributeColumns += 2
+					} else {
+					   sqlSelectQuery += sep + attr.Part.Name
+					   numPrimAttributeColumns ++
+				    }
+					sep = ","				
 				}
 			}
-		}
-		
+		}				
 		sqlSelectQuery += " FROM RObject ro"
     }
 

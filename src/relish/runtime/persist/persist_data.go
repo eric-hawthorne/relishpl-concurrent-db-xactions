@@ -29,8 +29,10 @@ import (
 	"relish/rterr"
 	"strconv"
 	"strings"
-	. "time"
+	"time"
 )
+
+const TIME_LAYOUT = "2006-01-02 15:04:05.000"
 
 /*
    Persist the setting of an attribute to a value.
@@ -50,8 +52,8 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 		} else if val.Type() == TimeType {
 			attrName := attr.Part.Name
 			attrLocName := attrName + "_loc"
-			t := Time(val.(RTime))
-			timeString := t.Format("2006-01-02 15:04:05.999")
+			t := time.Time(val.(RTime))
+			timeString := t.UTC().Format(TIME_LAYOUT)
 			locationName := t.Location().String()
 			stmt = fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()) 					
 		} else {
@@ -762,20 +764,40 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 
 	// Create the select clause
 
+    numPrimAttributeColumns := 0
+
 	selectClause := "SELECT "
 	sep := ""
 	for _, attr := range objTyp.Attributes {
 		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
-			selectClause += sep + attr.Part.Name
+			if attr.Part.Type == TimeType {
+			   selectClause += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+			   numPrimAttributeColumns += 2							
+			} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+			   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+			   numPrimAttributeColumns += 2
+			} else {
+			   selectClause += sep + attr.Part.Name
+			   numPrimAttributeColumns ++
+		    }
 			sep = ","
 		}
 	}
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
-				selectClause += sep + attr.Part.Name
-				sep = ","
+				if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
+				if attr.Part.Type == TimeType {
+				   selectClause += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+				   numPrimAttributeColumns += 2							
+				} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+				   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+				   numPrimAttributeColumns += 2
+				} else {
+				   selectClause += sep + attr.Part.Name
+				   numPrimAttributeColumns ++
+			    }
+				sep = ","				
 			}
 		}
 	}
@@ -828,9 +850,9 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 	   }
 	*/
 
-	attrValsBytes1 := make([][]byte, numPrimitiveAttrs)
+	attrValsBytes1 := make([][]byte, numPrimAttributeColumns)
 
-	attrValsBytes := make([]interface{}, numPrimitiveAttrs)
+	attrValsBytes := make([]interface{}, numPrimAttributeColumns)
 
 	for i := 0; i < len(attrValsBytes1); i++ {
 		attrValsBytes[i] = &attrValsBytes1[i]
@@ -843,36 +865,6 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 		return
 	}
 	
-/* REPLACED BY CALL TO RESTOREATTRS BELOW	
-
-	// Now go through the attrValsBytes and interpret each according to the datatype of each primitive
-	// attribute, and set the primitive attributes using the runtime SetAttrVal method.
-
-	i := 0
-	var val RObject
-
-	for _, attr := range objTyp.Attributes {
-		if attr.Part.Type.IsPrimitive {
-			valByteSlice := *(attrValsBytes[i].(*[]byte))
-			if convertAttrVal(valByteSlice, attr, &val) {
-				RT.RestoreAttr(obj, attr, val)
-			}
-			i++
-		}
-	}
-
-	for _, typ := range objTyp.Up {
-		for _, attr := range typ.Attributes {
-			if attr.Part.Type.IsPrimitive {
-				valByteSlice := *(attrValsBytes[i].(*[]byte))
-				if convertAttrVal(valByteSlice, attr, &val) {
-					RT.RestoreAttr(obj, attr, val)
-				}
-				i++
-			}
-		}
-	}
-*/
     db.restoreAttrs(obj, objTyp, attrValsBytes)
 
 	return
@@ -888,25 +880,40 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 
 	i := 0
 	var val RObject
+	var nonNil bool 
 
 	for _, attr := range objTyp.Attributes {
-		if attr.Part.Type.IsPrimitive {
+		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" {
 			valByteSlice := *(attrValsBytes[i].(*[]byte))
-			if convertAttrVal(valByteSlice, attr, &val) {
-				RT.RestoreAttr(obj, attr, val)
-			}
-			i++
+			if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+				i++
+				valByteSlice2 := *(attrValsBytes[i].(*[]byte))
+     		    nonNil = convertAttrValTwoFields(valByteSlice, valByteSlice2, attr, &val) 				
+			} else {
+			   nonNil = convertAttrVal(valByteSlice, attr, &val) 
+		    }
+		    if nonNil {
+		   		RT.RestoreAttr(obj, attr, val)			    
+		    }
+		    i++
 		}
 	}
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if attr.Part.Type.IsPrimitive {
+			if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" {
 				valByteSlice := *(attrValsBytes[i].(*[]byte))
-				if convertAttrVal(valByteSlice, attr, &val) {
-					RT.RestoreAttr(obj, attr, val)
-				}
-				i++
+				if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+					i++
+					valByteSlice2 := *(attrValsBytes[i].(*[]byte))
+	     		    nonNil = convertAttrValTwoFields(valByteSlice, valByteSlice2, attr, &val) 				
+				} else {
+				   nonNil = convertAttrVal(valByteSlice, attr, &val) 
+			    }
+			    if nonNil {
+			   		RT.RestoreAttr(obj, attr, val)			    
+			    }
+			    i++				
 			}
 		}
 	}
@@ -1035,7 +1042,7 @@ func convertAttrVal(valByteSlice []byte, attr *AttributeSpec, val *RObject) (non
 		*val = Bool(string(valByteSlice) == "1")
 
 	case StringType:
-		*val = String(string(valByteSlice))
+		*val = String(SqlStringValueUnescqpe(string(valByteSlice)))
 		nonNullValueFound = true // Shoot!! How do we distinguish between not set and empty string?
 
 	default:
@@ -1043,6 +1050,88 @@ func convertAttrVal(valByteSlice []byte, attr *AttributeSpec, val *RObject) (non
 	}
 	return
 }
+
+
+/*
+Convert the byte slice which was returned as a column-value of a databse result row into
+a primitive-type RObject. Sets the val argument to the new RObject.
+If the value from the database was NULL (empty string in numeric fields), does not
+set the val argument, and returns false.
+
+TODO NOT HANDLING NULLS PROPERLY HERE YET !!!!!!!!!
+
+*/
+func convertAttrValTwoFields(valByteSlice []byte, valByteSlice2 []byte, attr *AttributeSpec, val *RObject) (nonNullValueFound bool) {
+	switch attr.Part.Type {
+	case TimeType:
+		if len(valByteSlice) > 0 {
+			timeString := string(valByteSlice)
+			var locationName string
+	  	    if len(valByteSlice2) > 0 {
+			   locationName = string(valByteSlice2)		       
+		    }		
+			timeUTC, err := time.Parse(TIME_LAYOUT, timeString) 
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + " as Time: " + err.Error()))
+			}
+			location, err := time.LoadLocation(locationName)
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + " time.Location: " + err.Error()))
+			}			
+            *val = RTime(timeUTC.In(location))	
+			nonNullValueFound = true
+		}
+
+
+
+	case ComplexType:
+		if len(valByteSlice) > 0 {
+			r, err := strconv.ParseFloat(string(valByteSlice), 64)
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + "_r as float64: " + err.Error()))
+			}
+		    if len(valByteSlice2) == 0 {
+				panic(errors.New("attr " + attr.Part.Name + " imaginary part is null"))			
+			}
+			
+			i, err := strconv.ParseFloat(string(valByteSlice), 64)
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + "_i as float64: " + err.Error()))
+			}			
+				
+			*val = Complex(complex(r,i))
+			nonNullValueFound = true
+		}
+		
+	case Complex32Type:
+		if len(valByteSlice) > 0 {
+			r, err := strconv.ParseFloat(string(valByteSlice), 32)
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + "_r as float32: " + err.Error()))
+			}
+		    if len(valByteSlice2) == 0 {
+				panic(errors.New("attr " + attr.Part.Name + " imaginary part is null"))			
+			}
+			
+			i, err := strconv.ParseFloat(string(valByteSlice), 32)
+			if err != nil {
+				panic(errors.New("attr " + attr.Part.Name + "_i as float32: " + err.Error()))
+			}			
+				
+			r32 := float32(r)
+			i32 := float32(i)	
+			*val = Complex32(complex(r32,i32))
+			nonNullValueFound = true
+		}		
+
+	default:
+		panic(fmt.Sprintf("I don't know how to restore a type %v attribute.", attr.Part.Type))
+	}
+	return
+}
+
+
+
 
 /*
    Persist an robject for the first time. 
@@ -1097,14 +1186,25 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 				//case Uint:
 				//   s += strconv.Itoa64(int64(val.(Uint)))		
 				case RTime:
-					t := Time(val.(RTime))
-					timeString := t.Format("2006-01-02 15:04:05.999")
+					t := time.Time(val.(RTime))
+					timeString := t.UTC().Format(TIME_LAYOUT)
 					locationName := t.Location().String()
 					s += "'" + timeString + "','" + locationName + "'"															
 				case String:
 					s += "'" + SqlStringValueEscqpe(string(val.(String))) + "'"
 				case Float:
 					s += strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)
+					
+				case Complex:
+					c := complex128(val.(Complex))
+					r := real(c)
+					i := imag(c)
+					s += strconv.FormatFloat(r, 'G', -1, 64) + "," + strconv.FormatFloat(i, 'G', -1, 64)
+				case Complex32:
+					c := complex64(val.(Complex32))
+					r := float64(real(c))
+					i := float64(imag(c))					
+					s += strconv.FormatFloat(r, 'G', -1, 32) + "," + strconv.FormatFloat(i, 'G', -1, 32)								
 				case Bool:
 					boolVal := bool(val.(Bool))
 					if boolVal {
@@ -1117,6 +1217,8 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 				default:
 					panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
 				}
+			} else if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
+				s += "NULL,NULL"
 			} else {
 				s += "NULL"
 			}
@@ -1127,8 +1229,22 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 }
 
 func SqlStringValueEscqpe(s string) string {
-	s = strconv.Quote(s)
+	s = strconv.Quote(s)	
+    // Use QuoteToASCII(s) instead???
+	
 	s = strings.Replace(s, `\"`, `"`, -1)
 	s = strings.Replace(s, "'", "''", -1)
+	s = s[1:len(s)-1] // Strip surrounding double-quotes
+	return s
+}
+
+func SqlStringValueUnescqpe(s string) string {
+
+	
+	s = strings.Replace(s, `"`, `\"`, -1)
+	s, err := strconv.Unquote(`"` + s + `"`)
+	if err != nil {
+		panic(err)
+	}
 	return s
 }

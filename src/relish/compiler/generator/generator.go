@@ -287,11 +287,11 @@ func (g *Generator) GenerateMethods() {
 
 	   methodName := methodDeclaration.Name.Name
 		   
-	   // main functions and web dialog handler functions are explicitly package name qualified.
+	   // main functions and init<TypeName> functions and web dialog handler functions are explicitly package name qualified.
 	   //
-	// TODO   OOPS Which package are we executing when looking for web handler methods?????
+  	   // TODO   OOPS Which package are we executing when looking for web handler methods?????
 	
-	   if (methodName == "main") || (g.isWebDialogHandlerMethod()) {
+	   if (methodName == "main") || (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z') || (g.isWebDialogHandlerMethod()) {
 	      methodName = g.packagePath + methodName	
 	   }
 	

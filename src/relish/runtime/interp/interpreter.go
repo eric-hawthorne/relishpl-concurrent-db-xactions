@@ -617,21 +617,32 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
     // TODO or, if it is a type constructor, should put the type constructor function on the
     // stack. This is TBD.
 
-	methodKind := i.EvalFunExpr(t, call.Fun) // token.FUN (regular method) or token.TYPE (constructor)
+	isTypeConstructor, hasInitFunction := i.EvalFunExpr(t, call.Fun) // token.FUN (regular method) or token.TYPE (constructor)
 	
 	
 
-	// This here is a temporary short-cut. Because it doesn't handle constructors with arguments.
+	// This still doesn't handle implicit constructors that have keyword args corresponding to attributes of the
+	// type ad supertypes. !!!! TODO
 	//
-	if methodKind == token.TYPE {
-		nReturnArgs = 1
-		return
+	
+	var newObject RObject
+	var meth RObject
+	
+	if isTypeConstructor {
+		if ! hasInitFunction {
+			nReturnArgs = 1
+			return 
+		}
+	    meth = t.Pop() // put it back after the base pointer.	
+	    newObject = t.Pop()	
+	} else {
+	    meth = t.Pop() // put it back after the base pointer.			
 	}
 	
     // TODO Question - Why are we pushing the method and popping it again like this,
     // Why not just have EvalFunExpr return the method or multimethod as an RObject? breaks Eval.. method conventions, but more efficient.
 
-	meth := t.Pop() // put it back after the base pointer.
+
 	Logln(INTERP_TR, meth)
 	switch meth.(type) {
 	case *RMultiMethod:
@@ -649,6 +660,12 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 	// NOTE NOTE !!
 	// At some point, when leaving this context, we may want to also push just above this the offset into the method's code
 	// where we left off. We might wish to leave a space on the stack for that, and make initial variableOffset 3 instead of 2
+
+    constructorArg := 0
+    if isTypeConstructor {
+	   t.Push(newObject)
+	   constructorArg = 1
+    }  
 
 	for _, expr := range call.Args {
 		i.EvalExpr(t, expr)
@@ -670,7 +687,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 	switch meth.(type) {
 	case *RMultiMethod:
 		mm := meth.(*RMultiMethod)
-		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(len(call.Args))) // len call.Args is WRONG! Use Type.Param except vararg
+		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(constructorArg + len(call.Args))) // len call.Args is WRONG! Use Type.Param except vararg
 		if method == nil {
 			panic(fmt.Sprintf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple))
 		}
@@ -881,8 +898,14 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 Evaluate the expression which must end up as either a RMultiMethod or an RMethod or a Type. 
 If a RMultiMethod or RMethod, put that on the stack.
 If a Type, then if TODO!!!!!!!!!!!!
+
+If this is a type constructor call, then return isTypeConstructor = true
+and place the newly allocated but uninitialized object on the stack.
+If additionally an init<TypeName> function was found, set the hasInitFunc = true
+and place the init<TypeName> multimethod on the stack.
+If it is not a constructor call, place the found multimethod on the stack. 
 */
-func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) token.Token {
+func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bool, hasInitFunc bool) {
 	defer Un(Trace(INTERP_TR2, "EvalFunExpr"))
 	var methodKind token.Token
 	switch fun.(type) {
@@ -891,26 +914,46 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) token.Token {
 		methodKind = id.Kind
 		switch methodKind {
 		case token.FUNC:
-
-			// multiMethod, found := i.rt.MultiMethods[id.Name]
 			multiMethod, found := t.ExecutingPackage.MultiMethods[id.Name]
 			if !found {
 				panic(fmt.Sprintf("No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name))
 			}
 			t.Push(multiMethod)
+			
 		case token.TYPE:
 			obj, err := i.rt.NewObject(id.Name)
 			if err != nil {
 				panic(err)
 			}
 			t.Push(obj)
+			
+			isTypeConstructor = true			
+			
+			slashPos := strings.LastIndex(id.Name,"/")
+			var typeName string
+			var initMethodName string
+			if slashPos >= 0 {
+				typeName = id.Name[slashPos + 1:]
+				initMethodName = id.Name[:slashPos+1] + "init" + typeName
+			} else {
+				typeName = id.Name
+				initMethodName = "init" + typeName
+			}
+			
+			multiMethod, found := t.ExecutingPackage.MultiMethods[initMethodName]
+			if found {
+			   t.Push(multiMethod)	
+			   hasInitFunc = true	
+			}	
+			
+			
 		default:
 			panic("Wrong type of ident for function name.")
 		}
 	default:
 		panic("I don't handle lambda expressions yet!")
 	}
-	return methodKind
+	return 
 }
 
 /*

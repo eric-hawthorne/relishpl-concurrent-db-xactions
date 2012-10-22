@@ -19,3 +19,5 @@ Person <: phys.SelfLocomotive
    firstName String
 
    lastName String
+
+   dateOfBirth Time
