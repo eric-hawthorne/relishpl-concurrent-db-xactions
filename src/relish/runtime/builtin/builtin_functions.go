@@ -1170,10 +1170,11 @@ initTime t0 Time inKey String location String > t Time err String
 */
 
 func builtinInitTimeParse(objects []RObject) []RObject {
-	if len(objects) == 1 {
-		return initTimeParse1(objects[0].String())
+// ignore first Time arg
+	if len(objects) == 2 {
+		return initTimeParse1(objects[1].String())
 	} 
-	return initTimeParse2(objects[0].String(),objects[1].String())
+	return initTimeParse2(objects[1].String(),objects[2].String())
 }
 
 func initTimeParse1(timeString string) []RObject {
@@ -1253,7 +1254,7 @@ initTime t0 Time year Int month Int day Int hour Int min Int sec Int nsec Int lo
 */
 func builtinInitTimeDate(objects []RObject) []RObject {
 
-   // ignore first time argument
+   // ignore first Time argument
   
    year := int(objects[1].(Int))
    monthInt := int(objects[2].(Int))

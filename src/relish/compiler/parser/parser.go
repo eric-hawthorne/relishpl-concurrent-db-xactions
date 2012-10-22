@@ -2287,10 +2287,28 @@ func (p *parser) parseOneLineReturnArgSignature(funcType *ast.FuncType) bool {
    for ; p.Space(); {
 	   if ! p.parseOneLineReturnArgDecl(&returnArgDecls) {
 	       	p.Fail(st2)
-	        funcType.Results = returnArgDecls
-	        return true
+          break
 	   }
 	   st2 = p.State()
+   }
+
+   // Loop through the return arg declarations.
+   // Check that either they all have variable names or none do.
+   // If they have variable names, assign stack-offsets to the idents.
+   hasOneReturnArgName := false
+   hasAllReturnArgNames := true
+   for i := len(returnArgDecls)-1; i >= 0; i-- {
+       returnArgDecl := returnArgDecls[i]
+       if returnArgDecl.Name == nil {
+           hasAllReturnArgNames = false
+       } else { 
+           hasOneReturnArgName = true
+           p.ensureCurrentScopeVariable(returnArgDecl.Name, true)              
+       }
+   }
+   if hasOneReturnArgName && ! hasAllReturnArgNames {
+        p.stop("If one return value declaration has a variable name, all must be named")
+        return false
    }
 
    funcType.Results = returnArgDecls  
@@ -2324,10 +2342,28 @@ func (p *parser) parseIndentedReturnArgSignature(col int, funcType *ast.FuncType
 
        if ! p.parseReturnArgDecl(&returnArgDecls) {
             p.Fail(st2)
-            funcType.Results = returnArgDecls              
-            return true
+            break
        }     
        st2 = p.State()
+    }
+
+    // Loop through the return arg declarations.
+    // Check that either they all have variable names or none do.
+    // If they have variable names, assign stack-offsets to the idents.
+    hasOneReturnArgName := false
+    hasAllReturnArgNames := true
+    for i := len(returnArgDecls)-1; i >= 0; i-- {
+       returnArgDecl := returnArgDecls[i]
+       if returnArgDecl.Name == nil {
+           hasAllReturnArgNames = false
+       } else { 
+           hasOneReturnArgName = true
+           p.ensureCurrentScopeVariable(returnArgDecl.Name, true)              
+       }
+    }
+    if hasOneReturnArgName && ! hasAllReturnArgNames {
+        p.stop("If one return value declaration has a variable name, all must be named")
+        return false
     }
 
     funcType.Results = returnArgDecls  
@@ -2356,9 +2392,10 @@ func (p *parser) parseOneLineReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) boo
 	
 	*returnArgs = append(*returnArgs,returnArg)
 	
-    if argName != nil {
-       p.ensureCurrentScopeVariable(argName, true)	 	
-	}
+// Now doing this in the function that parses the whole return arg signature.  
+//    if argName != nil {
+//       p.ensureCurrentScopeVariable(argName, true)	 	
+//	  }
 	return true
 }
 

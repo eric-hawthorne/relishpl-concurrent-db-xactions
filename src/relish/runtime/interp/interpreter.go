@@ -592,8 +592,8 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
    [reserve for code position in method body bytecode? NOT PRESENTLY RESERVED]
    method
    base              ---
-   retval1              |
    retval2              |
+   retval1              |
    working data         | 
    working data         |
    paramOrLocalVar2     |    
@@ -706,7 +706,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 
 	t.Reserve(method.NumLocalVars)
 
-	i.apply1(t, method, t.TopN(len(call.Args))) // Puts results on stack BELOW the current stack frame.	
+	i.apply1(t, method, t.TopN(constructorArg + len(call.Args))) // Puts results on stack BELOW the current stack frame.	
 
 	t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
 	return
@@ -975,6 +975,9 @@ func (i *Interpreter) Apply(t *Thread, mm *RMultiMethod, args []RObject) {
 Apply the method implementation to the arguments.
 Puts the results on the stack, in reserved slots BELOW the current method-call's stack frame.
 Does not pop the m method's stack frame from the stack i.e. does not pop (move down) the base pointer.
+
+TODO TODO We cannot have the return values on the stack in reverse order like this.
+It will not work for using the values as args to the next outer method.
 */
 func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	defer Un(Trace(INTERP_TR, "apply1", m, "to", args))
@@ -985,8 +988,9 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		i.ExecBlock(t, m.Code.Body)
 	} else {
 		objs := m.PrimitiveCode(args)
+		n := len(objs)
 		for j, obj := range objs {
-			t.Stack[t.Base-j-1] = obj
+			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
 		}
 	}
 }
@@ -1571,6 +1575,96 @@ TODO
 */
 func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentStatement) {
 	defer Un(Trace(INTERP_TR2, "ExecAssignmentStatement"))
+	
+	startPos := t.Pos  // top of stack at beginning of assignment statement execution
+
+    for _,rhsExpr := range stmt.Rhs {
+ 		i.EvalExpr(t, rhsExpr)   	
+    }
+    numRhsValues := t.Pos - startPos
+    numLhsLocations := len(stmt.Lhs)
+    if numLhsLocations != numRhsValues  {
+    	var errMessage string
+    	if numRhsValues == 1 { 
+    		errMessage = fmt.Sprintf("Cannot assign 1 right-hand-side value to %d left-hand-side variables/attributes.",numLhsLocations)
+    	} else if numLhsLocations == 1 {
+    		errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to 1 left-hand-side variable/attribute.",numRhsValues)    		
+    	} else {
+            errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to %d left-hand-side variables/attributes.",numRhsValues, numLhsLocations)  
+        }    	
+ 		rterr.Stop(errMessage)   	
+    }
+
+    // Pop rhs values of the stack one by one, assigning each of them to a successive lhs location, starting with the last lhs expr and going
+    // from right to left.
+    //
+    for j := numLhsLocations - 1; j >= 0; j-- {
+       lhsExpr := stmt.Lhs[j]
+
+		switch lhsExpr.(type) {
+		case *ast.Ident: // A local variable or parameter or result parameter
+			Log(INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
+
+			t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
+
+			// TODO TODO TODO
+			// Will have to have reserved space for the local variables here when calling the method!!!     
+			// So have to know how many locals there are in the body!!!! Store it in the RMethod!!!
+			// Why is this comment here? We already do that.
+
+		// TODO handle dot expressions and [ ] selector expressions. First lhsEvaluate lhsExpr to put a
+		// cell reference onto the stack, then pop it and assign to it.
+		case *ast.SelectorExpr:
+			selector := lhsExpr.(*ast.SelectorExpr)
+			i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		      
+			assignee := t.Pop()       // the robject whose attribute is being assigned to.
+
+			// To speed this up at runtime, could, during parse time, have set an attr field (tbd) of the Sel ident.
+			//
+			// Except... We don't even know if this name is a one-arg method or an attribute, or which setter
+			// (from which type) to use. TODO TODO TODO. In this usage, in lhs of an assignment,
+			// it has to be an attribute or it's an error.
+			//
+			attr, found := assignee.Type().GetAttribute(selector.Sel.Name)
+			if !found {
+				rterr.Stop(fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
+			}
+
+			switch stmt.Tok {
+			case token.ASSIGN:
+				err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+				if err != nil {
+					if strings.Contains(err.Error()," a value of type ") {
+						rterr.Stop(err)
+					} 
+					panic(err)
+				}
+			case token.ADD_ASSIGN:
+				err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+				if err != nil {
+					if strings.Contains(err.Error()," a value of type ") {
+						rterr.Stop(err)
+					} 					
+					panic(err)
+				}
+			case token.SUB_ASSIGN:
+				// TODO TODO	
+				err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
+				if err != nil {
+					panic(err)
+				}
+			default:
+				panic("Unrecognized assignment operator")
+			}
+
+		default:
+			rterr.Stop("I only handle simple variable or attribute assignments currently. Not indexed ones.")
+
+		}       
+    }
+
+
+/*
 	for j, lhsExpr := range stmt.Lhs {
 		rhsExpr := stmt.Rhs[j]
 		i.EvalExpr(t, rhsExpr)
@@ -1633,16 +1727,20 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 		}
 	}
+	*/
 }
 
 /*
-TODO
+Executes expressions in left to right order then places them under the Base pointer on the stack, ready to be
+the results of the evaluation of the method.
 */
 func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) {
 	defer Un(Trace(INTERP_TR, "ExecReturnStatement", "stack top index ==>", t.Base-1))
+
+	n := len(stmt.Results)
 	for j, resultExpr := range stmt.Results {
 		i.EvalExpr(t, resultExpr)
-		t.Stack[t.Base-j-1] = t.Pop()
+		t.Stack[t.Base+j-n] = t.Pop()   // was t.Base-j-1  (return args in reverse order on stack)
 	}
 }
 
