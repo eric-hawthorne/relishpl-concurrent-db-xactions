@@ -626,7 +626,7 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 
    TODO THIS METHOD NEEDS TO FLUSH THE SQL STATEMENT QUEUE BEFORE IT RUNS THE SELECT QUERY!!!!!!!
 */
-func (db *SqliteDB) fetchMultipleEager(query string, radius int, numPrimitiveAttrs int, errSuffix string, checkCache bool, objs *[]RObject) (err error) {
+func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPrimitiveAttrs int, errSuffix string, checkCache bool, objs *[]RObject) (err error) {
 
 	Logln(PERSIST_, query)
 
@@ -644,105 +644,126 @@ func (db *SqliteDB) fetchMultipleEager(query string, radius int, numPrimitiveAtt
 	for selectStmt.Next() {
 	
 	    var obj RObject
-	
 		var id int64
-		var id2 int64
-		var flags int
-		var typeName string
+			
+	    if idsOnly {
 
-		attrValsBytes1 := make([][]byte, numPrimitiveAttrs)
-
-		attrValsBytes := make([]interface{}, numPrimitiveAttrs + 4)
-
-        attrValsBytes[0] = &id
-        attrValsBytes[1] = &id2
-        attrValsBytes[2] = &flags
-        attrValsBytes[3] = &typeName
-
- 		for i := 0; i < len(attrValsBytes1); i++ {
-			attrValsBytes[i+4] = &attrValsBytes1[i]
-		}
-
-
-		err = selectStmt.Scan(attrValsBytes...)
-		
-		if err != nil {
-			return
-		}
-		
-		if checkCache {
-			dbid := DBID(id, id2, flags)
-
-			var found bool
-			obj, found = RT.GetObject(dbid)
-			if found {
-	        	*objs = append(*objs, obj)				
-				continue    // to next object in the resultset
+			err = selectStmt.Scan(&id)
+			if err != nil {
+				return
 			}
-		}
-
-        fullTypeName := RT.Typs[typeName].Name
-
-	    obj, err = RT.NewObject(fullTypeName)
-		if err != nil {
-			return
-		}
-
-		// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
-
-		//   unit := obj.(*runit)
-		//   (&(unit.robject)).RestoreIdsAndFlags(id,id2,flags)
-
-		ob := obj.(Persistable)
-		ob.RestoreIdsAndFlags(id, id2, flags)
-
-		Logln(PERSIST2_, "id:", id, ", id2:", id2, ", flags:", flags, ", typeName:", typeName)
-
-		oid, oid2 := obj.UUIDuint64s()
-
-		Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
-
-		// Now restore the values of the unary primitive attributes of the object.
-		// These attribute values are stored in the db rows that represent the object in the db.
-		// The object in the db consists of a single row in each of several database tables.
-		// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
-		// and a single row in each such table identified by the object's dbid.
+					
+			if radius > 0 { // fetch the full objects
+				obj, err = db.Fetch(id, radius-1)
+				if err != nil {
+					return
+				}
+			} else { // Just put proxy objects into the collection.
+				obj = Proxy(id)
+			}		
 		
-	    objTyp := obj.Type()
-	    attrValsBytes = attrValsBytes[4:]
-        db.restoreAttrs(obj, objTyp, attrValsBytes)		
+	    } else { // The query fetched all primitive attributes of the objects.
+		
+			var id2 int64
+			var flags int
+			var typeName string
 
-		// Have to set this here before confirmed in order to avoid attribute or relation reference loops causing
-		// infinite looping during fetching. 
-		// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
+			attrValsBytes1 := make([][]byte, numPrimitiveAttrs)
 
-		obj.SetStoredLocally()
+			attrValsBytes := make([]interface{}, numPrimitiveAttrs + 4)
 
-		// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
-		// Maybe this should be fully lazy. Wait until the attribute value is asked for.
+	        attrValsBytes[0] = &id
+	        attrValsBytes[1] = &id2
+	        attrValsBytes[2] = &flags
+	        attrValsBytes[3] = &typeName
 
-		// TODO
+	 		for i := 0; i < len(attrValsBytes1); i++ {
+				attrValsBytes[i+4] = &attrValsBytes1[i]
+			}
 
-		// THIS NEEDS TO DEPEND ON DEPTH
 
-		// TODO
+			err = selectStmt.Scan(attrValsBytes...)
+		
+			if err != nil {
+				return
+			}
+		
+			if checkCache {
+				dbid := DBID(id, id2, flags)
+
+				var found bool
+				obj, found = RT.GetObject(dbid)
+				if found {
+		        	*objs = append(*objs, obj)				
+					continue    // to next object in the resultset
+				}
+			}
+
+	        fullTypeName := RT.Typs[typeName].Name
+
+		    obj, err = RT.NewObject(fullTypeName)
+			if err != nil {
+				return
+			}
+
+			// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
+
+			//   unit := obj.(*runit)
+			//   (&(unit.robject)).RestoreIdsAndFlags(id,id2,flags)
+
+			ob := obj.(Persistable)
+			ob.RestoreIdsAndFlags(id, id2, flags)
+
+			Logln(PERSIST2_, "id:", id, ", id2:", id2, ", flags:", flags, ", typeName:", typeName)
+
+			oid, oid2 := obj.UUIDuint64s()
+
+			Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
+
+			// Now restore the values of the unary primitive attributes of the object.
+			// These attribute values are stored in the db rows that represent the object in the db.
+			// The object in the db consists of a single row in each of several database tables.
+			// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
+			// and a single row in each such table identified by the object's dbid.
+		
+		    objTyp := obj.Type()
+		    attrValsBytes = attrValsBytes[4:]
+	        db.restoreAttrs(obj, objTyp, attrValsBytes)		
+
+			// Have to set this here before confirmed in order to avoid attribute or relation reference loops causing
+			// infinite looping during fetching. 
+			// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
+
+			obj.SetStoredLocally()
+
+			// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
+			// Maybe this should be fully lazy. Wait until the attribute value is asked for.
+
+			// TODO
+
+			// THIS NEEDS TO DEPEND ON DEPTH
+
+			// TODO IS THIS DEPTH CORRECT ????????
     
-		if radius > 0 {
-			err = db.fetchUnaryNonPrimitiveAttributeValues(id, obj, radius-1)
-			if err != nil {
-				return
-			}
+			if radius > 1 {
+				err = db.fetchUnaryNonPrimitiveAttributeValues(id, obj, radius-2)
+				if err != nil {
+					return
+				}
 
-			err = db.fetchMultiValuedNonPrimitiveAttributeValues(id, obj, radius-1)
-			if err != nil {
-				return
-			}
+				err = db.fetchMultiValuedNonPrimitiveAttributeValues(id, obj, radius-2)
+				if err != nil {
+					return
+				}
 
-			err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj, radius-1)
-			if err != nil {
-				return
+				err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj, radius-2)
+				if err != nil {
+					return
+				}
 			}
 		}
+		
+		
 		
 		*objs = append(*objs, obj)
 

@@ -54,6 +54,12 @@ Car <: Automobile
    engine Engine
    wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
 
+PickupTruck <: Automobile
+"""
+ A small truck.
+"""
+   bedLength Float
+
 
 Automobile 0 1 vehicleDriven -- driver 0 1 people.Person
 

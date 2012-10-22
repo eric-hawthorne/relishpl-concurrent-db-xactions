@@ -24,21 +24,26 @@ var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9
 
 /*
 */
-func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, lazy bool, objs *[]RObject) (err error) {
-	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius, lazy))
+func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) {
+	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius))
 	
 	var sqlQuery string
-	var numPrimitiveAttrs int
-    sqlQuery, numPrimitiveAttrs, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, lazy) 	
+	var numPrimitiveAttrColumns int
+	
+    polymorphic := typ.HasSubtypes()
+	
+	idsOnly := (radius == 0) || polymorphic
+    sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, idsOnly) 	
     if err != nil {
 	      err = fmt.Errorf("Query syntax error:\n%v\n while translating selection criteria:\n\"%s\"",err, oqlSelectionCriteria)
     }	
 	
 	checkCache := true
 	errSuffix := ""
-	err = db.fetchMultipleEager(sqlQuery, radius, numPrimitiveAttrs, errSuffix, checkCache, objs) 
+	err = db.fetchMultiple(sqlQuery, idsOnly, radius, numPrimitiveAttrColumns, errSuffix, checkCache, objs) 
 	return
 }
+
 
 
 
@@ -50,7 +55,7 @@ e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where s
 If lazy is true, the select statement selects only ids.
 If false, it selects everything from all tables: the type and all of its supertypes
 */
-func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, lazy bool) (sqlSelectQuery string, numPrimAttributeColumns int, err error) {
+func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, idsOnly bool) (sqlSelectQuery string, numPrimAttributeColumns int, err error) {
 
    // 1. Parse the OQL into an ast?
 
@@ -98,7 +103,7 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
         }
     } 
 
-    tableNameAliases, aliasedAttrNames, err := db.findAliases(objType, attributeNames, lazy)
+    tableNameAliases, aliasedAttrNames, err := db.findAliases(objType, attributeNames, idsOnly)
     if err != nil {
        return 	
     }
@@ -110,9 +115,9 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
     }
 
     var first bool
-    if lazy {
-       sqlSelectQuery = "SELECT id FROM "  // TODO This is going to be an ambiguous column name
-          first = true
+    if idsOnly {
+       sqlSelectQuery = "SELECT ro.id FROM RObject ro"  // TODO This is going to be an ambiguous column name
+       //   first = true
     } else {
 
 		sqlSelectQuery = "SELECT ro.id,id2,flags,typeName"
@@ -234,7 +239,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy
 }
 */
 
-func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
+func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsOnly bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
    tableNamesToAliases = make(map[string]string)
    attrNamesToAliasedAttrNames =  make(map[string]string)
    aliasNum := 1
@@ -261,7 +266,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy
 	  }
    }
 
-   if (foundAttribute && ! lazy) || matchedAttribute {
+   if (foundAttribute && ! idsOnly) || matchedAttribute {
       tableNamesToAliases[typeTableName] = alias	
    }
 
@@ -287,7 +292,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy
 		     }
 	      }
 	  }	
-	  if (foundAttribute && ! lazy) || matchedAttribute {
+	  if (foundAttribute && ! idsOnly) || matchedAttribute {
 	     tableNamesToAliases[typeTableName] = alias	
 	  }	      	
    }

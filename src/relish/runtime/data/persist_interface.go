@@ -31,7 +31,7 @@ type DB interface {
 	e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 	*/
 	
-    FetchN(typ *RType, oqlSelectionCriteria string, radius int, lazy bool, objs *[]RObject) (err error) 
+    FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) 
 
 	Close()
 }

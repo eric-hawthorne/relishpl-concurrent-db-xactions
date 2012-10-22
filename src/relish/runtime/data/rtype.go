@@ -202,7 +202,16 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 		ForwardRelationsByName:  make(map[string]*RelationSpec),
 		ReverseRelationsByName:  make(map[string]*RelationSpec),
 	}
+	
+	for _,parent := range parents {
+		parent.Children = append(parent.Children, typ)
+	}
+	
 	return typ
+}
+
+func (t *RType) HasSubtypes() bool {
+	return len(t.Children) > 0
 }
 
 func (t RType) String() string {

@@ -779,10 +779,10 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 	     rterr.Stop("Query expression used in list construction must evaluate to a String.")	
 	  }
 	  query := string(qS)
-	  lazy := false
+	  radius := 1
 	  if strings.HasPrefix(query, "lazy: ") {
 		 query = query[6:]
-	     lazy = true	 
+	     radius = 0	 
 	  }
 
 	
@@ -795,8 +795,8 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 
 	
-	  radius := 0
-      err = i.rt.DB().FetchN(list.ElementType(), query, radius, lazy, &objs)		
+
+      err = i.rt.DB().FetchN(list.ElementType(), query, radius, &objs)		
       if err != nil {
 	      rterr.Stop(err)
       }	

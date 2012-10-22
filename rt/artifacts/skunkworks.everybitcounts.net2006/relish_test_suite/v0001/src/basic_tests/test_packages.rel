@@ -92,6 +92,11 @@ main
    car1.long = 123.761  // - operator is not handled yet
    car1.vin = "V0E44R8139WT6214A"
 
+   truck1 = vehicles.PickupTruck
+   truck1.lat = 49.265
+   truck1.long = 123.778
+   truck1.bedLength = 8.3
+
    engine1 = vehicles.Engine
    engine1.horsepower = 120
    car1.engine = engine1
@@ -110,6 +115,7 @@ main
 
    if not exists "JSS 994"
       dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
+      dub truck1 "JAT 057"
 
    car1.wheels += wheel1  
    car1.wheels += wheel2  
@@ -143,6 +149,11 @@ main
    spares = [wheel1 wheel2 wheel3]vehicles.Wheel
 
    print "spares[1] =" spares[1].num
+
+   vcls = []vehicles.Vehicle "lat > 48" 
+   for vhcl in vcls 
+      print "boo"
+      print vhcl.lat vhcl.long
 
    a = """
 """

@@ -15,7 +15,10 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 2. Install the sqlite3 database software and its header files on your machine if not already installed.
 
    sudo aptitude show sqlite3
+   ...and if State: not installed...
    sudo aptitude install sqlite3
+   sudo aptitude show libsqlite3-dev
+   ...and if State: not installed...
    sudo aptitude install libsqlite3-dev
 
    works nicely on Ubuntu,
