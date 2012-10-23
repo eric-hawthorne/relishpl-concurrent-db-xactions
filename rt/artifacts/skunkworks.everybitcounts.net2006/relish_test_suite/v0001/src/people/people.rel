@@ -33,4 +33,4 @@ initPerson p Person firstName String lastName String dob Time > Person
    => p
 
 
-Person holder 1 -- 0 N Role
+Person 1 holder -- 0 N Role
