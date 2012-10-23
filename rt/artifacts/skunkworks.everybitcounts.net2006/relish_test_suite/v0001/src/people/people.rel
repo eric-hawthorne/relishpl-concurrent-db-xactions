@@ -31,3 +31,6 @@ initPerson p Person firstName String lastName String dob Time > Person
    p.lastName = lastName
    p.dateOfBirth = dob
    => p
+
+
+Person holder 1 -- 0 N Role
