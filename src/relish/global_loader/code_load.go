@@ -670,10 +670,18 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
                                            // This can be overridden with a statement in the program, as long as a persistence op has not been used first.
     }
 
+    // Collect a map of file nodes to the root of the filename. We will be passing this to the generator to generate runtime
+    // code for the whole package all at once.
+    //
+    astFileNodes := make(map[*ast.File]string)    
+
     for _,filename := range filenames {
 		var sourceFound bool
 		var pickledFound bool	
 	    if strings.HasSuffix(filename,".rel") { // consider only the relish source files in the dir.
+		// This is actually quite controversial, since it means that source code MUST be present
+		// or we won't bother looking for the compiled file to load.
+		// This is a somewhat political opinionated decision. Will have to be seriously mulled if not pondered.
 			
            // TODO add in here the on-demand compilation as found in relish.go
            // Doing it NOW!!
@@ -742,36 +750,38 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 			  }					
 		   }
 
-
- 
 		
 		   err = ldr.ensureImportsAreLoaded(fileNode)
 	       if err != nil {
 	          return
 	       }		
 		
-           gen = generator.NewGenerator(fileNode, fileNameRoot) // TODO NOW add a isLocal =ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath]
+		   astFileNodes[fileNode] = fileNameRoot
+//         gen = generator.NewGenerator(fileNode, fileNameRoot) // TODO NOW add a isLocal =ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath]
                                                                 // argument so that we can flag the RPackage object as local or shared.
-           gen.GenerateCode()	
+//         gen.GenerateCode()	
 
 	       if parseNeeded {
 		      fmt.Printf("Compiled %s\n", sourceFilePath)		
-		   } else {
-		      fmt.Printf("Loaded %s\n", pickleFilePath)	
-	       }
-	    }
-    }
+		   } 
+		
+	    } // end of if it is a code file.
+    } // end of loop over each file in the package.
+
+
+    gen = generator.NewGenerator(astFileNodes)
+    gen.GenerateCode()
+
 
     ldr.LoadedPackages[packageIdentifier] = version
 
-
-
     delete(ldr.PackagesBeingLoaded,packageIdentifier)
 
-    return
+    fmt.Printf("Loaded %s\n", packageCompiledPath)	
+    
+   return
 }
-     
-	
+  	
 
 
 /*

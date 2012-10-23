@@ -20,22 +20,30 @@ import (
 
 // The parser structure holds the parser's internal state.
 type Generator struct {
-	file *ast.File
+	files map[*ast.File]string  // map from ast filenode to filename root without .rel or .rlc suffix
 	Interp *interp.Interpreter
 	th *interp.Thread
 	packageName string // Full name of origin, artifact, and package
 	packagePath string // Full name of origin, artifact, and package, ending in a /
 	pkg *data.RPackage // the current package which this file is being generated into
-	fileNameRoot string // filename of the code file in the package, without its .rel or .rlc suffix
 }
 
-func NewGenerator(file *ast.File, fileNameRoot string) *Generator {
+func NewGenerator(files map[*ast.File]string) *Generator {
 	interpreter := interp.NewInterpreter(data.RT)
 	thread := interpreter.NewThread(nil)
-	return &Generator{file,interpreter,thread,file.Name.Name,file.Name.Name + "/",nil,fileNameRoot}
+	var packageName string
+	var packagePath string
+	for file := range files {
+		packageName = file.Name.Name
+		packagePath = packageName + "/"
+		break
+	}
+	return &Generator{files,interpreter,thread,packageName,packagePath,nil}
 }
 
 /*
+TODO HAVE TO CHANGE THIS TO GENERATE CODE FOR A WHOLE PACKAGE !!!!
+
 Given a Relish intermediate-code file node tree, create objects in the runtime for data-types, methods, and constants defined in the file.
 Assumes imported packages have already been loaded; thus the objects defined in files of the imported packages have been generated.
 */
