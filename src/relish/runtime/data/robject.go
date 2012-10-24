@@ -45,6 +45,9 @@ type RObject interface {
 	If this is a RCollection, return a slice or map of the elements, depending on the subtype of collection.
 	If not a collection,an error is returned as the second return value.
     Can be used by go's template range action to iterate through collection in a template.	
+
+    Note. This needs to fetch all Proxy objects in the collection before returning the slice.
+    Or wait a minute...
 	*/
 	Iterable() (sliceOrMap interface{}, err error)
 

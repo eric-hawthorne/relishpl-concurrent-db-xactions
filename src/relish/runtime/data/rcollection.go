@@ -300,6 +300,7 @@ func (c *rset) Iter() <-chan RObject {
 	return ch
 }
 
+
 /*
 Creates a fresh new slice.
 */
@@ -401,6 +402,7 @@ func (s *rsortedset) At(i int) RObject {
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching sorted-set element [%v]: %s", i, err))
 		}
+		(*(s.v))[i] = obj		
 	}
 	return obj
 }
@@ -578,15 +580,16 @@ func (c *rsortedset) Iter() <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
-			for _, obj := range *(c.v) {
+			for i, obj := range *(c.v) {
 				robj := obj.(RObject)
 				if robj.IsProxy() {
 					var err error
 					proxy := robj.(Proxy)
 					robj, err = RT.DB().Fetch(int64(proxy), 0)
 					if err != nil {
-						panic(fmt.Sprintf("Error fetching list element: %s", err))
+						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 					}
+				    (*(c.v))[i] = robj					
 				}
 				ch <- robj
 			}
@@ -596,10 +599,31 @@ func (c *rsortedset) Iter() <-chan RObject {
 	return ch
 }
 
+func (c *rsortedset) deproxify() {
+	if c.v != nil {
+		for i, obj := range *(c.v) {
+			robj := obj.(RObject)
+			if robj.IsProxy() {
+				var err error
+				proxy := robj.(Proxy)
+				robj, err = RT.DB().Fetch(int64(proxy), 0)
+				if err != nil {
+					panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
+				}
+				(*(c.v))[i] = robj
+			}
+		}
+	}
+}
+
 /*
 Do not modify the returned slice
 */
 func (s *rsortedset) AsSlice() []RObject {
+	s.deproxify()
+	if s.v == nil {
+		return []RObject{}
+	}
 	return []RObject(*(s.v))
 }
 
@@ -652,7 +676,7 @@ func (c *rlist) Iter() <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
-			for _, obj := range *(c.v) {
+			for i, obj := range *(c.v) {
 				robj := obj.(RObject)
 				if robj.IsProxy() {
 					var err error
@@ -661,6 +685,7 @@ func (c *rlist) Iter() <-chan RObject {
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching list element: %s", err))
 					}
+					(*(c.v))[i] = robj
 				}
 				ch <- robj
 			}
@@ -668,6 +693,26 @@ func (c *rlist) Iter() <-chan RObject {
 		close(ch)
 	}()
 	return ch
+}
+
+/*
+   Converts all proxies in the collection to real objects.
+*/
+func (c *rlist) deproxify() {
+	if c.v != nil {
+		for i, obj := range *(c.v) {
+			robj := obj.(RObject)
+			if robj.IsProxy() {
+				var err error
+				proxy := robj.(Proxy)
+				robj, err = RT.DB().Fetch(int64(proxy), 0)
+				if err != nil {
+					panic(fmt.Sprintf("Error fetching list element: %s", err))
+				}
+				(*(c.v))[i] = robj				
+			}
+		}
+	}
 }
 
 /*
@@ -683,6 +728,10 @@ func (s *rlist) ReplaceContents(objs []RObject) {
 }
 
 func (s *rlist) AsSlice() []RObject {
+	s.deproxify()
+	if s.v == nil {
+		return []RObject{}
+	}
 	return []RObject(*(s.v))
 }
 
@@ -728,6 +777,7 @@ func (s *rlist) At(i int) RObject {
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching list element [%v]: %s", i, err))
 		}
+		(*(s.v))[i] = obj		
 	}
 	return obj
 }

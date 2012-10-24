@@ -415,22 +415,12 @@ func getKeywordArgs(r *http.Request) (args url.Values, err error) {
 
 
 /*
-Given an index i in a slice of the specified length, return the corresponding index
-to use were the slice actually reversed. Used in processResponse because the
-method call results slice is in reverse order. 
-*/
-func reverseIndex(i int, length int) int {
-	return length - 1 - i             
-	                                    
-}
-
-/*
 Note should do considerably more checking of Content-Type (detected) and mimesubtype returnval,
 to ensure they are consistent with the kind of processing directive. 
 */
 func processResponse(w http.ResponseWriter, r *http.Request, methodName string, results []RObject) (err error) {
-   nr := len(results)
-   processingDirective := string(results[reverseIndex(0,nr)].(String))
+
+   processingDirective := string(results[0].(String))
    
    switch processingDirective {
 
@@ -440,7 +430,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
         return       
       } else if len(results) == 2 {            
-         xmlContent = string(results[reverseIndex(1,nr)].(String)) 
+         xmlContent = string(results[1].(String)) 
          if ! strings.HasPrefix(xmlContent,"<?xml") {
            err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
            return      
@@ -456,7 +446,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s XML FILE response requires a filepath", methodName) 
          return       
        } else if len(results) == 2 {            
-          filePath = string(results[reverseIndex(1,nr)].(String))       
+          filePath = string(results[1].(String))       
         } else {
               err = fmt.Errorf("%s XML FILE response has too many return values. Should be filepath", methodName) 
               return               
@@ -473,7 +463,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s HTML response requires a html-formatted string as second return value", methodName) 
         return       
       } else if len(results) == 2 {            
-         htmlContent = string(results[reverseIndex(1,nr)].(String)) 
+         htmlContent = string(results[1].(String)) 
          if ! (strings.HasPrefix(htmlContent,"<html") || strings.HasPrefix(htmlContent,"<HTML") || strings.HasPrefix(htmlContent,"<!DOCTYPE html")) {
            err = fmt.Errorf("%s HTML response requires a html-formatted string as second return value", methodName) 
            return      
@@ -489,7 +479,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s HTML FILE response requires a filepath", methodName) 
          return       
        } else if len(results) == 2 {            
-          filePath = string(results[reverseIndex(1,nr)].(String))       
+          filePath = string(results[1].(String))       
         } else {
               err = fmt.Errorf("%s HTML FILE response has too many return values. Should be filepath", methodName) 
               return               
@@ -517,12 +507,12 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s IMAGE FILE response requires a filepath", methodName) 
          return       
        } else if len(results) == 2 {            
-          filePath = string(results[reverseIndex(1,nr)].(String))    
+          filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeSubtype = string(results[reverseIndex(1,nr)].(String))
+          mimeSubtype = string(results[1].(String))
           mimeType = "image/" + mimeSubtype
-          filePath = string(results[reverseIndex(2,nr)].(String))    
+          filePath = string(results[2].(String))    
         } else {
               err = fmt.Errorf("%s IMAGE FILE response has too many return values. Should be filepath or mimesubtype filepath", methodName) 
               return               
@@ -543,12 +533,12 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s VIDEO FILE response requires a filepath", methodName) 
          return       
        } else if len(results) == 2 {            
-          filePath = string(results[reverseIndex(1,nr)].(String))    
+          filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeSubtype = string(results[reverseIndex(1,nr)].(String))
+          mimeSubtype = string(results[1].(String))
           mimeType = "video/" + mimeSubtype
-          filePath = string(results[reverseIndex(2,nr)].(String))    
+          filePath = string(results[2].(String))    
         } else {
               err = fmt.Errorf("%s VIDEO FILE response has too many return values. Should be filepath or mimesubtype filepath", methodName) 
               return               
@@ -568,11 +558,11 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s MEDIA FILE response requires a filepath", methodName) 
          return       
        } else if len(results) == 2 {            
-          filePath = string(results[reverseIndex(1,nr)].(String))    
+          filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeType = string(results[reverseIndex(1,nr)].(String))
-          filePath = string(results[reverseIndex(2,nr)].(String))    
+          mimeType = string(results[1].(String))
+          filePath = string(results[2].(String))    
         } else {
               err = fmt.Errorf("%s IMEDIA FILE response has too many return values. Should be filepath or mimetype filepath", methodName) 
               return               
@@ -591,12 +581,12 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
        } else if len(results) == 2 {
           code = 303   
           // TODO Should handle a builtin URL type as well as String               
-          urlStr = string(results[reverseIndex(1,nr)].(String))    
+          urlStr = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          code = int(results[reverseIndex(1,nr)].(Int))           
+          code = int(results[1].(Int))           
           // TODO Should handle a builtin URL type as well as String
-          urlStr = string(results[reverseIndex(2,nr)].(String))    
+          urlStr = string(results[2].(String))    
         } else {
               err = fmt.Errorf("%s redirect has too many return values. Should be URL or e.g. 307 URL", methodName) 
               return               
@@ -610,10 +600,10 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s HTTP ERROR response requires an http error code # e.g. 404", methodName) 
          return       
        } else if len(results) == 2 {
-          code = int(results[reverseIndex(1,nr)].(Int))         
+          code = int(results[1].(Int))         
        } else if len(results) == 3 {
-          code = int(results[reverseIndex(1,nr)].(Int))           
-          message = string(results[reverseIndex(2,nr)].(String))    
+          code = int(results[1].(Int))           
+          message = string(results[2].(String))    
 
        } else {
               err = fmt.Errorf("%s HTTP ERROR response has too many return values. Should be e.g. 404 [message]", methodName) 
@@ -630,8 +620,8 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 		     err = fmt.Errorf("%s (with a templated response) has unexpected 4th return value", methodName)	
 		     return
 	    }	
-	    relishTemplateText := string(results[reverseIndex(1,nr)].(String))
-	    obj := results[reverseIndex(2,nr)]
+	    relishTemplateText := string(results[1].(String))
+	    obj := results[2]
 	    err = processTemplateResponse(w, r, methodName, "", relishTemplateText, obj)
 		
       case "HEADERS":
@@ -654,7 +644,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
       }
 
           templateFilePath = makeAbsoluteFilePath(methodName, templateFilePath) 
-	      obj := results[reverseIndex(1,nr)]
+	      obj := results[1]
           err = processTemplateFileResponse(w, r, methodName, templateFilePath, obj) 
    }
 
