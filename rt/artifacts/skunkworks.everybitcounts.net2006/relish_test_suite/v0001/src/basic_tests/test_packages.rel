@@ -156,7 +156,6 @@ main
       print vhcl.lat vhcl.long
 
    a = """
-"""
 This is the very first
 multi-line string in relish!!
 """
