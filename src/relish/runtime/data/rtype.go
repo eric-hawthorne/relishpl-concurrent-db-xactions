@@ -16,6 +16,7 @@ import (
 	"hash"
 	"hash/adler32"
 	. "relish/dbg"
+	// "relish/rterr"
 )
 
 ///////////////////////////////////////////////////////////////////////////
@@ -621,7 +622,7 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 	orderFuncOrAttrName2 string,
 	isAscending2 bool,	
 	isTransient bool,
-	dispatcher Dispatcher) (type1 *RType, type2 *RType,err error) {
+	orderings map[string]*AttributeSpec) (type1 *RType, type2 *RType,err error) {
 				
 
 
@@ -636,7 +637,7 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 										 isTransient,
 										 true,
 										 false,
-										 dispatcher)
+										 orderings)
 
    if err != nil {
        return
@@ -653,7 +654,7 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 									 isTransient,
 									 false,
 									 true,
-									 dispatcher)
+									 orderings)
 
 
    if err != nil {
@@ -668,7 +669,6 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 
    return
 }
-
 
 
 
@@ -692,7 +692,7 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 	isTransient bool,
 	isForwardRelation bool,
 	isReverseRelation bool,
-	dispatcher Dispatcher) (attr *AttributeSpec, err error) {
+	orderings map[string]*AttributeSpec) (attr *AttributeSpec, err error) {
 
 	//fmt.Println(rt.Types)	
 	typ1, found := rt.Types[typeName1]
@@ -707,47 +707,6 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		return
 	}
 
-	var orderAttr *AttributeSpec
-	var attrFound bool
-	var orderMethod *RMultiMethod
-
-	// TODO Find out which of attribute or method it is. How????
-	// Should be along the lines of: 
-	// If there is a method of that name defined which takes only typ2 as arg signature, then use that function,
-	// Otherwise could check if there is an attribute of that name on typ2 or its supertypes, and if not,
-	// throw a type compatibility panic.
-
-	var orderMethodArity int32 = 0
-
-	if orderFuncOrAttrName != "" {
-		orderMethod, methodFound := rt.MultiMethods[orderFuncOrAttrName]
-
-		if methodFound {
-
-			// Find out if there is an arity 1 method
-			unaryMethod, _ := dispatcher.GetMethodForTypes(orderMethod, typ2)
-			// Find out if there is an arity 2 method
-			binaryMethod, _ := dispatcher.GetMethodForTypes(orderMethod, typ2, typ2)
-
-			if unaryMethod != nil && binaryMethod != nil {
-				panic(fmt.Sprintf("Can't order collection because ambiguous unary and binary method '%s'.", orderFuncOrAttrName))
-			}
-
-			if unaryMethod != nil {
-				orderMethodArity = 1
-			} else if binaryMethod != nil {
-				orderMethodArity = 2
-			} else {
-				panic(fmt.Sprintf("Can't order collection. No unary or binary method '%s' found.", orderFuncOrAttrName))
-			}
-		} else {
-			orderAttr, attrFound = typ2.GetAttribute(orderFuncOrAttrName)
-			if !attrFound {
-				panic(fmt.Sprintf("Can't order collection. No method or attribute '%s' found.", orderFuncOrAttrName))
-			}
-		}
-	}
-
 	attr = &AttributeSpec{typ1,
 		RelEnd{
 			Name:             endName2,
@@ -755,9 +714,9 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 			ArityLow:         arityLow2,
 			ArityHigh:        arityHigh2,
 			CollectionType:   collectionType2,
-			OrderAttr:        orderAttr,
-			OrderMethod:      orderMethod,
-			OrderMethodArity: orderMethodArity, // 1 or 2
+//			OrderAttr:        orderAttr,
+//			OrderMethod:      orderMethod,
+//			OrderMethodArity: orderMethodArity, // 1 or 2
 			IsAscending:      isAscending,
 		},
 		isTransient,
@@ -765,10 +724,18 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		isReverseRelation,
 		nil,
 	}
+
+    if orderFuncOrAttrName != "" {
+	    orderings[orderFuncOrAttrName] = attr
+    }	
+	
 	err = typ1.addAttribute(attr)
 
 	return
 }
+
+
+
 
 /*
 RelEnd

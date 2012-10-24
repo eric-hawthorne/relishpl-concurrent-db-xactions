@@ -19,6 +19,10 @@ const (
 	STACK_      = 1 << iota   // == 1 (iota has been reset)
 	AST_        = 1 << iota   // == 2
 	PARSE_	    = 1 << iota   // == 4
+	LOAD_       = 1 << iota
+	LOAD2_      = 1 << iota
+	GENERATE_   = 1 << iota
+	GENERATE2_  = 1 << iota	
 	INTERP_     = 1 << iota   // Log INTERPreter aspect of program when logging at minimum (or above) verbosity level
 	INTERP2_    = 1 << iota	  // Log INTERPreter aspect of program only when logging at medium (or above) verbosity level 
 	INTERP3_    = 1 << iota	  // Log INTERPreter aspect of program only when logging at max verbosity level	
@@ -28,8 +32,7 @@ const (
 	PERSIST_    = 1 << iota	
 	PERSIST2_   = 1 << iota	
 	PERSIST_TR  = 1 << iota	
-	PERSIST_TR2 = 1 << iota
-	GENERATE_   = 1 << iota			
+	PERSIST_TR2 = 1 << iota		
 	ALWAYS_     = 1 << iota		
 	WEB_        = 1 << iota	
 	WEB2_       = 1 << iota	
@@ -45,6 +48,10 @@ const (
 	STACK__     = STACK_
 	AST__       = AST_
 	PARSE__	    = PARSE_
+	LOAD__      = LOAD_
+	LOAD2__     = LOAD2_ | LOAD__
+	GENERATE__	= GENERATE_
+	GENERATE2__ = GENERATE2_ | GENERATE__	
 	INTERP__    = INTERP_                   // Log INTERPreter aspect of program at minimum verbosity level
 	INTERP2__   = INTERP2_ | INTERP__	    // Log INTERPreter aspect of program at medium verbosity level
 	INTERP3__   = INTERP3_ | INTERP2__    	// Log INTERPreter aspect of program at max verbosity level	

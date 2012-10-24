@@ -26,6 +26,7 @@ import (
 	"relish/compiler/generator"
 	"relish"
     "archive/zip"	
+    . "relish/dbg"
 )
 
 type Loader struct {
@@ -234,7 +235,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     ldr.PackagesBeingLoaded[packageIdentifier] = true
 
-    fmt.Printf("Loading package %s\n",packageIdentifier)
+    Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
 
     mustBeFromShared = mustBeFromShared || ldr.SharedCodeOnly  // Set whether will consider local code for this package.
     var mustBeFromLocal bool                 // We may end up constrained to load from local artifact.
@@ -261,7 +262,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
        artifactKnownToBeShared = ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]    
        mustBeFromShared = mustBeFromShared || artifactKnownToBeShared  // Set whether will consider local code for this package.         
 
-       fmt.Printf("%s %s mustBeFromShared=%v",originAndArtifactPath,packagePath,mustBeFromShared)
+       Log(LOAD2_,"%s %s mustBeFromShared=%v\n",originAndArtifactPath,packagePath,mustBeFromShared)
        if artifactKnownToBeLocal {
 	       if mustBeFromShared {
 	       	   // This should never happen I think. Check anyway.
@@ -532,13 +533,13 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		     continue
 	      }
 	      if fileInfo.IsDir() {  
-		      fmt.Printf("Directory %s:\n", f.Name)	
+		      Log(LOAD2_,"Directory %s:\n", f.Name)	
 		      err = os.MkdirAll(artifactVersionDir + "/" + f.Name,perm)
 	          if err != nil {
 	             return
 	          }	
 		  } else {
-		      fmt.Printf("Copying file %s:\n", f.Name)
+		      Log(LOAD2_,"Copying file %s:\n", f.Name)
 		      var rc io.ReadCloser
 		      rc, err = f.Open()
 		      if err != nil {
@@ -557,7 +558,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		      }
 		      rc.Close()
 		      outFile.Close()
-		      fmt.Println()
+		      Logln(LOAD2_)
 	      }
 	   }
 	}
@@ -590,7 +591,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 			   if versionFound {
 				   if artifactVersion != alreadyDesiredVersion {
 				      // Should be logging this, not printing it to stdout
-				      fmt.Printf("Using v%d of %s. %s (v%d) may prefer v%d of %s.\n",alreadyDesiredVersion, artifactPath, originAndArtifactPath, version, artifactVersion, artifactPath)
+				      Log(ALWAYS_,"Using v%d of %s. %s (v%d) may prefer v%d of %s.\n",alreadyDesiredVersion, artifactPath, originAndArtifactPath, version, artifactVersion, artifactPath)
 			       }
 			   } else {
 			      ldr.LoadedArtifacts[artifactPath] = artifactVersion	
@@ -649,8 +650,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
     ldr.LoadedArtifacts[originAndArtifactPath] = version
 
 	ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath] = strings.Contains(artifactVersionDir,"/shared/relish/artifacts/")   
-    fmt.Printf("ldr.LoadedArtifactKnownToBeShared[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath])
-    fmt.Println("artifactVersionDir="+artifactVersionDir)
+    Log(LOAD2_,"ldr.LoadedArtifactKnownToBeShared[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath])
+    Logln(LOAD_,"artifactVersionDir="+artifactVersionDir)
 
 
     ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] = ! ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]	
@@ -762,7 +763,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 //         gen.GenerateCode()	
 
 	       if parseNeeded {
-		      fmt.Printf("Compiled %s\n", sourceFilePath)		
+		      Log(ALWAYS_,"Compiled %s\n", sourceFilePath)		
 		   } 
 		
 	    } // end of if it is a code file.
@@ -777,7 +778,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     delete(ldr.PackagesBeingLoaded,packageIdentifier)
 
-    fmt.Printf("Loaded %s\n", packageCompiledPath)	
+    Log(ALWAYS_,"Loaded %s\n", packageCompiledPath)	
     
    return
 }
@@ -830,9 +831,9 @@ func (ldr *Loader) ensureImportsAreLoaded(fileNode *ast.File) (err error) {
 		                      false)		
         if err != nil {
 	       if importedArtifactVersion == 0 {
-		      fmt.Printf("Error loading package %s from current version of %s:  %v\n", importedPackageSpec.PackageName,importedPackageSpec.OriginAndArtifactName, err)		
+		      Log(ALWAYS_,"Error loading package %s from current version of %s:  %v\n", importedPackageSpec.PackageName,importedPackageSpec.OriginAndArtifactName, err)		
 		   } else {
-		      fmt.Printf("Error loading package %s from version %d of %s:  %v\n", importedPackageSpec.PackageName,importedArtifactVersion,importedPackageSpec.OriginAndArtifactName, err)		
+		      Log(ALWAYS_,"Error loading package %s from version %d of %s:  %v\n", importedPackageSpec.PackageName,importedArtifactVersion,importedPackageSpec.OriginAndArtifactName, err)		
 	       }
 		   break	
        }			

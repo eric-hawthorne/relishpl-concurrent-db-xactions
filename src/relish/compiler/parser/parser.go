@@ -4575,8 +4575,9 @@ func (p *parser) parseMultilineStringLiteral(x *ast.Expr) bool {
 	       p.required(p.BlankToEOL(),`nothing on line after """`) ) {
 	    return false
 	}
-    p.required(p.Below(1) && p.Match(`"""`), `""" at beginning of line`)
-    p.required(p.BlankToEOL(),`nothing on line after """`)
+// Formerly had another """ at column 1 to start the multi-line string literal.	
+//    p.required(p.Below(1) && p.Match(`"""`), `""" at beginning of line`)
+//    p.required(p.BlankToEOL(),`nothing on line after """`)
     var ch rune
     ch = p.Ch()	
     if ch < 0 {

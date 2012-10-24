@@ -98,11 +98,13 @@ func (rt *RuntimeEnv) DB() DB {
 	return rt.db
 }
 
-func (rt *RuntimeEnv) CreateConstant(name string, value RObject) {
+func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
 	if _, found := rt.constants[name]; found {
-		panic(fmt.Sprintf("Redefining constant '%s'", name))
+		err = fmt.Errorf("Redefining constant '%s'", name)
+		return 
 	}
 	rt.constants[name] = value
+	return
 }
 
 func (rt *RuntimeEnv) GetConstant(name string) RObject {

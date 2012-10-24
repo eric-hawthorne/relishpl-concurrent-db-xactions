@@ -13,8 +13,10 @@ import (
 	"relish/compiler/token"
 	"relish/runtime/data"
 	"relish/runtime/interp"
+	"relish/rterr"	
 	"relish"
 	. "relish/defs"
+	. "relish/dbg"
 )
 
 
@@ -49,11 +51,13 @@ Assumes imported packages have already been loaded; thus the objects defined in 
 */
 func (g *Generator) GenerateCode() {	
    types := make(map[*data.RType]bool)	
-   g.GeneratePackage()
-   g.GenerateTypes(types)
-   g.GenerateMethods()		
-   g.GenerateConstants()
-   g.GenerateRelations(types) 
+   attributeOrderings := make(map[string]*data.AttributeSpec)
+   g.generatePackage()
+   g.generateTypes(types, attributeOrderings)
+   g.generateMethods()		
+   g.generateConstants()
+   g.generateRelations(types, attributeOrderings) 
+   g.configureAttributeSortings(attributeOrderings)
    g.ensureAttributeAndRelationTables(types)
 }
 
@@ -62,7 +66,7 @@ Checks to see if the package which this source code file says its in already
 exists in the runtime. If not, creates it. Sets the pkg variable of the Generator
 to refer to the package.
 */
-func (g *Generator) GeneratePackage() {
+func (g *Generator) generatePackage() {
 	
     relish.EnsureDatabase() 
     // creates and/or creates a connection to the running artifact's database.
@@ -117,7 +121,7 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
    	   	   // Merge them if possible, else complain!! panic!
 
            if myMultiMethod.NumReturnArgs != multiMethod.NumReturnArgs {
-	          panic(fmt.Sprintf("Package %s defines %s to return %d values so can't be imported directly or indirectly into package %s which defines %s to return %d values.",dependencyPackage.Name,multiMethod.Name,multiMethod.NumReturnArgs,g.pkg.Name,myMultiMethod.Name,myMultiMethod.NumReturnArgs))
+	          rterr.Stopf("Package %s defines %s to return %d values so can't be imported directly or indirectly into package %s which defines %s to return %d values.",dependencyPackage.Name,multiMethod.Name,multiMethod.NumReturnArgs,g.pkg.Name,myMultiMethod.Name,myMultiMethod.NumReturnArgs)
 	
 	          // TODO Shit! I'm inheriting methods indirectly!!! Not allowed !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
@@ -163,14 +167,14 @@ Generates the runtime environment's objects for datatypes and attributes, and al
 
 Runtime *data.RType's are placed into the argument hashtable once created here.
 */
-func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
+func (g *Generator) generateTypes(types map[*data.RType]bool, attributeOrderings map[string]*data.AttributeSpec) {
 
 	allTypeDecls := make(map[string]*ast.TypeDecl)  // Map from full type name to *ast.TypeDecl
 
 	typeDeclFile := make(map[string]string)  // map of type name to which file it is declared in - the filenameroot is the value in the map
-
-	g.generateTypesWithoutAttributes(alltypeDecls, types, typeDeclFile)
-	g.generateAttributes(allTypeDecls, types, typeDeclFile)
+	
+	g.generateTypesWithoutAttributes(allTypeDecls, types, typeDeclFile)
+	g.generateAttributes(allTypeDecls, types, typeDeclFile, attributeOrderings)
 	g.ensureTypeTables(types)
 }
 
@@ -207,6 +211,7 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
 		   }
            allTypeDecls[typeName] = typeDeclaration
            typeDeclFile[typeName] = fileRoot
+        }
     }
 
     // Generate the runtime RType objects, recursively.
@@ -217,7 +222,7 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
 	   if found {
 		  continue // the recursion has already generated this type.
 	   }
-       g.generateTypeWithoutAttributes(typename, typeDecl, allTypeDecls, types, typesBeingGenerated, typeDeclFile)
+       g.generateTypeWithoutAttributes(typeName, typeDecl, allTypeDecls, types, typesBeingGenerated, typeDeclFile)
 
     }
 }
@@ -231,7 +236,7 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
        
    _,found := typesBeingGenerated[typeName]
    if found {
-	  rterr.Stopf("Type '%s' declaration in file %s.rel is involved in a type inheritance loop!",typeDeclaration.Spec.Name.Name,typeDeclfile[fileName])
+	  rterr.Stopf("Type '%s' declaration in file %s.rel is involved in a type inheritance loop!",typeDeclaration.Spec.Name.Name,typeDeclFile[typeName])
    }
    typesBeingGenerated[typeName] = true
 
@@ -244,11 +249,11 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
 
       parentTypeName := g.qualifyTypeName(parentTypeSpec.Name.Name)
 	  
-	  parentType, parentFound := data.RT.Types[parentTypeName]
+	  _, parentFound := data.RT.Types[parentTypeName]
 	  if ! parentFound {
 	  	 parentTypeDecl, parentDeclaredInPackage := allTypeDecls[parentTypeName]
 	  	 if parentDeclaredInPackage {
-            g.generateTypeWithoutAttributes(parentTypeName, parentTypeDecl, allTypeDecls, types, typesBeingDeclared, typeDeclFile)    
+            g.generateTypeWithoutAttributes(parentTypeName, parentTypeDecl, allTypeDecls, types, typesBeingGenerated, typeDeclFile)    
          }  
 
          // If the parent type was not declared in this package but is not already declared in some other package, then the
@@ -260,7 +265,9 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
 	
    theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
    if err != nil {
-      panic(err)
+      // panic(err)
+      sourceFilename := typeDeclFile[typeName] + ".rel"
+	  rterr.Stopf("Error creating type %s (%s): %s", typeName, sourceFilename, err.Error())
    }	
 
    types[theNewType] = true	 // record that this is one of the new RTypes we generated !
@@ -274,32 +281,12 @@ Processes the TypeDecls list of a ast.File object (which has been created by the
 Generates the runtime environment's objects for attributes of datatypes.
 Assumes the RType objects have already been created in the runtime for each datatype by a previous pass over the intermediate-code files.
 */
-func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typeDeclFile map[string]string) {
+func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typeDeclFile map[string]string, orderings map[string]*data.AttributeSpec) {
 	 
     for theNewType := range types {
-        typeName := theNewType.Name
-        typeDeclaration := allTypeDecls[typeName]
-        sourceFilename := typeDeclFile[typeName]
-
-@@@@@@@@@@@@@@@@@@@
-
-	for _,typeDeclaration := range g.file.TypeDecls {
-		
-	   typeSpec := typeDeclaration.Spec
-	   typeName := g.packagePath + typeSpec.Name.Name
-	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
-	
-	   var parentTypeNames []string
-	
-	   for _,parentTypeSpec := range typeSpec.SuperTypes {
-		  parentTypeNames = append(parentTypeNames, g.qualifyTypeName(parentTypeSpec.Name.Name))
-	   } 
-		
-	   // Get the type name and the supertype names	
-	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
-       if err != nil {
-          panic(err)
-       }	
+       typeName := theNewType.Name
+       typeDeclaration := allTypeDecls[typeName]
+       sourceFilename := typeDeclFile[typeName]
 
 	   for _,attrDecl := range typeDeclaration.Attributes {
 		  var minCard int32 = 1
@@ -369,8 +356,9 @@ RelEnd
    OrderMethod *RMultiMethod
 */
 
+         
 
-	      _,err = data.RT.CreateAttribute(typeName,
+	      _,err := data.RT.CreateAttribute(typeName,
 									 	 attributeTypeName,
 										 attributeName,
 										 minCard,
@@ -381,35 +369,27 @@ RelEnd
 										 false,
 										 false,
 										 false,
-										 g.Interp.Dispatcher())
+										 orderings)
 		   if err != nil {
-		      panic(err)
+		      rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, err.Error())
 		   }
-
         }
-
-        // Now ensure the persistence data model is created for the type.
-
-
-
+    }
 }
+
+// g.Interp.Dispatcher()
 
 /*
 Ensure the persistence data model is created for the type.
 */
 func (g *Generator) ensureTypeTables(types map[*data.RType]bool) {
 
-/*
-
-		err = data.RT.DB().EnsureTypeTable(theNewType) 
+    for theNewType := range types {
+		err := data.RT.DB().EnsureTypeTable(theNewType) 
 		if err != nil {
 		      panic(err)
 		}
-		
-       types[theNewType] = true	
     }
-
-    */
 }
 
 
@@ -536,6 +516,73 @@ func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
 */
 
 
+/*
+Give the sorted multi-valued attributes their sorting attribute or sorting method.
+This had to be delayed until all attributes and methods in the package were
+generated.
+*/
+func (g *Generator) configureAttributeSortings(orderings map[string]*data.AttributeSpec) {
+	for orderFuncOrAttrName, attr := range orderings {
+       g.configureAttributeSorting(orderFuncOrAttrName, attr)        		
+	}
+}
+
+/*
+Give the attribute its sorting attribute or sorting method.
+This had to be delayed until all attributes and methods in the package were
+generated.
+*/
+func (g *Generator) configureAttributeSorting(orderFuncOrAttrName string, attr *data.AttributeSpec) {
+
+	var orderAttr *data.AttributeSpec
+	var attrFound bool
+	var orderMethod *data.RMultiMethod
+
+	// TODO Find out which of attribute or method it is. How????
+	// Should be along the lines of: 
+	// If there is a method of that name defined which takes only typ2 as arg signature, then use that function,
+	// Otherwise could check if there is an attribute of that name on typ2 or its supertypes, and if not,
+	// throw a type compatibility panic.
+
+	var orderMethodArity int32 = 0
+
+	orderMethod, methodFound := g.pkg.MultiMethods[orderFuncOrAttrName]
+
+	if methodFound {
+		
+		dispatcher := g.Interp.Dispatcher()
+
+		// Find out if there is an arity 1 method
+		unaryMethod, _ := dispatcher.GetMethodForTypes(orderMethod, attr.Part.Type)
+		// Find out if there is an arity 2 method
+		binaryMethod, _ := dispatcher.GetMethodForTypes(orderMethod, attr.Part.Type, attr.Part.Type)
+
+		if unaryMethod != nil && binaryMethod != nil {
+			rterr.Stopf("Can't order collection because ambiguous unary and binary method '%s' for type %s.", orderFuncOrAttrName, attr.Part.Type.Name)
+		}
+
+		if unaryMethod != nil {
+			orderMethodArity = 1
+		} else if binaryMethod != nil {
+			orderMethodArity = 2
+		} else {
+			rterr.Stopf("Can't order collection. No unary or binary method '%s' found for type %s.", orderFuncOrAttrName, attr.Part.Type.Name)
+		}
+	} else {
+		orderAttr, attrFound = attr.Part.Type.GetAttribute(orderFuncOrAttrName)
+		if !attrFound {
+			rterr.Stopf("Can't order collection. No method or attribute '%s' found in type %s or supertypes.", orderFuncOrAttrName, attr.Part.Type.Name)
+		}
+	}
+
+	attr.Part.OrderAttr = orderAttr
+	attr.Part.OrderMethod = orderMethod
+	attr.Part.OrderMethodArity = orderMethodArity  // 1 or 2
+}
+
+
+
+
 
 func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool) {
 	for typ := range types {
@@ -551,54 +598,57 @@ func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool)
 /*
 TODO Need to add the constraint that the method is public here !!!!
 */
-func (g *Generator) isWebDialogHandlerMethod() bool {
-	return strings.HasSuffix(g.fileNameRoot,"dialog") && strings.Contains(g.packagePath,"/pkg/web/")
+func (g *Generator) isWebDialogHandlerMethod(fileNameRoot string) bool {
+	return strings.HasSuffix(fileNameRoot,"dialog") && strings.Contains(g.packagePath,"/pkg/web/")
 }
 
 
-func (g *Generator) GenerateMethods() {
+func (g *Generator) generateMethods() {
 	
-	for _,methodDeclaration := range g.file.MethodDecls {
+	for file, fileNameRoot := range g.files {	
+		for _,methodDeclaration := range file.MethodDecls {
 
-	   methodName := methodDeclaration.Name.Name
+		   methodName := methodDeclaration.Name.Name
 		   
-	   // main functions and init<TypeName> functions and web dialog handler functions are explicitly package name qualified.
-	   //
-  	   // TODO   OOPS Which package are we executing when looking for web handler methods?????
+		   // main functions and init<TypeName> functions and web dialog handler functions are explicitly package name qualified.
+		   //
+	  	   // TODO   OOPS Which package are we executing when looking for web handler methods?????
 	
-	   if (methodName == "main") || (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z') || (g.isWebDialogHandlerMethod()) {
-	      methodName = g.packagePath + methodName	
-	   }
+		   if (methodName == "main") || (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z') || (g.isWebDialogHandlerMethod(fileNameRoot)) {
+		      methodName = g.packagePath + methodName	
+		   }
 	
-	   var parameterNames []string
-	   var parameterTypes []string
-	   for _,inputArgDecl := range methodDeclaration.Type.Params {
-		  parameterNames = append(parameterNames, inputArgDecl.Name.Name)
-		  parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
-	   }
+		   var parameterNames []string
+		   var parameterTypes []string
+		   for _,inputArgDecl := range methodDeclaration.Type.Params {
+			  parameterNames = append(parameterNames, inputArgDecl.Name.Name)
+			  parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
+		   }
 	
-	   numReturnArgs := len(methodDeclaration.Type.Results)
+		   numReturnArgs := len(methodDeclaration.Type.Results)
 	
-	   allowRedefinition := false	
+		   allowRedefinition := false	
 	
-	   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
-   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
+		   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
+	   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
 	
-	   rMethod, err := data.RT.CreateMethod(g.packageName,
-	   	                                    methodName,
-	   	                                    parameterNames, 
-		                                    parameterTypes, 
-		                                    numReturnArgs,
-		                                    methodDeclaration.NumLocalVars,
-		                                    allowRedefinition  )
-	   if err != nil {
-	       panic(err)
-	   }
+		   rMethod, err := data.RT.CreateMethod(g.packageName,
+		   	                                    methodName,
+		   	                                    parameterNames, 
+			                                    parameterTypes, 
+			                                    numReturnArgs,
+			                                    methodDeclaration.NumLocalVars,
+			                                    allowRedefinition  )
+		   if err != nil {
+		       // panic(err)
+			   rterr.Stopf("Error creating method %s (%s): %s", methodName, fileNameRoot +".rel", err.Error())	
+		   }
 	
-       rMethod.Code = methodDeclaration // abstract syntax tree	
+	       rMethod.Code = methodDeclaration // abstract syntax tree	
 
-	   fmt.Println(rMethod)		
-    }	
+		   Logln(GENERATE__, rMethod)		
+	    }	
+    }
 }
 
 
@@ -614,20 +664,28 @@ func (g *Generator) qualifyConstName(constName string) string {
 }
 
 
-func (g *Generator) GenerateConstants () {
-	for _,constDeclaration := range g.file.ConstantDecls {
+func (g *Generator) generateConstants () {
+	for file, fileNameRoot := range g.files {	
+		for _,constDeclaration := range file.ConstantDecls {
 		
-
-	   constantName := g.qualifyConstName(constDeclaration.Name.Name)
-	   g.Interp.EvalExpr(g.th,constDeclaration.Value)
-	   obj := g.th.Pop()
-	   data.RT.CreateConstant(constantName,obj)
-    }	
+		   constantName := g.qualifyConstName(constDeclaration.Name.Name)
+		   g.Interp.EvalExpr(g.th,constDeclaration.Value)
+		   obj := g.th.Pop()
+		   err := data.RT.CreateConstant(constantName,obj)
+		   if err != nil {
+		       // panic(err)
+			   rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())	
+		   }	
+	    }	
+    }
 }
 
 func (g *Generator) TestWalk() {
-	p := &NodePrinter{}
-	ast.Walk(p, g.file)
+	for file, fileNameRoot := range g.files {	
+		fmt.Println("======================",fileNameRoot+".rel","========================")	
+	   p := &NodePrinter{}
+	   ast.Walk(p, file)
+    }
 }
 
 
@@ -637,132 +695,134 @@ Processes the RelationDecls list of a ast.File object (which has been created by
 Generates the runtime environment's objects for relations between datatypes, and also ensures 
 that db tables exist for these.
 */
-func (g *Generator) GenerateRelations(types map[*data.RType]bool) {
+func (g *Generator) generateRelations(types map[*data.RType]bool, orderings map[string]*data.AttributeSpec) {
 
-	for _,relationDeclaration := range g.file.RelationDecls {
+	for file, fileNameRoot := range g.files {
+		for _,relationDeclaration := range file.RelationDecls {
 		
-       end1 := relationDeclaration.End1
-       end2 := relationDeclaration.End2 
+	       end1 := relationDeclaration.End1
+	       end2 := relationDeclaration.End2 
 
 
-	   var minCard1 int32 = 1
-	   var maxCard1 int32 = 1
+		   var minCard1 int32 = 1
+		   var maxCard1 int32 = 1
 	  
-       attributeName1 := end1.Name.Name
-       multiValuedAttribute1 := (end1.Arity != nil)
-       if multiValuedAttribute1 {
-          minCard1 = int32(end1.Arity.MinCard)
-          maxCard1 = int32(end1.Arity.MaxCard)  // -1 means N
-       }
+	       attributeName1 := end1.Name.Name
+	       multiValuedAttribute1 := (end1.Arity != nil)
+	       if multiValuedAttribute1 {
+	          minCard1 = int32(end1.Arity.MinCard)
+	          maxCard1 = int32(end1.Arity.MaxCard)  // -1 means N
+	       }
         
-        var collectionType1 string 
+	        var collectionType1 string 
 
-        var orderFuncOrAttrName1 string = ""
-        var isAscending1 bool 
+	        var orderFuncOrAttrName1 string = ""
+	        var isAscending1 bool 
 
-        if end1.Type.CollectionSpec != nil {
-            switch end1.Type.CollectionSpec.Kind {
-            case token.SET:
-	        if end1.Type.CollectionSpec.IsSorting {
-	           collectionType1 = "sortedset"
-                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
-                     isAscending1 = end1.Type.CollectionSpec.IsAscending		
-            } else {
-	           collectionType1 = "set"			
-            }		
-         case token.LIST:
-	        if end1.Type.CollectionSpec.IsSorting {
-	           collectionType1 = "sortedlist"
-                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
-                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
-            } else {
-	           collectionType1 = "list"			
-            }
-	     case token.MAP:
-	        if end1.Type.CollectionSpec.IsSorting {
-	           collectionType1 = "sortedmap"
-                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
-                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
-            } else {
-	           collectionType1 = "map"			
-            }				
-          }	
-        }
+	        if end1.Type.CollectionSpec != nil {
+	            switch end1.Type.CollectionSpec.Kind {
+	            case token.SET:
+		        if end1.Type.CollectionSpec.IsSorting {
+		           collectionType1 = "sortedset"
+	                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+	                     isAscending1 = end1.Type.CollectionSpec.IsAscending		
+	            } else {
+		           collectionType1 = "set"			
+	            }		
+	         case token.LIST:
+		        if end1.Type.CollectionSpec.IsSorting {
+		           collectionType1 = "sortedlist"
+	                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+	                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
+	            } else {
+		           collectionType1 = "list"			
+	            }
+		     case token.MAP:
+		        if end1.Type.CollectionSpec.IsSorting {
+		           collectionType1 = "sortedmap"
+	                     orderFuncOrAttrName1 = end1.Type.CollectionSpec.OrderFunc	
+	                     isAscending1 = end1.Type.CollectionSpec.IsAscending			
+	            } else {
+		           collectionType1 = "map"			
+	            }				
+	          }	
+	        }
 
-	   var minCard2 int32 = 1
-	   var maxCard2 int32 = 1
+		   var minCard2 int32 = 1
+		   var maxCard2 int32 = 1
 	  
-       attributeName2 := end2.Name.Name
-       multiValuedAttribute2 := (end2.Arity != nil)
-       if multiValuedAttribute2 {
-          minCard2 = int32(end2.Arity.MinCard)
-          maxCard2 = int32(end2.Arity.MaxCard)  // -1 means N
-       }
+	       attributeName2 := end2.Name.Name
+	       multiValuedAttribute2 := (end2.Arity != nil)
+	       if multiValuedAttribute2 {
+	          minCard2 = int32(end2.Arity.MinCard)
+	          maxCard2 = int32(end2.Arity.MaxCard)  // -1 means N
+	       }
         
-        var collectionType2 string 
+	        var collectionType2 string 
 
-        var orderFuncOrAttrName2 string = ""
-        var isAscending2 bool 
+	        var orderFuncOrAttrName2 string = ""
+	        var isAscending2 bool 
 
-        if end2.Type.CollectionSpec != nil {
-            switch end2.Type.CollectionSpec.Kind {
-            case token.SET:
-	        if end2.Type.CollectionSpec.IsSorting {
-	           collectionType2 = "sortedset"
-                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
-                     isAscending2 = end2.Type.CollectionSpec.IsAscending		
-            } else {
-	           collectionType2 = "set"			
-            }		
-         case token.LIST:
-	        if end2.Type.CollectionSpec.IsSorting {
-	           collectionType2 = "sortedlist"
-                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
-                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
-            } else {
-	           collectionType2 = "list"			
-            }
-	     case token.MAP:
-	        if end2.Type.CollectionSpec.IsSorting {
-	           collectionType2 = "sortedmap"
-                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
-                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
-            } else {
-	           collectionType2 = "map"			
-            }				
-          }	
-        }
+	        if end2.Type.CollectionSpec != nil {
+	            switch end2.Type.CollectionSpec.Kind {
+	            case token.SET:
+		        if end2.Type.CollectionSpec.IsSorting {
+		           collectionType2 = "sortedset"
+	                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+	                     isAscending2 = end2.Type.CollectionSpec.IsAscending		
+	            } else {
+		           collectionType2 = "set"			
+	            }		
+	         case token.LIST:
+		        if end2.Type.CollectionSpec.IsSorting {
+		           collectionType2 = "sortedlist"
+	                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+	                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
+	            } else {
+		           collectionType2 = "list"			
+	            }
+		     case token.MAP:
+		        if end2.Type.CollectionSpec.IsSorting {
+		           collectionType2 = "sortedmap"
+	                     orderFuncOrAttrName2 = end2.Type.CollectionSpec.OrderFunc	
+	                     isAscending2 = end2.Type.CollectionSpec.IsAscending			
+	            } else {
+		           collectionType2 = "map"			
+	            }				
+	          }	
+	        }
 
-        typeName1 := g.qualifyTypeName(end1.Type.Name.Name)
-        typeName2 := g.qualifyTypeName(end2.Type.Name.Name)
+	        typeName1 := g.qualifyTypeName(end1.Type.Name.Name)
+	        typeName2 := g.qualifyTypeName(end2.Type.Name.Name)
 
-        type1, type2, err := data.RT.CreateRelation(typeName1,
-	                                    attributeName1,
-	                                    minCard1,
-										maxCard1,
-										collectionType1,
-										orderFuncOrAttrName1,
-										isAscending1,	
-										typeName2,
-										attributeName2,
-										minCard2,
-										maxCard2,
-										collectionType2,
-										orderFuncOrAttrName2,
-										isAscending2,	
-										false,
-										g.Interp.Dispatcher()) 
-
-
-
-       if err != nil {
-           panic(err)
-       }
+	        type1, type2, err := data.RT.CreateRelation(typeName1,
+		                                    attributeName1,
+		                                    minCard1,
+											maxCard1,
+											collectionType1,
+											orderFuncOrAttrName1,
+											isAscending1,	
+											typeName2,
+											attributeName2,
+											minCard2,
+											maxCard2,
+											collectionType2,
+											orderFuncOrAttrName2,
+											isAscending2,	
+											false,
+											orderings) 
 
 
-       types[type1] = true	
-       types[type2] = true	
-   }
+
+	       if err != nil {
+	           // panic(err)
+			   rterr.Stopf("Error creating relation %s %s -- %s %s (%s): %s", typeName1, attributeName1, attributeName2, typeName2, fileNameRoot +".rel", err.Error())	
+	       }
+
+	       types[type1] = true	
+	       types[type2] = true	
+	   }
+	}
 }
 
 
@@ -823,15 +883,6 @@ RelEnd
     }
 
 */    
-
-
-
-
-
-
-
-
-
 
 
 
