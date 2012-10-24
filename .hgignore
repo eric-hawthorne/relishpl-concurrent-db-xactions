@@ -1,3 +1,11 @@
+syntax: regexp
+
+# The relish compiler-interpreter executable
+^bin/relish
+
+# compiled code directories 
+/pkg/
+
 syntax: glob
 # This line is a comment, and will be skipped.
 # Empty lines are skipped too.
@@ -5,9 +13,11 @@ syntax: glob
 # Go code libraries
 *.a
 
-# 
-QLITE database files
+# SQLITE database files
 *.db
+
+# relish compiled (intermediate-code) files
+*.rlc
 
 # Temporary files used by the vim editor.
 .*.swp
