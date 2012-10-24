@@ -769,9 +769,10 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	    } // end of if it is a code file.
     } // end of loop over each file in the package.
 
-
-    gen = generator.NewGenerator(astFileNodes)
-    gen.GenerateCode()
+    if len(astFileNodes) > 0 {
+       gen = generator.NewGenerator(astFileNodes)
+       gen.GenerateCode()
+    }
 
 
     ldr.LoadedPackages[packageIdentifier] = version
