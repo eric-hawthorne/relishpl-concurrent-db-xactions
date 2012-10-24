@@ -69,33 +69,43 @@ func (g *Generator) GeneratePackage() {
     // Amongst other things, initializes from db the maps between package names and shortnames in the runtime.
 	
     g.pkg = data.RT.Packages[g.packageName]
-    if g.pkg == nil {
-	   g.pkg = data.RT.CreatePackage(g.packageName)  // This should init MMMap from core/builtin package   
-	}
+    if g.pkg != nil {
+    	rterr.Stopf("Package %s has already been loaded. Error to load it again.",g.packageName)
+    }
+	g.pkg = data.RT.CreatePackage(g.packageName)  // This should init MMMap from core/builtin package   
+	
 	g.updatePackageDependenciesAndMultiMethodMap()
 }
 
 /*
 Go through the (already loaded) packages that the newly generated package is dependent on, and update the new package's
 multimethod map to incorporate multimethods and methods from the dependency packages.
+Now does this all at once for all files in the current package being loaded.
+IMPORTANT NOTE: That means every file in the current package has access to method-implementations declared in packages which
+are not explicitly imported into that particular code file of the current package, but are imported into another
+file of the current package. Anyway, currently, the particular code file also has access (through dispatch) to method-implementations
+declared even in indirect dependency packages of any of the packages explicitly imported into the current package.  
 */
 func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
-	imports := g.file.RelishImports  // package specifications
-	for _,importedPackageSpec := range imports {		
-		dependencyPackageName := importedPackageSpec.OriginAndArtifactName + "/pkg/" + importedPackageSpec.PackageName
-		dependencyPackage, dependencyAlreadyProcessed := g.pkg.Dependencies[dependencyPackageName]
-        if ! dependencyAlreadyProcessed {
-		   dependencyPackage = data.RT.Packages[dependencyPackageName]
-		   g.pkg.Dependencies[dependencyPackageName] = dependencyPackage
+	for file := range g.files {
+		imports := file.RelishImports  // package specifications
+		for _,importedPackageSpec := range imports {		
+			dependencyPackageName := importedPackageSpec.OriginAndArtifactName + "/pkg/" + importedPackageSpec.PackageName
+			dependencyPackage, dependencyAlreadyProcessed := g.pkg.Dependencies[dependencyPackageName]
+	        if ! dependencyAlreadyProcessed {
+			   dependencyPackage = data.RT.Packages[dependencyPackageName]
+			   g.pkg.Dependencies[dependencyPackageName] = dependencyPackage
 
-		   g.updatePackageMultiMethodMap(dependencyPackage)
-	    }
+			   g.updatePackageMultiMethodMap(dependencyPackage)
+		    }
 
-	}
+		}
+    }
 }
 
 /*
 Update the package's multimethod map to incorporate multimethods and methods from a dependency package.
+Helper for updatePackageDependenciesAndMultiMethodMap.
 */
 func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage) {
    for multiMethodName,multiMethod := range dependencyPackage.MultiMethods {
@@ -146,13 +156,133 @@ func (g *Generator) qualifyTypeName(typeName string) string {
    return typeName
 }
 
+
 /*
-Processes the TypeDecls list of a ast.File object (which has been created by the parser.)
+Processes the TypeDecls from a set of ast.File objects (which have been created by the parser.)
 Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
-TODO prefix the g.packagePath onto the name of the type.!!!!!!!!!!!!!!
+
+Runtime *data.RType's are placed into the argument hashtable once created here.
 */
 func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
+
+	allTypeDecls := make(map[string]*ast.TypeDecl)  // Map from full type name to *ast.TypeDecl
+
+	typeDeclFile := make(map[string]string)  // map of type name to which file it is declared in - the filenameroot is the value in the map
+
+	g.generateTypesWithoutAttributes(alltypeDecls, types, typeDeclFile)
+	g.generateAttributes(allTypeDecls, types, typeDeclFile)
+	g.ensureTypeTables(types)
+}
+
+/*
+Processes the TypeDecls from a set of ast.File objects (which have been created by the parser.)
+Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
+
+Runtime *data.RType's are placed into the argument hashtable once created here.
+
+Note. This function has to operate recursively, since a given supertype (parent type) might not yet exist as a generated
+RType object, but might be in this same package so needs to be generated now anyway.
+
+Note. This function does not create the attribute specification part of the runtime RType objects.
+
+Attribute generation has to wait til all of the RTtypes for the package are generated and put in the RT.types map,
+so attribute generation will be done as a separate pass.
+
+
+	allTypeDecls := make(map[string]*ast.TypeDecl)
+
+*/
+func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typeDeclFile map[string]string) {
+	
+	typesBeingGenerated := make(map[string]bool)  // full names of types in the middle of being generated. Use to avoid inheritance loops.
+
+
+	// Collect all type declarations from all files into a map by full type name
+    //
+	for file, fileRoot := range g.files { 
+		for _,typeDeclaration := range file.TypeDecls {
+		   typeName := g.packagePath + typeDeclaration.Spec.Name.Name
+		   if allTypeDecls[typeName] != nil {
+		   	  rterr.Stopf("Type '%s' declaration in file %s.rel is 2nd declaration of this type found in package.",typeDeclaration.Spec.Name.Name,fileRoot)
+		   }
+           allTypeDecls[typeName] = typeDeclaration
+           typeDeclFile[typeName] = fileRoot
+    }
+
+    // Generate the runtime RType objects, recursively.
+
+    for typeName, typeDecl := range allTypeDecls {
+
+	   _, found := data.RT.Types[typeName]
+	   if found {
+		  continue // the recursion has already generated this type.
+	   }
+       g.generateTypeWithoutAttributes(typename, typeDecl, allTypeDecls, types, typesBeingGenerated, typeDeclFile)
+
+    }
+}
+
+
+/*
+   Generate a runtime RType object for the type declaration.
+   If the parent types are not already generated and are in this package, recurse to generate the parent type before finishing generating this one.
+*/
+func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclaration *ast.TypeDecl, allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typesBeingGenerated map[string]bool, typeDeclFile map[string]string) {
+       
+   _,found := typesBeingGenerated[typeName]
+   if found {
+	  rterr.Stopf("Type '%s' declaration in file %s.rel is involved in a type inheritance loop!",typeDeclaration.Spec.Name.Name,typeDeclfile[fileName])
+   }
+   typesBeingGenerated[typeName] = true
+
+   typeSpec := typeDeclaration.Spec    	
+   typeShortName := g.pkg.ShortName + "/" + typeSpec.Name.Name
+
+   var parentTypeNames []string
+
+   for _,parentTypeSpec := range typeSpec.SuperTypes {
+
+      parentTypeName := g.qualifyTypeName(parentTypeSpec.Name.Name)
+	  
+	  parentType, parentFound := data.RT.Types[parentTypeName]
+	  if ! parentFound {
+	  	 parentTypeDecl, parentDeclaredInPackage := allTypeDecls[parentTypeName]
+	  	 if parentDeclaredInPackage {
+            g.generateTypeWithoutAttributes(parentTypeName, parentTypeDecl, allTypeDecls, types, typesBeingDeclared, typeDeclFile)    
+         }  
+
+         // If the parent type was not declared in this package but is not already declared in some other package, then the
+         // parent type is missing in action. 
+         // Ignore this problem for the moment here. Let the rt.CreateType method report this error.
+	  }
+	  parentTypeNames = append(parentTypeNames, parentTypeName)
+   } 
+	
+   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
+   if err != nil {
+      panic(err)
+   }	
+
+   types[theNewType] = true	 // record that this is one of the new RTypes we generated !
+
+   delete(typesBeingGenerated, typeName)  // remove from the inheritance loop detection map
+}
+
+
+/*
+Processes the TypeDecls list of a ast.File object (which has been created by the parser.)
+Generates the runtime environment's objects for attributes of datatypes.
+Assumes the RType objects have already been created in the runtime for each datatype by a previous pass over the intermediate-code files.
+*/
+func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typeDeclFile map[string]string) {
 	 
+    for theNewType := range types {
+        typeName := theNewType.Name
+        typeDeclaration := allTypeDecls[typeName]
+        sourceFilename := typeDeclFile[typeName]
+
+@@@@@@@@@@@@@@@@@@@
+
 	for _,typeDeclaration := range g.file.TypeDecls {
 		
 	   typeSpec := typeDeclaration.Spec
@@ -261,6 +391,140 @@ RelEnd
         // Now ensure the persistence data model is created for the type.
 
 
+
+}
+
+/*
+Ensure the persistence data model is created for the type.
+*/
+func (g *Generator) ensureTypeTables(types map[*data.RType]bool) {
+
+/*
+
+		err = data.RT.DB().EnsureTypeTable(theNewType) 
+		if err != nil {
+		      panic(err)
+		}
+		
+       types[theNewType] = true	
+    }
+
+    */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* DEPRECATED IN FAVOUR OF MULTI-FILE (AND ATTRIBUTES SEPARATED OUT) VERSION ABOVE - DELETE THE BELOW SOON
+Processes the TypeDecls list of a ast.File object (which has been created by the parser.)
+Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
+TODO prefix the g.packagePath onto the name of the type.!!!!!!!!!!!!!!
+
+func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
+	 
+	for _,typeDeclaration := range g.file.TypeDecls {
+		
+	   typeSpec := typeDeclaration.Spec
+	   typeName := g.packagePath + typeSpec.Name.Name
+	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
+	
+	   var parentTypeNames []string
+	
+	   for _,parentTypeSpec := range typeSpec.SuperTypes {
+		  parentTypeNames = append(parentTypeNames, g.qualifyTypeName(parentTypeSpec.Name.Name))
+	   } 
+		
+	   // Get the type name and the supertype names	
+	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
+       if err != nil {
+          panic(err)
+       }	
+
+	   for _,attrDecl := range typeDeclaration.Attributes {
+		  var minCard int32 = 1
+		  var maxCard int32 = 1
+		  
+          attributeName := attrDecl.Name.Name
+          multiValuedAttribute := (attrDecl.Arity != nil)
+          if multiValuedAttribute {
+	         minCard = int32(attrDecl.Arity.MinCard)
+	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
+          }
+          
+          var collectionType string 
+
+          var orderFuncOrAttrName string = ""
+          var isAscending bool 
+
+          if attrDecl.Type.CollectionSpec != nil {
+              switch attrDecl.Type.CollectionSpec.Kind {
+	             case token.SET:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedset"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending		
+		            } else {
+			           collectionType = "set"			
+		            }		
+		         case token.LIST:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedlist"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
+		            } else {
+			           collectionType = "list"			
+		            }
+			     case token.MAP:
+			        if attrDecl.Type.CollectionSpec.IsSorting {
+			           collectionType = "sortedmap"
+                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
+                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
+		            } else {
+			           collectionType = "map"			
+		            }				
+	           }	
+          }
+
+
+
+ 
+          attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
+
+         
+
+	      _,err = data.RT.CreateAttribute(typeName,
+									 	 attributeTypeName,
+										 attributeName,
+										 minCard,
+										 maxCard,   // Is the -1 meaning N respected in here???? TODO
+										 collectionType,
+				                         orderFuncOrAttrName,
+				                         isAscending,
+										 false,
+										 false,
+										 false,
+										 g.Interp.Dispatcher())
+		   if err != nil {
+		      panic(err)
+		   }
+
+        }
+
+        // Now ensure the persistence data model is created for the type.
+
+
 		err = data.RT.DB().EnsureTypeTable(theNewType) 
 		if err != nil {
 		      panic(err)
@@ -269,6 +533,9 @@ RelEnd
        types[theNewType] = true	
     }
 }
+*/
+
+
 
 func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool) {
 	for typ := range types {
