@@ -318,6 +318,55 @@ func InitBuiltinFunctions() {
 	*/
 	
 
+    stringFill2Method, err := RT.CreateMethod("","fill", []string{"s1", "s2"}, []string{"String", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill2Method.PrimitiveCode = builtinStringFill
+
+	stringFill3Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3"}, []string{"String", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill3Method.PrimitiveCode = builtinStringFill
+
+	stringFill4Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4"}, []string{"String", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill4Method.PrimitiveCode = builtinStringFill
+
+	stringFill5Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"String", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill5Method.PrimitiveCode = builtinStringFill
+
+	stringFill6Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill6Method.PrimitiveCode = builtinStringFill
+
+	stringFill7Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill7Method.PrimitiveCode = builtinStringFill	
+
+	stringFill8Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill8Method.PrimitiveCode = builtinStringFill	
+
+		stringFill9Method, err := RT.CreateMethod("","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFill9Method.PrimitiveCode = builtinStringFill		
+
+
 
     ///////////////////////////////////////////////////////////////////
     // Collection functions	
@@ -1100,6 +1149,8 @@ func builtinTo(objects []RObject) []RObject {
 	return []RObject{obj}
 }
 
+/////////////////////////////////////////////////////////////// 
+// String functions
 
 /*
 contains operator (strings).
@@ -1139,6 +1190,40 @@ Also, should provide a template builtin function
 
 result = template templateString singleArgObject
 */
+
+
+func builtinStringFill(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+
+	nFillers := len(objects) - 1
+    nSlots := strings.Count(s, "%s")
+	if nSlots != nFillers {
+		snippet := s
+		if len(snippet) > 70 {
+			chars := strings.Split(s,"")
+			if len(chars) > 25 {
+			   firstChars := chars[:25]
+			   snippet = strings.Join(firstChars,"") + "..."
+		    }
+		}
+        rterr.Stopf("fill: String '%s' contains %d %%s slots but there are %d objects to fill slots.",snippet, nSlots, nFillers)
+	} 
+
+	for i := 1; i <= nSlots; i++ {
+       filler := objects[i].String()
+       s = strings.Replace(s,"%s", filler, 1)
+	}
+    return []RObject{String(s)}
+}
+
+
+
+
+
+
+
+
+
 
 
 
