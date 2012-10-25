@@ -1518,11 +1518,117 @@ len s String > Int
  Returns the number of bytes in the String. This is not the number of unicode codepoints, which may be fewer.
 """	
 
+
+numCodePoints s String > Int
+"""
+ Returns the number of utf-8 encoded unicode codepoints (i.e. unicode characters) in the String. 
+ This is not the byte-length of the string, which may be greater than the number of encoded codepoints.
+"""
+
+
 contains s String substr String > Bool 
 """
  Returns whether s contains the substring substr.
 """
+
+
+index s String substr String > Int
+"""
+ Returns the index (counting in bytes from 0) of the substring in the string s, or -1 if substr is not found in s.
+"""
+
+
+lastIndex s String substr String > Int
+"""
+ Returns the index (counting in bytes from 0) of the last occurrence of the substring in the string s, 
+ or -1 if substr is not found in s.
+"""
+
+
+slice s String start Int end Int > String
+"""
+ Returns the substring of s beginning at index 'start' (counting in bytes) and ending just before 'end'.
+"""
+
+
+slice s String start Int > String
+"""
+ Returns the substring of s beginning at index 'start' (counting in bytes) and including all
+ subsequent bytes of the string.
+"""
+
+
+first s String n Int > String
+"""
+ Returns the substring of the string s beginning at beginning of s and containing n utf8-encoded unicode codepoints.
+ If s has fewer codepoints in it than n, returns the whole string s and does not complain.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode characters.
+"""
+
+
+last s String n Int > String
+"""
+ Returns the suffix of the string s containing the last n utf8-encoded unicode codepoints in s.
+ If s has fewer codepoints in it than n, returns the whole string s and does not complain.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode characters.
+"""
+
+
+hasPrefix s String substr String > Bool
+"""
+ Returns true if substr is a prefix of s (or all of s). false otherwise.
+"""
+
+
+hasSuffux s String substr String > Bool
+"""
+ Returns true if substr is a suffix of s (or all of s). false otherwise.
+"""
+
+
+cat ...obj Any > String
+"""
+ Concatenates the String representation of up to 9 argument objects together and returns the resulting String.
+ Will eventually accept an arbitrary number of objects as arguments. 
+"""
+
+
+fill s String ...obj Any > String
+"""
+ Substitutes objects (currently up to 9) into placeholders in the string s, returning the resulting string.
+ Each placeholder is denoted by a %s inside the string s. The number of object arguments other than s
+ and the number of placeholders in s must be the same.
+ The default String representation of each object is used.
+"""
+
+Examples:
+
+   firstName = "John"
+   lastName = "Doe"
+   s = fill "Hello, my name is %s %s and I am %s years old." firstName lastName 19
+   print s
+
+   // Will print:    
+Hello, my name is John Doe and I am 19 years old.
+
+   s = fill """
+"""
+Hello!
+
+My name is %s %s 
+and I am %d years old.
+"""
+            firstName
+            lastName
+            19
+   print s
 	
+   // Will print:
+Hello!
+
+My name is John Doe 
+and I am 19 years old.	
+
 </pre></code>	
 <p>
 	Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, which explains relish's support for data persistence.

@@ -187,11 +187,11 @@ multi-line %s string in relish!!
    print "len smallWheels =" (len smallWheels)
    print "len car2.wheels =" (len car2.wheels)
 
-   last = and 2 "three" true "five"
-   print last
+   lastOne = and 2 "three" true "five"
+   print lastOne
 
-   first = or 0 0.0 "" "this one" "is true"
-   print first
+   firstOne = or 0 0.0 "" "this one" "is true"
+   print firstOne
 
    print plus 2 2
 
@@ -256,3 +256,32 @@ multi-line %s string in relish!!
 
    for person in youngsters
       print person.firstName person.lastName
+
+   s1 = "How now brown cow?"
+   
+   s2 = "bro"
+
+   s3 = "世界Hello"
+
+   print first s1 2
+   print first s1 30
+   print last s1 4
+   print last s1 30
+   print hasPrefix s1 s2
+   print hasPrefix s1 "How"
+   print hasSuffix s1 "cow"
+   print hasSuffix s1 "cow?"
+   print cat s1 s2 " " driver1.firstName
+   print index s1 s2
+   print lastIndex s1 "ow"
+   print slice s1 4 7
+   print slice s1 0 (neg 1)
+   print slice s1 1 (neg 5)  
+   print slice s1 8
+   print first s3 1
+   print first s3 2
+   print first s3 3
+   print len s3
+   print numCodePoints s3
+   print index s3 "世界"
+   print index s3 "界"

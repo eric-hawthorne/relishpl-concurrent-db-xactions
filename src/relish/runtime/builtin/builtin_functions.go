@@ -14,6 +14,7 @@ import (
 	. "relish/runtime/data"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 	"relish/rterr"
     "time"
 )
@@ -317,7 +318,8 @@ func InitBuiltinFunctions() {
 	
 	*/
 	
-
+    // substituting values for %s 
+    //
     stringFill2Method, err := RT.CreateMethod("","fill", []string{"s1", "s2"}, []string{"String", "Any"}, 1, 0, false)
 	if err != nil {
 		panic(err)
@@ -367,7 +369,140 @@ func InitBuiltinFunctions() {
 	stringFill9Method.PrimitiveCode = builtinStringFill		
 
 
+    // length of a string
+    //
+    // in bytes
+	stringLenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringLenMethod.PrimitiveCode = builtinStringLen
+	
+    // in characters (codepoints)
+    //
+	stringNumCodePointsMethod, err := RT.CreateMethod("","numCodePoints", []string{"c"}, []string{"String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringNumCodePointsMethod.PrimitiveCode = builtinStringNumCodePoints
+	
+	// concatenation of strings
+	
+    // s = cat s1 String s2 String s3 String s4 String s5 String s6 String s7 String s8 String s9 String > String  
+	
+    stringCat2Method, err := RT.CreateMethod("","cat", []string{"s1", "s2"}, []string{"Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat2Method.PrimitiveCode = builtinStringCat
 
+	stringCat3Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3"}, []string{"Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat3Method.PrimitiveCode = builtinStringCat
+
+	stringCat4Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4"}, []string{"Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat4Method.PrimitiveCode = builtinStringCat
+
+	stringCat5Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat5Method.PrimitiveCode = builtinStringCat
+
+	stringCat6Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat6Method.PrimitiveCode = builtinStringCat
+
+	stringCat7Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat7Method.PrimitiveCode = builtinStringCat	
+
+	stringCat8Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat8Method.PrimitiveCode = builtinStringCat	
+
+		stringCat9Method, err := RT.CreateMethod("","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringCat9Method.PrimitiveCode = builtinStringCat	
+	
+	
+    stringHasPrefixMethod, err := RT.CreateMethod("","hasPrefix", []string{"s1", "s2"}, []string{"String", "String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringHasPrefixMethod.PrimitiveCode = builtinStringHasPrefix	
+	
+    stringHasSuffixMethod, err := RT.CreateMethod("","hasSuffix", []string{"s1", "s2"}, []string{"String", "String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringHasSuffixMethod.PrimitiveCode = builtinStringHasSuffix	
+	
+	// index of substring in string
+	
+/*	
+	index s String t String > Int
+	"""
+	 index of first occurrence of t in s or -1 if t not found in s 
+	"""
+*/
+    stringIndexMethod, err := RT.CreateMethod("","index", []string{"s1", "s2"}, []string{"String", "String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringIndexMethod.PrimitiveCode = builtinStringIndex
+	
+    stringLastIndexMethod, err := RT.CreateMethod("","lastIndex", []string{"s1", "s2"}, []string{"String", "String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringLastIndexMethod.PrimitiveCode = builtinStringLastIndex	
+
+
+    // substring or slice
+/*
+	slice s String start Int end Int > String
+*/
+    stringSlice2Method, err := RT.CreateMethod("","slice", []string{"s", "start"}, []string{"String", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringSlice2Method.PrimitiveCode = builtinStringSlice	
+	
+    stringSlice3Method, err := RT.CreateMethod("","slice", []string{"s", "start", "end"}, []string{"String", "Int", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringSlice3Method.PrimitiveCode = builtinStringSlice	
+	
+    stringFirstMethod, err := RT.CreateMethod("","first", []string{"s", "n"}, []string{"String", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringFirstMethod.PrimitiveCode = builtinStringFirst	
+	
+    stringLastMethod, err := RT.CreateMethod("","last", []string{"s", "n"}, []string{"String", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringLastMethod.PrimitiveCode = builtinStringLast	
+	
+	
+	
+	
     ///////////////////////////////////////////////////////////////////
     // Collection functions	
 	
@@ -378,13 +513,6 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	lenMethod.PrimitiveCode = builtinLen
-
-
-	stringLenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"String"}, 1, 0, false)
-	if err != nil {
-		panic(err)
-	}
-	stringLenMethod.PrimitiveCode = builtinStringLen	
 
 
     /////////////////////////////////////////////////////////////////////
@@ -1098,13 +1226,7 @@ func builtinLen(objects []RObject) []RObject {
 }
 
 
-func builtinStringLen(objects []RObject) []RObject {
-	obj := objects[0].(String)
-    s := string(obj)
-	var val RObject
-	val = Int(int64(len(s)))
-	return []RObject{val}
-}
+
 
 
 /*
@@ -1152,6 +1274,26 @@ func builtinTo(objects []RObject) []RObject {
 /////////////////////////////////////////////////////////////// 
 // String functions
 
+// length in bytes
+
+func builtinStringLen(objects []RObject) []RObject {
+	obj := objects[0].(String)
+    s := string(obj)
+	var val RObject
+	val = Int(int64(len(s)))
+	return []RObject{val}
+}
+
+// count of unicode codepoints
+
+func builtinStringNumCodePoints(objects []RObject) []RObject {
+	obj := objects[0].(String)
+    s := string(obj)
+	var val RObject
+	val = Int(int64(utf8.RuneCountInString(s)))
+	return []RObject{val}
+}
+
 /*
 contains operator (strings).
 
@@ -1163,6 +1305,22 @@ func builtinStringContains(objects []RObject) []RObject {
 	substr := objects[1].(String)
 	var val RObject
 	val = Bool( strings.Contains(string(s), string(substr)) )
+	return []RObject{val}
+}
+
+func builtinStringHasPrefix(objects []RObject) []RObject {
+	s := objects[0].(String)
+	substr := objects[1].(String)
+	var val RObject
+	val = Bool( strings.HasPrefix(string(s), string(substr)) )
+	return []RObject{val}
+}
+
+func builtinStringHasSuffix(objects []RObject) []RObject {
+	s := objects[0].(String)
+	substr := objects[1].(String)
+	var val RObject
+	val = Bool( strings.HasSuffix(string(s), string(substr)) )
 	return []RObject{val}
 }
 
@@ -1218,11 +1376,124 @@ func builtinStringFill(objects []RObject) []RObject {
 
 
 
+		// concatenation of strings
+
+	    // s = cat s1 String s2 String s3 String s4 String s5 String s6 String s7 String s8 String s9 String > String  
+
+func builtinStringCat(objects []RObject) []RObject {
+	s := objects[0].String()
+    n := len(objects) 
+	for i := 1; i < n; i++ {
+		s += objects[i].String()
+	}
+    return []RObject{String(s)}
+}
+
+		// index of substring in string
+
+	/*	
+		index s String t String > Int
+		"""
+		 index of first occurrence of t in s or -1 if t not found in s 
+		"""
+	*/
+	
+func builtinStringIndex(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	substr := string(objects[1].(String))
+	var val RObject
+    val = Int(int64(strings.Index(s, substr)))	
+	return []RObject{val}
+}
 
 
+func builtinStringLastIndex(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	substr := string(objects[1].(String))
+	var val RObject
+    val = Int(int64(strings.LastIndex(s, substr)))	
+	return []RObject{val}
+}
 
 
+	    // substring or slice
+	/*
+		slice s String start Int end Int > String
+		
+		slice s String start Int end Int > String		
+	*/
 
+/*
+Counts in bytes.
+*/
+func builtinStringSlice(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	start := int(objects[1].(Int))
+	length := len(s)
+	end := length
+	if len(objects) == 3 {
+		end = int(objects[2].(Int))
+		if end < 0 {
+			end = length + end
+		}
+	}
+	substr := s[start:end]
+    return []RObject{String(substr)}
+}
+
+/*
+Counts in utf-8 encoded codepoints.
+Does not mind if the actual string is shorter than n codepoints.
+*/
+func builtinStringFirst(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	n := int(objects[1].(Int))
+    i := 0
+    end := len(s)
+    var pos int
+	for pos, _ = range s {
+	    if i >= n {
+		   end = pos
+		   break
+	    }
+	    i++
+	}
+	substr := s[0:end]
+    return []RObject{String(substr)}	
+}
+
+
+/*
+Counts in utf-8 encoded codepoints.
+Does not mind if the actual string is shorter than n codepoints.
+*/
+func builtinStringLast(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	n := int(objects[1].(Int))
+    if n == 0 {
+      return []RObject{String("")}	
+    }
+
+    nRunes := utf8.RuneCountInString(s)
+    n = nRunes - n
+    if n < 0 {
+	   n = 0
+    }
+	
+    i := 0
+    end := len(s)
+    var pos int
+    var start int
+	for pos, _ = range s {
+	    if i >= n {
+		   start = pos
+		   break
+	    }
+	    i++
+	}
+	substr := s[start:end]
+    return []RObject{String(substr)}	
+}
 
 
 
