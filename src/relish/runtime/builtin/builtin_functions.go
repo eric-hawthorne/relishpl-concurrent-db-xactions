@@ -515,6 +515,52 @@ func InitBuiltinFunctions() {
 	lenMethod.PrimitiveCode = builtinLen
 
 
+	// cap coll Collection > Int	
+	//
+	capMethod, err := RT.CreateMethod("","cap", []string{"c"}, []string{"Collection"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	capMethod.PrimitiveCode = builtinCap	
+
+
+    ///////////////////////////////////////////////////////////////////
+    // Concurrency functions	
+
+	// len c Channel > Int	
+	//
+	channelLenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"Channel"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelLenMethod.PrimitiveCode = builtinChannelLen    
+
+	// cap c Channel > Int	
+	//
+	channelCapMethod, err := RT.CreateMethod("","cap", []string{"c"}, []string{"Channel"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelCapMethod.PrimitiveCode = builtinChannelCap    	
+
+
+	// from c InChannel of T > T	
+	//
+	channelFromMethod, err := RT.CreateMethod("","from", []string{"c"}, []string{"InChannel"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelFromMethod.PrimitiveCode = builtinFrom   	
+
+
+    // to c OutChannel of T obj T 	
+	//
+	channelToMethod, err := RT.CreateMethod("","to", []string{"c","v"}, []string{"OutChannel","Any"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelToMethod.PrimitiveCode = builtinTo 
+
     /////////////////////////////////////////////////////////////////////
     // Type init functions
 
@@ -538,6 +584,17 @@ func InitBuiltinFunctions() {
 }
 
 
+	channelInit0Method, err := RT.CreateMethod("","initChannel", []string{"c"}, []string{"Channel"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelInit0Method.PrimitiveCode = builtinInitChannel 
+
+	channelInit1Method, err := RT.CreateMethod("","initChannel", []string{"c","n"}, []string{"Channel","Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	channelInit1Method.PrimitiveCode = builtinInitChannel	
 
 
 
@@ -1227,7 +1284,8 @@ func builtinLen(objects []RObject) []RObject {
 
 
 
-
+///////////////////////////////////////////////////////////////////////
+// Concurrency functions
 
 /*
 
@@ -1238,22 +1296,17 @@ val = from ch
 TODO DUMMY Implementation 
 */
 func builtinFrom(objects []RObject) []RObject {
-	name := objects[0].String()
-
-	obj, err := RT.DB().FetchByName(name, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	return []RObject{obj}
+	c := objects[0].(*Channel)
+    val  := <- c.ch
+	return []RObject{val}
 }
 
 
 /*
 
 to 
-   ch InChannel of T 
-   T
+   ch OutChannel of T 
+   val T
 
 to ch val
 
@@ -1261,14 +1314,12 @@ to ch val
 TODO DUMMY Implementation 
 */
 func builtinTo(objects []RObject) []RObject {
-	name := objects[0].String()
+	c := objects[0].(*Channel)
+    val := objects[1]
+    // TODO do a runtime type-compatibility check of val's type with c.ElementType
+	c.ch <- val
 
-	obj, err := RT.DB().FetchByName(name, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	return []RObject{obj}
+	return []RObject{}
 }
 
 /////////////////////////////////////////////////////////////// 
@@ -1634,3 +1685,18 @@ func builtinInitTimeDate(objects []RObject) []RObject {
 }
 
 
+
+func builtinInitChannel(objects []RObject) []RObject {
+   
+    c := objects[0].(*Channel)
+
+	var n int
+	if len(objects) == 2 {
+		n = int(objects[1].Int())
+		if n < 0 {
+			rterr.Stop("Channel capacity cannot be specified to be less than zero.")
+		}
+	} 
+	c.ch = make(chan RObject, n)
+	return c
+}

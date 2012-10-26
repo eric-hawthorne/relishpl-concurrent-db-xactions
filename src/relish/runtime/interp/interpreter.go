@@ -933,7 +933,9 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bo
 			t.Push(multiMethod)
 			
 		case token.TYPE:
-			obj, err := i.rt.NewObject(id.Name)
+			var obj RObject
+			var err error
+			obj, err = i.rt.NewObject(id.Name)
 			if err != nil {
 				panic(err)
 			}

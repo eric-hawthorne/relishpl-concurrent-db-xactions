@@ -45,6 +45,7 @@ type RType struct {
 	ForwardRelationsByName map[string]*RelationSpec
 	ReverseRelationsByName map[string]*RelationSpec
 	NumPrimitiveAttributes int
+	isParameterized        bool
 }
 
 /*

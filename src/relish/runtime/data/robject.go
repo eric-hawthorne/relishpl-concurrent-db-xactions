@@ -500,29 +500,66 @@ Create a new unitary object.
 
 func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	
+	/*
+    switch typeName {	
+    case "Time": get rid od this switch at this level
+    case "Channel":
+    case "String":
+    case "Int":
+    case "Int32":
+    case "Uint":
+    case "Uint32": 
+    default:
+    	*/
+
 	// TODO Need to handle parameterized types here
 	typ, found := rt.Types[typeName]
 	if !found {
 		return nil, fmt.Errorf("Type '%s' not found.", typeName)
 	}
 	
-	// Check for special primitive types
-	//
-	if typ == ChannelType { // This will not be ChannelType, it will be a derived type <: Channel of T
-		
-		// TODO Need to handle parameterized types properly here.
-		
-		// For example, have to re-point the channel's type to a Channel of T type
-		
-		// TODO Need to handle capacity of channel argument here.
-		
-		channel := make(Channel)
-		return channel, nil
-	}
-	
-	// It's not a primitive type
-	
-	unit := &runit{robject{rtype: typ}}
-	unit.robject.this = unit
-	return unit, nil
+	// Detect primitive types
+    switch typ:
+    case TimeType:
+        var t Time  // this is a zero Time value
+        return t, nil    	
+    case StringType:
+    	var s String
+    	return s, nil
+    case IntType:
+    	var i Int
+    	return i, nil
+    case Int32Type:
+    	var i32 Int32
+    	return i32, nil
+    case UintType:
+    	var u Uint
+    	return u, nil
+    case Uint32Type:
+    	var u32 Uint32
+    	return u32,nil
+    case FloatType:
+    	var f Float
+    	return f, nil
+    case BoolType:
+    	var b Bool
+    	return b, nil
+    default:
+       if typ.IsParameterized {
+       	   if typ == ChannelType || strings.HasPrefix(typeName, "Channel of ") {  // TODO May need to change to just == "Channel"
+              c := &Channel{} // this is an uninitialized Channel value
+              return c, nil   
+       	   }
+       	   // TODO Not handling other parameterized types yet.       	   
+           rterr.Stopf("Sorry. Parameterized data types are not handled yet.")
+       	   // TODO Not handling other parameterized types yet.
+       } else {
+
+			// It's not a primitive type nor a parameterized type
+			
+			unit := &runit{robject{rtype: typ}}
+			unit.robject.this = unit
+			return unit, nil
+       }
+   }
 }

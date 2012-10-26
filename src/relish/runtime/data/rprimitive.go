@@ -126,16 +126,20 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	
 	InChannelType, _ = rt.CreateType("InChannel", "", []string{})
 	OutChannelType, _ = rt.CreateType("OutChannel", "", []string{})
-	ChannelType, _ = rt.CreateType("Channel", "", []string{"InChannel","OutChannel"})		
+	ChannelType, _ = rt.CreateType("Channel", "", []string{"InChannel","OutChannel"})	
+	ChannelType.IsParameterized = true	
 }
 
 
-type Channel chan RObject
+type Channel struct {
+	ch chan RObject
+	ElementType *RType
+}
 
 // TODO
 
 func (p Channel) IsZero() bool {
-	return p == nil
+	return p.ch == nil
 }
 
 func (p Channel) Type() *RType {
@@ -146,17 +150,46 @@ func (p Channel) This() RObject {
 	return p
 }
 
+/*
+Hmmm. TODO
+*/
 func (p Channel) IsUnit() bool {
 	return true
 }
 
+/*
+Hmmm. TODO Maybe a Channel should be considered a collection???
+*/
 func (p Channel) IsCollection() bool {
 	return false
 }
 
 func (p Channel) String() string {
-	return "Channel"
+	var descriptor string
+	if p.ch == nil {
+		descriptor = "uninitialized"
+	} else if cap(p.ch) > 0 {
+		descriptor = fmt.Sprintf("cap: %d len: %d",cap(p.ch),len(p.ch))
+	} else {
+		descriptor = "synchronous"
+	}
+	return fmt.Sprintf("Channel (%s) of %v", descriptor, p.ElementType())
 }
+
+func (p Channel) Length() int64 {
+	if p.ch == nil {
+		return 0
+	}
+	return len(p.ch)
+}
+
+func (p Channel) Cap() int64 {
+	if p.ch == nil {
+		return 0
+	}
+	return cap(p.ch)
+}
+
 
 func (p Channel) HasUUID() bool {
 	return false
