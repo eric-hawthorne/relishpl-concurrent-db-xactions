@@ -156,7 +156,7 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 	//
 	// Should we define Int for Int64 Uint for Uint64 and Float for Float64
 	//
-	case "Int", "Uint", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8", "Bit", "Bool", "CodePoint":
+	case "Int", "Uint", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8", "Bit", "Bool", "CodePoint","Mutex","RWMutex":
 		fallthrough
 	case "[]Int", "[]Uint", "[]Int32", "[]Uint32", "[]Int16", "[]Uint16", "[]Int8", "[]Byte", "[]Bit", "[]Bool", "[]CodePoint":
 		fallthrough
@@ -1004,6 +1004,9 @@ start with
 typeTupleTree :=  &RTypeTupleTreeNode{}
 Create for T1 T2 
 
+TODO How can this be made thread-safe?????
+
+Does each thread need its own typeTupleTree? Or do we have a single thread that supplies typetuples and dispatch results.
 */
 func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObjects []RObject) *RTypeTuple {
 	if len(mObjects) == 0 {

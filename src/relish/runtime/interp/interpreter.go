@@ -404,7 +404,7 @@ func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultOb
 func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 	switch expr.(type) {
 	case *ast.MethodCall:
-		i.EvalMethodCall(t, expr.(*ast.MethodCall))
+		i.EvalMethodCall(t, nil, expr.(*ast.MethodCall))
 	case *ast.BasicLit:
 		i.EvalBasicLit(t, expr.(*ast.BasicLit))
 	case *ast.Ident:
@@ -570,28 +570,43 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 }
 
 /*
-   1. Evaluate the function expression to return a method or multimethod (or constructor function - how to handle?)  
-      as well as info on how many return args to expect. 
+   Evaluate a method call or type constructor call, including evaluation of the arguments. 
+   Place the result(s) on the stack.
 
-   - - - fixed above - - -
+   1. Evaluate the function expression placing a method or multimethod or newly constructed object
+      or newly constructed object + init multimethod
+   2. If it was a type construction expression (a type spec) with no init function, stop there. The new object is
+      on the thread's stack.
+   3. Pop the multi-method reference and/or the newly constructed object off the stack. They'll go back on after the
+      base for the new method execution is set. That is, after the creation of a new stack frame for executing the method.
+   4. Determine the number of return arguments of the multi-method.
+   5. PushBase - Reserve space on the stack for 
+         a. the return value(s), 
+         b. the base pointer which has the index of the previous base pointer. base pointer value will be -1 if stack empty
+         c. the method that is to be executed.
+      Note: This does not yet set the stack frame base to the new one, because we need to evaluate method call args in the
+      old existing stack frame context.
+   6. Place the newly constructed object if any back on the stack.
+   7. Evaluate each call argument expression, pushing the resulting argument values on the stack. 
+   8. If a multi-method, dispatch to find the correct RMethod. 
+       (An RMethod must point to the ast.MethodDeclaration which has the code body.) 
+       The correct method is determined by multimethod dispatch on the runtime types of the required positional arguments.
+   9. Set t.Base to the new base pointer's stack index, thus switching context to the new stack frame.
+   10. Apply the method to the arguments. (If a relish method, the method code uses the stack to find the arguments. If is
+       a builtin method implemented in go, uses a slice of RObjects which is a slice containing the args at the top of the stack)
+   11. Result value(s) are placed just below the current base pointer, during execution in the method relish code of assignments
+       to return arg variables, or alternately upon the execution of a relish "=>" expr1 expr2 (return) statement. 
+   12. PopBase - set t.Base to the value stored in the current base pointer. Set t.Pos to the index of the last return val. 
 
-   1. Evaluate the argument expressions of the method call, 
-   2. Place the results on the thread's stack.
-   3. Dispatch to find the correct RMethod. (An RMethod must point to the ast.MethodDeclaration which has the code body.)
-   4. Execute the method body.
-   5. Remove the arguments from the stack by setting the argument positions on the stack to nil and reducing the stack Pos.
-   6. Push the result(s) of executing the method onto the stack. 
 
-   This is no longer quite accurate!!
-
-   working data
-   working data
+   working data for statement, expr evaluation during method execution            <-- t.Pos
+   working data for statement, expr evaluation during method execution
    paramOrLocalVar2
    paramOrLocalVar1 
    paramOrLocalVar0
-   [reserve for code position in method body bytecode? NOT PRESENTLY RESERVED]
+   [reserve for code position in method body bytecode? RESERVED BUT NOT USED]
    method
-   base              ---
+   base              ---       . . . . . . . . . . . . . . . . . . . . . . . .  . <-- t.Base
    retval2              |
    retval1              |
    working data         | 
@@ -599,17 +614,20 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
    paramOrLocalVar2     |    
    paramOrLocalVar1     |
    paramOrLocalVar0     |
-   [reserve for code position in method body bytecode? NOT PRESENTLY RESERVED]
+   [reserve for code position in method body bytecode? RESERVED BUT NOT USED]
    method               |
    base      --       <-
    retval1     |
                v
 
 
-
+   Note. If Thread t2 is supplied non-nil, it refers to a newly spawned thread of which t is the parent.
+   In this case, the method call arguments (and the expression that yields the multimethod) will be evaluated 
+   in the parent thread t and its stack, then the stack frame of the call will be copied to t2's stack, 
+   and the method application to the arguments will be performed in the new thread (go-routine actually) using t2's stack.
 
 */
-func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnArgs int) {
+func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall) (nReturnArgs int) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalMethodCall"))
 
     // Evaluate the function expression - function name, lambda (TBD), or type name
@@ -710,18 +728,50 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 		panic("Expecting a Method or MultiMethod.")
 	}
 
-	// put currently executing method on stack in reserved parking place
-	t.Stack[newBase+1] = method
+    if t2 == nil { 
+
+		// put currently executing method on stack in reserved parking place
+		t.Stack[newBase+1] = method
+
+		t.ExecutingMethod = method       // Shortcut for dispatch efficiency
+		t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
+
+		t.Reserve(method.NumLocalVars) // This only works with next TopN call because builtin methods have 0 local vars.
+
+		i.apply1(t, method, t.TopN(constructorArg + len(call.Args))) // Puts results on stack BELOW the current stack frame.	
+
+    } else { // This is a go statement execution
+    	t2.copyStackFrameFrom(t, nReturnArgs)  // copies the frame for the execution of this method, 
+    	                                               // including space reserved for return val(s)
+        go i.GoApply(t2, method)
+    }
+
+	t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO
+
+	return
+}
+
+/*
+Assumes that the base pointer for executing the new method has been set in thread t,
+but that the method has not been pushed onto t's stack nor has the space for the method's local vars been reserved on t's stack.
+
+Applies the method using thread t to pre-evaluated arguments that are in the current frame of t's stack.
+*/
+func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
+    
+	t.Stack[t.Base+1] = method
 
 	t.ExecutingMethod = method       // Shortcut for dispatch efficiency
 	t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
 
-	t.Reserve(method.NumLocalVars)
+    nArgs := t.Pos - t.Base - 3
+	t.Reserve(method.NumLocalVars)   // This only works with next TopN call because builtin methods have 0 local vars.
+ 
 
-	i.apply1(t, method, t.TopN(constructorArg + len(call.Args))) // Puts results on stack BELOW the current stack frame.	
+	i.apply1(t, method, t.TopN(nArgs)) // Puts results on stack BELOW the current stack frame.	
 
-	t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO
-	return
+	t.PopBase()
+	t.PopN(method.NumReturnArgs) // Pop everything off the stack for good measure.		
 }
 
 
@@ -995,18 +1045,9 @@ It will not work for using the values as args to the next outer method.
 */
 func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	defer UnM(t, TraceM(t,INTERP_TR, "apply1", m, "to", args))	
-	if strings.Contains(m.String(),"spew") {
-		fmt.Println(args)
-		/*
-		for i, arg := range args {
-			if arg == nil {
-				fmt.Println("@@@@@@@@ arg ",i," is nil")
-			} else {
-				fmt.Println("@@@@@@@@ arg ",i, " ",arg)
-			}
-		}
-		*/
-	} 
+//	if strings.Contains(m.String(),"spew") {
+//		fmt.Println(args)
+//	} 
 
 	if Logging(STACK_) {
 		t.Dump()
@@ -1048,7 +1089,7 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 	case *ast.RangeStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecForRangeStatement(t, stmt.(*ast.RangeStatement))
 	case *ast.MethodCall:
-		i.ExecMethodCall(t, stmt.(*ast.MethodCall))
+		i.ExecMethodCall(t, nil, stmt.(*ast.MethodCall))
 	case *ast.AssignmentStatement:
 		i.ExecAssignmentStatement(t, stmt.(*ast.AssignmentStatement))
 	case *ast.ReturnStatement:
@@ -1087,7 +1128,7 @@ func (i *Interpreter) ExecIfStatement(t *Thread, stmt *ast.IfStatement) (breakLo
 */
 func (i *Interpreter) ExecGoStatement(parent *Thread, stmt *ast.GoStatement) {
 	t := i.NewThread(parent)
-	go i.ExecMethodCall(t, stmt.Call)	
+	i.ExecMethodCall(parent, t, stmt.Call)	
 }
 
 func (i *Interpreter) ExecWhileStatement(t *Thread, stmt *ast.WhileStatement) (breakLoop, continueLoop, returnFrom bool) {
@@ -1591,9 +1632,9 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 
 /*
  */
-func (i *Interpreter) ExecMethodCall(t *Thread, call *ast.MethodCall) {
+func (i *Interpreter) ExecMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall) {
 	defer UnM(t,TraceM(t,INTERP_TR, "ExecMethodCall"))
-	nResults := i.EvalMethodCall(t, call)
+	nResults := i.EvalMethodCall(t, t2, call)
 	t.PopN(nResults) // Discard the results of the method call. No one wants them.
 }
 
@@ -1926,6 +1967,17 @@ In order from bottom most (oldest pushed) to top most (most recently pushed).
 */
 func (t *Thread) TopN(n int) []RObject {
 	return t.Stack[t.Pos-n+1 : t.Pos+1]
+}
+
+func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
+   n := parent.Pos - parent.Base + numReturnVals + 1	
+   src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
+   if copy(t.Stack, src) != n {
+   	   panic("stack copy range exception during go-routine spawn.")
+   }
+   t.Base = numReturnVals
+   t.Pos = n - 1
+
 }
 
 /*

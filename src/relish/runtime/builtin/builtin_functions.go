@@ -561,6 +561,47 @@ func InitBuiltinFunctions() {
 	}
 	channelToMethod.PrimitiveCode = builtinTo 
 
+
+
+	mutexLockMethod, err := RT.CreateMethod("","lock", []string{"m"}, []string{"Mutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mutexLockMethod.PrimitiveCode = builtinMutexLock
+
+	mutexUnlockMethod, err := RT.CreateMethod("","unlock", []string{"m"}, []string{"Mutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mutexUnlockMethod.PrimitiveCode = builtinMutexUnlock
+
+	rwmutexLockMethod, err := RT.CreateMethod("","lock", []string{"m"}, []string{"RWMutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rwmutexLockMethod.PrimitiveCode = builtinRWMutexLock
+
+	rwmutexUnlockMethod, err := RT.CreateMethod("","unlock", []string{"m"}, []string{"RWMutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rwmutexUnlockMethod.PrimitiveCode = builtinRWMutexUnlock
+
+	rwmutexRLockMethod, err := RT.CreateMethod("","rlock", []string{"m"}, []string{"RWMutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rwmutexRLockMethod.PrimitiveCode = builtinRWMutexRLock
+
+	rwmutexRUnlockMethod, err := RT.CreateMethod("","runlock", []string{"m"}, []string{"RWMutex"}, 0, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rwmutexRUnlockMethod.PrimitiveCode = builtinRWMutexRUnlock
+
+
+
+
     /////////////////////////////////////////////////////////////////////
     // Type init functions
 
@@ -1342,6 +1383,41 @@ func builtinChannelCap(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
+func builtinMutexLock(objects []RObject) []RObject {
+	c := objects[0].(*Mutex)
+	c.Lock()
+	return []RObject{}
+}
+
+func builtinMutexUnlock(objects []RObject) []RObject {
+	c := objects[0].(*Mutex)
+	c.Unlock()
+	return []RObject{}
+}
+
+func builtinRWMutexLock(objects []RObject) []RObject {
+	c := objects[0].(*RWMutex)
+	c.Lock()
+	return []RObject{}
+}
+
+func builtinRWMutexUnlock(objects []RObject) []RObject {
+	c := objects[0].(*RWMutex)
+	c.Unlock()
+	return []RObject{}
+}
+
+func builtinRWMutexRLock(objects []RObject) []RObject {
+	c := objects[0].(*RWMutex)
+	c.RLock()
+	return []RObject{}
+}
+
+func builtinRWMutexRUnlock(objects []RObject) []RObject {
+	c := objects[0].(*RWMutex)
+	c.RUnlock()
+	return []RObject{}
+}
 
 /////////////////////////////////////////////////////////////// 
 // String functions

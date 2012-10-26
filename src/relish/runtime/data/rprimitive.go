@@ -11,6 +11,7 @@ import (
          "errors"
          . "time"
          "fmt"
+         "sync"
 )
 
 //"fmt"
@@ -81,6 +82,8 @@ var MapType *RType
 var InChannelType *RType
 var OutChannelType *RType
 var ChannelType *RType
+var MutexType *RType
+var RWMutexType *RType
 
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
@@ -128,6 +131,11 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	OutChannelType, _ = rt.CreateType("OutChannel", "", []string{})
 	ChannelType, _ = rt.CreateType("Channel", "", []string{"InChannel","OutChannel"})	
 	ChannelType.IsParameterized = true	
+
+	MutexType, _ = rt.CreateType("Mutex", "", []string{})
+
+	RWMutexType, _ = rt.CreateType("RWMutex", "", []string{})	
+
 }
 
 
@@ -292,6 +300,314 @@ func (p Channel) IsTransient() bool { return true }
 func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
+
+
+
+
+
+
+
+type Mutex sync.Mutex
+
+// TODO
+
+func (p Mutex) IsZero() bool {
+	return sync.Mutex(p) == sync.Mutex{}  // unlocked mutex
+}
+
+func (p Mutex) Type() *RType {
+	return MutexType
+}
+
+func (p Mutex) This() RObject {
+	return p
+}
+
+/*
+Hmmm. TODO
+*/
+func (p Mutex) IsUnit() bool {
+	return true
+}
+
+/*
+Hmmm. TODO Maybe a Mutex should be considered a collection???
+*/
+func (p Mutex) IsCollection() bool {
+	return false
+}
+
+func (p Mutex) String() string {
+   return fmt.Sprintf("%v",sync.Mutex(p))
+}
+
+func (p Mutex) HasUUID() bool {
+	return false
+}
+
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Mutex) UUID() []byte {
+	panic("A Mutex cannot have a UUID.")
+	return nil
+}
+
+func (p Mutex) DBID() int64 {
+	panic("A Mutex cannot have a DBID.")
+	return 0
+}
+
+func (p Mutex) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Mutex cannot have a UUID.")
+	return
+}
+
+func (p Mutex) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Mutex cannot have a UUID.")
+	return
+}
+
+func (p Mutex) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Mutex cannot have a UUID.")
+	return
+}
+
+func (p Mutex) UUIDstr() string {
+	panic("A Mutex cannot have a UUID.")
+	return ""
+}
+
+func (p Mutex) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Mutex cannot have a UUID.")
+	return
+}
+
+func (p Mutex) UUIDabbrev() string {
+	panic("A Mutex cannot have a UUID.")
+	return ""
+}
+
+func (p Mutex) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Mutex cannot have a UUID.")
+	return
+}
+
+func (p Mutex) RemoveUUID() {
+	panic("A Mutex does not have a UUID.")
+	return
+}
+
+func (p Mutex) Flags() int8 {
+	panic("A Mutex has no Flags.")
+	return 0
+}
+
+func (p Mutex) IsDirty() bool {
+	return false
+}
+func (p Mutex) SetDirty() {
+}
+func (p Mutex) ClearDirty() {
+}
+
+func (p Mutex) IsIdReversed() bool {
+	return false
+}
+
+func (p Mutex) SetIdReversed() {}
+
+func (p Mutex) ClearIdReversed() {}
+
+func (p Mutex) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Mutex) SetLoadNeeded()   {}
+func (p Mutex) ClearLoadNeeded() {}
+
+func (p Mutex) IsValid() bool { return true }
+func (p Mutex) SetValid()     {}
+func (p Mutex) ClearValid()   {}
+
+func (p Mutex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Mutex) SetStoredLocally()     {}
+func (p Mutex) ClearStoredLocally()   {}
+
+func (p Mutex) IsProxy() bool { return false }
+
+func (p Mutex) IsTransient() bool { return true }
+
+
+func (p Mutex) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p *Mutex) Lock() {
+	(*sync.Mutex)(p).Lock() 
+}
+
+func (p *Mutex) Unlock() {
+	(*sync.Mutex)(p).Unlock() 
+}
+
+
+
+
+
+type RWMutex sync.RWMutex
+
+// TODO
+
+func (p RWMutex) IsZero() bool {
+	return sync.RWMutex(p) == sync.RWMutex{}  // unlocked mutex
+}
+
+func (p RWMutex) Type() *RType {
+	return RWMutexType
+}
+
+func (p RWMutex) This() RObject {
+	return p
+}
+
+func (p RWMutex) IsUnit() bool {
+	return true
+}
+
+/*
+Hmmm. TODO Maybe a RWMutex should be considered a collection???
+*/
+func (p RWMutex) IsCollection() bool {
+	return false
+}
+
+func (p RWMutex) String() string {
+   return fmt.Sprintf("%v",sync.RWMutex(p))
+}
+
+func (p RWMutex) HasUUID() bool {
+	return false
+}
+
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p RWMutex) UUID() []byte {
+	panic("A RWMutex cannot have a UUID.")
+	return nil
+}
+
+func (p RWMutex) DBID() int64 {
+	panic("A RWMutex cannot have a DBID.")
+	return 0
+}
+
+func (p RWMutex) EnsureUUID() (theUUID []byte, err error) {
+	panic("A RWMutex cannot have a UUID.")
+	return
+}
+
+func (p RWMutex) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A RWMutex cannot have a UUID.")
+	return
+}
+
+func (p RWMutex) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A RWMutex cannot have a UUID.")
+	return
+}
+
+func (p RWMutex) UUIDstr() string {
+	panic("A RWMutex cannot have a UUID.")
+	return ""
+}
+
+func (p RWMutex) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A RWMutex cannot have a UUID.")
+	return
+}
+
+func (p RWMutex) UUIDabbrev() string {
+	panic("A RWMutex cannot have a UUID.")
+	return ""
+}
+
+func (p RWMutex) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A RWMutex cannot have a UUID.")
+	return
+}
+
+func (p RWMutex) RemoveUUID() {
+	panic("A RWMutex does not have a UUID.")
+	return
+}
+
+func (p RWMutex) Flags() int8 {
+	panic("A RWMutex has no Flags.")
+	return 0
+}
+
+func (p RWMutex) IsDirty() bool {
+	return false
+}
+func (p RWMutex) SetDirty() {
+}
+func (p RWMutex) ClearDirty() {
+}
+
+func (p RWMutex) IsIdReversed() bool {
+	return false
+}
+
+func (p RWMutex) SetIdReversed() {}
+
+func (p RWMutex) ClearIdReversed() {}
+
+func (p RWMutex) IsLoadNeeded() bool {
+	return false
+}
+
+func (p RWMutex) SetLoadNeeded()   {}
+func (p RWMutex) ClearLoadNeeded() {}
+
+func (p RWMutex) IsValid() bool { return true }
+func (p RWMutex) SetValid()     {}
+func (p RWMutex) ClearValid()   {}
+
+func (p RWMutex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p RWMutex) SetStoredLocally()     {}
+func (p RWMutex) ClearStoredLocally()   {}
+
+func (p RWMutex) IsProxy() bool { return false }
+
+func (p RWMutex) IsTransient() bool { return true }
+
+
+func (p RWMutex) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p *RWMutex) Lock() {
+	(*sync.RWMutex)(p).Lock() 
+}
+
+func (p *RWMutex) Unlock() {
+	(*sync.RWMutex)(p).Unlock() 
+}
+
+func (p *RWMutex) RLock() {
+	(*sync.RWMutex)(p).Lock() 
+}
+
+func (p *RWMutex) RUnlock() {
+	(*sync.RWMutex)(p).Unlock() 
+}
+
+
+
 
 
 
