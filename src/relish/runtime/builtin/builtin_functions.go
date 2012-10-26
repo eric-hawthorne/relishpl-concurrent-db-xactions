@@ -581,7 +581,7 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	timeInit3Method.PrimitiveCode = builtinInitTimeDate	
-}
+
 
 
 	channelInit0Method, err := RT.CreateMethod("","initChannel", []string{"c"}, []string{"Channel"}, 1, 0, false)
@@ -596,7 +596,7 @@ func InitBuiltinFunctions() {
 	}
 	channelInit1Method.PrimitiveCode = builtinInitChannel	
 
-
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
@@ -1282,7 +1282,12 @@ func builtinLen(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
-
+func builtinCap(objects []RObject) []RObject {
+	coll := objects[0].(RCollection)
+	var val RObject
+	val = Int(coll.Cap())
+	return []RObject{val}
+}
 
 ///////////////////////////////////////////////////////////////////////
 // Concurrency functions
@@ -1297,7 +1302,7 @@ TODO DUMMY Implementation
 */
 func builtinFrom(objects []RObject) []RObject {
 	c := objects[0].(*Channel)
-    val  := <- c.ch
+    val  := <- c.Ch
 	return []RObject{val}
 }
 
@@ -1317,10 +1322,26 @@ func builtinTo(objects []RObject) []RObject {
 	c := objects[0].(*Channel)
     val := objects[1]
     // TODO do a runtime type-compatibility check of val's type with c.ElementType
-	c.ch <- val
+	c.Ch <- val
 
 	return []RObject{}
 }
+
+
+func builtinChannelLen(objects []RObject) []RObject {
+	c := objects[0].(*Channel)
+	var val RObject
+	val = Int(c.Length())
+	return []RObject{val}
+}
+
+func builtinChannelCap(objects []RObject) []RObject {
+	c := objects[0].(*Channel)
+	var val RObject
+	val = Int(c.Cap())
+	return []RObject{val}
+}
+
 
 /////////////////////////////////////////////////////////////// 
 // String functions
@@ -1692,11 +1713,11 @@ func builtinInitChannel(objects []RObject) []RObject {
 
 	var n int
 	if len(objects) == 2 {
-		n = int(objects[1].Int())
+		n = int(objects[1].(Int))
 		if n < 0 {
 			rterr.Stop("Channel capacity cannot be specified to be less than zero.")
 		}
 	} 
-	c.ch = make(chan RObject, n)
-	return c
+	c.Ch = make(chan RObject, n)
+	return []RObject{c}
 }

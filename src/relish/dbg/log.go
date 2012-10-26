@@ -7,9 +7,15 @@ package dbg
 
 import (
 	"fmt"
+	"sync"
 )	
 	
 var indent uint  // Current call nesting level
+var threadNum uint
+var indents map[interface{}]uint = make(map[interface{}]uint)
+var threadNums map[interface{}]uint = make(map[interface{}]uint)
+var currentThreadNum uint
+
 	
 // These single-bit-set flags should be used (possibly |'d together explicitly) as the 
 // first arg to Log,Logln,Logging,Trace functions.
@@ -76,7 +82,11 @@ const (
 //const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | PERSIST2__ | PERSIST__TR2| INTERP__TR2 | INTERP2__	
 // const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | INTERP__TR2 | INTERP2__ | WEB__ | ALWAYS_
 //const SOME_DEBUG_FLAGS =   PERSIST__ | PERSIST__TR | INTERP__TR | INTERP__ | WEB__ | ALWAYS_
-const SOME_DEBUG_FLAGS =  PERSIST_ | WEB__ | ALWAYS_
+
+// Until Oct 25
+//const SOME_DEBUG_FLAGS =  PERSIST_ | WEB__ | ALWAYS_
+
+const SOME_DEBUG_FLAGS =  INTERP__TR3 | INTERP3__ | STACK__ | ALWAYS_
 
 // const FULL_DEBUG_FLAGS = SOME_DEBUG_FLAGS | GENERATE_
 
@@ -100,17 +110,18 @@ func InitLogging(masterLevel int32) {
 	}
 }
 
+var LogMutex sync.Mutex
 	
 func Log(flags uint64,s string,args ...interface{}) {
    if flags & DEBUG_FLAGS != 0 {
-      printDots()		
+      printDots(threadNum, indent)		
       fmt.Printf(s,args...)
    }
 }
 
 func Logln(flags uint64,s ...interface{}) {
    if flags & DEBUG_FLAGS != 0 {
-      printDots()		
+      printDots(threadNum, indent)		
       fmt.Println(s...)
    }
 }
@@ -130,7 +141,7 @@ func Trace(flags uint64, msg string, args ...interface{}) string {
 		
 	   args2 := []interface{}{msg,"("}
 	   args2 = append(args2,args...)
-	   printTrace(args2...)		
+	   printTrace(threadNum, indent,args2...)		
 	   //printTrace(msg, "(")
  	   indent++
 	   return msg
@@ -142,20 +153,82 @@ func Trace(flags uint64, msg string, args ...interface{}) string {
 func Un(msg string) {
 	if msg != "" {
 	   indent--
-	   printTrace(")",msg)
+	   printTrace(threadNum,indent,")",msg)
     }
 }
 
-func printTrace(a ...interface{}) {
-	printDots()
+
+
+func LogM(context interface{}, flags uint64,s string,args ...interface{}) {
+
+   if flags & DEBUG_FLAGS != 0 {
+      LogMutex.Lock()		
+      printDots(threadNums[context],indents[context])		
+      fmt.Printf(s,args...)
+      LogMutex.Unlock()
+   }
+
+}
+
+func LoglnM(context interface{}, flags uint64,s ...interface{}) {
+
+   if flags & DEBUG_FLAGS != 0 {
+      LogMutex.Lock()		
+      printDots(threadNums[context],indents[context])		
+      fmt.Println(s...)
+      LogMutex.Unlock()
+   }
+}
+
+func TraceM(context interface{}, flags uint64, msg string, args ...interface{}) string {
+	if flags & DEBUG_FLAGS != 0 {
+       LogMutex.Lock()		
+	   args2 := []interface{}{msg,"("}
+	   args2 = append(args2,args...)
+	
+	   indnt,found := indents[context]
+	   if ! found {
+	      indents[context] = indnt	
+	      currentThreadNum++
+	      threadNums[context] = currentThreadNum
+	   }	
+	   printTrace(threadNums[context],indnt,args2...)		
+	
+ 	   indents[context]++
+       LogMutex.Unlock()
+	   return msg
+    }
+    return ""
+}
+
+// Usage pattern: defer Un(Trace("..."))
+func UnM(context interface{}, msg string) {
+	if msg != "" {
+       LogMutex.Lock()		
+	   indents[context]--	
+	   
+	   printTrace(threadNums[context],indents[context],")",msg)
+       LogMutex.Unlock()	
+    }
+}
+
+
+
+
+func printTrace(tNum uint, indnt uint, a ...interface{}) {
+	printDots(tNum, indnt)
 	fmt.Println(a...)
 }
 
-func printDots() {
+func printDots(tNum uint, indnt uint) {
 	const dots = ". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . " +
 		". . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . "
 	const n = uint(len(dots))
-	i := 2 * indent
+	
+	if tNum > 0 {
+		fmt.Printf("%02d ",tNum)
+	}
+	i := 2 * indnt
 	for ; i > n; i -= n {
 		fmt.Print(dots)
 	}

@@ -132,14 +132,14 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 
 type Channel struct {
-	ch chan RObject
+	Ch chan RObject
 	ElementType *RType
 }
 
 // TODO
 
 func (p Channel) IsZero() bool {
-	return p.ch == nil
+	return p.Ch == nil
 }
 
 func (p Channel) Type() *RType {
@@ -166,28 +166,28 @@ func (p Channel) IsCollection() bool {
 
 func (p Channel) String() string {
 	var descriptor string
-	if p.ch == nil {
+	if p.Ch == nil {
 		descriptor = "uninitialized"
-	} else if cap(p.ch) > 0 {
-		descriptor = fmt.Sprintf("cap: %d len: %d",cap(p.ch),len(p.ch))
+	} else if cap(p.Ch) > 0 {
+		descriptor = fmt.Sprintf("cap: %d len: %d",cap(p.Ch),len(p.Ch))
 	} else {
 		descriptor = "synchronous"
 	}
-	return fmt.Sprintf("Channel (%s) of %v", descriptor, p.ElementType())
+	return fmt.Sprintf("Channel (%s) of %v", descriptor, p.ElementType)
 }
 
 func (p Channel) Length() int64 {
-	if p.ch == nil {
+	if p.Ch == nil {
 		return 0
 	}
-	return len(p.ch)
+	return int64(len(p.Ch))
 }
 
 func (p Channel) Cap() int64 {
-	if p.ch == nil {
+	if p.Ch == nil {
 		return 0
 	}
-	return cap(p.ch)
+	return int64(cap(p.Ch))
 }
 
 

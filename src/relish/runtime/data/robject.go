@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"io"
 	"crypto/rand"
+	"strings"
 )
 
 ///////////////////////////////////////////////////////////////////////////
@@ -519,9 +520,9 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	}
 	
 	// Detect primitive types
-    switch typ:
+    switch typ {
     case TimeType:
-        var t Time  // this is a zero Time value
+        var t RTime  // this is a zero Time value
         return t, nil    	
     case StringType:
     	var s String
@@ -551,15 +552,13 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
               return c, nil   
        	   }
        	   // TODO Not handling other parameterized types yet.       	   
-           rterr.Stopf("Sorry. Parameterized data types are not handled yet.")
+           return nil, fmt.Errorf("Sorry. Parameterized data types are not handled yet.")
        	   // TODO Not handling other parameterized types yet.
-       } else {
+       } 
+    }
+	// It's not a primitive type nor a parameterized type
 
-			// It's not a primitive type nor a parameterized type
-			
-			unit := &runit{robject{rtype: typ}}
-			unit.robject.this = unit
-			return unit, nil
-       }
-   }
+	unit := &runit{robject{rtype: typ}}
+	unit.robject.this = unit
+	return unit, nil
 }

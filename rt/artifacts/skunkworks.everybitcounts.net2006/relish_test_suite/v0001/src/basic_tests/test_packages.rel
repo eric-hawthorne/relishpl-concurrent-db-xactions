@@ -72,7 +72,17 @@ listTest
    => theList
 
 
-spew n Int
+// spew ch Channel n Int
+// """
+//  Prints the argument number, repeatedly, forever
+// """
+//    while 1
+//       to ch n
+//       m = from ch
+//       print "Got" m
+
+
+spew ch Channel n Int
 """
  Prints the argument number, repeatedly, forever
 """
@@ -139,7 +149,7 @@ main
    for i wheel in car2.wheels
       print "wheel[" i "] =" wheel.num
 
-   ch = Channel of Int   
+   
 
    bigWheels = []vehicles.Wheel "num > 2"
 
@@ -285,3 +295,10 @@ multi-line %s string in relish!!
    print numCodePoints s3
    print index s3 "世界"
    print index s3 "界"
+
+   ch = Channel  // of String
+
+   go spew ch 3
+
+   spew ch 2
+

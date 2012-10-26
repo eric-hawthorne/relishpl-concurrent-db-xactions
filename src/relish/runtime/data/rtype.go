@@ -45,7 +45,7 @@ type RType struct {
 	ForwardRelationsByName map[string]*RelationSpec
 	ReverseRelationsByName map[string]*RelationSpec
 	NumPrimitiveAttributes int
-	isParameterized        bool
+	IsParameterized        bool
 }
 
 /*
@@ -1013,7 +1013,12 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObje
 		return tttn.tuple
 	}
 
-	typ := mObjects[0].Type()
+    var typ *RType
+    if mObjects[0] == nil {
+	   typ = AnyType
+    } else {
+	   typ = mObjects[0].Type()  
+    }
 	if tttn.nextType != nil { // we need to explore the tree from here.
 		nextNodes, found := tttn.nextType[typ]
 		if found {

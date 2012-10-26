@@ -436,7 +436,7 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
    Otherwise, applies the index to the collection and leaves on the stack the value found at the index.
 */
 func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr, isLHS bool) {
-	defer Un(Trace(INTERP_TR3, "EvalIndexExpr"))
+	defer UnM(t,TraceM(t,INTERP_TR3, "EvalIndexExpr"))
 
     var val RObject
 
@@ -489,7 +489,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr, isLHS boo
    someExpr.ident
 */
 func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
-	defer Un(Trace(INTERP_TR3, "EvalSelectorExpr", fmt.Sprintf(".%s", selector.Sel.Name)))
+	defer UnM(t, TraceM(t, INTERP_TR3, "EvalSelectorExpr", fmt.Sprintf(".%s", selector.Sel.Name)))
 	i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		      
 	obj := t.Pop()            // the robject whose attribute value is going to be fetched.
 
@@ -518,7 +518,7 @@ Push the value of the variable onto the top of the stack. This means the object 
 stack. Once at the current stack top, and once at the variable's position in the stack frame.
 */
 func (i *Interpreter) EvalVar(t *Thread, ident *ast.Ident) {
-	defer Un(Trace(INTERP_TR, "EvalVar", ident.Name))
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalVar", ident.Name))
 	t.Push(t.GetVar(ident.Offset))
 }
 
@@ -527,7 +527,7 @@ Push the value of the constant with the given name onto the thread's stack.
 TODO handle fully qualified constant names properly.
 */
 func (i *Interpreter) EvalConst(t *Thread, id *ast.Ident) {
-	defer Un(Trace(INTERP_TR, "EvalConst", id.Name))
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalConst", id.Name))
 	t.Push(i.rt.GetConstant(id.Name))
 }
 
@@ -540,7 +540,7 @@ BasicLit struct {
 }
 */
 func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
-	defer Un(Trace(INTERP_TR, "EvalBasicLit", lit))
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalBasicLit", lit))
 	switch lit.Kind {
 	case token.INT:
 		i, err := strconv.ParseInt(lit.Value, 10, 64)
@@ -610,7 +610,7 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 
 */
 func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnArgs int) {
-	defer Un(Trace(INTERP_TR, "EvalMethodCall"))
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalMethodCall"))
 
     // Evaluate the function expression - function name, lambda (TBD), or type name
     // and put the method or multimethod on the stack,
@@ -643,7 +643,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
     // Why not just have EvalFunExpr return the method or multimethod as an RObject? breaks Eval.. method conventions, but more efficient.
 
 
-	Logln(INTERP_TR, meth)
+	LoglnM(t,INTERP_TR, meth)
 	switch meth.(type) {
 	case *RMultiMethod:
 		nReturnArgs = meth.(*RMultiMethod).NumReturnArgs
@@ -703,7 +703,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, call *ast.MethodCall) (nReturnAr
 			//
 			rterr.Stopf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
 		}
-		Logln(INTERP_, "Multi-method dispatched to ", method)
+		LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 	case *RMethod:
 		method = meth.(*RMethod)
 	default:
@@ -752,7 +752,7 @@ ListConstruction struct {
 }
 */
 func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.ListConstruction) {
-	defer Un(Trace(INTERP_TR, "EvalListConstruction"))
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalListConstruction"))
 
     list, err := i.CreateList(listConstruction.Type)
     if err != nil {
@@ -850,8 +850,8 @@ Evaluates a single-valued multi-method on some pre-evaluated arguments, and retu
 Used for example to evaluate collection-sort comparison functions on collection members.
 */
 func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod, args []RObject) RObject {
-	defer Un(Trace(INTERP_TR, "evalMultiMethodCall"))
-	Logln(INTERP_TR, mm)
+	defer UnM(t,TraceM(t,INTERP_TR, "evalMultiMethodCall"))
+	LoglnM(t,INTERP_TR, mm)
 
 	//   t.Push(multiMethod)
 
@@ -887,7 +887,7 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 	if method == nil {
 		panic(fmt.Sprintf("No method '%s' is compatible with %s", mm.Name, typeTuple))
 	}
-	Logln(INTERP_, "Multi-method dispatched to ", method)
+	LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 
 	// put currently executing method on stack in reserved parking place
 	t.Stack[newBase+1] = method
@@ -918,7 +918,7 @@ and place the init<TypeName> multimethod on the stack.
 If it is not a constructor call, place the found multimethod on the stack. 
 */
 func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bool, hasInitFunc bool) {
-	defer Un(Trace(INTERP_TR2, "EvalFunExpr"))
+	defer UnM(t,TraceM(t,INTERP_TR2, "EvalFunExpr"))
 	var methodKind token.Token
 	switch fun.(type) {
 	case *ast.Ident:
@@ -994,7 +994,20 @@ TODO TODO We cannot have the return values on the stack in reverse order like th
 It will not work for using the values as args to the next outer method.
 */
 func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
-	defer Un(Trace(INTERP_TR, "apply1", m, "to", args))
+	defer UnM(t, TraceM(t,INTERP_TR, "apply1", m, "to", args))	
+	if strings.Contains(m.String(),"spew") {
+		fmt.Println(args)
+		/*
+		for i, arg := range args {
+			if arg == nil {
+				fmt.Println("@@@@@@@@ arg ",i," is nil")
+			} else {
+				fmt.Println("@@@@@@@@ arg ",i, " ",arg)
+			}
+		}
+		*/
+	} 
+
 	if Logging(STACK_) {
 		t.Dump()
 	}
@@ -1015,7 +1028,7 @@ slots. Returns whether the next outermost loop should be broken or continued, or
 returned from.
 */
 func (i *Interpreter) ExecBlock(t *Thread, b *ast.BlockStatement) (breakLoop, continueLoop, returnFrom bool) {
-	defer Un(Trace(INTERP_TR2, "ExecBlock"))
+	defer UnM(t,TraceM(t,INTERP_TR2, "ExecBlock"))
 	for _, statement := range b.List {
 		breakLoop, continueLoop, returnFrom := i.ExecStatement(t, statement)
 		if breakLoop || continueLoop || returnFrom {
@@ -1026,7 +1039,7 @@ func (i *Interpreter) ExecBlock(t *Thread, b *ast.BlockStatement) (breakLoop, co
 }
 
 func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, continueLoop, returnFrom bool) {
-	defer Un(Trace(INTERP_TR3, "ExecStatement"))
+	defer UnM(t,TraceM(t,INTERP_TR3, "ExecStatement"))
 	switch stmt.(type) {
 	case *ast.IfStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecIfStatement(t, stmt.(*ast.IfStatement))
@@ -1057,7 +1070,7 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 /*
  */
 func (i *Interpreter) ExecIfStatement(t *Thread, stmt *ast.IfStatement) (breakLoop, continueLoop, returnFrom bool) {
-	defer Un(Trace(INTERP_TR2, "ExecIfStatement"))
+	defer UnM(t, TraceM(t,INTERP_TR2, "ExecIfStatement"))
 	i.EvalExpr(t, stmt.Cond)
 	if t.Pop().IsZero() {
 		if stmt.Else != nil {
@@ -1078,7 +1091,7 @@ func (i *Interpreter) ExecGoStatement(parent *Thread, stmt *ast.GoStatement) {
 }
 
 func (i *Interpreter) ExecWhileStatement(t *Thread, stmt *ast.WhileStatement) (breakLoop, continueLoop, returnFrom bool) {
-	defer Un(Trace(INTERP_TR2, "ExecWhileStatement"))
+	defer UnM(t,TraceM(t,INTERP_TR2, "ExecWhileStatement"))
 	i.EvalExpr(t, stmt.Cond)
 	if t.Pop().IsZero() {
 		if stmt.Else != nil {
@@ -1108,7 +1121,7 @@ Body       *BlockStatement
 */
 
 func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement) (breakLoop, continueLoop, returnFrom bool) {
-	defer Un(Trace(INTERP_TR2, "ExecForRangeStatement"))
+	defer UnM(t,TraceM(t,INTERP_TR2, "ExecForRangeStatement"))
 
 	kvLen := len(stmt.KeyAndValues)
 
@@ -1181,13 +1194,13 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			// Assign to the index variable
 
 			idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-			Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
+			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
 			t.Stack[t.Base+idxVar.Offset] = Int(idx)
 
 			// Assign to the key variable
 
 			keyVar := stmt.KeyAndValues[1].(*ast.Ident)
-			Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, keyVar.Name, keyVar.Offset)
+			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, keyVar.Name, keyVar.Offset)
 			t.Stack[t.Base+keyVar.Offset] = key
 
 			// Fetch the map value for the key 	
@@ -1198,7 +1211,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			// Assign to the value variable
 
 			valVar := stmt.KeyAndValues[2].(*ast.Ident)
-			Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
 			t.Stack[t.Base+valVar.Offset] = obj
 
 			// Execute loop body	
@@ -1248,13 +1261,13 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 					// Assign to the index variable
 
 					idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-					Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
+					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
 					t.Stack[t.Base+idxVar.Offset] = Int(idx)
 
 					// Assign to the value variable
 
 					valVar := stmt.KeyAndValues[1].(*ast.Ident)
-					Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
 					t.Stack[t.Base+valVar.Offset] = obj
 
 					// Execute loop body	
@@ -1299,7 +1312,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 					// Assign to the value variable
 
 					valVar := stmt.KeyAndValues[k+1].(*ast.Ident)
-					Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+					LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
 					t.Stack[t.Base+valVar.Offset] = obj
 				}
 
@@ -1310,7 +1323,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 				// Assign to the index variable
 
 				idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-				Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
+				LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
 				t.Stack[t.Base+idxVar.Offset] = Int(idx)
 
 				// Execute loop body	
@@ -1352,7 +1365,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 				// Assign to the value variable
 
 				valVar := stmt.KeyAndValues[0].(*ast.Ident)
-				Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+				LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
 				t.Stack[t.Base+valVar.Offset] = obj
 
 				// Execute loop body	
@@ -1396,7 +1409,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 					// Assign to the value variable
 
 					valVar := stmt.KeyAndValues[k].(*ast.Ident)
-					Log(INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+					LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
 					t.Stack[t.Base+valVar.Offset] = obj
 				}
 
@@ -1579,7 +1592,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 /*
  */
 func (i *Interpreter) ExecMethodCall(t *Thread, call *ast.MethodCall) {
-	defer Un(Trace(INTERP_TR, "ExecMethodCall"))
+	defer UnM(t,TraceM(t,INTERP_TR, "ExecMethodCall"))
 	nResults := i.EvalMethodCall(t, call)
 	t.PopN(nResults) // Discard the results of the method call. No one wants them.
 }
@@ -1588,7 +1601,7 @@ func (i *Interpreter) ExecMethodCall(t *Thread, call *ast.MethodCall) {
 TODO
 */
 func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentStatement) {
-	defer Un(Trace(INTERP_TR2, "ExecAssignmentStatement"))
+	defer UnM(t,TraceM(t,INTERP_TR2, "ExecAssignmentStatement"))
 	
 	startPos := t.Pos  // top of stack at beginning of assignment statement execution
 
@@ -1617,7 +1630,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 		switch lhsExpr.(type) {
 		case *ast.Ident: // A local variable or parameter or result parameter
-			Log(INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
+			LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
 
 			t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
 
@@ -1749,7 +1762,7 @@ Executes expressions in left to right order then places them under the Base poin
 the results of the evaluation of the method.
 */
 func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) {
-	defer Un(Trace(INTERP_TR, "ExecReturnStatement", "stack top index ==>", t.Base-1))
+	defer UnM(t,TraceM(t,INTERP_TR, "ExecReturnStatement", "stack top index ==>", t.Base-1))
 
 	n := len(stmt.Results)
 	for j, resultExpr := range stmt.Results {
@@ -1763,7 +1776,7 @@ If parent is nil, something else must take care of initializing
 the ExecutingMethod and ExecutingPackage attributes of the new thread.
 */
 func (i *Interpreter) NewThread(parent *Thread) *Thread {
-	defer Un(Trace(INTERP_TR, "NewThread"))
+	defer UnM(parent,TraceM(parent,INTERP_TR, "NewThread"))
 	return newThread(DEFAULT_STACK_DEPTH, i, parent)
 }
 
@@ -1803,7 +1816,7 @@ type Thread struct {
 }
 
 func (t *Thread) Push(obj RObject) {
-	defer Un(Trace(INTERP_TR3, "Push", obj))
+	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
 	if len(t.Stack) <= t.Pos {
 		oldStack := t.Stack
@@ -1817,7 +1830,7 @@ func (t *Thread) Push(obj RObject) {
 }
 
 func (t *Thread) Reserve(n int) {
-	defer Un(Trace(INTERP_TR3, "Reserve", n))
+	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
 	for len(t.Stack) <= t.Pos+n {
 		oldStack := t.Stack
 		t.Stack = make([]RObject, len(t.Stack)*2)
@@ -1836,7 +1849,7 @@ results (return values) of the method call.
 Returns the position of the base pointer which holds the stack-pointer to the previous stack-frame base position.
 */
 func (t *Thread) PushBase(numReturnArgs int) int {
-	defer Un(Trace(INTERP_TR3, "PushBase"))
+	defer UnM(t, TraceM(t, INTERP_TR3, "PushBase"))
 	if numReturnArgs > 0 {
 		t.Reserve(numReturnArgs)
 	}
@@ -1846,7 +1859,7 @@ func (t *Thread) PushBase(numReturnArgs int) int {
 }
 
 func (t *Thread) SetBase(newBase int) {
-	defer Un(Trace(INTERP_TR3, "SetBase", newBase))
+	defer UnM(t, TraceM(t, INTERP_TR3, "SetBase", newBase))
 	t.Base = newBase
 }
 
@@ -1862,12 +1875,12 @@ sets the thread's Base pointer to the beginning of the previous (outer) routine'
 
 */
 func (t *Thread) PopBase() {
-	defer Un(Trace(INTERP_TR3, "PopBase"))
+	defer UnM(t, TraceM(t, INTERP_TR3, "PopBase"))
 	obj := t.PopN(t.Pos - t.Base + 1) // 9 - 7 + 1 = 3
 	t.Base = int(obj.(Int32))
 	t.ExecutingMethod = t.Stack[t.Base+1].(*RMethod)
 	t.ExecutingPackage = t.ExecutingMethod.Pkg
-	Log(INTERP3_, "---Base = %d\n", t.Base)
+	LogM(t, INTERP3_, "---Base = %d\n", t.Base)
 }
 
 /*
@@ -1875,13 +1888,13 @@ Return the value of the local variable (or parameter) with the given offset from
 stack base.
 */
 func (t *Thread) GetVar(offset int) RObject {
-	defer Un(Trace(INTERP_TR3, "GetVar", "offset", offset, "stack index", t.Base+offset))
+	defer UnM(t, TraceM(t, INTERP_TR3, "GetVar", "offset", offset, "stack index", t.Base+offset))
 	return t.Stack[t.Base+offset]
 }
 
 func (t *Thread) Pop() RObject {
 	obj := t.Stack[t.Pos]
-	defer Un(Trace(INTERP_TR3, "Pop", "==>", obj))
+	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
 	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
 	t.Pos--
 	if Logging(STACK_) && Logging(INTERP_TR3) {
@@ -1896,7 +1909,7 @@ Efficiently pop n items off the stack.
 func (t *Thread) PopN(n int) RObject {
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
-	defer Un(Trace(INTERP_TR3, "PopN", n, "==>", obj))
+	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
 	for i := t.Pos; i >= lastPopped; i-- {
 		t.Stack[i] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
 	}
@@ -1919,6 +1932,7 @@ func (t *Thread) TopN(n int) []RObject {
 DEBUG printout of stack
 */
 func (t *Thread) Dump() {
+	LogMutex.Lock()
 	fmt.Println("------STACK----------")
 	for i := t.Pos; i >= 0; i-- {
 		fmt.Printf("%3d: %v\n", i, t.Stack[i])
@@ -1926,4 +1940,5 @@ func (t *Thread) Dump() {
 	fmt.Printf("Pos : %d\n", t.Pos)
 	fmt.Printf("Base : %d\n", t.Base)
 	fmt.Println("---------------------")
+	LogMutex.Unlock()
 }
