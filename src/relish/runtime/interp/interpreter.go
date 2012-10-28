@@ -115,7 +115,8 @@ func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValu
 	method := i.dispatcher.GetSingletonMethod(mm)
 
 	if method == nil {
-		panic(fmt.Sprintf("No method '%s' found.", mm.Name))
+		err = fmt.Errorf("No method '%s' found.", mm.Name)
+		return
 	}
 	
 	args, err := i.matchServiceArgsToMethodParameters(method, positionalArgStringValues, keywordArgStringValues)
@@ -352,7 +353,7 @@ func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultOb
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
 
 	if method == nil {
-		panic(fmt.Sprintf("No method '%s' is compatible with %s", mm.Name, typeTuple))
+		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
 	}
 	
 	
@@ -935,7 +936,7 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 
 	method, typeTuple = i.dispatcher.GetMethod(mm, args) // len call.Args is WRONG! Use Type.Param except vararg
 	if method == nil {
-		panic(fmt.Sprintf("No method '%s' is compatible with %s", mm.Name, typeTuple))
+		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
 	}
 	LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 
@@ -978,7 +979,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bo
 		case token.FUNC:
 			multiMethod, found := t.ExecutingPackage.MultiMethods[id.Name]
 			if !found {
-				panic(fmt.Sprintf("No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name))
+				rterr.Stopf("No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name)
 			}
 			t.Push(multiMethod)
 			
@@ -1651,86 +1652,114 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
     }
     numRhsValues := t.Pos - startPos
     numLhsLocations := len(stmt.Lhs)
-    if numLhsLocations != numRhsValues  {
-    	var errMessage string
-    	if numRhsValues == 1 { 
-    		errMessage = fmt.Sprintf("Cannot assign 1 right-hand-side value to %d left-hand-side variables/attributes.",numLhsLocations)
-    	} else if numLhsLocations == 1 {
-    		errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to 1 left-hand-side variable/attribute.",numRhsValues)    		
-    	} else {
-            errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to %d left-hand-side variables/attributes.",numRhsValues, numLhsLocations)  
-        }    	
- 		rterr.Stop(errMessage)   	
-    }
 
-    // Pop rhs values of the stack one by one, assigning each of them to a successive lhs location, starting with the last lhs expr and going
-    // from right to left.
-    //
-    for j := numLhsLocations - 1; j >= 0; j-- {
-       lhsExpr := stmt.Lhs[j]
 
-		switch lhsExpr.(type) {
-		case *ast.Ident: // A local variable or parameter or result parameter
-			LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
+    if stmt.Tok == token.ARROW { // send to channel
+       if numLhsLocations != 1 || numRhsValues != 1 {   // Channel send operator only accepts one lhs channel and one rhs expr
+ 		   rterr.Stop("Can only send a single value to a single channel in each invocation of '<-' operator.")  
+       }
 
-			t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
-
-			// TODO TODO TODO
-			// Will have to have reserved space for the local variables here when calling the method!!!     
-			// So have to know how many locals there are in the body!!!! Store it in the RMethod!!!
-			// Why is this comment here? We already do that.
-
-		// TODO handle dot expressions and [ ] selector expressions. First lhsEvaluate lhsExpr to put a
-		// cell reference onto the stack, then pop it and assign to it.
+	   lhsExpr := stmt.Lhs[0]
+			
+	   var c *Channel
+	   switch lhsExpr.(type) {
+	   case *ast.Ident: // A local variable or parameter or result parameter
+		   LogM(t,INTERP2_, "send to channel varname %s\n", lhsExpr.(*ast.Ident).Name)
+           c= t.GetVar(lhsExpr.(*ast.Ident).Offset).(*Channel)
 		case *ast.SelectorExpr:
-			selector := lhsExpr.(*ast.SelectorExpr)
-			i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		      
-			assignee := t.Pop()       // the robject whose attribute is being assigned to.
+		   selector := lhsExpr.(*ast.SelectorExpr)			
+		   LogM(t,INTERP2_, "send to channel attr name %s\n", selector.Sel.Name)			
+	  	   i.EvalSelectorExpr(t, selector)	      
+		   c = t.Pop().(*Channel)      		
+       }
 
-			// To speed this up at runtime, could, during parse time, have set an attr field (tbd) of the Sel ident.
-			//
-			// Except... We don't even know if this name is a one-arg method or an attribute, or which setter
-			// (from which type) to use. TODO TODO TODO. In this usage, in lhs of an assignment,
-			// it has to be an attribute or it's an error.
-			//
-			attr, found := assignee.Type().GetAttribute(selector.Sel.Name)
-			if !found {
-				rterr.Stop(fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
-			}
+       val := t.Pop()
+       // TODO do a runtime type-compatibility check of val's type with c.ElementType
+	   c.Ch <- val	    
 
-			switch stmt.Tok {
-			case token.ASSIGN:
-				err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-				if err != nil {
-					if strings.Contains(err.Error()," a value of type ") {
-						rterr.Stop(err)
-					} 
-					panic(err)
+
+    } else { // assignment
+
+	    if numLhsLocations != numRhsValues  {
+	    	var errMessage string
+	    	if numRhsValues == 1 { 
+	    		errMessage = fmt.Sprintf("Cannot assign 1 right-hand-side value to %d left-hand-side variables/attributes.",numLhsLocations)
+	    	} else if numLhsLocations == 1 {
+	    		errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to 1 left-hand-side variable/attribute.",numRhsValues)    		
+	    	} else {
+	            errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to %d left-hand-side variables/attributes.",numRhsValues, numLhsLocations)  
+	        }    	
+	 		rterr.Stop(errMessage)   	
+	    }
+
+	    // Pop rhs values of the stack one by one, assigning each of them to a successive lhs location, starting with the last lhs expr and going
+	    // from right to left.
+	    //
+	    for j := numLhsLocations - 1; j >= 0; j-- {
+	       lhsExpr := stmt.Lhs[j]
+
+			switch lhsExpr.(type) {
+			case *ast.Ident: // A local variable or parameter or result parameter
+				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
+
+				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
+
+				// TODO TODO TODO
+				// Will have to have reserved space for the local variables here when calling the method!!!     
+				// So have to know how many locals there are in the body!!!! Store it in the RMethod!!!
+				// Why is this comment here? We already do that.
+
+			// TODO handle dot expressions and [ ] selector expressions. First lhsEvaluate lhsExpr to put a
+			// cell reference onto the stack, then pop it and assign to it.
+			case *ast.SelectorExpr:
+				selector := lhsExpr.(*ast.SelectorExpr)
+				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		      
+				assignee := t.Pop()       // the robject whose attribute is being assigned to.
+
+				// To speed this up at runtime, could, during parse time, have set an attr field (tbd) of the Sel ident.
+				//
+				// Except... We don't even know if this name is a one-arg method or an attribute, or which setter
+				// (from which type) to use. TODO TODO TODO. In this usage, in lhs of an assignment,
+				// it has to be an attribute or it's an error.
+				//
+				attr, found := assignee.Type().GetAttribute(selector.Sel.Name)
+				if !found {
+					rterr.Stop(fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
 				}
-			case token.ADD_ASSIGN:
-				err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-				if err != nil {
-					if strings.Contains(err.Error()," a value of type ") {
-						rterr.Stop(err)
-					} 					
-					panic(err)
+
+				switch stmt.Tok {
+				case token.ASSIGN:
+					err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+					if err != nil {
+						if strings.Contains(err.Error()," a value of type ") {
+							rterr.Stop(err)
+						} 
+						panic(err)
+					}
+				case token.ADD_ASSIGN:
+					err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+					if err != nil {
+						if strings.Contains(err.Error()," a value of type ") {
+							rterr.Stop(err)
+						} 					
+						panic(err)
+					}
+				case token.SUB_ASSIGN:
+					// TODO TODO	
+					err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
+					if err != nil {
+						panic(err)
+					}
+				default:
+					panic("Unrecognized assignment operator")
 				}
-			case token.SUB_ASSIGN:
-				// TODO TODO	
-				err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
-				if err != nil {
-					panic(err)
-				}
+
 			default:
-				panic("Unrecognized assignment operator")
-			}
+				rterr.Stop("I only handle simple variable or attribute assignments currently. Not indexed ones.")
 
-		default:
-			rterr.Stop("I only handle simple variable or attribute assignments currently. Not indexed ones.")
-
-		}       
+			}       
+	    }
     }
-
 
 /*
 	for j, lhsExpr := range stmt.Lhs {

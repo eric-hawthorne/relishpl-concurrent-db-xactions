@@ -184,6 +184,11 @@ func (ldr *Loader) databaseDirPath(originAndArtifact string) string {
 }
 
 
+var parserDebugMode uint = parser.DeclarationErrors
+
+
+
+
 
 
 /*
@@ -214,6 +219,10 @@ been made and must apply to subsequent packages loaded from the same artifact.
 TODO MD5 sum integrity checks
 */
 func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (gen *generator.Generator, err error) {
+
+	if Logging(PARSE_) {
+	   parserDebugMode |= parser.Trace
+	}
 
     // First, see if the package is already loaded. If so, return 
 
@@ -731,7 +740,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
            var fileNode *ast.File
            if parseNeeded {	
               var fset = token.NewFileSet()	
-		  	  fileNode, err = parser.ParseFile(fset, sourceFilePath, nil, parser.DeclarationErrors | parser.Trace)
+		  	  fileNode, err = parser.ParseFile(fset, sourceFilePath, nil, parserDebugMode)
 			  if err != nil {
 				 err = fmt.Errorf("Error parsing file '%s': %v\n", sourceFilePath, err)
 				 return

@@ -33,6 +33,7 @@ import (
 	"strconv"
 	"unicode"
 	"unicode/utf8"
+	. "relish/dbg"
 )
 
 /*
@@ -184,7 +185,7 @@ func (S *Scanner) Next() {
 		if pr == '\n' {
 			pr = '@'
 		}
-		fmt.Printf("%s - %v - %v\n", string(pr), pr, S.runeColumn)
+		Log(PARSE_,"%s - %v - %v\n", string(pr), pr, S.runeColumn)
 		if S.runeColumn > MAX_COL && S.ch != '\n' {
 			S.error(S.offset, fmt.Sprintf("A Relish source code file line cannot exceed %v characters (Unicode codepoints) in width.", MAX_COL))
 		}
@@ -318,7 +319,7 @@ func (S *Scanner) BlankOrCommentsToEOF() bool {
 	if S.ch == -1 {
 		return true
 	}
-	for S.BlanksAndBelow(1) {
+	for S.BlanksAndBelow(1, false) {
 		if S.ch != -1 && !S.LineComment() {
 			return S.Fail(st)
 		}
@@ -386,6 +387,21 @@ func (S *Scanner) RestOfLineComment() bool {
 	return true
 }
 
+func (S *Scanner) BlankToEOLOrLineCommentAtColumn(col int) bool {
+	st := S.State()
+	
+    for ; S.ch == ' '; S.Next() {   // gobble spaces til first non-space
+    }
+    if S.Col() == col && S.LineComment() {
+	   return true
+    }
+	
+	if S.ch != '\n' && S.ch != -1 {
+		return S.Fail(st)
+	}
+	return true		
+}
+
 /*
 Parse a '//' comment which must begin at the current position. 
 Requires at least one blank space or before the beginning of the comment.
@@ -430,6 +446,29 @@ func (S *Scanner) LineComments() bool {
       st = S.State()	
    }
    return true
+}
+
+
+func (S *Scanner) LineCommentOrBlankLine(col int) bool {
+
+	st := S.State()
+
+	if !S.BlankOrCommentToEOL() {
+		return false
+	}
+
+	if S.ch == -1 { // EOF
+		return S.Fail(st)
+	}
+	S.Next()
+	if !S.BlankToEOLOrLineCommentAtColumn(col) {
+		return S.Fail(st)
+	}
+
+	//DEBUG pos := S.file.Position(S.Pos())
+	//DEBUG fmt.Printf("Blankline puts us at %5d:%3d:\n", pos.Line, pos.Column)	
+
+	return true 	
 }
 
 
@@ -498,7 +537,7 @@ and then the first non-blank character occurs at rune-column col.
 Gobbles blank lines before the indented thing. Note: Should I have a version
 of this that only allows a certain number of blank lines or fewer?
 */
-func (S *Scanner) BlanksAndBelow(col int) bool {
+func (S *Scanner) BlanksAndBelow(col int, lineCommentsAllowed bool) bool {
 
 	if S.ch != ' ' && S.ch != '\n' && S.ch != -1 && S.Col() == col {
 		return true // Make it idempotent
@@ -514,9 +553,13 @@ func (S *Scanner) BlanksAndBelow(col int) bool {
 		return S.Fail(st)
 	}
 
-	for S.BlankLine() {
-	} // Gobble blank lines
-
+    if lineCommentsAllowed {
+  	    for S.LineCommentOrBlankLine(col) {
+	    } // Gobble blank lines with line comments starting indented at the correct column allowed
+    } else {
+		for S.BlankLine() {
+		} // Gobble blank lines
+    }
 	S.Next() // Gobble EOL	
 
 	for S.Space() {
@@ -527,6 +570,8 @@ func (S *Scanner) BlanksAndBelow(col int) bool {
 	}
 	return true
 }
+
+
 
 /*
 Returns true if there is nothing but rest-of-line comment or blanks then an EOL
@@ -547,8 +592,8 @@ in from the fromCol.
 
 should this gobble blank lines or with extra arg a max # of them? 
 */
-func (S *Scanner) BlanksAndIndent(fromCol int) bool {
-	return S.BlanksAndBelow(fromCol + INDENT)
+func (S *Scanner) BlanksAndIndent(fromCol int, lineCommentsAllowed bool) bool {
+	return S.BlanksAndBelow(fromCol + INDENT, lineCommentsAllowed)
 }
 
 /*
@@ -559,8 +604,8 @@ in from the fromCol. Used for < or > prefixes
 
 should this gobble blank lines or with extra arg a max # of them? 
 */
-func (S *Scanner) BlanksAndMiniIndent(fromCol int) bool {
-	return S.BlanksAndBelow(fromCol + INDENT - 2)
+func (S *Scanner) BlanksAndMiniIndent(fromCol int, lineCommentsAllowed bool) bool {
+	return S.BlanksAndBelow(fromCol + INDENT - 2, lineCommentsAllowed)
 }
 
 // -----------------------------------------------------
@@ -588,7 +633,6 @@ func (S *Scanner) ScanDomainName() bool {
 	if !S.TopLevelDomainLabel() {
 		return S.Fail(st)
 	}
-	fmt.Println("DomainName succeeeded")
 	return true
 }
 
@@ -716,8 +760,7 @@ func (S *Scanner) ScanYear() bool {
 	if !IsAsciiDigit(S.ch) {
 		return S.Fail(st)
 	}
-	S.Next()
-    fmt.Println("Year succeeeded")	
+	S.Next()	
 	return true
 }
 
@@ -988,6 +1031,9 @@ func (S *Scanner) ScanTypeName() (bool, string) {
 }
 
 func (S *Scanner) ScanMethodName() (bool, string) {
+	if S.Match2('<','-') {
+		return true, "<-"
+	}
 	return S.ScanVarName()
 }
 

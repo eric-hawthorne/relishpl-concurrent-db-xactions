@@ -32,6 +32,7 @@ import (
 	"relish/compiler/scanner"
 	"relish/compiler/token"
 	. "relish/defs"
+	"relish/dbg"
 )
 
 // The mode parameter to the Parse* functions is a set of flags (or 0).
@@ -180,7 +181,7 @@ func (p *parser) ensureCurrentScopeVariable(ident *ast.Ident, knownToBeReturnArg
 	 	   p.currentScopeVariableOffset++
        }
     } 
-	fmt.Printf("ensureCSVar new %v %v %v knownRetArg %v\n",newVar,ident.Name,ident.Offset,knownToBeReturnArg)
+	dbg.Log(dbg.PARSE_,"ensureCSVar new %v %v %v knownRetArg %v\n",newVar,ident.Name,ident.Offset,knownToBeReturnArg)
 }
 
 // ----------------------------------------------------------------------------
@@ -266,13 +267,13 @@ func (p *parser) parseFile() *ast.File {
     p.required(p.BlankLine(),"a blank line")
 
 
-    p.required(p.BlanksAndBelow(1),"import, type, method, relation, or constant declaration at column 1 of file")
+    p.required(p.BlanksAndBelow(1, false),"import, type, method, relation, or constant declaration at column 1 of file")
 
     var importSpecs []*ast.RelishImportSpec
 
     p.optional(p.parseImports(&importSpecs) && 
                p.required(p.BlankLine() && 
-                          p.BlanksAndBelow(1),
+                          p.BlanksAndBelow(1,false),
                          "type, method, relation, or constant declaration, or a line comment, at column 1 of file, after a blank line"))
 
     
@@ -293,7 +294,7 @@ func (p *parser) parseFile() *ast.File {
        if ! p.BlankLine() {
           break	
        }
-       if ! p.BlanksAndBelow(1) {
+       if ! p.BlanksAndBelow(1,false) {
 	      break
        }
        if ! (p.parseRelationDeclaration(&relDecls) || 
@@ -428,7 +429,7 @@ func (p *parser) parseFileComment() bool {
       return p.Fail(st)
    }
    
-   // fmt.Printf("Got here ch=%s\n",string(p.Ch()))	
+   // dbg.Log(dbg.PARSE_,"Got here ch=%s\n",string(p.Ch()))	
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
@@ -436,13 +437,13 @@ func (p *parser) parseFileComment() bool {
    }
    st2 := p.State()
  
-   if ! p.required(p.BlanksAndBelow(2),"comment content - Must begin at column 2 of file") {
+   if ! p.required(p.BlanksAndBelow(2,false),"comment content - Must begin at column 2 of file") {
        return p.Fail(st)    	
    }
 
    found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,1)
    if ! found {
-	  fmt.Println(`Did not consume till """.`)	
+	  dbg.Logln(dbg.PARSE_,`Did not consume till """.`)	
       return p.Fail(st)	
    }
    if ! p.required(p.BlankToEOL(),`nothing on line after """`) {
@@ -457,9 +458,9 @@ func (p *parser) parseFileComment() bool {
    commentContent := p.Substring(st2.Offset,contentEndOffset) 	
 // Check the content to make sure none of it is in the first column.
 // Also, produce the actual content string, with first column removed.
-   fmt.Println("Comment Content:")
-   fmt.Println(commentContent)
-   fmt.Println("END Comment Content")
+   dbg.Logln(dbg.PARSE_,"Comment Content:")
+   dbg.Logln(dbg.PARSE_,commentContent)
+   dbg.Logln(dbg.PARSE_,"END Comment Content")
    return true
 }
 
@@ -579,7 +580,7 @@ func (p *parser) parseOneLinePackagePath(packagePath *string) bool {
            p.ScanPackageName()     ) {
 	    st2 := p.State()
 	    *packagePath = p.Substring(st.Offset,st2.Offset)
-	    fmt.Println("OneLinePackagePath succeeded")
+	    dbg.Logln(dbg.PARSE_,"OneLinePackagePath succeeded")
 	    return true
    }
    return p.Fail(st)
@@ -603,7 +604,7 @@ func (p *parser) parseTwoLinePackagePath(packagePath *string, multiline *bool) b
 	       packageName :=  p.Substring(st3.Offset,st4.Offset) 
 	       *packagePath = originAndArtifactName + "/pkg/" + packageName
 	       *multiline = true
-	       fmt.Println("TwoLinePackagePath succeeded")	
+	       dbg.Logln(dbg.PARSE_,"TwoLinePackagePath succeeded")	
 	       return true	
 	    }
 	  }
@@ -620,7 +621,7 @@ func (p *parser) parseLocalPackagePath(packagePath *string) bool {
    if p.ScanPackageName() {
 	    st2 := p.State()
 	    *packagePath = p.Substring(st.Offset,st2.Offset)
-	    fmt.Println("LocalPackagePath succeeded")	
+	    dbg.Logln(dbg.PARSE_,"LocalPackagePath succeeded")	
 	    return true
    } 
    return p.Fail(st)
@@ -641,7 +642,7 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
       return false
    }
    
-   fmt.Printf("Got here ch=%s\n",string(p.Ch()))	
+   // dbg.Log(dbg.PARSE_,"Got here ch=%s\n",string(p.Ch()))	
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
@@ -649,13 +650,13 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
    }
    st2 := p.State()
  
-   if ! p.required(p.BlanksAndBelow(2),"comment content - Must begin at column 2 of file") {
+   if ! p.required(p.BlanksAndBelow(2, false),"comment content - Must begin at column 2 of file") {
        return p.Fail(st)    	
    }
 
    found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,1)
    if ! found {
-	  fmt.Println(`Did not consume till """.`)	
+	  dbg.Logln(dbg.PARSE_,`Did not consume till """.`)	
       return p.Fail(st)	
    }
    if ! p.required(p.BlankToEOL(),`nothing on line after """`) {
@@ -665,9 +666,9 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
    commentContent := p.Substring(st2.Offset,contentEndOffset) 	
 // Check the content to make sure none of it is in the first column.
 // Also, produce the actual content string, with first column removed.
-   fmt.Println("Comment Content:")
-   fmt.Println(commentContent)
-   fmt.Println("END Comment Content")
+   dbg.Logln(dbg.PARSE_,"Comment Content:")
+   dbg.Logln(dbg.PARSE_,commentContent)
+   dbg.Logln(dbg.PARSE_,"END Comment Content")
    return true
 }
 	
@@ -686,7 +687,7 @@ func (p *parser) parseTypeComment(col int, typeDecl *ast.TypeDecl) bool {
       return false
    }
    
-   fmt.Printf("Got here ch=%s\n",string(p.Ch()))	
+   // db.Log(dbg.PARSE_,"Got here ch=%s\n",string(p.Ch()))	
 
    if ! ( p.Match(`"""`) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
@@ -694,13 +695,13 @@ func (p *parser) parseTypeComment(col int, typeDecl *ast.TypeDecl) bool {
    }
    st2 := p.State()
  
-   if ! p.required(p.BlanksAndBelow(2),"comment content - Must begin at column 2 of file") {
+   if ! p.required(p.BlanksAndBelow(2,false),"comment content - Must begin at column 2 of file") {
        return p.Fail(st)    	
    }
 
    found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,1)
    if ! found {
-	  fmt.Println(`Did not consume till """.`)	
+	  dbg.Logln(dbg.PARSE_,`Did not consume till """.`)	
       return p.Fail(st)	
    }
    if ! p.required(p.BlankToEOL(),`nothing on line after """`) {
@@ -710,9 +711,9 @@ func (p *parser) parseTypeComment(col int, typeDecl *ast.TypeDecl) bool {
    commentContent := p.Substring(st2.Offset,contentEndOffset) 	
 // Check the content to make sure none of it is in the first column.
 // Also, produce the actual content string, with first column removed.
-   fmt.Println("Comment Content:")
-   fmt.Println(commentContent)
-   fmt.Println("END Comment Content")
+   dbg.Logln(dbg.PARSE_,"Comment Content:")
+   dbg.Logln(dbg.PARSE_,commentContent)
+   dbg.Logln(dbg.PARSE_,"END Comment Content")
    return true
 }
 		
@@ -995,7 +996,7 @@ func (p *parser) parseAritySpec(aritySpec **ast.AritySpec) bool {
 
     if ! scanner.IsAsciiDigit(ch)  {
 	   maxCard = minCard
-	   fmt.Printf("succeeded on not a digit. '%s'\n",string(p.Ch()))	
+	   dbg.Log(dbg.PARSE_,"succeeded on not a digit. '%s'\n",string(p.Ch()))	
 	   goto Translate
     }	
 
@@ -1014,7 +1015,7 @@ func (p *parser) parseAritySpec(aritySpec **ast.AritySpec) bool {
 	end = p.Pos()
 	
     if ! p.Space() {
-	   fmt.Printf("not a space after second digits. '%s'\n",string(p.Ch()))
+	   dbg.Log(dbg.PARSE_,"not a space after second digits. '%s'\n",string(p.Ch()))
 	   return p.Fail(st)
     }	   	
 
@@ -1025,7 +1026,7 @@ func (p *parser) parseAritySpec(aritySpec **ast.AritySpec) bool {
     }
     *aritySpec = &ast.AritySpec{minCard,maxCard,pos,end}
     
-    fmt.Println("successful arity spec parse.")
+    dbg.Logln(dbg.PARSE_,"successful arity spec parse.")
     return true
 }
 
@@ -1367,11 +1368,11 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
 
     var attrs []*ast.AttributeDecl
 
-    if p.BlanksAndIndent(col) {
+    if p.BlanksAndIndent(col,true) {
        if ! p.parseReadWriteAttributeDecl(&attrs,"public") {
   	      return p.Fail(st)
        }
-    } else if p.BlanksAndMiniIndent(col) {
+    } else if p.BlanksAndMiniIndent(col, true) {
        if ! (p.parseReadOnlyAttributeDecl(&attrs,"public") || p.parseWriteOnlyAttributeDecl(&attrs,"public")) {	
 	      return p.Fail(st)
        }	
@@ -1380,9 +1381,9 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
     }
 
     for {
-	    if p.BlanksAndIndent(col) {
+	    if p.BlanksAndIndent(col, true) {
 	       p.required(p.parseReadWriteAttributeDecl(&attrs,"public"),"an attribute declaration")
-	    } else if p.BlanksAndMiniIndent(col) {
+	    } else if p.BlanksAndMiniIndent(col, true) {
 	       p.required(p.parseReadOnlyAttributeDecl(&attrs,"public") || p.parseWriteOnlyAttributeDecl(&attrs,"public"),"an attribute declaration starting with < or >") 	
 	    } else {
 		    break
@@ -1724,10 +1725,10 @@ func (p *parser) parseVarName(varName **ast.Ident, mustBeDefined bool) bool {
    if p.currentScopeVariables[name] { // set the Offset to the right local var or return arg
       offset = p.currentScopeVariableOffsets[name]	
    } else if mustBeDefined {
-   	    fmt.Println("------name not found as local var or return arg --------")
-	    fmt.Println(p.currentScopeVariables)
-	    fmt.Println(name)
-	    fmt.Println("--------------------------------------------------------")
+   	    dbg.Logln(dbg.PARSE_,"------name not found as local var or return arg --------")
+	    dbg.Logln(dbg.PARSE_,p.currentScopeVariables)
+	    dbg.Logln(dbg.PARSE_,name)
+	    dbg.Logln(dbg.PARSE_,"--------------------------------------------------------")
        return p.Fail(st)	
    }
 
@@ -2129,7 +2130,7 @@ func (p *parser) parseInputArgDecl(inputArgs *[]*ast.InputArgDecl, isKeywordDefa
        if typeSpec.CollectionSpec != nil {
            if typeSpec.CollectionSpec.Kind == token.LIST {
 	          *isVariadicListParam = true	 
-	          fmt.Println("SETTING *isVariadicListParam to true")         
+	          dbg.Logln(dbg.PARSE_,"SETTING *isVariadicListParam to true")         
 	       } else if typeSpec.CollectionSpec.Kind == token.MAP {
 	          *isVariadicKeywordsParam = true		
       	   } else {
@@ -2419,7 +2420,7 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
 
     // parse
     st := p.State()
-    if ! p.Indent(col) {
+    if ! p.BlanksAndIndent(col,true) {
 	   return false
     }
 
@@ -2427,11 +2428,10 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
 
     var stmts []ast.Stmt
 
-    col2 := p.Col()
     if ! p.parseMethodBodyStatement(&stmts) {
 	   return p.Fail(st)
     }
-    for p.BlanksAndBelow(col2) {
+    for p.BlanksAndIndent(col, true) {
         p.required(p.parseMethodBodyStatement(&stmts),"a statement")
     }
 
@@ -3645,6 +3645,11 @@ func (p *parser) parseAssignmentStatement(stmt **ast.AssignmentStatement) bool {
 		operator = token.ADD_ASSIGN
 	} else if p.Match(" -=") {
 		operator = token.SUB_ASSIGN
+	} else if p.Match(" <-") {
+		operator = token.ARROW	
+		if len(lhsList) > 1 {
+ 	       p.stop("Can only send data to one channel with a '<-' operator.")				
+		}
     } else {
 	    return p.Fail(st)
     }
@@ -3655,8 +3660,8 @@ func (p *parser) parseAssignmentStatement(stmt **ast.AssignmentStatement) bool {
 		     variable := expr.(*ast.Ident)
              p.ensureCurrentScopeVariable(variable, false)
 	      default: 
-		    fmt.Println("------------IS NOT A VARIABLE ---------------")
-		    fmt.Println(expr)
+		    dbg.Logln(dbg.PARSE_,"------------IS NOT A VARIABLE ---------------")
+		    dbg.Logln(dbg.PARSE_,expr)
        }
     }   
 
@@ -3956,12 +3961,12 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
 
     // parse
     p.required(p.parseExpression(&x),"an expression") 
-    p.required(p.Indent(col),"a statement, indented from the 'if'")
+    p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'if'")
 
     blockPos := p.Pos()
 
     p.required(p.parseIfClauseStatement(&stmtList),"a statement")
-    for ; p.Indent(col) ; {
+    for ; p.BlanksAndIndent(col,true) ; {
        p.required(p.parseIfClauseStatement(&stmtList),"a statement")	
     }
 
@@ -3980,7 +3985,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
        if p.Match("elif ") {
 	
 	      p.required(p.parseExpression(&x),"an expression") 
-	      p.required(p.Indent(col),"a statement, indented from the 'elif'")
+	      p.required(p.BlanksAndIndent(col, true),"a statement, indented from the 'elif'")
 	
 	      // translate
  	      var stmtList2 []ast.Stmt
@@ -3988,7 +3993,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
 	     
 	      // parse
 	      p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
-	      for ; p.Indent(col) ; {
+	      for ; p.BlanksAndIndent(col,true) ; {
 	         p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
 	      }	
 	      st2 = p.State()
@@ -4001,7 +4006,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
 	
 	   // parse
        } else if p.Match("else") {
-	      p.required(p.Indent(col),"a statement, indented from the 'else'")
+	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'else'")
 
           // translate
           var stmtList3 []ast.Stmt
@@ -4009,7 +4014,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
 	
 	      // parse
 	      p.required(p.parseIfClauseStatement(&stmtList3),"a statement")	
-	      for ; p.Indent(col) ; {
+	      for ; p.BlanksAndIndent(col,true) ; {
 		 	     p.required(p.parseIfClauseStatement(&stmtList3),"a statement")
 	      }  
 	
@@ -4062,12 +4067,13 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 	var stmtList []ast.Stmt
     // parse
     p.required(p.parseExpression(&x),"an expression") 
-    p.required(p.Indent(col),"a statement, indented from the 'while'")
+    p.required(p.BlanksAndIndent(col, true),"a statement, indented from the 'while'")
 
     blockPos := p.Pos()
 
     p.required(p.parseLoopBodyStatement(&stmtList),"a statement")
-    for ; p.Indent(col) ; {
+
+    for p.BlanksAndIndent(col, true) {
        p.required(p.parseLoopBodyStatement(&stmtList),"a statement")	
     }
 
@@ -4087,7 +4093,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
        if p.Match("elif ") {
 	
 	      p.required(p.parseExpression(&x),"an expression") 
-	      p.required(p.Indent(col),"a statement, indented from the 'elif'")
+	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'elif'")
 	
 	      // translate
  	      var stmtList2 []ast.Stmt
@@ -4095,7 +4101,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 	     
 	      // parse
 	      p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
-	      for ; p.Indent(col) ; {
+	      for ; p.BlanksAndIndent(col, true) ; {
 	         p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
 	      }	
 	      st2 = p.State()
@@ -4112,7 +4118,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 	
 	   // parse
        } else if p.Match("else") {
-	      p.required(p.Indent(col),"a statement, indented from the 'else'")
+	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'else'")
 	
           // translate
           var stmtList3 []ast.Stmt
@@ -4120,7 +4126,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 	
 	      // parse
 	      p.required(p.parseIfClauseStatement(&stmtList3),"a statement")	
-	      for ; p.Indent(col) ; {
+	      for ; p.BlanksAndIndent(col,true) ; {
 		 	p.required(p.parseIfClauseStatement(&stmtList3),"a statement")
 	      }  
 	
@@ -4292,8 +4298,8 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement) bool {
 		     variable := expr.(*ast.Ident)
              p.ensureCurrentScopeVariable(variable, false)
 	      default: 
-		    fmt.Println("------------IS NOT A VARIABLE ---------------")
-		    fmt.Println(expr)
+		    dbg.Logln(dbg.PARSE_,"------------IS NOT A VARIABLE ---------------")
+		    dbg.Logln(dbg.PARSE_,expr)
        }
     }   
 
@@ -4322,6 +4328,38 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement) bool {
 	                       // This is not correct!!! we need to handle multiple values
 	X          []Expr        // value to range over NOT CORRECT!!! Need to handle multiple expressions.
 	Body       *BlockStatement
+*/
+
+
+
+/*
+
+<- expr
+
+PROBABLY DEPRECATED
+
+func (p *parser) parseFromExpr(fromExpr **ast.FromExpr) bool {
+    if p.trace {
+       defer un(trace(p, "FromExpr"))
+    }
+
+    pos := p.Pos()
+
+    // parse
+    if ! p.Match("<- ") {
+	   return false
+    }
+
+    var mcs *ast.MethodCall
+    // parse
+    p.required(p.parseMethodCall(&mcs),"a method call")
+
+    // translate
+    *goStmt = &ast.GoStatement{pos, mcs}
+
+    return true
+}
+
 */
 
 
@@ -4497,7 +4535,7 @@ func (p *parser) parseNumberLiteral(x *ast.Expr) bool {
     if ! found {
 	   return false // Look for String literals or Boolean literals
     }
-    fmt.Printf("%s '%s'\n",tok,lit)
+    dbg.Log(dbg.PARSE_,"%s '%s'\n",tok,lit)
 
     *x = &ast.BasicLit{pos,tok,lit}
     return true
@@ -4518,7 +4556,7 @@ func (p *parser) parseBooleanLiteral(x *ast.Expr) bool {
     }
 
     tok := token.BOOL
-    fmt.Printf("%s '%s'\n",tok,lit)
+    dbg.Log(dbg.PARSE_,"%s '%s'\n",tok,lit)
 
     *x = &ast.BasicLit{pos,tok,lit}
     return true
@@ -4536,7 +4574,7 @@ func (p *parser) parseNilLiteral(x *ast.Expr) bool {
 	return false
 
     tok := token.NIL
-    fmt.Printf("%s '%s'\n",tok,lit)
+    dbg.Log(dbg.PARSE_,"%s '%s'\n",tok,lit)
 
     *x = &ast.BasicLit{pos,tok,lit}
     return true
@@ -4552,7 +4590,7 @@ func (p *parser) parseStringLiteral(x *ast.Expr) bool {
     if ! found {
 	   return false 
     }
-    fmt.Printf("String literal \"%s\"\n",lit)
+    dbg.Log(dbg.PARSE_,"String literal \"%s\"\n",lit)
 
     *x = &ast.BasicLit{pos,token.STRING,lit}
     return true
@@ -4598,7 +4636,7 @@ func (p *parser) parseMultilineStringLiteral(x *ast.Expr) bool {
 
     lit := p.Substring(startOffset, contentEndOffset) 
       	
-    fmt.Printf("String literal \"%s\"\n",lit)
+    dbg.Log(dbg.PARSE_,"String literal \"%s\"\n",lit)
 
     *x = &ast.BasicLit{pos,token.STRING,lit}
     return true

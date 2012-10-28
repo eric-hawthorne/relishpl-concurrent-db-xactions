@@ -15,6 +15,7 @@ import (
 	"os"
 	"relish/compiler/token"
 	"sort"
+	"strings"
 )
 
 // An implementation of an ErrorHandler may be provided to the Scanner.
@@ -59,7 +60,13 @@ func (e *Error) Error() string {
 	if e.Pos.Filename != "" || e.Pos.IsValid() {
 		// don't print "<unknown position>"
 		// TODO(gri) reconsider the semantics of Position.IsValid
-		return e.Pos.String() + ": " + e.Msg
+		
+        fileNamePosString := e.Pos.String()
+        srcPos := strings.LastIndex(fileNamePosString, "/src/")
+        artifactDir := fileNamePosString[:srcPos+5]
+        packageFilePos := fileNamePosString[srcPos+5:] 
+		
+		return "\n" + packageFilePos + ":\n\n" + e.Msg + "\n\nError in software artifact\n" + artifactDir + "\n"
 	}
 	return e.Msg
 }

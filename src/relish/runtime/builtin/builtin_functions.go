@@ -546,12 +546,13 @@ func InitBuiltinFunctions() {
 
 	// from c InChannel of T > T	
 	//
-	channelFromMethod, err := RT.CreateMethod("","from", []string{"c"}, []string{"InChannel"}, 1, 0, false)
+	channelFromMethod, err := RT.CreateMethod("","<-", []string{"c"}, []string{"InChannel"}, 1, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	channelFromMethod.PrimitiveCode = builtinFrom   	
 
+/* Deprecated in favour of ch <- operator
 
     // to c OutChannel of T obj T 	
 	//
@@ -560,7 +561,7 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	channelToMethod.PrimitiveCode = builtinTo 
-
+*/
 
 
 	mutexLockMethod, err := RT.CreateMethod("","lock", []string{"m"}, []string{"Mutex"}, 0, 0, false)
@@ -1357,8 +1358,6 @@ to
 to ch val
 
 
-TODO DUMMY Implementation 
-*/
 func builtinTo(objects []RObject) []RObject {
 	c := objects[0].(*Channel)
     val := objects[1]
@@ -1367,7 +1366,7 @@ func builtinTo(objects []RObject) []RObject {
 
 	return []RObject{}
 }
-
+*/
 
 func builtinChannelLen(objects []RObject) []RObject {
 	c := objects[0].(*Channel)
