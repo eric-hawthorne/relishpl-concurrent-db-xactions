@@ -23,6 +23,12 @@ color: #4E6500; /* dark green */
   text-decoration: none;
 }
 
+h1 a 
+{
+  text-decoration: none;
+  color: inherit;
+}
+
 .trademark 
 {
    font-size: 40%;
@@ -75,6 +81,7 @@ color: #4E6500; /* dark green */
    color: #EEFFE6;
    border:1px solid #006549;
    border-radius:0.5em;
+   text-decoration: none;
 }
 
 
@@ -154,6 +161,7 @@ color: #4E6500; /* dark green */
 {
    vertical-align: top; 
    padding-left: 2em;
+   font-size: 90%;
 }
 
 

@@ -76,14 +76,7 @@ listTest
    => theList
 
 
-// spew ch Channel n Int
-// """
-//  Prints the argument number, repeatedly, forever
-// """
-//    while 1
-//       to ch n
-//       m = <- ch
-//       print "Got" m
+
 
 
 spew mx Mutex chin InChannel inNum Int chout OutChannel outNum Int n Int

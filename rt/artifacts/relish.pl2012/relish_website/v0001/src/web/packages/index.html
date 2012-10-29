@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>
-relish tutorials - relish programming language
+relish standard library packages - relish programming language
 </title>
 
 <meta name="keywords" content="relish programming language web application development framework persistence" />
@@ -34,7 +34,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h2>relish Programming Language Tutorials</h2>
+        <h2>relish Standard Library Packages</h2>
       </td>
     </tr>
   </table>
@@ -50,19 +50,30 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </div>
   <a id="download_button" class="menubutton" href="/download/">
 	DOWNLOAD
-  </a>
+  </a>	
 <div id="content">	
 <table>	
 	<tr>
 		<td class="contentside">
 <div id="content_left">
-	<h3>TBD</h3>
-	<p>Hope to fairly soon at least have "simple programs in relish" example snippets inspired by the python simple programs examples.</p>
+	<h3>For now - Built-in Functions</h3>
+	<p>
+		There is no standard library yet. Instead, there is currently a suite of built-in relish methods which provide useful operations on relish primitive data types, such as String, Numeric, Bool, Time, List, Channel. These functions are implemented as "native" functions, written in Go. Many are thin wrappings of functions from several of Go's standard library packages, such as the "strings" package, the "time" package etc. Others are wrappings of Go primitive operators such as arithmetic and logical operators, and slice expressions.
+	</p>	
+	<p>
+		The currently available Built-in Functions are listed in the <b>relish Syntax and Semantics By Example</b> reference manual.
+		</p>
+	<h3>Roadmap</h3>
+	<p>
+	The plan is to lift a subset of Go standard library packages into relish by providing thin adapter wrappers for the Go functions. Wrapper functions generally just cast the Go primitive data type arguments into equivalent data types which implement the RObject interface, which every relish data object implements.
+	</p>
+		<p>
+			A small number of methods will remain as relish language standard built-in methods, available for use in any relish package without importing a package of methods. More of the "lifted" standard library methods, however, will be placed in separate relish packages. The library packages will then have to be individually imported into any new package in order to use the standard library package method.
+</p>		
 </div>
 </td>
 <td class="contentside">
 <div id="content_right">
-&nbsp; 
 </div>
 </td>
 </tr>

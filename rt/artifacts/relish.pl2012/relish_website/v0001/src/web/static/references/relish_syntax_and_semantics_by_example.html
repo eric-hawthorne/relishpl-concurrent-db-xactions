@@ -22,13 +22,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <table>
 	<tr>
 	  <td>	
-        <img src="/relish_logo4_small.png">
+        <a href="/"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1>relish<span class="trademark">&#8482;</span></h1>
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
@@ -40,18 +40,18 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     </tr>
   </table>
   </div>
-  <div id="tutorials_button" class="menubutton">
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
 	Tutorials
   </div>
-  <div id="references_button" class="menubutton">
+  <a id="references_button" class="menubutton" href="/references/">
 	References
   </div>
-  <div id="packages_button" class="menubutton">
+  <a id="packages_button" class="menubutton" href="/packages/">
 	Packages
   </div>
-  <div id="download_button" class="menubutton">
+  <a id="download_button" class="menubutton" href="/download/">
 	DOWNLOAD
-  </div>	
+  </a>	
 <div id="index">
 	<a href="#Introduction">Introduction</a><br/>	
 	<a href="#Variables">Variables</a><br/>
@@ -965,7 +965,8 @@ while someCondition
 print "Finally done."
 
 // If the tired condition becomes non-false, execution resumes at the next test of someCondition 
-// and if that is non-false, "Hello" is printed before another "Working on the railroad." and before another "Goodbye"  
+// and if that is non-false, "Hello" is printed before another "Working on the railroad." 
+// and before another "Goodbye"  
   </pre></code>  
 
 
@@ -1363,7 +1364,8 @@ It may also specify the value(s) to return from the method.
 If a method specified two return arguments, and did not name the return arguments (they were specified
 with a type only), then the following form of return statement must be used:
     <code><pre>
-   => a nil  // return two values, as long as a is a variable and not the name of a method that takes an argument.
+   => a nil  // return two values, as long as a is a variable and not the name of a method that takes
+             // an argument.
 
    => a
       nil 
@@ -1507,7 +1509,8 @@ len c Collection > Int
 
 print ...a Any
 """
- Prints a representation of the argument object/value(s) on the standard output, with a space separating each printed object/value.
+ Prints a representation of the argument object/value(s) on the standard output, with a space separating 
+ each printed object/value.
 """	
 
 
@@ -1534,7 +1537,8 @@ contains s String substr String > Bool
 
 index s String substr String > Int
 """
- Returns the index (counting in bytes from 0) of the substring in the string s, or -1 if substr is not found in s.
+ Returns the index (counting in bytes from 0) of the substring in the string s, or -1 if substr is 
+ not found in s.
 """
 
 
@@ -1560,9 +1564,11 @@ slice s String start Int > String
 
 first s String n Int > String
 """
- Returns the substring of the string s beginning at beginning of s and containing n utf8-encoded unicode codepoints.
+ Returns the substring of the string s beginning at beginning of s and containing n utf8-encoded unicode 
+ codepoints.
  If s has fewer codepoints in it than n, returns the whole string s and does not complain.
- Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode characters.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode 
+ characters.
 """
 
 
@@ -1570,7 +1576,8 @@ last s String n Int > String
 """
  Returns the suffix of the string s containing the last n utf8-encoded unicode codepoints in s.
  If s has fewer codepoints in it than n, returns the whole string s and does not complain.
- Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode characters.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode 
+ characters.
 """
 
 
@@ -1580,7 +1587,7 @@ hasPrefix s String substr String > Bool
 """
 
 
-hasSuffux s String substr String > Bool
+hasSuffix s String substr String > Bool
 """
  Returns true if substr is a suffix of s (or all of s). false otherwise.
 """
@@ -1631,7 +1638,8 @@ and I am 19 years old.
 
 </pre></code>	
 <p>
-	Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, which explains relish's support for data persistence.
+Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, 
+which explains relish's support for data persistence.
 </p>
 
 
@@ -2104,6 +2112,9 @@ print student1.courses[2].name  // Prints Biology 101 assuming courses is a List
 
 <br/>
   <a name="Concurrency"><h3>Concurrency</h3></a>
+
+  <h4>Spawn new go-routines</h4>
+ <p>go-routines are lightweight "threads" - many thousands can be alive at once.</p>
 <code><pre>
 go foo arg1 arg2
 
@@ -2113,18 +2124,82 @@ go foo arg1
 go foo
       arg1
       arg2
+</pre></code>
+	  <h4>Use Channels to communicate between go-routines</h4>
+	 <p>A programmer can create a Channel, buffered or unbuffered, which acts as a conduit for data to be sent safely between one concurrent go-routine and another. Provided two go-routines both have reference to the same Channel, the programmer can send data objects/values into the channel in code in one go-routine, and write code in the other go-routine to receive the data from the Channel. The send-to-Channel operation blocks if the buffered channel is full, or if the Channel is unbuffered and no go-routine has asked to receive the next value from it. Receive-from-Channel operations block if the buffered channel is empty, or if the unbuffered Channel has not been sent the next value yet.</p>
+<code><pre>	
+ch = Channel <span class="future">of Car</span>  // an unbuffered, synchronous channel 
 
-<span class="future">ch = Channel of Car 
+ch2 = Channel <span class="future">of Car</span>  
+		100  // an asynchronous, buffered channel with a buffer capacity of 100
 
-ch2 = Channel of Car 
-		cap = 100
+// Send the car object to the channel.
 
-
-to ch car1
+ch &lt;- car1
 
 // ... and in a different, concurrent go-routine...
 
-car2 = from ch</span>
+// Receive the car from the channel, in this case, assigning it to a variable.
+
+car2 = &lt;- ch
+</pre></code>
+ <h4><span class="future">Select between alternative communications</span></h4>
+<p><span class="future">The select statement allows only at most one channel operation amongst several alternatives to proceed. The others are abandoned. The one which proceeds is a randomly chosen one which is not blocked. If all channel operations are blocked upon evaluation, the whole select statement blocks until one channel operation can proceed. Except if the select statement has a default clause, then if all channel operations are blocked, the default clause is executed immediately and all of the channel operations are abandoned without being executed.</span></p>
+<code><pre>	
+<span class="future">select
+   case ch1 &lt;- expr
+      do some statement
+      another
+   case ch2 &lt;- expr2
+
+
+// randomly send 1 or 0 to a channel
+
+select
+   case ch &lt;- 0
+      do some statement
+      another
+   case ch &lt;- 1
+
+
+// receive from a channel only if it has something immediately to offer
+
+select
+   case v = &lt;- ch
+      do some statement
+      another
+   default
+      print "there was no v here to claim the prize. You snooze you lose."
+</span> 
+</pre></code>
+ <h4>Mutual-Exclusion Locks</h4>
+<p>For Mutexes, one go-routine at a time can Lock() the mutex. Others block trying to Lock() until the mutex is unlocked,
+at which time one of the go-routines that tried to lock it gets the lock and is unblocked. RWMutexes can be RLocked by 
+any number of readers or Locked by one writer. Mutexes can be used to create <em>critical sections</em> of 
+code whose sequence of statements is executed all together without a context-switch; the statements
+in between an mx.Lock() and an mx.Unlock() cannot be interleaved with execution of statements from 
+other go-routines which also try to lock the same mutex mx before executing their statements.</p>
+<code><pre>	
+mx = Mutex
+
+lock mx
+
+// ...do other things
+
+unlock mx
+
+rwmx = RWMutex
+
+lock rwmx  // write-lock the mutex
+// write to something
+unlock rwmx
+
+rlock rwmx  // read-lock the mutex
+// ...read the something
+rlock rwmx  // read-lock the mutex from in another go-routine. Multiple go-routines can read-lock.
+// ...read the same thing from somewhere else
+runlock rwmx
+runlock rwmx
 </pre></code>
 <p>
 <b>Semantics</b>

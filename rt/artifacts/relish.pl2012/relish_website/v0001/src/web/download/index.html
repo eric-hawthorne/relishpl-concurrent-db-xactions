@@ -22,13 +22,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <table>
 	<tr>
 	  <td>	
-        <img src="relish_logo4_small.png">
+         <a href="/"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1>relish<span class="trademark">&#8482;</span></h1>
+        <h1> <a href="/">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
@@ -39,56 +39,47 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     </tr>
   </table>
   </div>
-  <div id="tutorials_button" class="menubutton">
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
 	Tutorials
   </div>
-  <div id="references_button" class="menubutton">
+  <a id="references_button" class="menubutton" href="/references/">
 	References
   </div>
-  <div id="packages_button" class="menubutton">
+  <a id="packages_button" class="menubutton" href="/packages/">
 	Packages
   </div>
-  <div id="download_button" class="menubutton">
+  <a id="download_button" class="menubutton" href="/download/">
 	DOWNLOAD
-  </div>	
+  </a>	
 <div id="content">	
 <table>	
 	<tr>
 		<td class="contentside">
 <div id="content_left">
-	<h3>Why you might want to program with relish</h3>
-	<dl>
-		<dt>the language is simple</dt> 
-		<dd>and should be easy to learn by example</dd>
-		
-		<dt>easy to read programs</dt> 
-		<dd>relish programs are all alike in their structure and layout and are always properly indented - oh and commenting is enforced</dd>
-		
-		<dt>start building a web application immediately</dt> 
-		<dd>without worrying about complications like getting data into and out of a database, and without having to configure much of anything.</dd>
-		
-		<dt>find and incorporate other code easily</dt> 
-		<dd>relish can download the proper versions of code libraries your program is dependent on automatically from the Internet - and all relish code comes with source code.</dd>
-		
-		<dt>model your domain quickly</dt> 
-		<dd>and in one simple class-definition syntax which works for both data structures in memory and data stored in the database. Specify relationships between types of data right in the programming language.</dd>
-		
-		<dt>advanced programming features</dt> 
-	    <dd>if you are advanced in programming, you may appreciate advanced features like multiple inheritance, methods which are selected by best-matching the types of all of their arguments, lightweight threads with communication channels, and (tbd -planned) closures. </dd>
-	</dl>		
-
-	<h3>Technical Summary of Features</h3>
+	<h3>Source Code Distribution</h3>
 	<p>
-	relish&#8482; is an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name 'rel'ish  comes from the language's inbuilt support of relations between datatypes. A programmer can define an entity-relation model in the language, then with concise syntax can associate objects according to the model relations, and conveniently traverse the network of related objects. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+		The relish software project is hosted at
+	 <a href="http://code.google.com/p/relish/">http://code.google.com/p/relish/</a>
+	</p>	
+	<p>
+		To compile the relish programming language, you will first have to install the go programming language (http://golang.org), the gosqlite package,  sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
 	</p>
 	<p>
-	relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy.
+		Installation and build instructions can be found in README_INSTALL.txt in the root directory of the source distribution.
+	</p>
+	<h3>Binary Distributions</h3>
+	<p>
+		It should shortly be possible to download a relish binary distribution. Initially, these binary distributions will still require separate installation of sqlite3 (version 3.5 or greater) if sqlite3 is not already present on the platform, but will not require the installation of the go programming language.
+	</p>
+	<p>
+		Binary distributions are planned in the relatively near term for 
+		linux i386, linux amd64, and macosx.
 	</p>
 </div>
 </td>
 <td class="contentside">
 <div id="content_right">
-	The relish compiler-interpreter is free software licensed with GPL version 3 and libraries for programmers are licensed with LGPL v3, meaning that programs written in relish need not themselves be licensed compatibly with the GPL. However, the relish runtime environment will only execute programs which have their source code present in a standard location. 
+	The relish compiler-interpreter is free software licensed with GPL version 3 and libraries for programmers are licensed with LGPL v3.
 </div>
 </td>
 </tr>
