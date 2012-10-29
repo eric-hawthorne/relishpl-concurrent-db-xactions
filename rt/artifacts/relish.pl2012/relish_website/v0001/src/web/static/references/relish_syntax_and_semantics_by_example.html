@@ -1963,7 +1963,13 @@ car1.wheels -= wheel1
 <code><pre>
 car1 = Car
 
-<span class="future">car2 = Car
+car2 = Car (Company "General Motors") "Chevrolet Aveo"
+
+car3 = Car 
+          Company "General Motors"
+          "Chevrolet Aveo"
+
+<span class="future">car4 = Car
           make = Company 
                     name = "General Motors" 
           model = "Chevrolet Aveo"
@@ -1972,7 +1978,7 @@ car1 = Car
           year = 2011</span>
 
 </pre></code>
-<h4><span class="future">Constructor Declarations</span></h4>
+<h4>Constructor Declarations</h4>
 <p>
 	relish implicitly defines the constructor methods that take no arguments, <span class="future">and also all constructor methods that accept only keyword arguments corresponding to (all or a subset of) the attributes of the data type and its supertypes.</span>
 	</p>
@@ -2004,13 +2010,13 @@ An init&lt;TypeName&gt; method can also be called explicitly, in case re-initial
 </p>
 
 <br/>
-  <a name="Relations"><h3><span class="future">Relations</span></h3></a>   
+  <a name="Relations"><h3>Relations</h3></a>   
 <div style="padding-left: 3em">
 <img src="ERD_example.png">
 </div>
 <br/>
 <br/>
-<h4><span class="future">Relation declarations</span></h4>
+<h4>Relation declarations</h4>
 <code><pre>
 Cart 0 1 cart -- horses {&lt;age} 0 N Horse
 
