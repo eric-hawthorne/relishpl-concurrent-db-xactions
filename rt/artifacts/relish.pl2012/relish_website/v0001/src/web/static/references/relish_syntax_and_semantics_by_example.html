@@ -126,7 +126,7 @@ Some names of this form may not be used as variable names:
     	<b>Semantics:</b>
     </p>
     <p>
-	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#Methods">method</a> body. 
+	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#MethodDeclarations">method</a> body. 
 	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
     </p>
 <p>
@@ -217,12 +217,12 @@ Note that underscores are not permitted (since they are an alternative to camel-
 		Data types are of three kinds, primitive value types, structured object types, and collection types.
 	</p>
 	<p>
-		Primitive value types are such types as Int and Bool and <span class="future">Rune (unicode character)</span>.
+		Primitive value types are such types as Int and Bool and <span class="future">CodePoint (unicode character)</span>.
 	</p>
 	<p>
         Structured object types are like the familiar "object classes" of other languages.
         A structured object type is defined by specifying a list of attribute specifications to define the attributes of the object.
-        See "data type definition" section for details.        
+        See <a href="#DataTypeDeclarations">data type declarations</a> section for details.        
 
     <p>
         Collection types are types such as List of T, Map of T T1, Set of T and have element accessing and iterating syntax support in the language, as well as compact syntax support for adding and deleting elements, if the collection is mutable. 
@@ -293,14 +293,16 @@ Method &lt;: Callable               An executable function implementation
 
 NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive             
 Struct &lt;: Any                    Abstract supertype of programmer-defined structured object types
-Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map
+Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map</span>
 List of T &lt;: Collection of T     Collection which maintains elements in a sequence
-Set of T &lt;: Collection of T      Collection which holds at most one of each value
-Map of T1 T2 &lt;: Collection of T1 Map from one data type to another 
+<span class="future">Set of T &lt;: Collection of T      Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 Map from one data type to another</span> 
 
 InChannel &lt;: Any                 A channel which can be read from
 OutChannel &lt;: Any                A channel which can be written to
-Channel &lt;: InChannel OutChannel  A channel which can be read from and written to</span>
+Channel &lt;: InChannel OutChannel  A channel which can be read from and written to
+Mutex &lt;: Any                     A mutual-exclusion lock to serialize access to a resource
+RWMutex &lt;: Any                   A mutual-exclusion lock allowing many readers or one writer
 </pre></code>
 <p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
 		   
@@ -390,11 +392,11 @@ So values that test false or act as false in boolean operator functions are:
 0
 0.
 false
-[]   // empty list
-{}   // empty set
-{=>} // empty map
+[]T   // empty list of T
+<span class="future">{}T   // empty set of T
+{}T=>T1 // empty map</span>
 ""   // empty string
-nil
+<span class="future">nil</span>
 </pre>
 All other values of any data type test non-false, and act non-false in boolean operator functions.
 </p>
@@ -465,8 +467,8 @@ Within the delimiters, any character is legal. The value of a raw string literal
 </p>
 <p>
 Because of the heavily indentation-dependent nature of relish source code, multi-line raw string literals are first introduced
-in their proper indented location, by a single """. On the following line, there must be another """ at the beginning of the line.
-The actual raw string value begins on the next line; the one after the second """. 
+in their proper indented location, by a single """. 
+The actual raw string value begins at the beginning (file column 0) of the next line. 
 The raw string continues until the next (third) """, which must again occur at the beginning of a line of the source code file.
 So raw strings are always multi-line. Raw string literal values do not include the initial newline character, but do include the last newline character.
 The shortest possible multi-line raw string is 
@@ -1974,10 +1976,10 @@ car1 = Car
 <p>
 	relish implicitly defines the constructor methods that take no arguments, <span class="future">and also all constructor methods that accept only keyword arguments corresponding to (all or a subset of) the attributes of the data type and its supertypes.</span>
 	</p>
-	<p><span class="future">The implicitly defined constructors can be overridden by explicitly defining a method in the package in which the type is defined. Such a method must be named according to the pattern init&lt;TypeName&gt; e.g. initCar. If an init&lt;TypeName&gt; method's parameter signature matches the arguments which have been supplied to a &lt;TypeName&gt; constructor call, the init&lt;TypeName&gt; method is invoked automatically to initialize state, after the barebones object has been constructed.</span></p>
+	<p>The implicitly defined constructors can be overridden by explicitly defining a method in the package in which the type is defined. Such a method must be named according to the pattern init&lt;TypeName&gt; e.g. initCar. If an init&lt;TypeName&gt; method's parameter signature matches the arguments which have been supplied to a &lt;TypeName&gt; constructor call, the init&lt;TypeName&gt; method is invoked automatically to initialize state, after the barebones object has been constructed.</p>
 <code><pre>
 
-<span class="future">initCar 
+initCar 
    c Car 
    make Company
    model String
@@ -1986,19 +1988,19 @@ car1 = Car
 """
    initVehicle c someArg
    c.make = make
-   ...</span>
+   => c
 </pre></code>
 <p>
-<span class="future">	init&lt;TypeName&gt; methods can also be defined that accept arguments other than keyword arguments that correspond to data type attributes. Whichever init... function best matches the arguments supplied in the call will be invoked.</span>
+init&lt;TypeName&gt; methods can also be defined that accept arguments other than keyword arguments that correspond to data type attributes. Whichever init... function best matches the arguments supplied in the call will be invoked.
 </p>
 <p>
-<span class="future">	When a constructor call occurs, that is, a use of the type name in method-name position in a call statement, a search is made automatically for an init&lt;TypeName&gt; method whose second and subsequent parameter signature matches the constructor call arguments. If found, then first a raw, uninitialized newly allocated object of the type is constructed, and then the init... function is called passing the new object as first argument.</span>
+When a constructor call occurs, that is, a use of the type name in method-name position in a call statement, a search is made automatically for an init&lt;TypeName&gt; method whose second and subsequent parameter signature matches the constructor call arguments. If found, then first a raw, uninitialized newly allocated object of the type is constructed, and then the init... function is called passing the new object as first argument.
 	</p>
 <p>
-<span class="future">An init&lt;TypeName&gt; method should explicitly call init... methods for direct supertypes of the type, if init... methods other than those that would be called by default are needed.</span>
+An init&lt;TypeName&gt; method should explicitly call init... methods for direct supertypes of the type, if init... methods other than those that would be called by default are needed.
 </p>
 <p>
-<span class="future">	An init&lt;TypeName&gt; method can also be called explicitly, in case re-initialization is desired for a pre-existing object, for example, in a scheme that re-uses objects rather than allocating new ones.</span>
+An init&lt;TypeName&gt; method can also be called explicitly, in case re-initialization is desired for a pre-existing object, for example, in a scheme that re-uses objects rather than allocating new ones.
 </p>
 
 <br/>
@@ -2010,7 +2012,6 @@ car1 = Car
 <br/>
 <h4><span class="future">Relation declarations</span></h4>
 <code><pre>
-<span class="future">
 Cart 0 1 cart -- horses {&lt;age} 0 N Horse
 
 Student 1 500 enrollees -- courses 1 8 Course
@@ -2027,7 +2028,7 @@ Student 1 500 enrollees -- [] 1 8 Course       // Use a List to collect the cour
 
 Student 1 500 enrollees -- {&lt;name} 1 8 Course   // Use a Set that orders by Course.name
 
-Student 1 500 enrollees -- {&lt;} 1 8 name=>Course      
+<span class="future">Student 1 500 enrollees -- {&lt;} 1 8 name=>Course      
 """
  Use a Map of courses that you can access by Course.name. Also sorts by course.name.
 """
@@ -2079,20 +2080,20 @@ As explained in the "Semantics of Data Types" section of this manual, relish can
 	<b>Etymology:</b> Language and runtime-environment support for relations as first-class, primitive concepts is what gives "relish" its name. That and that it is hoped that after the initial learning curve, programmers will "enjoy greatly" how quickly they can get down to focussing on their domain problems and solutions (and not focussing on low-level data-structure and persistence mechanics) when programming in this language.
 </p>
 
-<h4><span class="future">Relation maintenance</span></h4>
+<h4>Relation maintenance</h4>
 <code><pre>
-<span class="future">cart.driver = Person "Slim Pickens"	
+cart.driver = Person "Slim Pickens"	
 horse1 = Horse "Seattle Slew"	
 horse2 = Horse "Secretariat"
 cart.horses += horse1
 cart.horses += horse2
 cart.horses += Horse "Big Ben"
-cart.horses -= horse2</span>
+cart.horses -= horse2
 </pre></code>
 
-<h4><span class="future">Relation traversal</span></h4>
+<h4>Relation traversal</h4>
 <code><pre>
-<span class="future">for horse in cart.horses
+for horse in cart.horses
    print horse.name
 
 // Prints
@@ -2106,7 +2107,7 @@ print horse1.cart.driver.name  // prints Slim Pickens
 print horse2.cart  // prints &lt;nil>
 
 print student1.courses[2].name  // Prints Biology 101 assuming courses is a List relation-end 
-                                // therefore indexable.</span>
+                                // therefore indexable.
 </pre></code>
 
 
@@ -2201,8 +2202,9 @@ rlock rwmx  // read-lock the mutex from in another go-routine. Multiple go-routi
 runlock rwmx
 runlock rwmx
 </pre></code>
+<br/>
 <p>
-<b>Semantics</b>
+<b>Semantics of Concurrency Constructs</b>
 </p>
 <p>
 Concurrency support in relish is patterned after the <a href="http://golang.org" target="_blank">Go programming language</a>. Go is the implementation language for Relish, and Relish concurrency constructs and capabilities are thin wrappers around the underlying Go constructs and concurrency implementation. The go statement creates a new concurrent go-routine and executes the method call in that go-routine. The go statement immediately returns, after launching the new go-routine. A go-routine is a "light-weight" separate thread of execution, with its own method-call stack. Go-routines may be mapped onto separate operating-system threads (true concurrency) but the mapping is unlikely to be 1-to-1. Instead, many go-routines may be mapped (multiplexed) onto the same OS thread. The Go runtime environment ensures sharing of processor cycles between go-routines, and facilitates data communication between go-routines by means of channels. Because the mapping of go-routines to OS threads is not 1 to 1, it is fine in Go to create hundreds thousands of concurrent go-routines in a program. relish, being interpreted, and maintaining its own stack per go-routine, will have more memory and processing overhead for go-routine creation, but should still be able to take substantial advantage of Go's light-weight concurrency facilities.
