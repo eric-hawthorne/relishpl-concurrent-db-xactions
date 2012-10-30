@@ -10,3 +10,13 @@ To install in Sublime Text 2, place the file as follows
 
 and restart Sublime Text 2
 
+Then, in Sublime Text 2
+1. Open a .rel file
+2. Go to the View menu
+      Syntax 
+        Open all with current extension as...
+
+        Relish
+
+3. Shield your eyes from the dazzling colours.
+        
