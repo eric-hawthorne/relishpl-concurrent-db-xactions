@@ -139,9 +139,25 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 }
 
 
+type RInChannel interface {
+	RObject
+
+	From() RObject
+}
+
+
+
 type Channel struct {
 	Ch chan RObject
 	ElementType *RType
+}
+
+func (c *Channel) From() RObject {
+   return <- c.Ch
+}
+
+func (c *Channel) To(val RObject) {
+   c.Ch <- val
 }
 
 // TODO
@@ -301,6 +317,176 @@ func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+
+
+
+
+type TimeChannel struct {
+	Ch <-chan Time
+	ElementType *RType
+}
+
+func (c *TimeChannel) From() RObject {
+   return RTime(<- c.Ch)
+}
+
+
+// TODO
+
+func (p TimeChannel) IsZero() bool {
+	return p.Ch == nil
+}
+
+func (p TimeChannel) Type() *RType {
+	return ChannelType
+}
+
+func (p TimeChannel) This() RObject {
+	return p
+}
+
+/*
+Hmmm. TODO
+*/
+func (p TimeChannel) IsUnit() bool {
+	return true
+}
+
+/*
+Hmmm. TODO Maybe a TimeChannel should be considered a collection???
+*/
+func (p TimeChannel) IsCollection() bool {
+	return false
+}
+
+func (p TimeChannel) String() string {
+	var descriptor string
+	if p.Ch == nil {
+		descriptor = "uninitialized"
+	} else if cap(p.Ch) > 0 {
+		descriptor = fmt.Sprintf("cap: %d len: %d",cap(p.Ch),len(p.Ch))
+	} else {
+		descriptor = "synchronous"
+	}
+	return fmt.Sprintf(" Channel (%s) of %v", descriptor, p.ElementType)
+}
+
+func (p TimeChannel) Length() int64 {
+	if p.Ch == nil {
+		return 0
+	}
+	return int64(len(p.Ch))
+}
+
+func (p TimeChannel) Cap() int64 {
+	if p.Ch == nil {
+		return 0
+	}
+	return int64(cap(p.Ch))
+}
+
+
+func (p TimeChannel) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p TimeChannel) UUID() []byte {
+	panic("A TimeChannel cannot have a UUID.")
+	return nil
+}
+
+func (p TimeChannel) DBID() int64 {
+	panic("A TimeChannel cannot have a DBID.")
+	return 0
+}
+
+func (p TimeChannel) EnsureUUID() (theUUID []byte, err error) {
+	panic("A TimeChannel cannot have a UUID.")
+	return
+}
+
+func (p TimeChannel) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A TimeChannel cannot have a UUID.")
+	return
+}
+
+func (p TimeChannel) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A TimeChannel cannot have a UUID.")
+	return
+}
+
+func (p TimeChannel) UUIDstr() string {
+	panic("A TimeChannel cannot have a UUID.")
+	return ""
+}
+
+func (p TimeChannel) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A TimeChannel cannot have a UUID.")
+	return
+}
+
+func (p TimeChannel) UUIDabbrev() string {
+	panic("A TimeChannel cannot have a UUID.")
+	return ""
+}
+
+func (p TimeChannel) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A TimeChannel cannot have a UUID.")
+	return
+}
+
+func (p TimeChannel) RemoveUUID() {
+	panic("A TimeChannel does not have a UUID.")
+	return
+}
+
+func (p TimeChannel) Flags() int8 {
+	panic("A TimeChannel has no Flags.")
+	return 0
+}
+
+func (p TimeChannel) IsDirty() bool {
+	return false
+}
+func (p TimeChannel) SetDirty() {
+}
+func (p TimeChannel) ClearDirty() {
+}
+
+func (p TimeChannel) IsIdReversed() bool {
+	return false
+}
+
+func (p TimeChannel) SetIdReversed() {}
+
+func (p TimeChannel) ClearIdReversed() {}
+
+func (p TimeChannel) IsLoadNeeded() bool {
+	return false
+}
+
+func (p TimeChannel) SetLoadNeeded()   {}
+func (p TimeChannel) ClearLoadNeeded() {}
+
+func (p TimeChannel) IsValid() bool { return true }
+func (p TimeChannel) SetValid()     {}
+func (p TimeChannel) ClearValid()   {}
+
+func (p TimeChannel) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p TimeChannel) SetStoredLocally()     {}
+func (p TimeChannel) ClearStoredLocally()   {}
+
+func (p TimeChannel) IsProxy() bool { return false }
+
+func (p TimeChannel) IsTransient() bool { return true }
+
+
+func (p TimeChannel) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
 
 
 

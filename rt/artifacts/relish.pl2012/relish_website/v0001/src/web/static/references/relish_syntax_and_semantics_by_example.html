@@ -1498,7 +1498,147 @@ neg a Numeric > Numeric
  Return value type is covariant with (same as) argument type.
 """
 
-		
+
+// Time and Duration functions
+
+now location String > Time
+"""
+ Returns the current time in the specified location.
+ Locations are IANA timezone database locations, 
+ such as "America/Los_Angeles" or the special locations "UTC" or "LOCAL" 
+ 
+ t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
+""" 
+
+
+sleep durationNs Int
+"""
+ Pauses the current goroutine for the duration (specified in nanoseconds).
+"""
+
+
+tick durationNs Int > InChannel of Time
+"""
+ Returns a channel that will yield the current time, then will block for the specified 
+ duration (nanoseconds) before yielding the next current time, and will repeat doing 
+ that ad infinitum. 
+"""
+
+
+plus t Time durationNs Int > Time
+"""
+ Returns the time obtained by adding the duration (in nanoseconds) to the input argument 
+ time.
+ (The duration argument can be negative.)
+"""
+ 
+
+addDate t Time years Int months Int days Int > Time
+"""
+ Returns the time obtained by adding the specified number of years, months, and days to the 
+ input argument time.
+"""
+
+
+minus t Time durationNs Int > Time
+"""
+ Returns the time obtained by subtracting the duration (in nanoseconds) from the input 
+ argument time.
+"""  
+
+
+minus t2 Time t1 Time > durationNs Int
+"""
+ Returns the duration in nanoseconds computed as t2 - t1. If t2 is before t1, the 
+ duration returned will be negative.
+"""   
+
+
+since t Time > durationNs Int
+"""
+ Returns the time elapsed since t (in nanoseconds). 
+ It is shorthand for 
+ minus 
+    now "UTC"
+    t
+"""
+
+
+timeIn t Time location String > Time
+"""
+ Returns t with the location information set to the named location.
+ Locations are IANA timezone database locations, 
+ such as "America/Los_Angeles" or the special locations "UTC" or "LOCAL" 
+
+ timeIn panics if the location name is invalid.
+"""
+
+
+hours n Int > durationNs Int
+"""
+ Converts n hours to the equivalent number of nanoseconds.
+"""
+
+
+minutes n Int > durationNs Int
+"""
+ Converts n minutes to the equivalent number of nanoseconds.
+""" 
+
+seconds n Int > durationNs Int
+"""
+ Converts n seconds to the equivalent number of nanoseconds.
+"""
+
+milliseconds n Int > durationNs Int
+"""
+ Converts n milliseconds to the equivalent number of nanoseconds.
+""" 
+
+duration hours Int minutes Int > durationNs Int
+"""
+ Converts the number of hours + the number of minutes to the equivalent number of 
+ nanoseconds.
+"""
+
+duration hours Int minutes Int seconds Int > durationNs Int
+"""
+ Converts the number of hours,minutes, and seconds to the equivalent number of
+ nanoseconds.
+"""
+
+duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
+"""
+ Converts the number of hours, minutes, seconds, and nanoseconds to the equivalent 
+ number of nanoseconds.
+"""
+
+
+hoursEquivalentOf durationNs Int > Float
+"""
+ Returns the duration as a floating point number of hours.
+""" 
+
+
+minutesEquivalentOf durationNs Int > Float
+"""
+ Returns the duration as a floating point number of minutes.
+"""
+ 
+secondsEquivalentOf durationNs Int > Float
+"""
+ Returns the duration as a floating point number of seconds.
+"""
+
+
+timeParts durationNs Int > h Int m Int s Int ns Int
+"""
+ Returns the duration as the number of hours, remaining minutes, remaining seconds, 
+ and remaining nanoseconds
+"""
+
+
+	
 // Collection methods		
 		
 len c Collection > Int

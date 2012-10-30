@@ -13,7 +13,7 @@ import
    relish.pl2012/things/pkg/physical_objects as phys
    people
 
-
+TEST_TIME_METHODS = true
 TEST_GOROUTINES = false
 
 //
@@ -309,6 +309,27 @@ multi-line %s string in relish!!
    print base64Hash s3
 
    print hexHash s3   
+
+   if TEST_TIME_METHODS
+      print driver1.dateOfBirth
+      t2 = 
+         plus 
+            driver1.dateOfBirth 
+            plus (hours 50) (minutes 30)     
+      t3 = plus driver1.dateOfBirth (duration 50 30)
+      t4 = addDate driver1.dateOfBirth 1 0 2      
+      print t2
+      print t3
+      print t4
+      print minus t3 t2
+      print minus t3 (hours 50)    
+      print now "Local"
+      now1 = now "UTC"    
+      sleep seconds 3
+      ns = since now1 
+      print secondsEquivalentOf ns
+      h m s ns = timeParts ns
+      print h m s ns                
 
    if TEST_GOROUTINES
 

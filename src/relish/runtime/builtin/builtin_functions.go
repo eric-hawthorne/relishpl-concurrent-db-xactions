@@ -155,6 +155,184 @@ func InitBuiltinFunctions() {
 	negMethod.PrimitiveCode = builtinNeg		
 
 
+    ////////////////////////////////////////////////////////////
+    // Time and Duration functions
+
+    // now location String > Time
+    //
+    // t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
+    //
+	timeNowMethod, err := RT.CreateMethod("","now", []string{"loc"}, []string{"String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeNowMethod.PrimitiveCode = builtinTimeNow	
+
+    // sleep durationNs Int
+    //
+	sleepMethod, err := RT.CreateMethod("","sleep", []string{"ns"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sleepMethod.PrimitiveCode = builtinSleep
+
+    // tick durationNs Int > InChannel of Time
+    //
+	tickMethod, err := RT.CreateMethod("","tick", []string{"ns"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	tickMethod.PrimitiveCode = builtinTick
+
+
+    // plus t Time durationNs Int > Time
+    //
+	timePlusMethod, err := RT.CreateMethod("","plus", []string{"t", "ns"}, []string{"Time", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timePlusMethod.PrimitiveCode = builtinTimePlus	
+
+    // addDate t Time years Int months Int days Int > Time
+    //
+	timeAddDateMethod, err := RT.CreateMethod("","addDate", []string{"t", "years","months","days"}, []string{"Time", "Int", "Int", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeAddDateMethod.PrimitiveCode = builtinTimeAddDate
+
+    // minus t Time durationNs Int > Time
+    //
+	timeMinusDurationMethod, err := RT.CreateMethod("","minus", []string{"t", "ns"}, []string{"Time", "Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeMinusDurationMethod.PrimitiveCode = builtinTimeMinusDuration	
+
+    // minus t2 Time t2 Time > durationNs Int
+    //
+	timeMinusTimeMethod, err := RT.CreateMethod("","minus", []string{"t", "t"}, []string{"Time", "Time"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeMinusTimeMethod.PrimitiveCode = builtinTimeMinusTime	
+
+    // since t Time > durationNs Int
+    //
+	timeSinceMethod, err := RT.CreateMethod("","since", []string{"t"}, []string{"Time"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeSinceMethod.PrimitiveCode = builtinTimeSince	
+
+    // timeIn t Time location String > Time
+    //
+	timeInMethod, err := RT.CreateMethod("","timeIn", []string{"t","location"}, []string{"Time","String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeInMethod.PrimitiveCode = builtinTimeSince
+
+    // hours n Int > durationNs Int
+    // 
+	hoursMethod, err := RT.CreateMethod("","hours", []string{"n"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	hoursMethod.PrimitiveCode = builtinHours
+
+    // minutes n Int > durationNs Int
+    // 
+	minutesMethod, err := RT.CreateMethod("","minutes", []string{"n"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	minutesMethod.PrimitiveCode = builtinMinutes	
+
+    // seconds n Int > durationNs Int
+    // 
+	secondsMethod, err := RT.CreateMethod("","seconds", []string{"n"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	secondsMethod.PrimitiveCode = builtinSeconds
+
+    // milliseconds n Int > durationNs Int
+    // 
+	millisecondsMethod, err := RT.CreateMethod("","milliseconds", []string{"n"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	millisecondsMethod.PrimitiveCode = builtinMilliseconds	
+
+    // duration hours Int minutes Int > durationNs Int
+    // 
+	durationHoursMinutesMethod, err := RT.CreateMethod("","duration", []string{"h","m"}, []string{"Int","Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	durationHoursMinutesMethod.PrimitiveCode = builtinDuration
+
+    // duration hours Int minutes Int seconds Int > durationNs Int
+    // 
+	durationHoursMinutesSecondsMethod, err := RT.CreateMethod("","duration", []string{"h","m","s"}, []string{"Int","Int","Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	durationHoursMinutesSecondsMethod.PrimitiveCode = builtinDuration	
+
+    // duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
+    // 
+	durationHoursMinutesSecondsNsMethod, err := RT.CreateMethod("","duration", []string{"h","m","s","ns"}, []string{"Int","Int","Int","Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	durationHoursMinutesSecondsNsMethod.PrimitiveCode = builtinDuration		
+
+
+    // hoursEquivalentOf durationNs Int > Float
+    //
+    // Returns the duration as a floating point number of hours.
+    // 
+	hoursEquivalentOfMethod, err := RT.CreateMethod("","hoursEquivalentOf", []string{"ns"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	hoursEquivalentOfMethod.PrimitiveCode = builtinHoursEquivalentOf
+
+    // minutesEquivalentOf durationNs Int > Float
+    //
+    // Returns the duration as a floating point number of minutes.
+    // 
+	minutesEquivalentOfMethod, err := RT.CreateMethod("","minutesEquivalentOf", []string{"ns"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	minutesEquivalentOfMethod.PrimitiveCode = builtinMinutesEquivalentOf
+
+    // secondsEquivalentOf durationNs Int > Float
+    //
+    // Returns the duration as a floating point number of seconds.
+    // 
+	secondsEquivalentOfMethod, err := RT.CreateMethod("","secondsEquivalentOf", []string{"ns"}, []string{"Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	secondsEquivalentOfMethod.PrimitiveCode = builtinSecondsEquivalentOf	
+
+    // timeParts durationNs Int > h Int m Int s Int ns Int
+    //
+    // Returns the duration as the number of hours, remaining minutes, remaining seconds, 
+    // and remaining nanoseconds
+    // 
+	timePartsMethod, err := RT.CreateMethod("","timeParts", []string{"ns"}, []string{"Int"}, 4, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timePartsMethod.PrimitiveCode = builtinTimeParts	
+
+
+
 
     ///////////////////////////////////////////////////////////
     // Persistence functions
@@ -1186,8 +1364,188 @@ func builtinNeg(objects []RObject) []RObject {
 
 
 
+////////////////////////////////////////////////////////////
+// Time and Duration functions
+
+// now location String > Time
+//
+// t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
+//
+// Will throw a runtime error and halt the relish program if the location string is invalid.
+//
+func builtinTimeNow(objects []RObject) []RObject {
+	loc := string(objects[0].(String))
+    location,err := time.LoadLocation(loc) 
+    if err != nil {
+    	rterr.Stop(err.Error())
+    }
+    t := time.Now().In(location)
+	return []RObject{RTime(t)}
+}	
 
 
+// sleep durationNs Int
+//
+func builtinSleep(objects []RObject) []RObject {
+	d := time.Duration(int64(objects[0].(Int)))
+    time.Sleep(d)
+	return []RObject{}
+}	
+
+
+// tick durationNs Int > Inchannel of Time
+//
+func builtinTick(objects []RObject) []RObject {
+	d := time.Duration(int64(objects[0].(Int)))
+    ch := time.Tick(d)
+
+    c := &TimeChannel{Ch: ch}
+ 
+	return []RObject{c}
+}	
+
+// plus t Time durationNs Int > Time
+//
+func builtinTimePlus(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+	d := time.Duration(int64(objects[1].(Int)))
+    t2 := t.Add(d)
+	return []RObject{RTime(t2)}
+}	
+
+// addDate t Time years Int months Int days Int > Time
+//
+func builtinTimeAddDate(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+	years := int(objects[1].(Int))
+	months := int(objects[2].(Int))
+	days := int(objects[3].(Int))		
+    t2 := t.AddDate(years,months,days)
+	return []RObject{RTime(t2)}
+}	
+
+// minus t Time durationNs Int > Time
+//
+func builtinTimeMinusDuration(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))	
+	d := time.Duration(int64(objects[1].(Int)))
+    t2 := t.Add(-d)
+	return []RObject{RTime(t2)}	
+}	
+
+// minus t2 Time t1 Time > durationNs Int
+//
+func builtinTimeMinusTime(objects []RObject) []RObject {
+	t2 := time.Time(objects[0].(RTime))
+	t1 := time.Time(objects[1].(RTime))	
+    d := t2.Sub(t1)
+	return []RObject{Int(int64(d))}			
+}		
+
+// since t Time > durationNs Int
+//
+func builtinTimeSince(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    d := time.Since(t)
+	return []RObject{Int(int64(d))}		
+}	
+
+// timeIn t Time location String > Time 
+// 
+// Will throw a runtime error and halt the relish program if the location string is invalid.
+//
+func builtinTimeIn(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+	loc := string(objects[1].(String))	
+    location,err := time.LoadLocation(loc) 
+    if err != nil {
+    	rterr.Stop(err.Error())
+    }
+    t2 := t.In(location)
+	return []RObject{RTime(t2)}	
+}	
+
+// hours n Int > durationNs Int
+// 
+func builtinHours(objects []RObject) []RObject {
+	h := int64(objects[0].(Int))	
+	d := h * 3600 * 1000000000 
+	return []RObject{Int(d)}		
+}	
+
+// minutes n Int > durationNs Int
+// 
+func builtinMinutes(objects []RObject) []RObject {
+	m := int64(objects[0].(Int))	
+	d := m * 60 * 1000000000 
+	return []RObject{Int(d)}		
+}		
+
+// seconds n Int > durationNs Int
+// 
+func builtinSeconds(objects []RObject) []RObject {
+	s := int64(objects[0].(Int))	
+	d := s * 1000000000 	
+	return []RObject{Int(d)}		
+}		
+
+// milliseconds n Int > durationNs Int
+// 
+func builtinMilliseconds(objects []RObject) []RObject {
+	ms := int64(objects[0].(Int))	
+	d := ms * 1000000 	
+	return []RObject{Int(d)}		
+}	
+	
+
+// duration hours Int minutes Int > durationNs Int
+// 
+// duration hours Int minutes Int seconds Int > durationNs Int
+// 	
+// duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
+// 
+func builtinDuration(objects []RObject) []RObject {
+	var h,m,s,ns int64
+	h = int64(objects[0].(Int))
+	m = int64(objects[1].(Int))
+	if len(objects) > 2 {
+	   s = int64(objects[0].(Int))
+	}
+	if len(objects) > 3 {
+	   ns = int64(objects[0].(Int))
+	}		
+	d := h * 3600 * 1000000000 + m * 60 * 1000000000 + s * 1000000000 + ns
+	return []RObject{Int(d)}	
+}		
+
+func builtinHoursEquivalentOf(objects []RObject) []RObject {
+	d := time.Duration(int64(objects[0].(Int)))	
+	h := d.Hours()
+    return []RObject{Float(h)}	
+}
+
+func builtinMinutesEquivalentOf(objects []RObject) []RObject {
+	d := time.Duration(int64(objects[0].(Int)))	
+	m := d.Minutes()	
+    return []RObject{Float(m)}		
+}
+
+func builtinSecondsEquivalentOf(objects []RObject) []RObject {
+	d := time.Duration(int64(objects[0].(Int)))	
+	s := d.Seconds()
+    return []RObject{Float(s)}		
+}
+
+func builtinTimeParts(objects []RObject) []RObject {
+	d := int64(objects[0].(Int))
+    h := d / (3600 * 1000000000)	
+    excess := d % (3600 * 1000000000)	
+    m := excess / (60 * 1000000000)   
+    excess = excess % (60 * 1000000000)
+    s := excess / 1000000000
+    ns := excess % 1000000000
+    return []RObject{Int(h),Int(m),Int(s),Int(ns)}	    
+}
 
 
 
@@ -1361,8 +1719,8 @@ val = from ch
 TODO DUMMY Implementation 
 */
 func builtinFrom(objects []RObject) []RObject {
-	c := objects[0].(*Channel)
-    val  := <- c.Ch
+	c := objects[0].(RInChannel)
+    val := c.From()
 	return []RObject{val}
 }
 
