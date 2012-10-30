@@ -306,7 +306,9 @@ multi-line %s string in relish!!
    print index s3 "世界"
    print index s3 "界"
 
-   print hash s3
+   print base64Hash s3
+
+   print hexHash s3   
 
    if TEST_GOROUTINES
 

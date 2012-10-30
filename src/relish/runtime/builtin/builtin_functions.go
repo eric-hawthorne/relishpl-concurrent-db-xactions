@@ -506,11 +506,20 @@ func InitBuiltinFunctions() {
 	/*
 	    returns a String - the base64-encoded sha25 hash of the input argument String.
 	*/
-	stringHashMethod, err := RT.CreateMethod("","hash", []string{"s"}, []string{"String"}, 1, 0, false)
+	stringBase64HashMethod, err := RT.CreateMethod("","base64Hash", []string{"s"}, []string{"String"}, 1, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	stringHashMethod.PrimitiveCode = builtinStringHashSha256Base64		
+	stringBase64HashMethod.PrimitiveCode = builtinStringHashSha256Base64		
+
+	/*
+	    returns a String - the hexadecimal-encoded sha25 hash of the input argument String.
+	*/
+	stringHexHashMethod, err := RT.CreateMethod("","hexHash", []string{"s"}, []string{"String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringHexHashMethod.PrimitiveCode = builtinStringHashSha256Hex			
 	
     ///////////////////////////////////////////////////////////////////
     // Collection functions	
@@ -1662,6 +1671,14 @@ func builtinStringHashSha256Base64(objects []RObject) []RObject {
     return []RObject{String(b64)}	
 }
 
+func builtinStringHashSha256Hex(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	hasher := sha256.New()
+	hasher.Write([]byte(s))
+	sha := hasher.Sum(nil)
+	hex := fmt.Sprintf("%x",sha)   
+    return []RObject{String(hex)}	
+}
 
 
 
