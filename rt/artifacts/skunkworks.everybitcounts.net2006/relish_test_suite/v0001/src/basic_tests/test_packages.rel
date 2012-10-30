@@ -283,10 +283,21 @@ multi-line %s string in relish!!
 
    s3 = "世界Hello"
 
+   s4 = "one"
+   s5 = "two"
+   s6 = "three"
+   count = [s4 s5 s6]String
+   print join count ","
+   print join count
+   assortment = ["one" 2 3.0 "four" false]Any
+   print join assortment "|"
+
    print first s1 2
    print first s1 30
    print last s1 4
    print last s1 30
+   print replace s1 "ow" "ew"
+   print replace s1 "ow" "ew" 1   
    print hasPrefix s1 s2
    print hasPrefix s1 "How"
    print hasSuffix s1 "cow"

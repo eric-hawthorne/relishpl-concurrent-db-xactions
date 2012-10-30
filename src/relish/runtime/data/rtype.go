@@ -52,6 +52,9 @@ type RType struct {
    Returns true iff t is a strict subtype of t2.
 */
 func (t *RType) Less(t2 *RType) bool {
+    if t2 == AnyType && t != AnyType {
+    	return true
+    }	
 	for _, ti := range t.Up {
 		if ti == t2 {
 			return true
@@ -65,7 +68,7 @@ func (t *RType) Less(t2 *RType) bool {
    This is the type assignment compatibility predicate.
 */
 func (t *RType) LessEq(t2 *RType) bool {
-	return (t == t2) || t.Less(t2)
+	return (t == t2) || t2 == AnyType || t.Less(t2)
 }
 
 /*
@@ -581,7 +584,7 @@ func (rt *RuntimeEnv) CreateType(typeName string, typeShortName string, parentTy
 /*
    Create if necessary and return the type representing a set of some element type.
 */
-func (rt *RuntimeEnv) getSetType(elementType *RType) (typ *RType, err error) {
+func (rt *RuntimeEnv) GetSetType(elementType *RType) (typ *RType, err error) {
 	typeName := "Set_of_" + elementType.Name
 	typeShortName := "Set_of_" + elementType.ShortName()	
 	typ, found := rt.Types[typeName]
@@ -594,7 +597,7 @@ func (rt *RuntimeEnv) getSetType(elementType *RType) (typ *RType, err error) {
 /*
    Create if necessary and return the type representing a list of some element type.
 */
-func (rt *RuntimeEnv) getListType(elementType *RType) (typ *RType, err error) {
+func (rt *RuntimeEnv) GetListType(elementType *RType) (typ *RType, err error) {
 	typeName := "List_of_" + elementType.Name
 	typeShortName := "List_of_" + elementType.ShortName()
 	typ, found := rt.Types[typeName]

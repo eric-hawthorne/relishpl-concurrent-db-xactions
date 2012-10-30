@@ -323,7 +323,7 @@ func (s *rset) Iterable() (interface{},error) {
    Constructor
 */
 func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality int64, owner RObject) (coll RCollection, err error) {
-	typ, err := rt.getSetType(elementType)
+	typ, err := rt.GetSetType(elementType)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +639,7 @@ func (s *rsortedset) Iterable() (interface{},error) {
    Constructor
 */
 func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll RCollection, err error) {
-	typ, err := rt.getSetType(elementType)
+	typ, err := rt.GetSetType(elementType)
 	if err != nil {
 		return nil, err
 	}
@@ -931,7 +931,7 @@ func (s *rlist) ClearInMemory() {
    Constructor
 */
 func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll List, err error) {
-	typ, err := rt.getListType(elementType)
+	typ, err := rt.GetListType(elementType)
 	if err != nil {
 		return nil, err
 	}

@@ -1742,6 +1742,40 @@ cat ...obj Any > String
 """
 
 
+replace s String old String new String > String
+"""
+  Returns a copy of the string s with all non-overlapping instances of old replaced by new. 
+"""
+
+
+replace s String old String new String n Int > String
+"""
+  Returns a copy of the string s with the first n non-overlapping instances of old replaced by new. 
+  If n &lt; 0, there is no limit on the number of replacements.
+"""
+
+
+join a []String > String
+"""
+ Concatenates the elements of a to create a single string. 
+"""
+
+
+join a []String sep String > String
+"""
+ Concatenates the elements of a to create a single string. The separator string sep is placed between 
+ elements in the resulting string.
+"""
+
+join a []Any sep String > String
+"""
+ Concatenates the elements of a to create a single string. The separator string sep is placed between 
+ elements in the resulting string.
+ Note that list arguments are not covariant by element type yet, so you either have to supply
+ a []String or a []Any  - nothing else in between will work yet.
+"""
+
+
 fill s String ...obj Any > String
 """
  Substitutes objects (currently up to 9) into placeholders in the string s, returning the resulting string.

@@ -85,6 +85,14 @@ var ChannelType *RType
 var MutexType *RType
 var RWMutexType *RType
 
+
+var ListOfAnyType *RType
+var SetOfAnyType *RType
+
+var ListOfStringType *RType
+var SetOfStringType *RType
+
+
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	PrimitiveType, _ = rt.CreateType("RelishPrimitive", "", []string{})
@@ -135,6 +143,17 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	MutexType, _ = rt.CreateType("Mutex", "", []string{})
 
 	RWMutexType, _ = rt.CreateType("RWMutex", "", []string{})	
+
+
+    // Primitive collection types
+
+	ListOfAnyType, _ = rt.GetListType(AnyType)
+	SetOfAnyType, _  = rt.GetSetType(AnyType)	
+
+	ListOfStringType, _ = rt.GetListType(StringType)
+	SetOfStringType, _  = rt.GetSetType(StringType)	
+
+
 
 }
 

@@ -464,6 +464,75 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	stringContainsMethod.PrimitiveCode = builtinStringContains	
+
+
+
+
+/*
+replace s String old String new String > String
+"""
+  Returns a copy of the string s with all non-overlapping instances of old replaced by new. 
+"""
+
+replace s String old String new String n Int > String
+"""
+  Returns a copy of the string s with the first n non-overlapping instances of old replaced by new. 
+  If n < 0, there is no limit on the number of replacements.
+"""
+*/
+
+
+    stringReplace3Method, err := RT.CreateMethod("","replace", []string{"s","old","new"}, []string{"String","String","String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringReplace3Method.PrimitiveCode = builtinStringReplace
+
+    stringReplace4Method, err := RT.CreateMethod("","replace", []string{"s","old","new","n"}, []string{"String","String","String","Int"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringReplace4Method.PrimitiveCode = builtinStringReplace
+
+
+
+
+// join a []String
+// """
+//  Concatenates the elements of a to create a single string. T
+// """
+//
+// join a []String sep String > String
+//
+// Should be 
+// join a []Any sep String > String
+// but we don't have covariant collection type compatibility in input args yet. should have, for immutable input args	
+
+
+    stringJoin1Method, err := RT.CreateMethod("","join", []string{"a"}, []string{"List_of_String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringJoin1Method.PrimitiveCode = builtinStringJoin
+
+
+
+    stringJoin2Method, err := RT.CreateMethod("","join", []string{"a","sep"}, []string{"List_of_String","String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringJoin2Method.PrimitiveCode = builtinStringJoin
+
+
+    stringJoin2AnyMethod, err := RT.CreateMethod("","join", []string{"a","sep"}, []string{"List_of_Any","String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringJoin2AnyMethod.PrimitiveCode = builtinStringJoin
+
+
+
+
 	
 	/*
 
@@ -1846,6 +1915,66 @@ func builtinStringHasSuffix(objects []RObject) []RObject {
 	val = Bool( strings.HasSuffix(string(s), string(substr)) )
 	return []RObject{val}
 }
+
+
+/*
+replace s String old String new String > String
+"""
+  Returns a copy of the string s with all non-overlapping instances of old replaced by new. 
+"""
+
+replace s String old String new String n Int > String
+"""
+  Returns a copy of the string s with the first n non-overlapping instances of old replaced by new. 
+  If n < 0, there is no limit on the number of replacements.
+"""
+*/
+
+func builtinStringReplace(objects []RObject) []RObject {
+    var n int = -1
+	s := string(objects[0].(String))
+	oldPiece := string(objects[1].(String))
+	newPiece := string(objects[2].(String))	
+	if len(objects) == 4 {
+		n = int(objects[3].(Int))
+	}
+	s2 := strings.Replace(s, oldPiece, newPiece, n)
+	return []RObject{String(s2)}
+}
+
+
+/*
+join a []String
+"""
+ Concatenates the elements of a to create a single string. T
+"""
+
+join a []Any sep String > String
+"""
+ Concatenates the elements of a to create a single string. The separator string sep
+ is placed between elements in the resulting string.
+"""
+*/
+
+func builtinStringJoin(objects []RObject) []RObject {
+    list := objects[0].(List)
+    objSlice := list.AsSlice()
+    stringSlice := make([]string,len(objSlice))
+    for i,obj := range objSlice {
+    	stringSlice[i] = obj.String()
+    }
+    sep := ""
+	if len(objects) == 2 {
+		sep = string(objects[1].(String))
+    }
+	s2 := strings.Join(stringSlice, sep)
+	return []RObject{String(s2)}
+}
+
+
+
+
+
 
 /*
 TODO IMPORTANT
