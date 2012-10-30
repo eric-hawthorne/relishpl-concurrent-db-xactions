@@ -14,7 +14,7 @@ import
    people
 
 
-TEST_GOROUTINES = true
+TEST_GOROUTINES = false
 
 //
 // if gt radius MAX_RADIUS
@@ -305,6 +305,8 @@ multi-line %s string in relish!!
    print numCodePoints s3
    print index s3 "世界"
    print index s3 "界"
+
+   print hash s3
 
    if TEST_GOROUTINES
 

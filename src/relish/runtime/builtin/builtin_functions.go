@@ -17,6 +17,8 @@ import (
 	"unicode/utf8"
 	"relish/rterr"
     "time"
+    "crypto/sha256"
+    "encoding/base64"
 )
 
 func InitBuiltinFunctions() {
@@ -501,7 +503,14 @@ func InitBuiltinFunctions() {
 	stringLastMethod.PrimitiveCode = builtinStringLast	
 	
 	
-	
+	/*
+	    returns a String - the base64-encoded sha25 hash of the input argument String.
+	*/
+	stringHashMethod, err := RT.CreateMethod("","hash", []string{"s"}, []string{"String"}, 1, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringHashMethod.PrimitiveCode = builtinStringHashSha256Base64		
 	
     ///////////////////////////////////////////////////////////////////
     // Collection functions	
@@ -1641,6 +1650,26 @@ func builtinStringLast(objects []RObject) []RObject {
 	substr := s[start:end]
     return []RObject{String(substr)}	
 }
+
+
+
+func builtinStringHashSha256Base64(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	hasher := sha256.New()
+	hasher.Write([]byte(s))
+	sha := hasher.Sum(nil)
+	b64 := base64.URLEncoding.EncodeToString(sha)     
+    return []RObject{String(b64)}	
+}
+
+
+
+
+
+
+
+
+
 
 
 
