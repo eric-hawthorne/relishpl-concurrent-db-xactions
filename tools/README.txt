@@ -6,7 +6,9 @@ is a TextMate format.
 
 To install in Sublime Text 2, place the file as follows
 
-~/.config/sublime-text-2/Packages/Relish/Relish.tmLanguage
+Linux: ~/.config/sublime-text-2/Packages/Relish/Relish.tmLanguage
+OS X: ~/Library/Application Support/Sublime Text 2/Packages/Relish/Relish.tmLanguage
+Windows: %APPDATA%\Sublime Text 2/Packages/Relish/Relish.tmLanguage
 
 and restart Sublime Text 2
 
