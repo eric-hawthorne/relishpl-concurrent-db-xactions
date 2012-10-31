@@ -52,6 +52,9 @@ type RType struct {
    Returns true iff t is a strict subtype of t2.
 */
 func (t *RType) Less(t2 *RType) bool {
+	if t == NothingType {
+		return t2 != NothingType
+	}
     if t2 == AnyType && t != AnyType {
     	return true
     }	
@@ -68,7 +71,7 @@ func (t *RType) Less(t2 *RType) bool {
    This is the type assignment compatibility predicate.
 */
 func (t *RType) LessEq(t2 *RType) bool {
-	return (t == t2) || t2 == AnyType || t.Less(t2)
+	return (t == t2) || t2 == AnyType || t == NothingType || t.Less(t2)
 }
 
 /*
@@ -175,6 +178,8 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 		fallthrough		
 	case "{}Time", "[]Time":		
 		fallthrough
+	case "Nothing":		
+		fallthrough		
 	case "String":
 		isPrimitive = true
 
@@ -920,41 +925,53 @@ func (subTT *RTypeTuple) SpecializationDistanceFrom(superTT *RTypeTuple) (float6
 	for i, subType := range subTT.Types {
 		superType := superTT.Types[i]
 		var foundOnePathForTypeSpecialization bool = false
-		for _, pathNode := range subType.SpecializationPathNodes {
+		
+		if subType == NothingType { // type of <>nil<>
 			nDimensions++
-			node := pathNode
-			var found bool = false
-			var levelDiff uint32
+			var levelDiff uint32 = 101
+			foundOnePathForTypeSpecialization = true	
+			for _, node := range superType.SpecializationPathNodes {
+			   nDimensions++	
+			   sumSquaredLevelDiff += levelDiff * levelDiff		
+			   sumSquaredSupertypeSpecificity += node.Level * node.Level										
+			}								
+		} else {
+			for _, pathNode := range subType.SpecializationPathNodes {
+				nDimensions++
+				node := pathNode
+				var found bool = false
+				var levelDiff uint32
 
-			if superType == AnyType { // Special case
-				levelDiff = 100
-				found = true
-				foundOnePathForTypeSpecialization = true
-			} else if superType == NonPrimitiveType {
-				if !node.Type.IsPrimitive { // Special case 
-					levelDiff = 99
+				if superType == AnyType { // Special case
+					levelDiff = 100
 					found = true
 					foundOnePathForTypeSpecialization = true
-				}
-			} else {
-
-				for levelDiff = 0; ; levelDiff++ {
-					if node.Type == superType {
+				} else if superType == NonPrimitiveType {
+					if !node.Type.IsPrimitive { // Special case 
+						levelDiff = 99
 						found = true
 						foundOnePathForTypeSpecialization = true
-						break
-					} else if node.Up == nil {
-						break
-					} else {
-						node = node.Up
+					}
+				} else {
+
+					for levelDiff = 0; ; levelDiff++ {
+						if node.Type == superType {
+							found = true
+							foundOnePathForTypeSpecialization = true
+							break
+						} else if node.Up == nil {
+							break
+						} else {
+							node = node.Up
+						}
 					}
 				}
+				if found {
+					sumSquaredLevelDiff += levelDiff * levelDiff
+					sumSquaredSupertypeSpecificity += node.Level * node.Level
+				}
 			}
-			if found {
-				sumSquaredLevelDiff += levelDiff * levelDiff
-				sumSquaredSupertypeSpecificity += node.Level * node.Level
-			}
-		}
+	    }
 		if !foundOnePathForTypeSpecialization {
 			return -1.0, -1.0, true
 		}

@@ -72,6 +72,7 @@ var MultiMethodType *RType
 var MethodType *RType
 
 var AnyType *RType
+var NothingType *RType
 var NonPrimitiveType *RType
 var StructType *RType
 var CollectionType *RType
@@ -126,6 +127,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	// Do I need a "Closure" type???
 
 	AnyType, _ = rt.CreateType("Any", "", []string{})
+	NothingType, _ = rt.CreateType("Nothing", "", []string{})	
 	NonPrimitiveType, _ = rt.CreateType("NonPrimitive", "", []string{})
 	StructType, _ = rt.CreateType("Struct", "", []string{})
 	CollectionType, _ = rt.CreateType("Collection", "", []string{})
@@ -1716,6 +1718,141 @@ func (p Bool) IsTransient() bool { return false }
 func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
+
+
+
+
+
+type Nil byte
+
+func (p Nil) IsZero() bool {
+	return true
+}
+
+func (p Nil) Type() *RType {
+	return NothingType
+}
+
+func (p Nil) This() RObject {
+	return p
+}
+
+func (p Nil) IsUnit() bool {
+	return true
+}
+
+func (p Nil) IsCollection() bool {
+	return false
+}
+
+func (p Nil) String() string {
+	return "<>nil<>"
+}
+
+func (p Nil) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Nil) UUID() []byte {
+	panic("A Nil cannot have a UUID.")
+	return nil
+}
+
+func (p Nil) DBID() int64 {
+	panic("A Nil cannot have a DBID.")
+	return 0
+}
+
+func (p Nil) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Nil cannot have a UUID.")
+	return
+}
+
+func (p Nil) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Nil cannot have a UUID.")
+	return
+}
+
+func (p Nil) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Nil cannot have a UUID.")
+	return
+}
+
+func (p Nil) UUIDstr() string {
+	panic("A Nil cannot have a UUID.")
+	return ""
+}
+
+func (p Nil) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Nil cannot have a UUID.")
+	return
+}
+
+func (p Nil) UUIDabbrev() string {
+	panic("A Nil cannot have a UUID.")
+	return ""
+}
+
+func (p Nil) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Nil cannot have a UUID.")
+	return
+}
+
+func (p Nil) RemoveUUID() {
+	panic("A Nil does not have a UUID.")
+	return
+}
+
+func (p Nil) Flags() int8 {
+	panic("A Nil has no Flags.")
+	return 0
+}
+
+func (p Nil) IsDirty() bool {
+	return false
+}
+func (p Nil) SetDirty() {
+}
+func (p Nil) ClearDirty() {
+}
+
+func (p Nil) IsIdReversed() bool {
+	return false
+}
+
+func (p Nil) SetIdReversed() {}
+
+func (p Nil) ClearIdReversed() {}
+
+func (p Nil) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Nil) SetLoadNeeded()   {}
+func (p Nil) ClearLoadNeeded() {}
+
+func (p Nil) IsValid() bool { return true }
+func (p Nil) SetValid()     {}
+func (p Nil) ClearValid()   {}
+
+func (p Nil) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Nil) SetStoredLocally()     {}
+func (p Nil) ClearStoredLocally()   {}
+
+func (p Nil) IsProxy() bool { return false }
+
+func (p Nil) IsTransient() bool { return false }
+
+func (p Nil) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+const NIL Nil = 0
+
+
 
 type Float32 float32
 type Byte byte

@@ -564,7 +564,9 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 		if err != nil {
 			panic(err)
 		}
-		t.Push(Bool(b))				
+		t.Push(Bool(b))		
+	case token.NIL:
+		t.Push(NIL)				
 	default:
 		panic("I don't know how to interpret this kind of literal yet.")
 	}
