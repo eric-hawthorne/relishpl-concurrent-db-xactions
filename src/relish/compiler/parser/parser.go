@@ -4569,10 +4569,10 @@ func (p *parser) parseNilLiteral(x *ast.Expr) bool {
     pos := p.Pos()
     var lit string
     if p.MatchWord("nil") {
-	   lit = "nil"
+	      lit = "nil"
+    } else {
+	      return false
     }
-	return false
-
     tok := token.NIL
     dbg.Log(dbg.PARSE_,"%s '%s'\n",tok,lit)
 

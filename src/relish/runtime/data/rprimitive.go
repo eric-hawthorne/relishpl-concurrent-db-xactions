@@ -160,6 +160,85 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 }
 
 
+/*
+Return a zero-value of the type.
+For structured object types, this is currently defined to be NIL which is a Go constant in this data package.
+NIL is of go-type Nil, of relish RType NothingType. 
+NIL's name in relish source code is nil, and its string representation when printed is *nil* 
+*/
+func (t *RType) Zero() RObject {
+	var z RObject
+    switch t {
+	case PrimitiveType:
+		z = Int(0)	
+	case NumericType:
+		z = Int(0)	
+	case IntegerType:
+		z = Int(0)	
+	case IntType:
+		z = Int(0)
+    case Int32Type:
+    	z = Int32(0)
+/*
+    case Int16Type:
+    	z = Int16(0)
+    case Int8Type:
+    	z = Int8(0)
+*/
+    case UintType:
+    	z = Uint(0)
+    case Uint32Type:
+        z = Uint(0)	
+/*
+    case Uint16Type:
+    	z = Uint16(0)
+    case ByteType:
+    	z = Byte(0)    	
+    case BitType:
+    	z = Bit(0)
+*/
+    case BoolType:
+    	z = Bool(false)
+    case TextType:
+    	z = String("")
+/*
+    case CodePointType:
+    	z = CodePoint(0)
+*/
+    case RealType:
+        z = Float(0.)
+    case FloatType:
+        z = Float(0.)    	
+/*
+    case Float32Type:
+        z = Float32(0.)    	
+*/
+    case ComplexNumberType:
+    case ComplexType:
+        z = Complex(0+0i)    	
+    case Complex32Type:
+        z = Complex32(0+0i)       	
+    case StringType:
+    	z = String("")
+    case TimeType:
+    	var t Time
+    	z = RTime(t)
+    case AnyType:
+		z = Int(0)	    	
+    default:
+    	z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
+    }   
+    return z
+}
+
+
+
+
+
+
+
+
+
 type RInChannel interface {
 	RObject
 
@@ -1746,7 +1825,7 @@ func (p Nil) IsCollection() bool {
 }
 
 func (p Nil) String() string {
-	return "<>nil<>"
+	return "*nil*"
 }
 
 func (p Nil) HasUUID() bool {
