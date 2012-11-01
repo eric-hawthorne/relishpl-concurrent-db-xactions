@@ -1106,8 +1106,11 @@ type (
 		Params         []*TypeSpec         // Type parameters (egh)
 		SuperTypes     []*TypeSpec         // Only valid if this is a type variable (egh)
 		CollectionSpec *CollectionTypeSpec // nil or a collection specification
+		typ interface{}  // The actual *RType - associated at generation time.
+		
+		// This is wrong !! The Method object needs to get a list of actual *RTypes of its return types
 	}
-
+	
 	/*
 
 	*/

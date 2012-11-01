@@ -1056,7 +1056,17 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		t.Dump()
 	}
 	if m.PrimitiveCode == nil {
+		rslts := m.Code.Type.Results
+		n := len(rslts)
+		if n != 0 && rslts[0].Name != nil { 
+			for j, returnArgDecl := range rslts {
+               t.Stack[t.Base+j-n] = returnArgDecl.Type.Typ.Zero()  // Need to attach the real *RType to the ast.TypeSpec during generation
+				                                 // Then can do some type checking of the function return vals at end
+				                                 // of execution too!!
+			}
+	    }
 		i.ExecBlock(t, m.Code.Body)
+		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
 		objs := m.PrimitiveCode(args)
 		n := len(objs)
