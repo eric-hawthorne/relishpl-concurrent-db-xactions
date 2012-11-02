@@ -53,7 +53,7 @@
 				</dict>
 			</dict>
 			<key>end</key>
-			<string>(^\W$)</string>
+			<string>(^\W*$)</string>
 			<key>patterns</key>
 			<array>
 				<dict>
