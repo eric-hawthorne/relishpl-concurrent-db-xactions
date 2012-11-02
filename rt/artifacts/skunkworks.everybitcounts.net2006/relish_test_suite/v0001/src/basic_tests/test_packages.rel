@@ -39,6 +39,12 @@ circleArea radius Float > Float
    r2 = times radius radius
    => times phys.PI r2
 
+testReturnArgDefaults a Int > c Int d String e Int
+"""
+ Tests the return arg defaulting.
+"""
+   c = a
+   
 
 circleProperty radius Float prop String > Float
 """
@@ -321,6 +327,10 @@ multi-line %s string in relish!!
    print base64Hash s3
 
    print hexHash s3   
+
+   a1 a2 a3 = testReturnArgDefaults 9
+
+   print "a1" a1 "a2" a2 "a3" a3
 
    if TEST_TIME_METHODS
       print driver1.dateOfBirth

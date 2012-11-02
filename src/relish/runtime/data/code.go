@@ -402,7 +402,8 @@ func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
    implementations?
 */
 func (rt *RuntimeEnv) CreateMethod(packageName string, methodName string, parameterNames []string, parameterTypes []string, 
-	                  numReturnArgs int, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
+	returnValTypes []string,
+	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
 		return rt.CreateMethodGeneral(packageName, methodName, parameterNames, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -410,7 +411,8 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, methodName string, parame
 						                  "",
 						                  "",
 						                  "",
-						                  numReturnArgs, 
+						                  returnValTypes,
+						                  returnValNamed, 
 						                  numLocalVars, 
 						                  allowRedefinition)
 }
@@ -446,7 +448,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 	                  variadicParameterName string,
 	                  variadicParameterType string,
 	                  // FROM HERE UP IS NEW
-	                  numReturnArgs int, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
+	                  returnValTypes []string,
+	                  returnArgsNamed bool,
+	                  numLocalVars int, allowRedefinition bool) (*RMethod, error) {
 
 	if packageName == "" { 
 		packageName = "relish.pl2012/core/inbuilt"
@@ -461,7 +465,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 
 
 	arity := len(parameterTypes)
-
+    numReturnArgs := len(returnValTypes)
 
     // TODO - Have to find and/or create this in the pkg object !!!!!!!!!!!!!!!!!
     //
@@ -502,10 +506,16 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 	if err != nil {
 		return nil, err
 	}
+	resultTypeTuple, err := rt.getTypeTupleFromTypes(returnValTypes)
+	if err != nil {
+		return nil, err
+	}	
 	method := &RMethod{
 		multiMethod:    multiMethod,
 		ParameterNames: parameterNames,
 		Signature:      typeTuple,
+		ReturnSignature: resultTypeTuple,
+		ReturnArgsNamed: returnArgsNamed,		
 		NumReturnArgs:  numReturnArgs,
 		NumLocalVars:   numLocalVars,
 		Pkg:            pkg,
