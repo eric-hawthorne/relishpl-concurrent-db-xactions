@@ -242,6 +242,8 @@ type RMethod struct {
 	multiMethod    *RMultiMethod
 	ParameterNames []string               // names of parameters
 	Signature      *RTypeTuple            // types of parameters
+	ReturnSignature *RTypeTuple           // types of return values
+	ReturnArgsNamed bool                  // Whether the return arguments are named and have to be initialized on method call.
 	Code           *ast.MethodDeclaration // abstract syntax tree
 	NumReturnArgs  int
 	NumLocalVars   int

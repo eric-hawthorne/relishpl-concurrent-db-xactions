@@ -620,12 +620,19 @@ func (g *Generator) generateMethods() {
 	
 		   var parameterNames []string
 		   var parameterTypes []string
+		   var returnValTypes []string
+		   var returnArgsAreNamed bool		   
 		   for _,inputArgDecl := range methodDeclaration.Type.Params {
 			  parameterNames = append(parameterNames, inputArgDecl.Name.Name)
 			  parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
 		   }
 	
-		   numReturnArgs := len(methodDeclaration.Type.Results)
+		   for _,returnArgDecl := range methodDeclaration.Type.Results {
+               if returnArgDecl.Name != nil {
+               	  returnArgsAreNamed = true
+               }
+			   returnValTypes = append(returnValTypes, g.qualifyTypeName(returnArgDecl.Type.Name.Name))               
+		   }
 	
 		   allowRedefinition := false	
 	
@@ -636,7 +643,8 @@ func (g *Generator) generateMethods() {
 		   	                                    methodName,
 		   	                                    parameterNames, 
 			                                    parameterTypes, 
-			                                    numReturnArgs,
+			                                    returnValTypes,
+			                                    returnArgsAreNamed,
 			                                    methodDeclaration.NumLocalVars,
 			                                    allowRedefinition  )
 		   if err != nil {
