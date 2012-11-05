@@ -106,6 +106,27 @@ type MethodDeclaration struct {
 	NumLocalVars int
 }
 
+func (d *MethodDeclaration) ReturnArgsAreNamed() bool {
+   rslts := d.Type.Results
+   return len(rslts) > 0 && rslts[0].Name != nil
+}
+
+func (d *MethodDeclaration) NumAnonymousReturnVals() int {
+   rslts := d.Type.Results
+   n := len(rslts)
+   if n == 0 {
+      return 0	
+   } else if rslts[0].Name != nil {
+      return 0	
+   }
+   return n
+}
+
+func (d *MethodDeclaration) NumReturnVals() int {
+   rslts := d.Type.Results
+   return len(rslts)
+}
+
 type ConstantDecl struct {
 	Name  *Ident // constant name	
 	Value Expr
@@ -418,6 +439,25 @@ type (
 		Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
 		                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
 	}	
+	
+	// EGH A SetConstruction node represents a set constructor invocation, which may be a set literal, a new empty set of a type, or
+	// a set with a db sql query where clause specified as the source of set members.
+	SetConstruction struct {
+        Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Set.
+		Elements  []Expr    // explicitly listed elements; or nil        
+		Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
+		                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
+	}
+	
+	// EGH A MapConstruction node represents a Map constructor invocation, which may be a map literal, 
+	// or a new empty map of some type to another.
+	MapConstruction struct {
+        Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Map.
+        ValType *TypeSpec     // Type of the values
+        Keys []Expr         // explicitly listed keys; or nil
+		Elements  []Expr    // explicitly listed elements; or nil        
+	}		
+
 
 	// A StarExpr node represents an expression of the form "*" Expression.
 	// Semantically it could be a unary "*" expression, or a pointer type.
@@ -536,6 +576,8 @@ func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
 func (x *TypeAssertion) Pos() token.Pos  { return x.Type.Pos() }
 func (x *MethodCall) Pos() token.Pos     { return x.Fun.Pos() }
 func (x *ListConstruction) Pos() token.Pos     { return x.Type.Pos() }
+func (x *SetConstruction) Pos() token.Pos     { return x.Type.Pos() }
+func (x *MapConstruction) Pos() token.Pos     { return x.Type.Pos() }
 func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
 func (x *StarExpr) Pos() token.Pos       { return x.Star }
 func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
@@ -588,6 +630,17 @@ func (x *ListConstruction) End() token.Pos     {
 	return x.Type.End()
 }
 
+func (x *SetConstruction) End() token.Pos     { 
+	if  x.Query != nil {
+		return x.Query.End() 
+	}
+	return x.Type.End()
+}
+
+func (x *MapConstruction) End() token.Pos     { 
+	return x.ValType.End()
+}
+
 func (x *StarExpr) End() token.Pos     { return x.X.End() }
 func (x *UnaryExpr) End() token.Pos    { return x.X.End() }
 func (x *BinaryExpr) End() token.Pos   { return x.Y.End() }
@@ -625,6 +678,8 @@ func (x *TypeAssertion) exprNode()  {}
 func (x *CallExpr) exprNode()       {}
 func (x *MethodCall) exprNode()     {}
 func (x *ListConstruction) exprNode()     {}
+func (x *SetConstruction) exprNode()     {}
+func (x *MapConstruction) exprNode()     {}
 func (x *StarExpr) exprNode()       {}
 func (x *UnaryExpr) exprNode()      {}
 func (x *BinaryExpr) exprNode()     {}

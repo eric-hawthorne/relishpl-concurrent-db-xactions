@@ -468,6 +468,63 @@ Need to decide how to persist collections and check if persisted and handle pers
 	return
 }
 
+/*
+TODO Optimize this  to add all at once with a slice copy or similar, then persist in fewer
+separate DB calls.
+*/
+func (rt *RuntimeEnv) ExtendMapTypeChecked(theMap Map, keysVals []RObject, context MethodEvaluationContext) (err error) {
+    n := len(keysVals)
+    for i := 0; i < n; i+=2 {
+       key := keysVals[i]
+       val := keysVals[i+1]
+       err = rt.PutInMapTypeChecked(theMap, key, val, context)	
+       if err != nil {
+	      return
+       }
+    }
+    return
+}
+
+func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, context MethodEvaluationContext) (err error) {
+
+	if !key.Type().LessEq(theMap.KeyType()) {
+		err = fmt.Errorf("Cannot use a key of type '%v' in a map with key-type constraint '%v'.", key.Type(),theMap.KeyType())
+		return
+	}
+	
+	if !val.Type().LessEq(theMap.ValType()) {
+		err = fmt.Errorf("Cannot put a value of type '%v' in a map with key-type constraint '%v'.", val.Type(),theMap.ValType())
+		return
+	}	
+
+    theMap.Put(key, val, context)
+	
+/*
+Need to decide how to persist collections and check if persisted and handle persisting add
+
+	TODO figure out efficient persistence of map collection updates
+	
+	//fmt.Printf("added=%v\n",added)
+	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
+
+    // This part is COPYITIS from AddToAttrTypeChecked method.
+	if added && obj.IsStoredLocally() {
+		var insertIndex int
+		if objColl.(RCollection).IsSorting() {
+			orderedColl := objColl.(OrderedCollection)
+			insertIndex = orderedColl.Index(val, 0)
+		} else {
+			insertIndex = newLen - 1
+		}
+		rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
+	}
+
+	*/
+
+	return
+}
+
+
 
 /*
 Helper method. Ensures that a collection exists in memory to manage the values of a multi-valued attribute of an object.

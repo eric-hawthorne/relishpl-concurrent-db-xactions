@@ -39,6 +39,7 @@ circleArea radius Float > Float
    r2 = times radius radius
    => times phys.PI r2
 
+
 testReturnArgDefaults a Int > c Int d String e Int
 """
  Tests the return arg defaulting.
@@ -180,6 +181,23 @@ main
    for vhcl in vcls 
       print "boo"
       print vhcl.lat vhcl.long
+
+   map1 = {"One"=>wheel1 "Two"=>wheel2 "Three"=>wheel3}String > vehicles.Wheel
+
+   map2 = {}String > vehicles.Wheel
+
+   //   map3 = {
+   //            "One"   => wheel1 
+   //            "Two"   => wheel2 
+   //            "Three" => wheel3
+   //          }String > vehicles.Wheel
+   //
+   //   map2["tres"] = map1["Three"]
+   //   map2["doux"] = map1["Two"]
+   //   
+   //   wh found = map1["Four"?] // returns the mapped element or nil, plus whether the key was found
+   //
+   //   found = map1[?"Four"]  // query as to whether the key is found in the map.
 
    a = """
 This is the very first

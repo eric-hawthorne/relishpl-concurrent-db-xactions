@@ -65,6 +65,8 @@ func registerAstNodeTypes() {
 	gob.Register(&CallExpr{})
 	gob.Register(&MethodCall{})
 	gob.Register(&ListConstruction{})
+	gob.Register(&SetConstruction{})
+	gob.Register(&MapConstruction{})		
 	gob.Register(&StarExpr{})
 	gob.Register(&UnaryExpr{})
 	gob.Register(&BinaryExpr{})

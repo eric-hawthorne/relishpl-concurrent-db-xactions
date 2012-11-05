@@ -2428,11 +2428,14 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
 
     var stmts []ast.Stmt
 
-    if ! p.parseMethodBodyStatement(&stmts) {
+    nReturnVals := methodDecl.NumAnonymousReturnVals()
+    noResults := (methodDecl.NumReturnVals() == 0)
+
+    if ! p.parseMethodBodyStatement(&stmts, nReturnVals, noResults) {
 	   return p.Fail(st)
     }
     for p.BlanksAndIndent(col, true) {
-        p.required(p.parseMethodBodyStatement(&stmts),"a statement")
+        p.required(p.parseMethodBodyStatement(&stmts, nReturnVals, noResults),"a statement")
     }
 
     methodDecl.Body = &ast.BlockStatement{blockPos,stmts}
@@ -2443,14 +2446,14 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
 }
 
 
-func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt) bool {
+func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt, nReturnVals int, noResults bool) bool {
     if p.trace {
        defer un(trace(p, "MethodBodyStatement"))
     }
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s) {
+    if p.parseControlStatement(&s, nReturnVals) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2458,7 +2461,16 @@ func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt) bool {
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs) {
+    if p.parseReturnStatement(&rs, nReturnVals) {
+	
+	   if nReturnVals == 0 {
+		  if noResults {
+              p.stop("=> statement not allowed, except in 'if' 'while' or 'for', because this method returns no results")		
+          } else {
+	          p.stop("=> statement not allowed, except in 'if' 'while' or 'for', because this method has named return arguments")		
+          }
+       }
+
 	   // translate
 	   *stmts = append(*stmts,rs)
 	   return true	
@@ -2486,14 +2498,14 @@ func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt) bool {
 /*
 Add a break and continue statement and also a return statement modifier "."
 */
-func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt) bool {
+func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "IfClauseStatement"))
     }
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s) {
+    if p.parseControlStatement(&s, nReturnVals) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2501,7 +2513,7 @@ func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt) bool {
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs) {
+    if p.parseReturnStatement(&rs, nReturnVals) {
 	   // translate
 	   *stmts = append(*stmts,rs)
 	   return true	
@@ -2529,14 +2541,14 @@ func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt) bool {
 /*
 How is this different from method body?
 */
-func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt) bool {
+func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "LoopBodyStatement"))
     }
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s) {
+    if p.parseControlStatement(&s, nReturnVals) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2544,7 +2556,7 @@ func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt) bool {
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs) {
+    if p.parseReturnStatement(&rs, nReturnVals) {
 	   // translate
 	   *stmts = append(*stmts,rs)
 	   return true	
@@ -2570,22 +2582,22 @@ func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt) bool {
 }
 
 
-func (p *parser) parseControlStatement(stmt *ast.Stmt) bool {
+func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "ControlStatement"))
     }
     var ifStmt *ast.IfStatement
-    if p.parseIfStatement(&ifStmt) {
+    if p.parseIfStatement(&ifStmt, nReturnVals) {
 	   *stmt = ifStmt
 	   return true
     } 
     var whileStmt *ast.WhileStatement
-    if p.parseWhileStatement(&whileStmt) {
+    if p.parseWhileStatement(&whileStmt, nReturnVals) {
 	   *stmt = whileStmt
 	   return true
     }  
     var rangeStmt *ast.RangeStatement
-    if p.parseForRangeStatement(&rangeStmt) {
+    if p.parseForRangeStatement(&rangeStmt, nReturnVals) {
 	   *stmt = rangeStmt
 	   return true
     }   
@@ -2601,7 +2613,7 @@ func (p *parser) parseControlStatement(stmt *ast.Stmt) bool {
     }
 /*
     var forStmt *ast.ForStatement
-    if p.parseForStatement(&forStmt) {
+    if p.parseForStatement(&forStmt, nReturnVals) {
 	   *stmt = forStmt
 	   return true
     }
@@ -2617,8 +2629,12 @@ ReturnStatement struct {
 	Return  token.Pos // position of "=>" keyword
 	Results []Expr    // result expressions; or nil
 }
+
+Note: If returnStmtRestricted is true, the return statement is not allowed
+to have arguments after it (because the method declaration declared named return arguments.)
+
 */
-func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement) bool {
+func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "ReturnStatement"))
     }
@@ -2628,16 +2644,31 @@ func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement) bool {
     if ! p.Match2('=','>') {
 	   return false
     }
-    p.required(p.Space(),"a single space after '=>'")
-  
+    hasSpace := p.Space()
+    if ! hasSpace {
+	    if nReturnVals > 0 {
+	       p.required(false,"a single space after '=>' followed by values to return from method")
+	    }
+    }
     isInsideBrackets := false
 
     var xs []ast.Expr
 
-    p.required(p.parseLenientVerticalExpressions(p.Col(),&xs) || 
-               p.parseMultipleOneLineExpressions(&xs,isInsideBrackets) || 
-               p.parseSingleOneLineExpression(&xs,isInsideBrackets), 
-               "a literal value or constant or variable reference or method call")
+    var foundResultExprs bool
+    if hasSpace {
+       foundResultExprs = (p.parseLenientVerticalExpressions(p.Col(),&xs) || 
+                           p.parseMultipleOneLineExpressions(&xs,isInsideBrackets) || 
+                           p.parseSingleOneLineExpression(&xs,isInsideBrackets))
+    }
+    if foundResultExprs {
+	   if nReturnVals == 0 {
+	       p.stop("=> val... statement cannot appear here, because this method declares no anonymous result values")	
+  	   } 
+    } else {
+	    if nReturnVals > 0 {
+		   p.stop("=> must be followed by a literal value or constant or variable/attribute reference or method call")
+	   }
+    }
 
     // translate
     *stmt = &ast.ReturnStatement{pos,xs}
@@ -2682,20 +2713,26 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
 	
 	   if isOneOfMultiple { // need a bracketed method call
 	       var mcs *ast.MethodCall
-         var lcs *ast.ListConstruction         
-	       
+           var lcs *ast.ListConstruction         
+           var mpcs *ast.MapConstruction 	 
+           var scs *ast.SetConstruction      
 	       if p.Match1('(') {
 	
-	          p.required(p.parseOneLineMethodCall(&mcs,true) || p.parseOneLineListConstruction(&lcs,true),"a subroutine call or constructor invocation") 
+	            p.required(p.parseOneLineMethodCall(&mcs,true) || p.parseOneLineListConstruction(&lcs,true) || p.parseOneLineMapOrSetConstruction(&mpcs,&scs,true), "a subroutine call or constructor invocation") 
 		
 		        p.required(p.Match1(')'),")")
 		
 		        // translate
-            if mcs == nil {
-              *x = lcs
-            } else {
-		          *x = mcs
-            } 
+	            if mcs != nil {
+	              *x = mcs
+	            } else if lcs != nil {
+			          *x = lcs
+	            } else if mpcs != nil {
+			          *x = mpcs
+	            } else {
+		              *x = scs
+	            }
+
 		        return true
 	       }
      } else { // not one of multiple
@@ -2705,12 +2742,23 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
 		      *x = mcs
 		      return true
 	       }
-         var lcs *ast.ListConstruction
-         if p.parseOneLineListConstruction(&lcs,false) {
-          // translate
-          *x = lcs
-          return true
-         }           
+           var lcs *ast.ListConstruction
+           if p.parseOneLineListConstruction(&lcs,false) {
+              // translate
+              *x = lcs
+              return true
+           }    
+           var mpcs *ast.MapConstruction
+           var scs *ast.SetConstruction
+           if p.parseOneLineMapOrSetConstruction(&mpcs,&scs,false) {
+              // translate
+              if mpcs != nil {
+                  *x = mpcs
+			  } else {
+				  *x = scs
+			  }
+              return true
+           }
        }
     }
 
@@ -2815,6 +2863,67 @@ func (p *parser) parseMultipleOneLineExpressions(xs *[]ast.Expr, isInsideBracket
     p.Fail(st2)
     return true
 }
+
+
+
+
+
+/* 
+*/
+func (p *parser) parseOneLineMapEntryExpressions(keys *[]ast.Expr, vals *[]ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "OneLineMapEntryExpressions"))
+    }
+    
+    st := p.State()
+
+    isOneOfMultiple := false
+    isInsideBrackets := false
+
+    var key ast.Expr
+    if ! p.parseOneLineExpression(&key, isOneOfMultiple, isInsideBrackets) { 
+	   return false
+    }
+
+    if ! p.Match2('=','>') {
+	    return p.Fail(st)
+    }
+
+    var val ast.Expr
+    p.required(p.parseOneLineExpression(&val, isOneOfMultiple, isInsideBrackets),"a value expression to be put in the map") 
+
+    // translate
+    *keys = nil
+    *keys = append(*keys,key)
+    *vals = nil
+    *vals = append(*vals,val)
+
+
+    st2 := p.State()
+    for ; p.Space() ; {
+	   if ! p.parseOneLineExpression(&key, isOneOfMultiple, isInsideBrackets) {
+		   break	
+	   }
+	
+	   // translate
+       *keys = append(*keys,key)	
+	
+	   p.required(p.Match2('=','>'), "=> and a value expression to be put in the map") 
+
+	   var val ast.Expr
+	   p.required(p.parseOneLineExpression(&val, isOneOfMultiple, isInsideBrackets),"a value expression to be put in the map")
+	
+	   // translate
+       *vals = append(*vals,val)	
+       
+       st2 = p.State()	
+    }
+    p.Fail(st2)
+    return true
+}
+
+
+
 
 /*
 May be only one expression, but must be indented below the current line.
@@ -3522,7 +3631,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
        } 
     }
 
-    isSorting := false // TODO allow sorting-list specifications in list constructions!!!!
+    isSorting := false // TODO allow sorting-list specifications in empty list constructions!!!!
     isAscending := false 
     orderFunc := "" 
     collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
@@ -3554,6 +3663,193 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
     return true
 }
 
+
+
+
+func (p *parser) parseMapOrSetConstruction(mapStmt **ast.MapConstruction, setStmt **ast.SetConstruction) bool {
+    if p.trace {
+       defer un(trace(p, "MapOrSetConstruction"))
+    }
+    return p.parseIndentedMapOrSetConstruction(mapStmt, setStmt) || p.parseOneLineMapOrSetConstruction(mapStmt, setStmt, false)
+}
+
+
+/*
+Note, somehow, these have to be prevented from being standalone statements. Can only appear in expression context.
+
+[]Car
+["First" "Second" "Third"]String
+[]Car "year > 2010 order by year"
+[1 2 45 6]
+
+  TypeSpec struct {
+    Doc            *CommentGroup       // associated documentation; or nil
+    Name           *Ident              // type name (or type variable name)
+    Type           Expr                // *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
+    Comment        *CommentGroup       // line comments; or nil
+    Params         []*TypeSpec         // Type parameters (egh)
+    SuperTypes     []*TypeSpec         // Only valid if this is a type variable (egh)
+    CollectionSpec *CollectionTypeSpec // nil or a collection specification
+  }
+
+*/
+func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction, setStmt **ast.SetConstruction, isInsideBrackets bool) bool {
+    if p.trace {
+       defer un(trace(p, "OneLineMapOrSetConstruction"))
+    }
+
+    pos := p.Pos()
+    var end token.Pos
+
+    var typeSpec *ast.TypeSpec
+    var valTypeSpec *ast.TypeSpec
+
+    var collectionTypeSpec *ast.CollectionTypeSpec
+
+    var keyExprs []ast.Expr
+    var elementExprs []ast.Expr    
+
+    emptyMapOrSet := false
+    hasType := false
+    knownToBeMap := false
+    knownToBeSet := false
+    mapEntriesFound := false
+    setEntriesFound := false
+    
+    if p.Match2('{','}') {
+        end = p.Pos()
+        emptyMapOrSet = true
+    } else if p.Match1('{') {
+
+        // Get the list of expressions inside the map or set literal squiggly-brackets
+        // Note that one of these must exist, because it is not {}
+
+        mapEntriesFound = p.parseOneLineMapEntryExpressions(&keyExprs, &elementExprs) 
+
+        if ! mapEntriesFound { 
+			setEntriesFound = (p.parseMultipleOneLineExpressions(&elementExprs, false) || 
+			                   p.parseSingleOneLineExpression(&elementExprs, false))
+		}
+		
+		if ! (mapEntriesFound || setEntriesFound) {
+		    p.stop("zero or more set-element or map-entry expressions on the same line as {, followed by closing squiggly-bracket }")
+        }
+
+        knownToBeMap = mapEntriesFound
+        knownToBeSet = setEntriesFound
+
+/*
+        p.required(p.parseMultipleOneLineMapEntryExpressions(&elementExprs, false) || p.parseSingleOneLineMapEntryExpression(&elementExprs, false),
+                   "zero or more list-element expressions on the same line as {, followed by closing squiggly-bracket }")
+
+		p.required(p.parseMultipleOneLineMapEntryExpressions(&elementExprs, false) || p.parseSingleOneLineMapEntryExpression(&elementExprs, false),
+		           "zero or more list-element expressions on the same line as {, followed by closing squiggly-bracket }")
+*/
+
+        p.required(p.Match1('}'), "closing squiggly-bracket ]")   
+        end = p.Pos()            
+    } else { 
+	     return false // Did not match a map-or-set-specifying squiggly-bracket
+    }
+
+//    col := p.Col()
+    if p.parseTypeSpec(true,false,false,false,&typeSpec) {
+       hasType = true 
+    }
+
+    if hasType {
+	
+       if knownToBeMap {	
+	       p.required(p.Match2(' ','>')," > T : the map's value-type") 
+       } else if knownToBeSet {
+	      if p.Match2(' ','>') {
+		     p.stop("A map literal must contain map entries {a=>b c=>d} not simple elements {a b}")
+	      }
+       } else { // could be either map or set
+	      if p.Match2(' ','>') {	  
+	         knownToBeMap = true
+	      } else {
+		     knownToBeSet = true
+	      }
+	   }
+	   
+	   if knownToBeMap {
+	      p.required(p.Space(),"a space followed by the map value-type specification")
+          p.required(p.parseTypeSpec(true,false,false,false,&valTypeSpec),"the map value-type specification")
+	   }
+    }
+
+
+    if ! hasType { 
+       if emptyMapOrSet { // Oops - no way to infer the element-type constraint
+          p.stop("An empty map/set literal must specify its entry/element type. e.g. {}Widget or {}String > Widget")
+          return false // superfluous when parser is in single-error mode as now
+       }
+
+       // Try to infer the element-type constraint from the statically known types of the arguments.
+
+       // TODO TODO TODO !!!!!!!!!
+       // Once we are doing static type inference and type checking of variables and expressions
+       // we will be able to do this properly when element types are not all the same.  
+
+       if knownToBeMap {
+	       if ! p.crudeTypeInfer(keyExprs, &typeSpec) {
+	          p.stop("Cannot infer key type constraint of map. Specify types for map. e.g. {}String > Widget")
+	       }	 
+	       if ! p.crudeTypeInfer(elementExprs, &valTypeSpec) {
+	          p.stop("Cannot infer value type constraint of map. Specify types for map. e.g. {}String > Widget")
+	       }	
+	   } else { // It's a Set
+	       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
+	          p.stop("Cannot infer element-type constraint of set. Specify element type. e.g. {}Widget")
+	       } 
+       }
+    }
+
+    isSorting := false // TODO allow sorting specifications in empty set/map constructions!!!!
+    isAscending := false 
+    orderFunc := "" 
+
+    if knownToBeMap {
+       collectionTypeSpec = &ast.CollectionTypeSpec{token.MAP,pos,end,isSorting,isAscending,orderFunc}
+    } else {
+       collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isSorting,isAscending,orderFunc}	
+    }
+    typeSpec.CollectionSpec = collectionTypeSpec
+
+    if knownToBeMap {
+	
+		// translate
+		*mapStmt = &ast.MapConstruction{Type:typeSpec, ValType: valTypeSpec, Keys: keyExprs, Elements: elementExprs}	
+	
+   } else {
+    
+	    var queryStringExprs []ast.Expr  // there is only allowed to be one query string
+	    var queryStringExpr ast.Expr
+
+	    st2 := p.State()
+
+	    if p.Space() { // May be arguments
+	       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
+	          queryStringExpr = queryStringExprs[0]
+	       } else {
+		        p.Fail(st2)
+		     }
+	    }
+	
+	    // translate
+	    *setStmt = &ast.SetConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
+	}
+    return true
+}
+
+func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction, setStmt **ast.SetConstruction) bool {
+    if p.trace {
+       defer un(trace(p, "IndentedMapOrSetConstruction"))
+    }
+    // TODO temporary
+    return p.parseOneLineMapOrSetConstruction(mapStmt, setStmt, false)
+}
 
 /*
 If it can, uses the preliminary compile-time type information about the element expressions to 
@@ -3942,7 +4238,7 @@ if expr
 [else
    block]
 */
-func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
+func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "IfStatement"))
     }
@@ -3965,9 +4261,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
 
     blockPos := p.Pos()
 
-    p.required(p.parseIfClauseStatement(&stmtList),"a statement")
+    p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")
     for ; p.BlanksAndIndent(col,true) ; {
-       p.required(p.parseIfClauseStatement(&stmtList),"a statement")	
+       p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")	
     }
 
     // translate
@@ -3992,9 +4288,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
           blockPos = p.Pos()	
 	     
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
+	      p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
 	      for ; p.BlanksAndIndent(col,true) ; {
-	         p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
+	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
 	      }	
 	      st2 = p.State()
 	
@@ -4013,9 +4309,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement) bool {
           blockPos = p.Pos()
 	
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList3),"a statement")	
+	      p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")	
 	      for ; p.BlanksAndIndent(col,true) ; {
-		 	     p.required(p.parseIfClauseStatement(&stmtList3),"a statement")
+		 	     p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
 	      }  
 	
 	      // translate
@@ -4049,7 +4345,7 @@ WhileStatement struct {
 
 
 */
-func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
+func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "WhileStatement"))
     }
@@ -4071,10 +4367,10 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 
     blockPos := p.Pos()
 
-    p.required(p.parseLoopBodyStatement(&stmtList),"a statement")
+    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
 
     for p.BlanksAndIndent(col, true) {
-       p.required(p.parseLoopBodyStatement(&stmtList),"a statement")	
+       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
     }
 
     // translate
@@ -4100,9 +4396,9 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
           blockPos = p.Pos()	
 	     
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
+	      p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
 	      for ; p.BlanksAndIndent(col, true) ; {
-	         p.required(p.parseIfClauseStatement(&stmtList2),"a statement")
+	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
 	      }	
 	      st2 = p.State()
 	
@@ -4125,9 +4421,9 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
           blockPos = p.Pos()
 	
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList3),"a statement")	
+	      p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")	
 	      for ; p.BlanksAndIndent(col,true) ; {
-		 	p.required(p.parseIfClauseStatement(&stmtList3),"a statement")
+		 	p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
 	      }  
 	
 	      // translate
@@ -4182,7 +4478,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement) bool {
 */
 
 
-func (p *parser) parseForStatement(forStmt **ast.ForStatement) bool {
+func (p *parser) parseForStatement(forStmt **ast.ForStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "ForStatement"))
     }
@@ -4241,7 +4537,7 @@ for i val in someList
    statement
    statement
 */
-func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement) bool {
+func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "ForRangeStatement"))
     }
@@ -4310,9 +4606,9 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement) bool {
     
     blockPos := p.Pos()
 
-    p.required(p.parseLoopBodyStatement(&stmtList),"a statement")
+    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
     for ; p.Indent(col) ; {
-       p.required(p.parseLoopBodyStatement(&stmtList),"a statement")	
+       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
     }
 
     // translate

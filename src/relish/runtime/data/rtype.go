@@ -590,6 +590,7 @@ func (rt *RuntimeEnv) CreateType(typeName string, typeShortName string, parentTy
 
 /*
    Create if necessary and return the type representing a set of some element type.
+   THESE ARE ALL WRONG. Should use a single type for all sets with type parameters.
 */
 func (rt *RuntimeEnv) GetSetType(elementType *RType) (typ *RType, err error) {
 	typeName := "Set_of_" + elementType.Name
@@ -603,6 +604,7 @@ func (rt *RuntimeEnv) GetSetType(elementType *RType) (typ *RType, err error) {
 
 /*
    Create if necessary and return the type representing a list of some element type.
+   THESE ARE ALL WRONG. Should use a single type for all lists with type parameters.
 */
 func (rt *RuntimeEnv) GetListType(elementType *RType) (typ *RType, err error) {
 	typeName := "List_of_" + elementType.Name
@@ -610,6 +612,20 @@ func (rt *RuntimeEnv) GetListType(elementType *RType) (typ *RType, err error) {
 	typ, found := rt.Types[typeName]
 	if !found {
 		typ, err = rt.CreateType(typeName, typeShortName, []string{"List"})
+	}
+	return
+}
+
+/*
+   Create if necessary and return the type representing a map from some key type to some value type.
+   THESE ARE ALL WRONG. Should use a single type for all maps with type parameters.
+*/
+func (rt *RuntimeEnv) GetMapType(keyType *RType, valType *RType) (typ *RType, err error) {
+	typeName := "Map_of_(" + keyType.Name + ")=>(" + valType.Name + ")"
+	typeShortName := "Map_of_(" + keyType.ShortName() + ")=>(" + valType.ShortName() + ")"
+	typ, found := rt.Types[typeName]
+	if !found {
+		typ, err = rt.CreateType(typeName, typeShortName, []string{"Map"})
 	}
 	return
 }

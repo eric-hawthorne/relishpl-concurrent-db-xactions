@@ -133,7 +133,17 @@ type Set interface {
 
 type Map interface {
 	RCollection
+	KeyType() *RType
+	ValType() *RType
 	Get(key RObject) (val RObject, found bool)
+	Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int)
+
+	/*
+		This version of the put method does not sort. It assumes that it is being called with key and val objects
+		already known to be simply insertable (at the end of if applicable) the collection.
+		Used by the persistence service. Do not use for general use of the collection.
+	*/
+	PutSimple(key RObject, val RObject) (newLen int)	
 }
 
 /*
@@ -955,8 +965,38 @@ func (o rlist) IsZero() bool {
 	return o.Length() == 0
 }
 
+
+
+
+/*
+   Constructor - decides which kind of map to use depending on the keyType
+*/
+func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll Map, err error) {
+	typ, err := rt.GetMapType(keyType,valType)
+	if err != nil {
+		return nil, err
+	}
+	if maxCardinality == -1 {
+		maxCardinality = MAX_CARDINALITY
+	}
+	switch keyType {
+	case StringType:
+		coll = &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[string]RObject)}	
+	case IntType, Int32Type:
+		coll = &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[int64]RObject)}
+	case UintType, Uint32Type:
+		coll = &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[uint64]RObject)}		
+	default:
+		coll = &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[RObject]RObject)}							
+	}
+
+	return
+}
+
+
 type rstringmap struct {
 	rcollection
+	valType *RType
 	m map[string]RObject
 }
 
@@ -976,6 +1016,8 @@ func (s *rstringmap) Iterable() (interface{},error) {
 }
 
 
+
+
 func (s rstringmap) Length() int64   { return int64(len(s.m)) }
 func (s rstringmap) Cap() int64      { return int64(len(s.m)) * 2 }
 func (s rstringmap) IsMap() bool     { return true }
@@ -988,6 +1030,13 @@ func (o rstringmap) IsZero() bool {
 	return o.Length() == 0
 }
 
+func (s rstringmap) KeyType() *RType {
+	return s.ElementType()
+}
+
+func (s rstringmap) ValType() *RType {
+	return s.valType
+}
 
 func (s *rstringmap) Get(key RObject) (val RObject, found bool) {
 	k := string(key.(String))
@@ -995,8 +1044,24 @@ func (s *rstringmap) Get(key RObject) (val RObject, found bool) {
 	return
 }
 
+func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
+	// TODO
+	return false, 0
+}
+
+/*
+	This version of the put method does not sort. It assumes that it is being called with key and val objects
+	already known to be simply insertable (at the end of if applicable) the collection.
+	Used by the persistence service. Do not use for general use of the collection.
+*/
+func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {
+	    // TODO
+		return 0
+}
+
 type ruint64map struct {
 	rcollection
+	valType *RType	
 	m map[uint64]RObject
 }
 
@@ -1027,10 +1092,33 @@ func (o ruint64map) IsZero() bool {
 	return o.Length() == 0
 }
 
+func (s ruint64map) KeyType() *RType {
+	return s.ElementType()
+}
+
+func (s ruint64map) ValType() *RType {
+	return s.valType
+}
+
 func (s *ruint64map) Get(key RObject) (val RObject, found bool) {
 	k := uint64(key.(Uint))
 	val, found = s.m[k]
 	return
+}
+
+func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
+	// TODO
+	return false, 0
+}
+
+/*
+	This version of the put method does not sort. It assumes that it is being called with key and val objects
+	already known to be simply insertable (at the end of if applicable) the collection.
+	Used by the persistence service. Do not use for general use of the collection.
+*/
+func (s *ruint64map) PutSimple(key RObject, val RObject) (newLen int) {
+	    // TODO
+		return 0
 }
 
 /*
@@ -1038,6 +1126,7 @@ Can I just use a ruint64map and cast the int64 to uint64? probably
 */
 type rint64map struct {
 	rcollection
+	valType *RType	
 	m map[int64]RObject
 }
 
@@ -1068,22 +1157,49 @@ func (o rint64map) IsZero() bool {
 	return o.Length() == 0
 }
 
+func (s rint64map) KeyType() *RType {
+	return s.ElementType()
+}
+
+func (s rint64map) ValType() *RType {
+	return s.valType
+}
+
 func (s *rint64map) Get(key RObject) (val RObject, found bool) {
 	k := int64(key.(Int))
 	val, found = s.m[k]
 	return
 }
 
+
+
+func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
+	// TODO
+	return false, 0
+}
+
+/*
+	This version of the put method does not sort. It assumes that it is being called with key and val objects
+	already known to be simply insertable (at the end of if applicable) the collection.
+	Used by the persistence service. Do not use for general use of the collection.
+*/
+func (s *rint64map) PutSimple(key RObject, val RObject) (newLen int) {
+	    // TODO
+		return 0
+}
+
+
 type rpointermap struct {
 	rcollection
-	m map[*runit]RObject
+	valType *RType	
+	m map[RObject]RObject
 }
 
 func (c *rpointermap) Iter() <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		for key, _ := range c.m {
-			ch <- key.This()
+			ch <- key //.This()
 		}
 		close(ch)
 	}()
@@ -1106,8 +1222,40 @@ func (o rpointermap) IsZero() bool {
 	return o.Length() == 0
 }
 
+func (s rpointermap) KeyType() *RType {
+	return s.ElementType()
+}
+
+func (s rpointermap) ValType() *RType {
+	return s.valType
+}
+
+func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
+	val, found = s.m[key]
+	return
+}
+
+
+func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
+	// TODO
+	return false, 0
+}
+
+/*
+	This version of the put method does not sort. It assumes that it is being called with key and val objects
+	already known to be simply insertable (at the end of if applicable) the collection.
+	Used by the persistence service. Do not use for general use of the collection.
+*/
+func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {
+	    // TODO
+		return 0
+}
+
+
+/*
 func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
 	unit := key.(*runit)
 	val, found = s.m[unit]
 	return
 }
+*/

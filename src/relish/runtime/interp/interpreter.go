@@ -425,6 +425,12 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 
 	case *ast.ListConstruction:
 		i.EvalListConstruction(t, expr.(*ast.ListConstruction))		
+		
+	case *ast.SetConstruction:
+		i.EvalSetConstruction(t, expr.(*ast.SetConstruction))
+		
+	case *ast.MapConstruction:
+		i.EvalMapConstruction(t, expr.(*ast.MapConstruction))				
 	}
 
 }
@@ -789,6 +795,40 @@ func (i *Interpreter) CreateList(elementType *ast.TypeSpec) (List, error) {
    return i.rt.Newrlist(typ, 0, -1, nil, nil)
 }
 
+/*
+Not handling sorting sets yet.
+*/
+func (i *Interpreter) CreateSet(elementType *ast.TypeSpec) (RCollection, error) {
+	// Find the type
+   typ, typFound := i.rt.Types[elementType.Name.Name]
+   if ! typFound {
+      rterr.Stopf("Set Element Type '%s' not found.",elementType.Name.Name)	
+   }
+
+   // TODO sorting-sets
+   return i.rt.Newrset(typ, 0, -1, nil)
+}
+
+/*
+Note it is not really the key type, since the type of the keyType typeSpec has a collectionTypeSpec
+*/
+func (i *Interpreter) CreateMap(keyType *ast.TypeSpec, valType *ast.TypeSpec) (Map, error) {
+	// Find the key and value types
+	
+   keyTyp, typFound := i.rt.Types[keyType.Name.Name]
+   if ! typFound {
+      rterr.Stopf("Map Key Type '%s' not found.",keyType.Name.Name)	
+   }	
+   valTyp, typFound := i.rt.Types[valType.Name.Name]
+   if ! typFound {
+      rterr.Stopf("Map Value Type '%s' not found.",valType.Name.Name)	
+   }
+
+   // TODO sorting-maps
+   return i.rt.Newmap(keyTyp, valTyp, 0, -1, nil, nil)
+}
+
+
 
 /*
 Creates a list, and populates it from explicit element expressions or by executing a SQL query in the database.
@@ -874,6 +914,135 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 	return
 }
 
+
+/*
+Creates a set, and populates it from explicit element expressions or by executing a SQL query in the database.
+Leaves the constructed and possibly populated set as the top of the stack.
+
+// EGH A SetConstruction node represents a set constructor invocation, which may be a set literal, a new empty set of a type, or
+// a set with a db sql query where clause specified as the source of set members.
+
+SetConstruction struct {
+    Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Set.
+	Elements  []Expr    // explicitly listed elements; or nil        
+	Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
+	                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
+}
+*/
+func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetConstruction) {
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalSetConstruction"))
+
+    set, err := i.CreateSet(setConstruction.Type)
+    if err != nil {
+	   panic(err)
+    }
+    t.Push(set)
+
+   nElem := len(setConstruction.Elements)
+   if nElem > 0 {
+		for _, expr := range setConstruction.Elements {
+			i.EvalExpr(t, expr)
+		}	
+		
+       err = i.rt.ExtendCollectionTypeChecked(set, t.TopN(nElem), t.EvalContext) 	
+       if err != nil {
+	      rterr.Stop(err)
+       }		
+
+       t.PopN(nElem)
+	
+   } else if setConstruction.Query != nil { // Database select query to fill the list
+	  // TODO
+	
+	
+	  // TODO Why can't we do this query syntax transformation at generation time, so we only do it
+	  // once per occurrence in the program text, as long as it is a literal string.
+	  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	  //
+			
+	  i.EvalExpr(t, setConstruction.Query)
+	
+	  qExpr := t.Pop()	
+	
+	  qS,isString := qExpr.(String)
+	  if ! isString {
+	     rterr.Stop("Query expression used in set construction must evaluate to a String.")	
+	  }
+	  query := string(qS)
+	  radius := 1
+	  if strings.HasPrefix(query, "lazy: ") {
+		 query = query[6:]
+	     radius = 0	 
+	  }
+
+	
+	  objs := []RObject{} // TODO Use the existing List's RVector somehow
+	
+	  // objs := list.Vector().(*[]RObject)
+	
+//	  rv := list.Vector()
+//      objs := (*[]RObject)(rv)
+
+
+	
+
+      err = i.rt.DB().FetchN(set.ElementType(), query, radius, &objs)		
+      if err != nil {
+	      rterr.Stop(err)
+      }	
+
+      aSet := set.(AddableCollection)
+      for _,obj := range objs {
+		 aSet.Add(obj, t.EvalContext) 
+      }
+
+
+      // fmt.Println(len(*objs))
+
+   }
+	return
+}
+
+
+
+/*
+Creates a map, and populates it from explicit entry expressions. 
+Leaves the constructed and possibly populated map as the top of the stack.
+
+MapConstruction struct {
+    Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Map.
+    ValType *TypeSpec     // Type of the values
+    Keys []Expr         // explicitly listed keys; or nil
+	Elements  []Expr    // explicitly listed elements; or nil        
+}
+
+*/
+func (i *Interpreter) EvalMapConstruction(t *Thread, mapConstruction *ast.MapConstruction) {
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalMapConstruction"))
+
+    theMap, err := i.CreateMap(mapConstruction.Type, mapConstruction.ValType)
+    if err != nil {
+	   panic(err)
+    }
+    t.Push(theMap)
+
+   nElem := len(mapConstruction.Elements)
+   if nElem > 0 {
+		for j, valExpr := range mapConstruction.Elements {
+			i.EvalExpr(t, mapConstruction.Keys[j])
+			i.EvalExpr(t, valExpr)
+		}	
+		
+       err = i.rt.ExtendMapTypeChecked(theMap, t.TopN(nElem *2), t.EvalContext) 	
+       if err != nil {
+	      rterr.Stop(err)
+       }		
+
+       t.PopN(nElem * 2)
+	}
+ 
+	return
+}
 
 
 
