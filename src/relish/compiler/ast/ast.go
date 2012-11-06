@@ -382,12 +382,18 @@ type (
 		Sel *Ident // field selector
 	}
 
-	// An IndexExpr node represents an expression followed by an index.
+	// An IndexExpr node represents an expression followed by [ index ].
+	//
+	// This variant, [?index], for maps, returns whether the value is in the map
+	// This variant, [index?], for maps, returns the value or a zero value, and whether the value is in the map
+	//
 	IndexExpr struct {
 		X      Expr      // expression
 		Lbrack token.Pos // position of "["
 		Index  Expr      // index expression
 		Rbrack token.Pos // position of "]"
+		AssertExists bool  // the expression explicitly asserts that the value or a zero value is to be returned even if not found in map
+		AskWhether bool // the expression is supposed to return just whether the key is in the map
 	}
 
 	// An SliceExpr node represents an expression followed by slice indices.

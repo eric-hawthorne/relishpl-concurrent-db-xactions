@@ -420,8 +420,7 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 		i.EvalSelectorExpr(t, expr.(*ast.SelectorExpr))
 
 	case *ast.IndexExpr:
-		isLHS := false // Hmmm - need to pass through from arg to EvalExpr
-		i.EvalIndexExpr(t, expr.(*ast.IndexExpr), isLHS)
+		i.EvalIndexExpr(t, expr.(*ast.IndexExpr))
 
 	case *ast.ListConstruction:
 		i.EvalListConstruction(t, expr.(*ast.ListConstruction))		
@@ -439,56 +438,82 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 /*
    someExpr[indexExpr]
 
-   If isLHS (i.e. is left-hand-side expr), leaves the collection below the index on the stack (Ready to have the indexed-location in collection be assigned to.)
-   Otherwise, applies the index to the collection and leaves on the stack the value found at the index.
+  Evaluates someExpr to yield a collection or map. Evaluates the index exprssion to yield the index or key.
+  Applies the index/key to the collection/map and leaves on the stack the value found at the index/key.
+
+    val = list1[2]
+
+    val = map1[! "Four"]        // return val stored under key or zero-val/nil
+    val found = map1["Four"]  // return val stored under key, or zero-val/nil, and also whether key is found in the map
+    found = map1[? "Four"]    // query as to whether the key is found in the map.  
 */
-func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr, isLHS bool) {
+func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 	defer UnM(t,TraceM(t,INTERP_TR3, "EvalIndexExpr"))
 
-    var val RObject
+   var val RObject
 
-	i.EvalExpr(t, idxExpr.X) // Evaluate the left part of the index expression.		      
+   i.EvalExpr(t, idxExpr.X) // Evaluate the left part of the index expression.		      
 
-	i.EvalExpr(t, idxExpr.Index) // Evaluate the inside-square-brackets part of the index expression.		
+   i.EvalExpr(t, idxExpr.Index) // Evaluate the inside-square-brackets part of the index expression.		
 
-    if ! isLHS {
-       obj := t.Stack[t.Pos-1]  // the object to be indexed into
-       idx := t.Stack[t.Pos]    	
-	    switch idx.(type) {
-	    case Int:
 
-		   coll,isOrderedCollection := obj.(OrderedCollection)       // the collection whose element value is going to be fetched.
-		   if ! isOrderedCollection {
-			  rterr.Stop("Attempt to apply [ ] (index operator) to a non-collection or un-indexable collection. Must be a list or map.")
-		   }      	
+   obj := t.Stack[t.Pos-1]  // the object to be indexed into
+   idx := t.Stack[t.Pos]    	
 
-		   i := int(idx.(Int))   
+   collection,isCollection := obj.(RCollection)
+   if ! isCollection {
+		rterr.Stopf("[ ] (access by index/key) applies to a collection or map; not to an object of type %v. ", obj.Type())
+   }
 
-	       val = coll.At(i)
+   if collection.IsOrdered() {
+        coll := collection.(OrderedCollection)
+        var ix int
+        switch idx.(type) {
+        case Int:
+        	ix = int(int64(idx.(Int)))
+        case Int32:
+        	ix = int(int32(idx.(Int32)))
+        case Uint:
+        	ix = int(uint64(idx.(Uint)))                    	                    
+        case Uint32:
+        	ix = int(uint32(idx.(Uint32)))
+        default:
+		   rterr.Stop("Index value must be an Integer")
+		}
+        val = coll.At(ix)
 
-	    case Int32:
+        if val == nil {
+        	val = collection.ElementType().Zero()
+        }
 
-		   coll,isOrderedCollection := obj.(OrderedCollection)       // the collection whose element value is going to be fetched.
-		   if ! isOrderedCollection {
-			  rterr.Stop("Attempt to apply [ ] (index operator) to a non-collection or un-indexable collection. Must be a list or map.")
-		   } 
+        t.PopN(2) // Pop off the collection and its index
+	    t.Push(val)        
 
-		   i := int(idx.(Int32))
+   } else if collection.IsMap() {
 
-	       val = coll.At(i)
+   	   var found bool
+   	   theMap := collection.(Map)
+       val,found = theMap.Get(idx) 
 
-	    case String:
-	    	rterr.Stop("Sorry. Not handling map index expressions yet.")
+        t.PopN(2) // Pop off the collection and its index
 
-	    	// Need to cast obj to Map
+        if idxExpr.AskWhether {
+           t.Push(Bool(found))
+        } else {
 
-	    default:
-	    	rterr.Stop("Sorry. Not handling map index expressions yet.")
-	    }
+           if val == nil {
+        	  val = theMap.ValType().Zero()
+           }
 
-	    t.PopN(2) // Pop off the collection and its index
-		t.Push(val)
-	}
+	       t.Push(val)  
+	       if ! idxExpr.AssertExists {
+        	  t.Push(Bool(found))
+	       }
+	    }        
+
+   } else {
+		rterr.Stopf("[ ] (access by index/key) applies to an ordered collection or a map; not to a %v. ", obj.Type())
+   }
 }
 
 
@@ -1932,8 +1957,136 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					panic("Unrecognized assignment operator")
 				}
 
+			case *ast.IndexExpr:
+				indexExpr := lhsExpr.(*ast.IndexExpr)
+				i.EvalExpr(t, indexExpr.X) // Evaluate the left part of the index expression.		
+				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.					 
+				idx := t.Pop()       // the index or map key			     
+				assignee := t.Pop()       // the robject whose attribute is being assigned to. OrderedCollection or Map
+
+				collection,isCollection := assignee.(RCollection)
+				if ! isCollection {
+					rterr.Stopf("Cannot [index] into a non-collection of type %v.", assignee.Type())
+				}
+
+				if collection.IsIndexSettable() {
+                    coll := collection.(IndexSettable)
+                    var ix int
+                    switch idx.(type) {
+                    case Int:
+                    	ix = int(int64(idx.(Int)))
+                    case Int32:
+                    	ix = int(int32(idx.(Int32)))
+                    case Uint:
+                    	ix = int(uint64(idx.(Uint)))                    	                    
+                    case Uint32:
+                    	ix = int(uint32(idx.(Uint32)))
+                    default:
+					   rterr.Stop("Index value must be an Integer")
+					}
+
+					switch stmt.Tok {
+					case token.ASSIGN:
+					   // No problem
+					case token.ADD_ASSIGN:
+						rterr.Stop("[index] += val  is not supported yet.")
+					case token.SUB_ASSIGN:
+						rterr.Stop("[index] -= val  is not supported yet.")
+					default:
+						panic("Unrecognized assignment operator")
+					}	
+
+					coll.Set(ix,t.Pop())	
+
+/* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
+					switch stmt.Tok {
+					case token.ASSIGN:
+						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						if err != nil {
+							if strings.Contains(err.Error()," a value of type ") {
+								rterr.Stop(err)
+							} 
+							panic(err)
+						}
+					case token.ADD_ASSIGN:
+						err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						if err != nil {
+							if strings.Contains(err.Error()," a value of type ") {
+								rterr.Stop(err)
+							} 					
+							panic(err)
+						}
+					case token.SUB_ASSIGN:
+						// TODO TODO	
+						err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
+						if err != nil {
+							panic(err)
+						}
+					default:
+						panic("Unrecognized assignment operator")
+					}	
+*/
+
+
+				} else if collection.IsMap() {
+
+					switch stmt.Tok {
+					case token.ASSIGN:
+					   // No problem
+					case token.ADD_ASSIGN:
+						rterr.Stop("[Key] += val  is not supported yet.")
+					case token.SUB_ASSIGN:
+						rterr.Stop("[Key] -= val  is not supported yet.")
+					default:
+						panic("Unrecognized assignment operator")
+					}			
+
+                    theMap := collection.(Map)
+	                theMap.Put(idx, t.Pop(), t.EvalContext) 
+
+	
+/* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
+					switch stmt.Tok {
+					case token.ASSIGN:
+						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						if err != nil {
+							if strings.Contains(err.Error()," a value of type ") {
+								rterr.Stop(err)
+							} 
+							panic(err)
+						}
+					case token.ADD_ASSIGN:
+						err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						if err != nil {
+							if strings.Contains(err.Error()," a value of type ") {
+								rterr.Stop(err)
+							} 					
+							panic(err)
+						}
+					case token.SUB_ASSIGN:
+						// TODO TODO	
+						err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
+						if err != nil {
+							panic(err)
+						}
+					default:
+						panic("Unrecognized assignment operator")
+					}	
+*/
+
+				} else {
+					if collection.IsList() { // Must be a sorting list
+					   rterr.Stop("Cannot set element at [index] of a sorting list.")	
+					} 				
+					rterr.Stopf("Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
+				}
+
+
+
+			
+
 			default:
-				rterr.Stop("I only handle simple variable or attribute assignments currently. Not indexed ones.")
+				rterr.Stop("Left-hand side expr must be variable, attribute, or indexed position in map/collection.")
 
 			}       
 	    }

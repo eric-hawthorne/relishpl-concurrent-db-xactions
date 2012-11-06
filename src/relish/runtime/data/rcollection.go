@@ -13,6 +13,7 @@ package data
 import (
 	"fmt"
 	"sort"
+	"relish/rterr"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -64,6 +65,12 @@ type RCollection interface {
 	// when iterated over in order of their sequential indexed position.
 
 	IsSorting() bool // true if the collection has a defined sort order other index-position.
+    IsInsertable() bool // true if the ordered collection supports inserting an element at an integer index
+         // Note: Presently, only a List which is not sorting is insertable    
+    IsIndexSettable() bool // true if the ordered collection supports setting the value of the ith element.
+         // Note: Presently, only a List which is not sorting is index settable
+
+
 	IsCardOk() bool  // Is my current cardinality within my cardinality constraints?
 	Owner() RObject  // if non-nil, this collection is the implementation of a multi-valued attribute.
 	// Returns an iterator that yields the objects in the collection. A Map iterator returns the keys.
@@ -146,6 +153,29 @@ type Map interface {
 	PutSimple(key RObject, val RObject) (newLen int)	
 }
 
+type Insertable interface {
+	RCollection
+	Insert(i int, val RObject) (newLen int)
+}
+
+type IndexSettable interface {
+	RCollection
+	Set(i int, val RObject) 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 func (c *container) Iter () <-chan item {
     ch := make(chan item);
@@ -221,6 +251,14 @@ func (c rcollection) ElementType() *RType {
 */
 func (c rcollection) Owner() RObject {
 	return c.owner
+}
+
+func (c rcollection) IsInsertable() bool {
+   return false  // default, override in sub-types
+}
+
+func (c rcollection) IsIndexSettable() bool {
+   return false  // default, override in sub-types
 }
 
 /*
@@ -732,6 +770,40 @@ func (s *rlist) Vector() *RVector {
 	return s.v
 }
 
+
+/*
+Insert the element at the specified index. Shift elements from that index on to have
+the next higher index.
+TODO: DOES NOT HANDLE PERSISTENCE YET !!!!
+*/
+func (s *rlist)	Insert(i int, val RObject) (newLen int) {
+	if s.IsSorting() {
+        rterr.Stop("Cannot insert at specified index into a sorting list.")				
+	}
+	if s.v == nil {
+		if i != 0 {
+           rterr.Stopf("Error in list-element insert: index %d is out of range.",i)			
+		}
+		newLen = s.AddSimple(val)
+	} else {
+       s.v.Insert(i, val)
+       newLen = len(*(s.v))
+	}
+	return
+}
+
+/*
+Set the element at index i to be the specified value.
+Note: It is illegal to call this on a IsSorting() == true list. Not enforced. Watch out!
+*/
+func (s *rlist) Set(i int, val RObject) {
+   if s.v == nil {
+      rterr.Stopf("Error in list-element set: index %d is out of range.",i)
+   }
+   s.v.Set(i, val)
+}
+
+
 func (s *rlist) ReplaceContents(objs []RObject) {
 	var rv RVector = RVector(objs)
 	s.v = &rv
@@ -790,6 +862,14 @@ func (s *rlist) At(i int) RObject {
 		(*(s.v))[i] = obj		
 	}
 	return obj
+}
+
+func (s *rlist) IsInsertable() bool {
+   return ! s.IsSorting()
+}
+
+func (s *rlist) IsIndexSettable() bool {
+    return ! s.IsSorting()
 }
 
 func (s *rlist) Len() int {
@@ -1045,8 +1125,13 @@ func (s *rstringmap) Get(key RObject) (val RObject, found bool) {
 }
 
 func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	// TODO
-	return false, 0
+	
+	k := string(key.(String))	
+	_,found := s.m[k] 
+	added = ! found
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
 
 /*
@@ -1055,8 +1140,10 @@ func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationConte
 	Used by the persistence service. Do not use for general use of the collection.
 */
 func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {
-	    // TODO
-		return 0
+	k := string(key.(String))	
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
 
 type ruint64map struct {
@@ -1101,14 +1188,42 @@ func (s ruint64map) ValType() *RType {
 }
 
 func (s *ruint64map) Get(key RObject) (val RObject, found bool) {
-	k := uint64(key.(Uint))
+    var k uint64
+	switch key.(type) {
+	   case Uint:	
+	      k = uint64(key.(Uint))
+       case Uint32:
+	      k = uint64(uint32(key.(Uint32)))
+	   case Int:	
+	      k = uint64(int64(key.(Int)))
+       case Int32:
+	      k = uint64(int32(key.(Int32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
 	val, found = s.m[k]
 	return
 }
 
 func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	// TODO
-	return false, 0
+    var k uint64
+	switch key.(type) {
+	   case Uint:	
+	      k = uint64(key.(Uint))
+       case Uint32:
+	      k = uint64(uint32(key.(Uint32)))
+	   case Int:	
+	      k = uint64(int64(key.(Int)))
+       case Int32:
+	      k = uint64(int32(key.(Int32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
+	_,found := s.m[k] 
+	added = ! found
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
 
 /*
@@ -1117,9 +1232,39 @@ func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationConte
 	Used by the persistence service. Do not use for general use of the collection.
 */
 func (s *ruint64map) PutSimple(key RObject, val RObject) (newLen int) {
-	    // TODO
-		return 0
+    var k uint64
+	switch key.(type) {
+	   case Uint:	
+	      k = uint64(key.(Uint))
+       case Uint32:
+	      k = uint64(uint32(key.(Uint32)))
+	   case Int:	
+	      k = uint64(int64(key.(Int)))
+       case Int32:
+	      k = uint64(int32(key.(Int32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
 Can I just use a ruint64map and cast the int64 to uint64? probably
@@ -1166,16 +1311,42 @@ func (s rint64map) ValType() *RType {
 }
 
 func (s *rint64map) Get(key RObject) (val RObject, found bool) {
-	k := int64(key.(Int))
+    var k int64
+	switch key.(type) {
+	   case Int:	
+	      k = int64(key.(Int))
+       case Int32:
+	      k = int64(int32(key.(Int32)))
+	   case Uint:	
+	      k = int64(uint64(key.(Uint)))
+       case Uint32:
+	      k = int64(uint32(key.(Uint32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
 	val, found = s.m[k]
 	return
 }
 
-
-
 func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	// TODO
-	return false, 0
+    var k int64
+	switch key.(type) {
+	   case Int:	
+	      k = int64(key.(Int))
+       case Int32:
+	      k = int64(int32(key.(Int32)))
+	   case Uint:	
+	      k = int64(uint64(key.(Uint)))
+       case Uint32:
+	      k = int64(uint32(key.(Uint32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
+	_,found := s.m[k] 
+	added = ! found
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
 
 /*
@@ -1184,8 +1355,22 @@ func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContex
 	Used by the persistence service. Do not use for general use of the collection.
 */
 func (s *rint64map) PutSimple(key RObject, val RObject) (newLen int) {
-	    // TODO
-		return 0
+    var k int64
+	switch key.(type) {
+	   case Int:	
+	      k = int64(key.(Int))
+       case Int32:
+	      k = int64(int32(key.(Int32)))
+	   case Uint:	
+	      k = int64(uint64(key.(Uint)))
+       case Uint32:
+	      k = int64(uint32(key.(Uint32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
+    s.m[k] = val
+    newLen = len(s.m)
+    return
 }
 
 
@@ -1237,8 +1422,11 @@ func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
 
 
 func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	// TODO
-	return false, 0
+	_,found := s.m[key] 
+	added = ! found
+    s.m[key] = val
+    newLen = len(s.m)
+    return
 }
 
 /*
@@ -1247,8 +1435,9 @@ func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationCont
 	Used by the persistence service. Do not use for general use of the collection.
 */
 func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {
-	    // TODO
-		return 0
+    s.m[key] = val
+    newLen = len(s.m)
+    return
 }
 
 

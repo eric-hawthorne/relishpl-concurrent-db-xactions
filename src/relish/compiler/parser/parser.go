@@ -4195,6 +4195,16 @@ func (p *parser) parseIndentedIndexExpression(exprSoFar ast.Expr, x *ast.Expr) b
     if ! p.Match1('[') {
        return false
     }
+
+    askWhether := false
+
+    assertExists := p.Match1('!')
+    if ! assertExists {
+       if p.Match1('?') {
+          askWhether = true
+       }
+    }
+
     if ! p.Indent(col) {
 	   return p.Fail(st)
 	}
@@ -4206,7 +4216,7 @@ func (p *parser) parseIndentedIndexExpression(exprSoFar ast.Expr, x *ast.Expr) b
     rBracketPos := p.Pos()
     p.required(p.Match1(']'),"] below [") 
 
-    *x = &ast.IndexExpr{exprSoFar,lBracketPos, *x, rBracketPos}
+    *x = &ast.IndexExpr{exprSoFar,lBracketPos, *x, rBracketPos, assertExists, askWhether}
 
     return true
 }
@@ -4220,11 +4230,24 @@ func (p *parser) parseOneLineIndexExpression(exprSoFar ast.Expr, x *ast.Expr) bo
     if ! p.Match1('[') {
 	   return false
     }
+
+    askWhether := false
+
+    assertExists := p.Match1('!')
+    if ! assertExists {
+       if p.Match1('?') {
+          askWhether = true
+       }
+    }
+    if assertExists || askWhether {
+        p.required(p.Space(),"a space, followed by the index expression")
+    }
+
     p.required(p.parseOneLineExpression(x,false,false),"an expression")
     rBracketPos := p.Pos()
     p.required(p.Match1(']'),"']'")
 
-    *x = &ast.IndexExpr{exprSoFar,lBracketPos, *x, rBracketPos}
+    *x = &ast.IndexExpr{exprSoFar,lBracketPos, *x, rBracketPos, assertExists, askWhether}
 
     return true
 }
@@ -6000,7 +6023,7 @@ func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
 	if isSlice {
 		return &ast.SliceExpr{x, lbrack, low, high, rbrack}
 	}
-	return &ast.IndexExpr{x, lbrack, low, rbrack}
+	return &ast.IndexExpr{x, lbrack, low, rbrack, false, false}
 }
 
 func (p *parser) parseCallOrConversion(fun ast.Expr) *ast.CallExpr {

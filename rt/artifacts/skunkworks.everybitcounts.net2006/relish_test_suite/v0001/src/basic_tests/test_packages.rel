@@ -195,9 +195,28 @@ main
    //   map2["tres"] = map1["Three"]
    //   map2["doux"] = map1["Two"]
    //   
-   //   wh found = map1["Four"?] // returns the mapped element or nil, plus whether the key was found
+   //   wh = map[!"Four"]
+   //   wh found = map1["Four"] // returns the mapped element or nil, plus whether the key was found
    //
    //   found = map1[?"Four"]  // query as to whether the key is found in the map.
+
+   wheelFourFound = map1[? "Four"]
+   print "map1[? \"Four\"] =" wheelFourFound
+   print map1[! "Three"].num
+   for key in map1
+      print key
+   for key val in map1
+      print key val.num
+
+   wh2 found = map1["Two"]
+   print wh2.num found
+
+   wh2 found = map1["two"]
+   print wh2 found   
+
+   map1["Four"] = wheel4
+
+   print map1[! "Four"].num
 
    a = """
 This is the very first

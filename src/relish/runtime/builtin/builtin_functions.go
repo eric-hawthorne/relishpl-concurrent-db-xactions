@@ -789,6 +789,40 @@ replace s String old String new String n Int > String
 	capMethod.PrimitiveCode = builtinCap	
 
 
+/*
+	slice s List of T start Int end Int > List of T
+
+	One idea: Can we have shared-array slice operators AND copy slice operators?
+
+	Cannot proceed with these things overall til sort our parameterized types.
+
+    listSlice2Method, err := RT.CreateMethod("","slice", []string{"s", "start"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	listSlice2Method.PrimitiveCode = builtinListSlice	
+	
+    listSlice3Method, err := RT.CreateMethod("","slice", []string{"s", "start", "end"}, []string{"List_of_Any", "Int", "Int"}, []string{"List_of_Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	listSlice3Method.PrimitiveCode = builtinListSlice	
+	
+    listFirstMethod, err := RT.CreateMethod("","first", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	listFirstMethod.PrimitiveCode = builtinListFirst	
+	
+    listLastMethod, err := RT.CreateMethod("","last", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	listLastMethod.PrimitiveCode = builtinListLast		
+
+*/
+
+
     ///////////////////////////////////////////////////////////////////
     // Concurrency functions	
 
