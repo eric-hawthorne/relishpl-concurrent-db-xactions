@@ -1876,7 +1876,9 @@ func (p *parser) parseReturnArgsOnlySignature(col int, methodDecl *ast.MethodDec
 		if p.parseOneLineReturnArgSignature(funcType) {
 			foundReturnArgSignature = true
 		} else {
-			p.Fail(st)
+			if ! (p.Space() || p.Match1('\n')) {
+         p.Fail(st)
+      }
 		}
 	}
 	if ! foundReturnArgSignature {
@@ -2813,6 +2815,18 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
      return true
     }
 
+    var mpcs *ast.MapConstruction
+    var scs *ast.SetConstruction
+    if p.parseIndentedMapOrSetConstruction(&mpcs,&scs) {
+     //translate
+     if mpcs != nil {
+        *x = mpcs
+     } else {
+        *x = scs
+     } 
+     return true     
+    }    
+
     return false
 }
 
@@ -2920,6 +2934,81 @@ func (p *parser) parseOneLineMapEntryExpressions(keys *[]ast.Expr, vals *[]ast.E
     }
     p.Fail(st2)
     return true
+}
+
+
+
+/*
+May be only one expression, but must be indented below the current line.
+*/
+func (p *parser) parseIndentedMapEntryExpressions(col int, keys *[]ast.Expr, vals *[]ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "IndentedMapEntryExpressions"))
+    }
+
+    st := p.State()
+
+    isOneOfMultiple := false
+    isInsideBrackets := false
+
+    if ! p.Indent(col) {
+     return false
+    }
+
+    var arrowCol int
+
+    var key ast.Expr
+    if ! p.parseOneLineExpression(&key, isOneOfMultiple, isInsideBrackets) { 
+     return p.Fail(st)
+    }
+    if ! p.Space() {
+      p.required( ! p.Match2('=','>'),"one or more spaces followed by =>")
+      return p.Fail(st)
+    }
+    for p.Space() {  // continue til not a space
+    }
+
+    arrowCol = p.Col()
+
+    if ! p.Match2('=','>') {
+      return p.Fail(st)
+    }
+
+    var val ast.Expr
+    p.required(p.Space() && p.parseExpression(&val),"a space then a value expression to be put in the map") 
+
+    // translate
+    *keys = nil
+    *keys = append(*keys,key)
+    *vals = nil
+    *vals = append(*vals,val)
+
+    for  p.Indent(col)  {
+       p.required(p.parseOneLineExpression(&key, isOneOfMultiple, isInsideBrackets),"a key expression")
+  
+       // translate
+       *keys = append(*keys,key)  
+  
+       for p.Space() {  // continue til not a space
+       }  
+       arrowFoundAtCol := p.Col()
+       if arrowFoundAtCol != arrowCol {
+          if p.Ch() == '=' {
+             p.stop("All =>'s must be lined up vertically below each other")            
+          } else {
+             p.required(false, "=> and a value expression to be put in the map")             
+          }
+
+       }
+       p.required(p.Match2('=','>'), "=> and a value expression to be put in the map") 
+
+       var val ast.Expr
+       p.required(p.Space() && p.parseExpression(&val),"a space then a value expression to be put in the map") 
+  
+       // translate
+       *vals = append(*vals,val)  
+    }
+    return true    
 }
 
 
@@ -3848,173 +3937,188 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
     }
 
     st := p.State()
-	pos := p.Pos()
-	var end token.Pos
+  	pos := p.Pos()
+  	var end token.Pos
 
-	var typeSpec *ast.TypeSpec
-	var valTypeSpec *ast.TypeSpec
+  	var typeSpec *ast.TypeSpec
+  	var valTypeSpec *ast.TypeSpec
 
-	var collectionTypeSpec *ast.CollectionTypeSpec
+  	var collectionTypeSpec *ast.CollectionTypeSpec
 
-	var keyExprs []ast.Expr
-	var elementExprs []ast.Expr    
+  	var keyExprs []ast.Expr
+  	var elementExprs []ast.Expr    
 
-	emptyMapOrSet := false
-	hasType := false
-	knownToBeMap := false
-	knownToBeSet := false
-	mapEntriesFound := false
-	setEntriesFound := false
+  	emptyMapOrSet := false
+  	hasType := false
+  	knownToBeMap := false
+  	knownToBeSet := false
+  	mapEntriesFound := false
+  	setEntriesFound := false
 
-	if p.Match2('{','}') {
-	    end = p.Pos()
-	    emptyMapOrSet = true
-	} else if p.Match1('{') {
+  	if p.Match2('{','}') {
+  	    end = p.Pos()
+  	    emptyMapOrSet = true
+  	} else if p.Match1('{') {
 
-       // Get the list of expressions inside the map or set literal squiggly-brackets
+        // Get the list of expressions inside the map or set literal squiggly-brackets
         // Note that one of these must exist, because it is not {}
 
-        mapEntriesFound = p.parseIndentedeMapEntryExpressions(st.RuneColumn, &keyExprs, &elementExprs) 
+        mapEntriesFound = p.parseIndentedMapEntryExpressions(st.RuneColumn, &keyExprs, &elementExprs) 
 
         if ! mapEntriesFound { 
-			setEntriesFound = p.parseIndentedExpressions(st.RuneColumn, &elementExprs)
-		}
+  			   setEntriesFound = p.parseIndentedExpressions(st.RuneColumn, &elementExprs)
+  		  }
 
         if mapEntriesFound || setEntriesFound {
-            p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {") 
+           p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {") 
         }
-		
-
-
+  		
         knownToBeMap = mapEntriesFound
         knownToBeSet = setEntriesFound
 
-	    if ! (mapEntriesFound || setEntriesFound) {
-	    
-	        mapEntriesFound = p.parseOneLineMapEntryExpressions(&keyExprs, &elementExprs) 
+  	    if ! (mapEntriesFound || setEntriesFound) {
+  	    
+  	      mapEntriesFound = p.parseOneLineMapEntryExpressions(&keyExprs, &elementExprs) 
 
-		    if ! mapEntriesFound { 
-				setEntriesFound = (p.parseMultipleOneLineExpressions(&elementExprs, false) || 
-				                   p.parseSingleOneLineExpression(&elementExprs, false))
-				
-				if setEntriesFound {
-		            p.required(p.Match1('}'), "closing squiggly-bracket }")  
-				}
-			}
-	    }
+  		    if ! mapEntriesFound { 
+  				   setEntriesFound = (p.parseMultipleOneLineExpressions(&elementExprs, false) || 
+  				                      p.parseSingleOneLineExpression(&elementExprs, false))
+  				}
+  			  if mapEntriesFound || setEntriesFound {
+  		          p.required(p.Match1('}'), "closing squiggly-bracket }")  
+  				}
+  	    }
 
-		p.required(mapEntriesFound || setEntriesFound, "zero or more set-element or map-entry expressions, followed by closing squiggly-bracket }")
+  		  p.required(mapEntriesFound || setEntriesFound, "zero or more set-element or map-entry expressions, followed by closing squiggly-bracket }")
 
-	    knownToBeMap = mapEntriesFound
-	    knownToBeSet = setEntriesFound
+  	    knownToBeMap = mapEntriesFound
+  	    knownToBeSet = setEntriesFound
 
         end = p.Pos()            
-    } else { 
-       return false // Did not match a list-specifying square-bracket
-    }
+      } else { 
+         return false // Did not match a list-specifying square-bracket
+      }
 
--------------
-	if p.parseTypeSpec(true,false,false,false,&typeSpec) {
-	   hasType = true 
-	}
+    typeCol := p.Col()
+  	if p.parseTypeSpec(true,false,false,false,&typeSpec) {
+  	   hasType = true 
+  	}
 
-	if hasType {
+  	if hasType {
+       foundTypeRelation := false
+       horizontalTypeRelationLayout := false
+  	   if knownToBeMap {	
+           foundTypeRelation = p.Match2(' ','>')
+           if foundTypeRelation {
+               horizontalTypeRelationLayout = true
+           } else {  // look for vertical
+               if p.Below(typeCol) {
+                  p.required(p.Match1('>'),"> T : the map's value-type")
+                  foundTypeRelation = true
+               }
+           }
+  	       p.required(foundTypeRelation," > T : the map's value-type") 
+  	   } else if knownToBeSet {
+  	      if p.Match2(' ','>') {
+  		     p.stop("A map literal must contain map entries {a=>b c=>d} not simple elements {a b}")
+  	      }
+  	   } else { // could be either map or set
+  	      if p.Match2(' ','>') {	  
+  	         knownToBeMap = true
+             foundTypeRelation = true
+             horizontalTypeRelationLayout = true
+          } else if p.Below(typeCol) {
+             p.required(p.Match1('>'),"> T : the map's value-type")
+             knownToBeMap = true           
+             foundTypeRelation = true        
+          } else {
+  		     knownToBeSet = true
+  	      }
+  	   }
+     
+  	   if knownToBeMap {
+          if horizontalTypeRelationLayout {
+  	         p.required(p.Space(),"a space followed by the map value-type specification")
+             p.required(p.parseTypeSpec(true,false,false,false,&valTypeSpec),"the map value-type specification")           
+          } else { // vertical layout 
+             foundValType := false
+             if p.Space() {
+                if p.parseTypeSpec(true,false,false,false,&valTypeSpec) {
+                   foundValType = true
+                } else {
+                   p.required(p.Space() || (p.Ch()  == '\n'),"the map value-type specification")
+                }
+             }
+             if ! foundValType {
+                p.required(p.Indent(typeCol) && p.parseTypeSpec(true,false,false,false,&valTypeSpec),
+                           "the map value-type specification, after a space or indented on next line")                                        
+             } 
+          }  
+  	   }
+  	}
 
-	   if knownToBeMap {	
-	       p.required(p.Match2(' ','>')," > T : the map's value-type") 
-	   } else if knownToBeSet {
-	      if p.Match2(' ','>') {
-		     p.stop("A map literal must contain map entries {a=>b c=>d} not simple elements {a b}")
-	      }
-	   } else { // could be either map or set
-	      if p.Match2(' ','>') {	  
-	         knownToBeMap = true
-	      } else {
-		     knownToBeSet = true
-	      }
-	   }
-   
-	   if knownToBeMap {
-	      p.required(p.Space(),"a space followed by the map value-type specification")
-	      p.required(p.parseTypeSpec(true,false,false,false,&valTypeSpec),"the map value-type specification")
-	   }
-	}
+  	if ! hasType { 
+  	   if emptyMapOrSet { // Oops - no way to infer the element-type constraint
+  	      p.stop("An empty map/set literal must specify its entry/element type. e.g. {}Widget or {}String > Widget")
+  	      return false // superfluous when parser is in single-error mode as now
+  	   }
 
-	if ! hasType { 
-	   if emptyMapOrSet { // Oops - no way to infer the element-type constraint
-	      p.stop("An empty map/set literal must specify its entry/element type. e.g. {}Widget or {}String > Widget")
-	      return false // superfluous when parser is in single-error mode as now
-	   }
+  	   // Try to infer the element-type constraint from the statically known types of the arguments.
 
-	   // Try to infer the element-type constraint from the statically known types of the arguments.
+  	   // TODO TODO TODO !!!!!!!!!
+  	   // Once we are doing static type inference and type checking of variables and expressions
+  	   // we will be able to do this properly when element types are not all the same.  
 
-	   // TODO TODO TODO !!!!!!!!!
-	   // Once we are doing static type inference and type checking of variables and expressions
-	   // we will be able to do this properly when element types are not all the same.  
+  	   if knownToBeMap {
+  	       if ! p.crudeTypeInfer(keyExprs, &typeSpec) {
+  	          p.stop("Cannot infer key type constraint of map. Specify types for map. e.g. {}String > Widget")
+  	       }	 
+  	       if ! p.crudeTypeInfer(elementExprs, &valTypeSpec) {
+  	          p.stop("Cannot infer value type constraint of map. Specify types for map. e.g. {}String > Widget")
+  	       }	
+  	   } else { // It's a Set
+  	       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
+  	          p.stop("Cannot infer element-type constraint of set. Specify element type. e.g. {}Widget")
+  	       } 
+  	   }
+  	}
 
-	   if knownToBeMap {
-	       if ! p.crudeTypeInfer(keyExprs, &typeSpec) {
-	          p.stop("Cannot infer key type constraint of map. Specify types for map. e.g. {}String > Widget")
-	       }	 
-	       if ! p.crudeTypeInfer(elementExprs, &valTypeSpec) {
-	          p.stop("Cannot infer value type constraint of map. Specify types for map. e.g. {}String > Widget")
-	       }	
-	   } else { // It's a Set
-	       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
-	          p.stop("Cannot infer element-type constraint of set. Specify element type. e.g. {}Widget")
-	       } 
-	   }
-	}
--------------
-
-
-    if ! hasType { 
-       if emptyList { // Oops - no way to infer the element-type constraint
-          p.stop("An empty list literal must specify its element type. e.g. []Widget")
-          return false // superfluous when parser is in single-error mode as now
-       }
-
-       // Try to infer the element-type constraint from the statically known types of the arguments.
-
-       // TODO TODO TODO !!!!!!!!!
-       // Once we are doing static type inference and type checking of variables and expressions
-       // we will be able to do this properly when element types are not all the same.  
-       if ! p.crudeTypeInfer(elementExprs, &typeSpec) {
-          p.stop("Cannot infer element-type constraint of list. Specify element type. e.g. []Widget")
-       } 
-    }
-
---
-
-    isSorting := false // TODO allow sorting-list specifications in empty list constructions!!!!
+    isSorting := false // TODO allow sorting specifications in empty set/map constructions!!!!
     isAscending := false 
     orderFunc := "" 
-    collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
 
+    if knownToBeMap {
+       collectionTypeSpec = &ast.CollectionTypeSpec{token.MAP,pos,end,isSorting,isAscending,orderFunc}
+    } else {
+       collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isSorting,isAscending,orderFunc}  
+    }
     typeSpec.CollectionSpec = collectionTypeSpec
 
+    if knownToBeMap {
+  
+      // translate
+      *mapStmt = &ast.MapConstruction{Type:typeSpec, ValType: valTypeSpec, Keys: keyExprs, Elements: elementExprs}  
+  
+    } else {
+    
+       var queryStringExprs []ast.Expr  // there is only allowed to be one query string
+       var queryStringExpr ast.Expr
 
+       st2 := p.State()
 
-
-    var queryStringExprs []ast.Expr  // there is only allowed to be one query string
-    var queryStringExpr ast.Expr
-
-    st2 := p.State()
-
-
-    if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
-       if len(queryStringExprs) == 1 {
-           queryStringExpr = queryStringExprs[0]
-       } else {
-          p.stop("Only one argument is allowed after a list constructor - a String containing SQL-formatted selection criteria")
-       }
-    } else if ! p.isLower(st,st2) {
-        return p.Fail(st)  // Sorry, after all that, it is not a multiLine list construction
-    }    
-
-    // translate
-    *stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}  
-	
+      if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
+         if len(queryStringExprs) == 1 {
+             queryStringExpr = queryStringExprs[0]
+         } else {
+            p.stop("Only one argument is allowed after a set constructor - a String containing SQL-formatted selection criteria")
+         }
+      } else if ! p.isLower(st,st2) {
+          return p.Fail(st)  // Sorry, after all that, it is not a multiLine set construction
+      }    
+  
+      // translate
+      *setStmt = &ast.SetConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
+    }
     return true
 }
 
@@ -5182,6 +5286,7 @@ func (p *parser) required(elementFound bool, whatIsExpected string) bool {
 	}
 	fs := p.FailedOnString()
 	if len(fs) > 0 {
+      //panic(fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, fs))    
     	p.error(p.FailedPos(),fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, fs))
     } else {
 	    var found string
@@ -5193,6 +5298,7 @@ func (p *parser) required(elementFound bool, whatIsExpected string) bool {
 	       default:
 		       found = string(c)
         }
+      //panic(fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, found))        
     	p.error(p.Pos(),fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, found))
 	    
     	//p.error(p.Pos(),fmt.Sprintf("%s.", whatIsExpected))

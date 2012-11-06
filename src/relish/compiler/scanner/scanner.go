@@ -502,6 +502,8 @@ func (S *Scanner) BlankLine() bool {
 Returns true if there is nothing but rest-of-line comment or blanks then an EOL
 and then the first non-blank character occurs at rune-column col.
 Does not allow blank lines.
+Does not succeed if it is sitting at EOL or EOF after it has gobbled the right number of spaces.
+The assertion is that there is some language token starting at the specified position.
 */
 func (S *Scanner) Below(col int) bool {
 
@@ -527,6 +529,11 @@ func (S *Scanner) Below(col int) bool {
 	if S.Col() != col {
 		return S.Fail(st)
 	}
+
+	if S.ch == '\n' || S.ch == -1 { // EOL or EOF
+		return S.Fail(st)
+	}
+
 	return true
 }
 

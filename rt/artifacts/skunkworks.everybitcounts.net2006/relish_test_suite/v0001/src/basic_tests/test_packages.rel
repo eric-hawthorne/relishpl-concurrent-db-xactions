@@ -218,6 +218,27 @@ main
 
    print map1[! "Four"].num
 
+   solarSystem = {
+                    1 => "Mercury"
+                    2 => "Venus"
+                    3 => "Earth"
+                    4 => "Mars"
+                 }Int 
+                  > 
+                     String
+
+   print solarSystem[! 1]
+
+   outerSolarSystem = {
+                         "Jupiter" => 5
+                         "Saturn"  => 6
+                         "Uranus"  => 7
+                         "Neptune" => 8
+                      }String > Int 
+
+   for k v in outerSolarSystem
+      print k v   
+
    a = """
 This is the very first
 multi-line string in relish!!
