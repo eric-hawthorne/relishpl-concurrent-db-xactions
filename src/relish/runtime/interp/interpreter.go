@@ -1479,6 +1479,44 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			if collection.IsMap() {
 
 				// 2. for key val in mapOrOrderedMap 
+				
+				theMap := collection.(Map)
+				
+				for {
+					moreMembers := false
+
+					key, nextMemberFound := <-iters[0]
+
+					if nextMemberFound {
+						moreMembers = true
+					}
+
+					if !moreMembers {
+						break
+					}
+
+					// Assign to the key variable
+
+					keyVar := stmt.KeyAndValues[0].(*ast.Ident)
+					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, keyVar.Name, keyVar.Offset)
+					t.Stack[t.Base+keyVar.Offset] = key
+
+					// Assign to the value variable
+
+					valVar := stmt.KeyAndValues[1].(*ast.Ident)
+					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+					t.Stack[t.Base+valVar.Offset],_ = theMap.Get(key)
+
+					// Execute loop body	
+
+					breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
+
+					if breakLoop || returnFrom {
+						breakLoop = false
+						continueLoop = false
+						break
+					}
+				}				
 
 			} else {
 
