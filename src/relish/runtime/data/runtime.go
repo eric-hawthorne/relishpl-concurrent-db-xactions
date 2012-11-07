@@ -305,8 +305,8 @@ func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, , c
 /*
 Untypechecked assignment. Used in restoration (summoning) of an object from persistent storage.
 */
-func (rt *RuntimeEnv) RestoreAttr(obj RObject, attr *AttributeSpec, val RObject) {
-
+func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject) {
+	defer Un(Trace(PERSIST_TR2, "RestoreAttr", obj, attr, val))
 	attrVals, found := rt.attributes[attr]
 	if !found {
 		attrVals = make(map[RObject]RObject)

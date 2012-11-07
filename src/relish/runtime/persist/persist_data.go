@@ -47,9 +47,7 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 
 		table := db.TableNameIfy(attr.WholeType.ShortName())
 
-		if val.Type() == StringType {
-			stmt = fmt.Sprintf("UPDATE %s SET %s='%v' WHERE id=%v", table, attr.Part.Name, val, obj.DBID()) 
-		} else if val.Type() == TimeType {
+		if val.Type() == TimeType {
 			attrName := attr.Part.Name
 			attrLocName := attrName + "_loc"
 			t := time.Time(val.(RTime))
@@ -57,7 +55,7 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			locationName := t.Location().String()
 			stmt = fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()) 					
 		} else {
-			stmt = fmt.Sprintf("UPDATE %s SET %s=%v WHERE id=%v", table, attr.Part.Name, val, obj.DBID())
+			stmt = fmt.Sprintf("UPDATE %s SET %s=%s WHERE id=%v", table, attr.Part.Name, db.primitiveAttrValSQL(val), obj.DBID())
 		}
 	} else { // non-primitive value type
 
@@ -81,6 +79,51 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 	return
 
 }
+
+
+/*
+Return a string representation of the value, suitable for use as the argument in a sql "SET attrname=%s"
+Works for String, Int, Int32, Float, Bool, Uint, Uint32
+*/
+func (db *SqliteDB) primitiveAttrValSQL(val RObject) string {
+
+	var s string
+
+	switch val.(type) {
+	case Int:
+		s = strconv.FormatInt(int64(val.(Int)), 10)
+	case Int32:
+		s = strconv.FormatInt(int64(int32(val.(Int32))), 10)	
+	case Uint:
+	    s = strconv.FormatUint(uint64(val.(Uint)), 10)		
+	case Uint32:
+		s = strconv.FormatUint(uint64(uint32(val.(Uint32))), 10)		    											
+	case String:
+		s = "'" + SqlStringValueEscape(string(val.(String))) + "'"
+	case Float:
+		s = strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)				
+	case Bool:
+		boolVal := bool(val.(Bool))
+		if boolVal {
+			s = "1"
+		} else {
+			s = "0"
+		}
+	default:
+		panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
+	}
+	return s
+}
+
+
+
+
+
+
+
+
+
+
 
 
 /*
@@ -778,7 +821,7 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 Fetch from db and set unary primitive-valued attributes of an object.
 */
 func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (err error) {
-	defer Un(Trace(PERSIST_TR2, "fetchPrimitiveAttributeValues", id))
+	defer Un(Trace(PERSIST_TR2, "fetchUnaryPrimitiveAttributeValues", id))
 	// TODO
 
 	objTyp := obj.Type()
@@ -895,6 +938,7 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 Given the result of a scan of a select result row, restore object attribute values for an object in the runtime.
 */
 func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []interface{}) {
+	defer Un(Trace(PERSIST_TR2, "restoreAttrs of a", objTyp.Name))
 
 	// Now go through the attrValsBytes and interpret each according to the datatype of each primitive
 	// attribute, and set the primitive attributes using the runtime SetAttrVal method.
@@ -1061,9 +1105,10 @@ func convertAttrVal(valByteSlice []byte, attr *AttributeSpec, val *RObject) (non
 
 	case BoolType:
 		*val = Bool(string(valByteSlice) == "1")
+		nonNullValueFound = true		
 
 	case StringType:
-		*val = String(SqlStringValueUnescqpe(string(valByteSlice)))
+		*val = String(SqlStringValueUnescape(string(valByteSlice)))
 		nonNullValueFound = true // Shoot!! How do we distinguish between not set and empty string?
 
 	default:
@@ -1204,15 +1249,19 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 				switch val.(type) {
 				case Int:
 					s += strconv.FormatInt(int64(val.(Int)), 10)
-				//case Uint:
-				//   s += strconv.Itoa64(int64(val.(Uint)))		
+				case Int32:
+					s += strconv.FormatInt(int64(int32(val.(Int32))), 10)	
+				case Uint:
+				    s += strconv.FormatUint(uint64(val.(Uint)), 10)		
+				case Uint32:
+					s += strconv.FormatUint(uint64(uint32(val.(Uint32))), 10)		
 				case RTime:
 					t := time.Time(val.(RTime))
 					timeString := t.UTC().Format(TIME_LAYOUT)
 					locationName := t.Location().String()
 					s += "'" + timeString + "','" + locationName + "'"															
 				case String:
-					s += "'" + SqlStringValueEscqpe(string(val.(String))) + "'"
+					s += "'" + SqlStringValueEscape(string(val.(String))) + "'"
 				case Float:
 					s += strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)
 					
@@ -1233,8 +1282,6 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 					} else {
 						s += "0"
 					}
-				case Int32:
-					s += strconv.Itoa(int(val.(Int32)))
 				default:
 					panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
 				}
@@ -1249,7 +1296,7 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 
 }
 
-func SqlStringValueEscqpe(s string) string {
+func SqlStringValueEscape(s string) string {
 	s = strconv.Quote(s)	
     // Use QuoteToASCII(s) instead???
 	
@@ -1259,7 +1306,7 @@ func SqlStringValueEscqpe(s string) string {
 	return s
 }
 
-func SqlStringValueUnescqpe(s string) string {
+func SqlStringValueUnescape(s string) string {
 
 	
 	s = strings.Replace(s, `"`, `\"`, -1)
