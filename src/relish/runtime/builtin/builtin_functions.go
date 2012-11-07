@@ -19,7 +19,13 @@ import (
     "time"
     "crypto/sha256"
     "encoding/base64"
+	"os"
+	"bufio"
 )
+
+// Reader for reading from standard input
+var buf *bufio.Reader = bufio.NewReader(os.Stdin)
+
 
 func InitBuiltinFunctions() {
 
@@ -64,6 +70,27 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	print7Method.PrimitiveCode = builtinPrint
+
+
+
+	inputMethod, err := RT.CreateMethod("","input", []string{"message"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	inputMethod.PrimitiveCode = builtinInput
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	eqMethod, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
@@ -956,6 +983,16 @@ func builtinPrint(objects []RObject) []RObject {
 	}
 	fmt.Println()
 	return nil
+}
+
+func builtinInput(objects []RObject) []RObject {
+   message := string(objects[0].(String))	
+   fmt.Print(message)
+   result,err := buf.ReadString('\n')
+   if err != nil {
+      result = err.Error()
+   }
+   return []RObject{String(result)}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

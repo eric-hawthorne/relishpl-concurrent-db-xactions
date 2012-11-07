@@ -111,6 +111,9 @@ main
 """
  Main program.
 """
+   s = input "What is your name?"
+   print s      
+
    print circleProperty 9.0 "a"
    print circleProperty 9.0 "c"
 
