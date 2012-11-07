@@ -13,6 +13,7 @@ import
    relish.pl2012/things/pkg/physical_objects as phys
    people
 
+TEST_ATTRIBUTE_PERSISTENCE = false
 TEST_TIME_METHODS = true
 TEST_GOROUTINES = false
 REST_OF_TEST = true
@@ -119,31 +120,45 @@ main
 """
  Main program.
 """
-   basic1 = Basic
-   basic1.b = true
+   if TEST_ATTRIBUTE_PERSISTENCE
+      basic1 = Basic
+      basic1.b = true
 
-   if exists "BASIC 1"
-      basic2 = summon "BASIC 1"
-   else
-      dub basic1 "BASIC 1"
-      basic2 = basic1
+      if exists "BASIC 1"
+         basic2 = summon "BASIC 1"
+      else
+         dub basic1 "BASIC 1"
+         basic2 = basic1
 
-   print basic2.b   
+      print basic2.b   
 
-   basic2.b = false
+      basic2.b = false
 
-   print basic2.b
+      print basic2.b
 
-   basic2.b = true
+      basic2.b = true
 
-   print basic2.b
+      print basic2.b
+
+   cp = circleProperty 9.0 
+                       "a"
+   print cp
+               
+   print circleProperty 9.0 
+                        "a" 
+
+   print circleProperty 
+            9.0 
+            "a"                             
+   print 
+      circleProperty 
+         9.0 
+         "a"
+   print circleProperty 9.0 "c"
 
    if REST_OF_TEST
-      // s = input "What is your name?"
-      // print s      
-
-      print circleProperty 9.0 "a"
-      print circleProperty 9.0 "c"
+      s = input "What is your first name?\n"
+      print s      
 
       car1 = vehicles.Car
       car1.lat = 49.243

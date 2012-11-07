@@ -28,6 +28,7 @@ package parser
 import (
 	"fmt"
 	"strings"
+  "strconv"
 	"relish/compiler/ast"
 	"relish/compiler/scanner"
 	"relish/compiler/token"
@@ -3399,6 +3400,137 @@ func (p *parser) parseLenientVerticalExpressions(col int, xs *[]ast.Expr) bool {
 	return true
 }
 
+
+
+/*
+Requires that the expression or multiple vertical aligned expressions take up at least two lines of the file vertically.
+
+TODO NOTE THIS IS NOT RIGHT!!! FIX IT LIKE parseIndentedExpressionsOrKeywordParamAssignments so it always looks for a keyword
+param assignment on each row before looking for an expression!!!!!!!!
+*/
+func (p *parser) parseLenientVerticalExpressionsOrKeywordParamAssignments(col int, xs *[]ast.Expr, firstAssignmentPos *int32, kws map[string]ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "LenientVerticalExpressionsOrKeywordParamAssignments"))
+    }
+    st := p.State()
+
+    *firstAssignmentPos = -1
+
+    var i int32 = 0
+    var x ast.Expr
+    var key string
+
+    multiLines := false
+
+    foundPositional := false
+    foundKeywords := false
+    foundTwoRows := false
+    foundVariadic := false
+
+    // translate
+    *xs = nil
+
+    if p.parseExpression(&x) {
+     i++
+     foundPositional = true
+  
+       // translate
+       *xs = append(*xs,x)  
+
+    } else if p.parseKeywordParameterAssignmentStatement(&key, &x) {
+     foundKeywords = true
+       *firstAssignmentPos = i  
+  
+       // translate 
+     kws[key] = x 
+  
+    } else {
+     return false
+    }
+  
+  
+    st2 := p.State()
+    if p.isLower(st,st2) {
+     multiLines = true
+    }    
+
+    for p.Below(col) {
+     if ! p.parseExpression(&x) {
+      p.Fail(st2)
+        break 
+     }
+     i++
+       st2 = p.State()  
+     foundPositional = true
+     if foundKeywords {
+        foundVariadic = true  
+     }  
+     foundTwoRows = true
+     
+       // translate
+       *xs = append(*xs,x)  
+    }
+
+
+    if ! foundVariadic {  // There has been no positional arg after a keyword arg yet
+
+      for p.Below(col) {
+  
+         if ! p.parseKeywordParameterAssignmentStatement(&key, &x) {
+           p.Fail(st2)
+           break
+       }
+           st2 = p.State()    
+       foundKeywords = true
+         foundTwoRows = true    
+         if *firstAssignmentPos == -1 { 
+            *firstAssignmentPos = i 
+           }
+         // translate 
+       kws[key] = x 
+      }
+    }
+
+    if ! (foundTwoRows || multiLines) {
+     return p.Fail(st)
+    }
+
+    if ! foundVariadic {
+      for p.Below(col) {
+  
+       p.required(p.parseExpression(&x),"an expression")
+  
+         // translate
+         *xs = append(*xs,x)  
+      }
+    }
+
+    if ! foundPositional && ! foundKeywords {
+        p.stop("Expecting an expression or parameter assignment statement")             
+    }
+
+    return true
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 true if belowState is on a lower file line than aboveState
 */
@@ -3417,6 +3549,7 @@ func (p *parser) parseMethodCall(stmt **ast.MethodCall) bool {
 /*
 foo a1 (bar a2 a3) 
 foo a1 (bar a2 a3) list1...      <- TODO
+bar foo (baz 1 3) "froboz"   <- all remaining args pertain to call of method foo
 */
 func (p *parser) parseOneLineMethodCall(stmt **ast.MethodCall, isInsideBrackets bool) bool {
     if p.trace {
@@ -3500,7 +3633,7 @@ func (p *parser) parseIndentedMethodCall(stmt **ast.MethodCall) bool {
         if ! p.Space() {
 	       return p.Fail(st)
 	    }
-	    if ! p.parseVerticalExpressionsOrKeywordParamAssignments(p.Col(), &xs, &firstAssignmentPos, kws) {
+	    if ! p.parseLenientVerticalExpressionsOrKeywordParamAssignments(p.Col(), &xs, &firstAssignmentPos, kws) {
 	       return p.Fail(st)	
 	    }
     }
@@ -5185,6 +5318,12 @@ func (p *parser) parseStringLiteral(x *ast.Expr) bool {
 	   return false 
     }
     dbg.Log(dbg.PARSE_,"String literal \"%s\"\n",lit)
+
+    var err error
+    lit,err = strconv.Unquote(`"` + lit + `"`)
+    if err != nil {
+       p.stop(err.Error())
+    }
 
     *x = &ast.BasicLit{pos,token.STRING,lit}
     return true
