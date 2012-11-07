@@ -357,6 +357,9 @@ multi-line %s string in relish!!
    assortment = ["one" 2 3.0 "four" v1 false]Any
    print join assortment "|"
 
+   assortment[1] = "Two"
+   print join assortment "|"
+
    print first s1 2
    print first s1 30
    print last s1 4
