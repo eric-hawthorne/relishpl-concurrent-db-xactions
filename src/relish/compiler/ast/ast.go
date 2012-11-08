@@ -441,7 +441,8 @@ type (
 	// a list with a db sql query where clause specified as the source of list members.
 	ListConstruction struct {
         Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a List.
-		Elements  []Expr    // explicitly listed elements; or nil        
+		Elements  []Expr    // explicitly listed elements; or nil  
+		Generator *RangeStatement // A for-range generator which will yield elements for the list, or nil      
 		Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
 		                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
 	}	
@@ -451,6 +452,7 @@ type (
 	SetConstruction struct {
         Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Set.
 		Elements  []Expr    // explicitly listed elements; or nil        
+		Generator *RangeStatement // A for-range generator which will yield elements for the set, or nil		
 		Query     Expr     // must be an expression evaluating to a String containing a SQL WHERE clause (without the "WHERE"), or nil
 		                   // Note eventually it should be more like OQL where you can say e.g. engine.horsePower > 120 when fetching []Car
 	}
@@ -461,7 +463,8 @@ type (
         Type *TypeSpec     // Includes the CollectionTypeSpec which must be a spec of a Map.
         ValType *TypeSpec     // Type of the values
         Keys []Expr         // explicitly listed keys; or nil
-		Elements  []Expr    // explicitly listed elements; or nil        
+		Elements  []Expr    // explicitly listed elements; or nil  
+		Generator *RangeStatement // A for-range generator which will yield key/map pairs for the map, or nil			      
 	}		
 
 
@@ -944,6 +947,7 @@ type (
 		X    []Expr // value to range over NOT CORRECT!!! Need to handle multiple expressions.
 		Body *BlockStatement
 	}
+	
 
 	// A ForStmt represents a for statement.
 	ForStmt struct {

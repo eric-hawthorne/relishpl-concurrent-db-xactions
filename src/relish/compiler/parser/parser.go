@@ -2464,7 +2464,7 @@ func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt, nReturnVals int, no
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs, nReturnVals) {
+    if p.parseReturnStatement(&rs, nReturnVals, false) {
 	
 	   if nReturnVals == 0 {
 		  if noResults {
@@ -2516,7 +2516,7 @@ func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt, nReturnVals int) bool
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs, nReturnVals) {
+    if p.parseReturnStatement(&rs, nReturnVals, false) {
 	   // translate
 	   *stmts = append(*stmts,rs)
 	   return true	
@@ -2559,7 +2559,7 @@ func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt, nReturnVals int) bool
     
     var rs *ast.ReturnStatement
     // parse
-    if p.parseReturnStatement(&rs, nReturnVals) {
+    if p.parseReturnStatement(&rs, nReturnVals, false) {
 	   // translate
 	   *stmts = append(*stmts,rs)
 	   return true	
@@ -2600,7 +2600,7 @@ func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int) bool {
 	   return true
     }  
     var rangeStmt *ast.RangeStatement
-    if p.parseForRangeStatement(&rangeStmt, nReturnVals) {
+    if p.parseForRangeStatement(&rangeStmt, nReturnVals, false) {
 	   *stmt = rangeStmt
 	   return true
     }   
@@ -2637,17 +2637,22 @@ Note: If returnStmtRestricted is true, the return statement is not allowed
 to have arguments after it (because the method declaration declared named return arguments.)
 
 */
-func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals int) bool {
+func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals int, skipArrow bool) bool {
     if p.trace {
        defer un(trace(p, "ReturnStatement"))
     }
 
     pos := p.Pos()
 
-    if ! p.Match2('=','>') {
-	   return false
+    var hasSpace bool
+    if skipArrow {
+	   hasSpace = true
+    } else {
+       if ! p.Match2('=','>') {
+	      return false
+       }
+       hasSpace = p.Space()
     }
-    hasSpace := p.Space()
     if ! hasSpace {
 	    if nReturnVals > 0 {
 	       p.required(false,"a single space after '=>' followed by values to return from method")
@@ -3745,18 +3750,20 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
     var queryStringExprs []ast.Expr  // there is only allowed to be one query string
     var queryStringExpr ast.Expr
 
-    st2 := p.State()
+    if emptyList {
+	    st2 := p.State()
 
-    if p.Space() { // May be arguments
-       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
-          queryStringExpr = queryStringExprs[0]
-       } else {
-	        p.Fail(st2)
-	     }
-    }
+	    if p.Space() { // May be arguments
+	       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
+	          queryStringExpr = queryStringExprs[0]
+	       } else {
+		        p.Fail(st2)
+		     }
+	    }
+	}
 	
-	  // translate
-	  *stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
+	// translate
+	*stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
 	
     return true
 }
@@ -3807,27 +3814,31 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
 
     var collectionTypeSpec *ast.CollectionTypeSpec
 
+    var rangeStmt *ast.RangeStatement
+
     var elementExprs []ast.Expr    
 
     emptyList := false
     hasType := false
-    
-
 
     if p.Match2('[',']') {
         end = p.Pos()
         emptyList = true
     } else if p.Match1('[') {
 
-        // Get the list of expressions inside the list literal square-brackets
 
-        if p.parseIndentedExpressions(st.RuneColumn, &elementExprs) {
-            p.required(p.Below(st.RuneColumn) && p.Match1(']'), "closing square-bracket ] aligned exactly below opening [")   
-        } else {
-           p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
-                   "zero or more list-element expressions, followed by closing square-bracket ]")  
-           p.required(p.Match1(']'), "closing square-bracket ]")              
-        }
+	    if ! p.parseForRangeStatement(&rangeStmt, 1, true) {
+		
+	        // Get the list of expressions inside the list literal square-brackets
+
+	        if p.parseIndentedExpressions(st.RuneColumn, &elementExprs) {
+	            p.required(p.Below(st.RuneColumn) && p.Match1(']'), "closing square-bracket ] aligned exactly below opening [")   
+	        } else {
+	           p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
+	                   "zero or more list-element expressions, followed by closing square-bracket ]")  
+	           p.required(p.Match1(']'), "closing square-bracket ]")              
+	        }
+	    }
         end = p.Pos()            
     } else { 
        return false // Did not match a list-specifying square-bracket
@@ -3866,21 +3877,22 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
     var queryStringExprs []ast.Expr  // there is only allowed to be one query string
     var queryStringExpr ast.Expr
 
-    st2 := p.State()
+    if emptyList {
+	    st2 := p.State()
 
-
-    if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
-       if len(queryStringExprs) == 1 {
-           queryStringExpr = queryStringExprs[0]
-       } else {
-          p.stop("Only one argument is allowed after a list constructor - a String containing SQL-formatted selection criteria")
-       }
-    } else if ! p.isLower(st,st2) {
-        return p.Fail(st)  // Sorry, after all that, it is not a multiLine list construction
-    }    
+	    if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
+	       if len(queryStringExprs) == 1 {
+	           queryStringExpr = queryStringExprs[0]
+	       } else {
+	          p.stop("Only one argument is allowed after a list constructor - a String containing SQL-formatted selection criteria")
+	       }
+	    } else if ! p.isLower(st,st2) {
+	        return p.Fail(st)  // Sorry, after all that, it is not a multiLine list construction
+	    }    
+    }
 
     // translate
-    *stmt = &ast.ListConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}  
+    *stmt = &ast.ListConstruction{Type:typeSpec,  Generator:rangeStmt, Elements: elementExprs, Query:queryStringExpr}  
 	
     return true
 }
@@ -4046,16 +4058,18 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
     
 	    var queryStringExprs []ast.Expr  // there is only allowed to be one query string
 	    var queryStringExpr ast.Expr
+        
+        if emptyMapOrSet {
+		    st2 := p.State()
 
-	    st2 := p.State()
-
-	    if p.Space() { // May be arguments
-	       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
-	          queryStringExpr = queryStringExprs[0]
-	       } else {
-		        p.Fail(st2)
-		     }
-	    }
+		    if p.Space() { // May be arguments
+		       if p.parseSingleOneLineExpression(&queryStringExprs, isInsideBrackets) {
+		          queryStringExpr = queryStringExprs[0]
+		       } else {
+			        p.Fail(st2)
+			     }
+		    }
+        }
 	
 	    // translate
 	    *setStmt = &ast.SetConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
@@ -4078,6 +4092,8 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
 
   	var collectionTypeSpec *ast.CollectionTypeSpec
 
+    var rangeStmt *ast.RangeStatement
+
   	var keyExprs []ast.Expr
   	var elementExprs []ast.Expr    
 
@@ -4093,43 +4109,45 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	    emptyMapOrSet = true
   	} else if p.Match1('{') {
 
-        // Get the list of expressions inside the map or set literal squiggly-brackets
-        // Note that one of these must exist, because it is not {}
+	    if ! p.parseForRangeStatement(&rangeStmt, 1, true) {
+	
+	        // Get the list of expressions inside the map or set literal squiggly-brackets
+	        // Note that one of these must exist, because it is not {}
 
-        mapEntriesFound = p.parseIndentedMapEntryExpressions(st.RuneColumn, &keyExprs, &elementExprs) 
+	        mapEntriesFound = p.parseIndentedMapEntryExpressions(st.RuneColumn, &keyExprs, &elementExprs) 
 
-        if ! mapEntriesFound { 
-  			   setEntriesFound = p.parseIndentedExpressions(st.RuneColumn, &elementExprs)
-  		  }
+	        if ! mapEntriesFound { 
+	  			   setEntriesFound = p.parseIndentedExpressions(st.RuneColumn, &elementExprs)
+	  		  }
 
-        if mapEntriesFound || setEntriesFound {
-           p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {") 
-        }
+	        if mapEntriesFound || setEntriesFound {
+	           p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {") 
+	        }
   		
-        knownToBeMap = mapEntriesFound
-        knownToBeSet = setEntriesFound
+	        knownToBeMap = mapEntriesFound
+	        knownToBeSet = setEntriesFound
 
-  	    if ! (mapEntriesFound || setEntriesFound) {
+	  	    if ! (mapEntriesFound || setEntriesFound) {
   	    
-  	      mapEntriesFound = p.parseOneLineMapEntryExpressions(&keyExprs, &elementExprs) 
+	  	      mapEntriesFound = p.parseOneLineMapEntryExpressions(&keyExprs, &elementExprs) 
 
-  		    if ! mapEntriesFound { 
-  				   setEntriesFound = (p.parseMultipleOneLineExpressions(&elementExprs, false) || 
-  				                      p.parseSingleOneLineExpression(&elementExprs, false))
-  				}
-  			  if mapEntriesFound || setEntriesFound {
-  		          p.required(p.Match1('}'), "closing squiggly-bracket }")  
-  				}
-  	    }
+	  		    if ! mapEntriesFound { 
+	  				   setEntriesFound = (p.parseMultipleOneLineExpressions(&elementExprs, false) || 
+	  				                      p.parseSingleOneLineExpression(&elementExprs, false))
+	  				}
+	  			  if mapEntriesFound || setEntriesFound {
+	  		          p.required(p.Match1('}'), "closing squiggly-bracket }")  
+	  				}
+	  	    }
 
-  		  p.required(mapEntriesFound || setEntriesFound, "zero or more set-element or map-entry expressions, followed by closing squiggly-bracket }")
+	  		  p.required(mapEntriesFound || setEntriesFound, "zero or more set-element or map-entry expressions, followed by closing squiggly-bracket }")
 
-  	    knownToBeMap = mapEntriesFound
-  	    knownToBeSet = setEntriesFound
-
-        end = p.Pos()            
+	  	    knownToBeMap = mapEntriesFound
+	  	    knownToBeSet = setEntriesFound
+         }
+         end = p.Pos()            
       } else { 
-         return false // Did not match a list-specifying square-bracket
+         return false // Did not match a map-or-set-specifying squiggly-bracket
       }
 
     typeCol := p.Col()
@@ -4237,20 +4255,22 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
        var queryStringExprs []ast.Expr  // there is only allowed to be one query string
        var queryStringExpr ast.Expr
 
-       st2 := p.State()
+       if emptyMapOrSet {
+	       st2 := p.State()
 
-      if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
-         if len(queryStringExprs) == 1 {
-             queryStringExpr = queryStringExprs[0]
-         } else {
-            p.stop("Only one argument is allowed after a set constructor - a String containing SQL-formatted selection criteria")
-         }
-      } else if ! p.isLower(st,st2) {
-          return p.Fail(st)  // Sorry, after all that, it is not a multiLine set construction
-      }    
+	      if p.parseIndentedExpressions(st.RuneColumn, &queryStringExprs ) {
+	         if len(queryStringExprs) == 1 {
+	             queryStringExpr = queryStringExprs[0]
+	         } else {
+	            p.stop("Only one argument is allowed after a set constructor - a String containing SQL-formatted selection criteria")
+	         }
+	      } else if ! p.isLower(st,st2) {
+	          return p.Fail(st)  // Sorry, after all that, it is not a multiLine set construction
+	      }   
+       } 
   
       // translate
-      *setStmt = &ast.SetConstruction{Type:typeSpec, Elements: elementExprs, Query:queryStringExpr}
+      *setStmt = &ast.SetConstruction{Type:typeSpec, Generator: rangeStmt, Elements: elementExprs, Query:queryStringExpr}
     }
     return true
 }
@@ -4968,7 +4988,7 @@ for i val in someList
    statement
    statement
 */
-func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnVals int) bool {
+func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnVals int,  isGeneratorExpr bool) bool {
     if p.trace {
        defer un(trace(p, "ForRangeStatement"))
     }
@@ -5037,9 +5057,26 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
     
     blockPos := p.Pos()
 
-    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
-    for ; p.Indent(col) ; {
-       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
+    if isGeneratorExpr {
+	    var rs *ast.ReturnStatement
+	
+	    var errMessage string
+	    if nReturnVals == 1 {
+		   errMessage = "an expression that this generator will yield"
+	    } else {
+		   errMessage = fmt.Sprintln("%s expressions that the for generator will yield",nReturnVals)
+	    }
+	
+	    // parse
+	    p.required(p.parseReturnStatement(&rs, nReturnVals, true), errMessage)
+
+        stmtList = []ast.Stmt{rs}
+
+    } else {
+	    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
+	    for ; p.Indent(col) ; {
+	       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
+	    }
     }
 
     // translate
