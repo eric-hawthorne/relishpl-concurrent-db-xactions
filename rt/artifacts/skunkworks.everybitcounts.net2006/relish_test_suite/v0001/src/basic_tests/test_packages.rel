@@ -347,6 +347,20 @@ main
          print key8 val8
       print opps2["left"] opps2["up"]
     
+
+      places = ["left" "inside" "up"]    
+
+      opps3 = {
+                 for val4 in places
+                    val4
+                    cat "[" val4 "]"
+              }String > String
+      
+      for key7 val7 in opps3
+         print key7 val7
+      print opps3["left"] opps3["up"]
+
+
       a = """
 This is the very first
 multi-line string in relish!!

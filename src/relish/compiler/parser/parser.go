@@ -4256,7 +4256,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
     if knownToBeMap {
   
       // translate
-      *mapStmt = &ast.MapConstruction{Type:typeSpec, ValType: valTypeSpec, Keys: keyExprs, Elements: elementExprs}  
+      *mapStmt = &ast.MapConstruction{Type:typeSpec, ValType: valTypeSpec,  Generator: rangeStmt, Keys: keyExprs, Elements: elementExprs}  
   
     } else {
     
