@@ -2590,7 +2590,7 @@ func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int) bool {
        defer un(trace(p, "ControlStatement"))
     }
     var ifStmt *ast.IfStatement
-    if p.parseIfStatement(&ifStmt, nReturnVals) {
+    if p.parseIfStatement(&ifStmt, nReturnVals, false) {
 	   *stmt = ifStmt
 	   return true
     } 
@@ -4696,8 +4696,10 @@ if expr
    block}...
 [else
    block]
+
+  If isGeneratorExpr is true, the blocks can only contain "yield" statements i.e. ReturnStatements with IsYield==true
 */
-func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int) bool {
+func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isGeneratorExpr bool) bool {
     if p.trace {
        defer un(trace(p, "IfStatement"))
     }
@@ -4720,10 +4722,25 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int) boo
 
     blockPos := p.Pos()
 
-    p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")
-    for ; p.BlanksAndIndent(col,true) ; {
-       p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")	
-    }
+    if isGeneratorExpr {
+       var rs *ast.ReturnStatement  
+       var ifStatmt *ast.IfStatement
+
+       // parse
+       if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+          stmtList = []ast.Stmt{ifStatmt}
+       } else {
+          p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
+          stmtList = []ast.Stmt{rs}
+       }
+    } else {
+
+        // parse
+        p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")
+        for ; p.BlanksAndIndent(col,true) ; {
+           p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")	
+        }
+    } 
 
     // translate
     body := &ast.BlockStatement{blockPos,stmtList}
@@ -4744,13 +4761,27 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int) boo
 	
 	      // translate
  	      var stmtList2 []ast.Stmt
-          blockPos = p.Pos()	
+        blockPos = p.Pos()	
 	     
-	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
-	      for ; p.BlanksAndIndent(col,true) ; {
-	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
-	      }	
+        if isGeneratorExpr {
+           var rs *ast.ReturnStatement  
+           var ifStatmt *ast.IfStatement
+
+           // parse
+           if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+              stmtList2 = []ast.Stmt{ifStatmt}
+           } else {
+              p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
+              stmtList2 = []ast.Stmt{rs}
+           }
+        } else {
+
+            // parse
+            p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
+            for ; p.BlanksAndIndent(col,true) ; {
+               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement") 
+            }
+        } 
 	      st2 = p.State()
 	
 	      // translate
@@ -4767,20 +4798,35 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int) boo
           var stmtList3 []ast.Stmt
           blockPos = p.Pos()
 	
-	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")	
-	      for ; p.BlanksAndIndent(col,true) ; {
-		 	     p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
-	      }  
+          if isGeneratorExpr {
+             var rs *ast.ReturnStatement  
+             var ifStatmt *ast.IfStatement
+
+             // parse
+             if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+                stmtList3 = []ast.Stmt{ifStatmt}
+             } else {
+                p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
+                stmtList3 = []ast.Stmt{rs}
+             }
+
+          } else {
+
+              // parse
+              p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
+              for ; p.BlanksAndIndent(col,true) ; {
+                 p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement") 
+              }
+          }  
 	
-	      // translate
-	      body = &ast.BlockStatement{blockPos,stmtList3}
-	      lastIf.Else = body	
+	        // translate
+	        body = &ast.BlockStatement{blockPos,stmtList3}
+	        lastIf.Else = body	
 	
-	      break       	  
+	        break       	  
        } else {
-	      p.Fail(st2)
-        break
+	       p.Fail(st2)
+         break
        }
     }
     return true
@@ -5058,33 +5104,33 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
        }
     }   
 
+    // TODO for the above: Check that each expression's type is a collection
 
-    // TODO Check that each expression's type is a collection
 
     p.required(p.Indent(col),"a statement, indented from the 'for'")
     
     blockPos := p.Pos()
 
+
     if isGeneratorExpr {
-	    var rs *ast.ReturnStatement
 	
-	    var errMessage string
-	    if nReturnVals == 1 {
-		   errMessage = "an expression that this generator will yield"
-	    } else {
-		   errMessage = fmt.Sprintln("%s expressions that the for generator will yield",nReturnVals)
-	    }
-	
-	    // parse
-	    p.required(p.parseReturnStatement(&rs, nReturnVals, true), errMessage)
+       var rs *ast.ReturnStatement	
+       var ifStmt *ast.IfStatement
 
-        stmtList = []ast.Stmt{rs}
-
+       // parse
+       if p.parseIfStatement(&ifStmt, nReturnVals, true) {
+          stmtList = []ast.Stmt{ifStmt}
+       } else {
+	        p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
+          stmtList = []ast.Stmt{rs}
+       }
     } else {
-	    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
-	    for ; p.Indent(col) ; {
-	       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
-	    }
+
+       // parse
+	     p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
+	     for ; p.Indent(col) ; {
+	        p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
+	     }
     }
 
     // translate

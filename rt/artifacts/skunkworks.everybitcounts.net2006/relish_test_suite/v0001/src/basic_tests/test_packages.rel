@@ -325,6 +325,15 @@ main
 
       print sum taxedSales
 
+      taxedBigSales = [
+                         for sale in sales
+                            if gt sale 1.0
+                               times sale 1.10
+                      ]Float
+
+      print sum taxedBigSales
+
+
       opps = {
                 for ky vl 
                    in 
@@ -360,6 +369,25 @@ main
          print key7 val7
       print opps3["left"] opps3["up"]
 
+      opps4 = {
+                 for key6 val6 in opps
+                    if lt (len key6) 5
+                       if lt (len val6) 5
+                          key6 val6
+                       else
+                          key6
+                          first val6 3
+                    else
+                       if lt (len val6) 5
+                          first key6 3
+                          val6
+                       else
+                          first key6 3
+                          first val6 3
+              }String > String
+      
+      for key5 val5 in opps4
+         print key5 val5
 
       a = """
 This is the very first
