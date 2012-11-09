@@ -93,6 +93,18 @@ var SetOfAnyType *RType
 var ListOfStringType *RType
 var SetOfStringType *RType
 
+var ListOfNumericType *RType
+var SetOfNumericType *RType
+
+var ListOfFloatType *RType
+var SetOfFloatType *RType
+
+var ListOfIntType *RType
+var SetOfIntType *RType
+
+var ListOfUIntType *RType
+var SetOfUIntType *RType
+
 
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
@@ -155,6 +167,17 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	ListOfStringType, _ = rt.GetListType(StringType)
 	SetOfStringType, _  = rt.GetSetType(StringType)	
 
+	ListOfNumericType, _ = rt.GetListType(NumericType)
+	SetOfNumericType, _  = rt.GetSetType(NumericType)	
+
+	ListOfFloatType, _ = rt.GetListType(FloatType)
+	SetOfFloatType, _  = rt.GetSetType(FloatType)			
+
+	ListOfIntType, _ = rt.GetListType(IntType)
+	SetOfIntType, _  = rt.GetSetType(IntType)	
+
+	ListOfUintType, _ = rt.GetListType(UintType)
+	SetOfUintType, _  = rt.GetSetType(UintType)		
 
 
 }

@@ -157,6 +157,56 @@ func InitBuiltinFunctions() {
 	}
 	plusMethod.PrimitiveCode = builtinPlus	
 
+	sumNumericMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Numeric"},  []string{"Numeric"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumNumericMethod.PrimitiveCode = builtinSum	
+
+	sumFloatMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Float"},  []string{"Float"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumFloatMethod.PrimitiveCode = builtinSum
+
+	sumIntMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Int"},  []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumIntMethod.PrimitiveCode = builtinSum
+
+	sumUintMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Uint"},  []string{"Uint"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumUintMethod.PrimitiveCode = builtinSum	
+
+	sumNumericSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Numeric"},  []string{"Numeric"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumNumericSetMethod.PrimitiveCode = builtinSum	
+
+	sumFloatSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Float"},  []string{"Float"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumFloatSetMethod.PrimitiveCode = builtinSum
+
+	sumIntSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Int"},  []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumIntSetMethod.PrimitiveCode = builtinSum
+
+	sumUintSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Uint"},  []string{"Uint"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sumUintSetMethod.PrimitiveCode = builtinSum	
+
+
+
 	minusMethod, err := RT.CreateMethod("","minus", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -1349,6 +1399,59 @@ func builtinPlus(objects []RObject) []RObject {
 	}
 	return []RObject{val}
 }
+
+
+/*
+Arithmetic sum (of a collection of numbers) operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
+subtype of numeric depending on the argument types.
+
+TODO  IMPLEMENT
+*/
+func builtinSum(objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	var val RObject
+	switch obj1.(type) {
+	case Int:
+		switch obj2.(type) {
+		case Int:
+			val = Int(int64(obj1.(Int)) + int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(obj1.(Int)) + int64(obj2.(Int32)))
+		case Float:
+			val = Float(float64(obj2.(Float)) + float64(obj1.(Int)))
+		default:
+		    rterr.Stop("plus is not defined for argument types")
+		}
+	case Int32:
+		switch obj2.(type) {
+		case Int32:
+			val = Int(int32(obj1.(Int32)) + int32(obj2.(Int32)))
+		case Int:
+			val = Int(int64(obj1.(Int32)) + int64(obj2.(Int)))
+		case Float:
+			val = Float(float64(obj2.(Float)) + float64(obj1.(Int32)))
+		default:
+		    rterr.Stop("plus is not defined for argument types")
+		}
+	case Float:
+		switch obj2.(type) {
+		case Float:
+			val = Float(float64(obj1.(Float)) + float64(obj2.(Float)))
+		case Int:
+			val = Float(float64(obj1.(Float)) + float64(obj2.(Int)))
+		case Int32:
+			val = Float(float64(obj1.(Float)) + float64(obj2.(Int32)))
+		default:
+		    rterr.Stop("plus is not defined for argument types")
+		}
+	default:
+		rterr.Stop("plus is not defined for argument types")
+	}
+	return []RObject{val}
+}
+
+
 
 
 /*
