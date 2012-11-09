@@ -836,6 +836,7 @@ type (
 	ReturnStatement struct {
 		Return  token.Pos // position of "=>" keyword
 		Results []Expr    // result expressions; or nil
+		IsYield bool      // If true, this is a generator "yield" statement 
 	}
 
 	// A ReturnStmt node represents a return statement.

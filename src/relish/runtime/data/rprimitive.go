@@ -102,8 +102,8 @@ var SetOfFloatType *RType
 var ListOfIntType *RType
 var SetOfIntType *RType
 
-var ListOfUIntType *RType
-var SetOfUIntType *RType
+var ListOfUintType *RType
+var SetOfUintType *RType
 
 
 func (rt *RuntimeEnv) createPrimitiveTypes() {

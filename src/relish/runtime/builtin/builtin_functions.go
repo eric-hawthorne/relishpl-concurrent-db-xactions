@@ -1359,6 +1359,14 @@ subtype of numeric depending on the argument types.
 func builtinPlus(objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
+	return []RObject{plus(obj1,obj2)}
+}
+
+/*
+Arithmetic Addition operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
+subtype of numeric depending on the argument types.
+*/
+func plus(obj1, obj2 RObject) RObject {
 	var val RObject
 	switch obj1.(type) {
 	case Int:
@@ -1397,61 +1405,59 @@ func builtinPlus(objects []RObject) []RObject {
 	default:
 		rterr.Stop("plus is not defined for argument types")
 	}
-	return []RObject{val}
+	return val
 }
-
 
 /*
 Arithmetic sum (of a collection of numbers) operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 
 TODO  IMPLEMENT
+
+var ListOfNumericType *RType
+var SetOfNumericType *RType
+
+var ListOfFloatType *RType
+var SetOfFloatType *RType
+
+var ListOfIntType *RType
+var SetOfIntType *RType
+
+var ListOfUIntType *RType
+var SetOfUIntType *RType
+
 */
 func builtinSum(objects []RObject) []RObject {
-	obj1 := objects[0]
-	obj2 := objects[1]
-	var val RObject
-	switch obj1.(type) {
-	case Int:
-		switch obj2.(type) {
-		case Int:
-			val = Int(int64(obj1.(Int)) + int64(obj2.(Int)))
-		case Int32:
-			val = Int(int64(obj1.(Int)) + int64(obj2.(Int32)))
-		case Float:
-			val = Float(float64(obj2.(Float)) + float64(obj1.(Int)))
-		default:
-		    rterr.Stop("plus is not defined for argument types")
+	collection := objects[0].(RCollection)
+	t := collection.ElementType()
+	var n RObject	
+	if collection.Length() == 0 {
+		switch t {
+		   case FloatType:
+			  n = Float(0.)
+		   case IntType, Int32Type:
+			  n = Int(0)
+		   case UintType, Uint32Type:
+			  n = Uint(0)
+		   case NumericType:
+			  n = Float(0.)	
+	  	   default:
+		     rterr.Stop("wrong element type for sum")				
 		}
-	case Int32:
-		switch obj2.(type) {
-		case Int32:
-			val = Int(int32(obj1.(Int32)) + int32(obj2.(Int32)))
-		case Int:
-			val = Int(int64(obj1.(Int32)) + int64(obj2.(Int)))
-		case Float:
-			val = Float(float64(obj2.(Float)) + float64(obj1.(Int32)))
-		default:
-		    rterr.Stop("plus is not defined for argument types")
+	} else {
+		first := true
+		for val := range collection.Iter() {
+			if first {
+				n = val
+				first = false
+			} else {
+			   n = plus(n, val)
+		    }
 		}
-	case Float:
-		switch obj2.(type) {
-		case Float:
-			val = Float(float64(obj1.(Float)) + float64(obj2.(Float)))
-		case Int:
-			val = Float(float64(obj1.(Float)) + float64(obj2.(Int)))
-		case Int32:
-			val = Float(float64(obj1.(Float)) + float64(obj2.(Int32)))
-		default:
-		    rterr.Stop("plus is not defined for argument types")
-		}
-	default:
-		rterr.Stop("plus is not defined for argument types")
-	}
-	return []RObject{val}
+	}	
+	
+	return []RObject{n}
 }
-
-
 
 
 /*

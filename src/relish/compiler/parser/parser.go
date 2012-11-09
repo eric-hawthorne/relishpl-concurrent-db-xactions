@@ -2633,11 +2633,11 @@ ReturnStatement struct {
 	Results []Expr    // result expressions; or nil
 }
 
-Note: If returnStmtRestricted is true, the return statement is not allowed
-to have arguments after it (because the method declaration declared named return arguments.)
+Note: If nReturnVals == 0, the return statement is not allowed
+to have arguments after it (because the method declaration declared named return arguments or no return args.)
 
 */
-func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals int, skipArrow bool) bool {
+func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals int, isYield bool) bool {
     if p.trace {
        defer un(trace(p, "ReturnStatement"))
     }
@@ -2645,7 +2645,7 @@ func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals in
     pos := p.Pos()
 
     var hasSpace bool
-    if skipArrow {
+    if isYield { // There is no => arrow. Maybe eventually use a -> arrow???????? or <- 
 	   hasSpace = true
     } else {
        if ! p.Match2('=','>') {
@@ -2679,7 +2679,7 @@ func (p *parser) parseReturnStatement(stmt **ast.ReturnStatement, nReturnVals in
     }
 
     // translate
-    *stmt = &ast.ReturnStatement{pos,xs}
+    *stmt = &ast.ReturnStatement{pos,xs, isYield}
 
     return true
 }
@@ -3825,10 +3825,9 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
         end = p.Pos()
         emptyList = true
     } else if p.Match1('[') {
-
-
-	    if ! p.parseForRangeStatement(&rangeStmt, 1, true) {
-		
+        if p.parseIndentedForGenerator(st.RuneColumn, &rangeStmt) {
+	        p.required(p.Below(st.RuneColumn) && p.Match1(']'), "closing square-bracket ] aligned exactly below opening [")  	
+		} else {
 	        // Get the list of expressions inside the list literal square-brackets
 
 	        if p.parseIndentedExpressions(st.RuneColumn, &elementExprs) {
@@ -3897,7 +3896,16 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
     return true
 }
 
-
+func (p *parser) parseIndentedForGenerator(col int, stmt **ast.RangeStatement) bool {
+   st := p.State()	
+   if ! p.Indent(col) {
+      return false	
+   }
+   if ! p.parseForRangeStatement(stmt, 1, true) {
+	  return p.Fail(st)
+   }
+   return true
+}
 
 
 func (p *parser) parseMapOrSetConstruction(mapStmt **ast.MapConstruction, setStmt **ast.SetConstruction) bool {
@@ -4108,9 +4116,9 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	    end = p.Pos()
   	    emptyMapOrSet = true
   	} else if p.Match1('{') {
-
-	    if ! p.parseForRangeStatement(&rangeStmt, 1, true) {
-	
+        if p.parseIndentedForGenerator(st.RuneColumn, &rangeStmt) {		
+	        p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {}")  
+	    } else {	
 	        // Get the list of expressions inside the map or set literal squiggly-brackets
 	        // Note that one of these must exist, because it is not {}
 
@@ -4315,7 +4323,7 @@ func (p *parser) crudeTypeInfer(elementExprs []ast.Expr, typeSpec **ast.TypeSpec
     var typName string
     if len(primitiveTypes) == 1 {
         for tok,_ := range primitiveTypes {
-         typName = strings.Title(tok.String())
+         typName = strings.Title(strings.ToLower(tok.String()))
            typeName = &ast.Ident{pos, typName, nil, token.TYPE,-1}  
         }
     } else if len(primitiveTypes) == 2 { // See if types are all Numeric, else Choose RelishPrimitive

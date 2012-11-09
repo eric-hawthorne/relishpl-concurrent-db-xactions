@@ -17,6 +17,7 @@ TEST_ATTRIBUTE_PERSISTENCE = false
 TEST_TIME_METHODS = true
 TEST_GOROUTINES = false
 REST_OF_TEST = true
+TEST_CONSOLE_INPUT = false
 
 //
 // if gt radius MAX_RADIUS
@@ -85,7 +86,24 @@ listTest
    => theList
 
 
+testReturns2More > Int Int
+"""
+ Returns two items.
+"""
+   => 4 5
 
+testReturns2 > Int Int
+"""
+ Returns two items.
+"""
+   => testReturns2More
+
+
+testReturnsTheTwoItGotMultiplied x Int y Int > Int 
+"""
+ Testing returning multiple values and receiving multiple
+"""
+   => times x y
 
 
 spew mx Mutex chin InChannel inNum Int chout OutChannel outNum Int n Int
@@ -157,8 +175,16 @@ main
    print circleProperty 9.0 "c"
 
    if REST_OF_TEST
-      s = input "What is your first name?\n"
-      print s      
+      if TEST_CONSOLE_INPUT
+         s = input "What is your first name?\n"
+         print s      
+
+      v1 v2 = testReturns2
+      print v1 v2
+
+      // FAILING !!!!!
+      print testReturns2
+      print testReturnsTheTwoItGotMultiplied testReturns2
 
       car1 = vehicles.Car
       car1.lat = 49.243
@@ -285,6 +311,42 @@ main
       for k v in outerSolarSystem
          print k v   
 
+
+      sales = [1.29 4.25 0.33 5.981]
+      print sum sales  // should print 11.851
+
+      scores = [22 9 0 13]
+      print sum scores  // should print 44
+
+      taxedSales = [
+                      for sale in sales
+                         times sale 1.10
+                   ]Float
+
+      print sum taxedSales
+
+      opps = {
+                for ky vl 
+                   in 
+                      ["left" "up" "inside"]
+                      ["right" "down" "outside"]
+                   ky vl
+             }String > String
+      
+      for key9 val9 in opps
+         print key9 val9
+      print opps["left"] opps["up"]
+
+      opps2 = {
+                 for val3 in ["left" "up" "inside"]
+                    val3
+                    cat "[" val3 "]"
+              }String > String
+      
+      for key8 val8 in opps2
+         print key8 val8
+      print opps2["left"] opps2["up"]
+    
       a = """
 This is the very first
 multi-line string in relish!!

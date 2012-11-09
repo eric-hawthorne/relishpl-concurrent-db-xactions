@@ -660,6 +660,9 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
    in the parent thread t and its stack, then the stack frame of the call will be copied to t2's stack, 
    and the method application to the arguments will be performed in the new thread (go-routine actually) using t2's stack.
 
+
+TODO Put nArgs in variants of this method !!!!!!!!!!!!
+
 */
 func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall) (nReturnArgs int) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalMethodCall"))
@@ -719,9 +722,13 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	   constructorArg = 1
     }  
 
+    p0 := t.Pos
 	for _, expr := range call.Args {
 		i.EvalExpr(t, expr)
 	}
+	p1 := t.Pos
+	nArgs := p1 - p0
+	
 	// 
 	// TODO We are going to have to handle varargs differently here. Basically, eval and push only the non-variable
 	// args here, then, below, reserve space for one list (of varargs) then reserve space for the local vars, 
@@ -739,9 +746,14 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	switch meth.(type) {
 	case *RMultiMethod:
 		mm := meth.(*RMultiMethod)
-		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(constructorArg + len(call.Args))) // len call.Args is WRONG! Use Type.Param except vararg
+		
+// !!!!!!!!!!!!!!! TODO TODO TODO SEVERELY WRONG !!! Can't do dispatch at all
+// until have evaluated the argument expressions and know how many args were pushed on
+// the stack.	
+		
+		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(constructorArg + nArgs)) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
-			if isTypeConstructor && len(call.Args) == 0 {  // There is no other-argless init<TypeName> method.
+			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
                // Unsetup the aborted constructor method call.
 	           // TODO This is really inefficient!! Do something else for simple no-method constructions.
 	           t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO   
@@ -772,7 +784,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
 		t.Reserve(method.NumLocalVars) // This only works with next TopN call because builtin methods have 0 local vars.
 
-		i.apply1(t, method, t.TopN(constructorArg + len(call.Args))) // Puts results on stack BELOW the current stack frame.	
+		i.apply1(t, method, t.TopN(constructorArg + nArgs)) // Puts results on stack BELOW the current stack frame.	
 
     } else { // This is a go statement execution
     	t2.copyStackFrameFrom(t, nReturnArgs)  // copies the frame for the execution of this method, 
@@ -935,8 +947,26 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
       // fmt.Println(len(*objs))
 
+   } else if listConstruction.Generator != nil { // Generator expression to yield elements  
+      i.iterateGenerator(t, listConstruction.Generator, 1)
+      list.ReplaceContents(t.Objs)
+      t.Objs = nil
    }
-	return
+   return
+}
+
+/*
+   Given a for-range statement which is of the special type that constitutes a generator expression,
+   causes the iteration of the range statement to produce all of the generated results.
+   nResultsPerIteration is the expected number of result values expected to be yielded per iteration
+   of the for loop. A runtime error will occur if the for-range statement does not yield this number
+   of results per iteration.
+   Results are collected in a slice of RObjects. If there is more than one result per iteration,
+   the result values are interleaved in the returned slice as follows iteration1result1 i1r2 i2r1 i2r2 i3r1 i3r2 
+*/
+func (i *Interpreter) iterateGenerator(t *Thread, rangeStmt *ast.RangeStatement, nResultsPerIteration int) {
+	t.YieldCardinality = nResultsPerIteration
+	i.ExecForRangeStatement(t, rangeStmt)
 }
 
 
@@ -1024,6 +1054,13 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
       // fmt.Println(len(*objs))
 
+   } else if setConstruction.Generator != nil { // Generator expression to yield elements  
+      i.iterateGenerator(t, setConstruction.Generator, 1)
+      aSet := set.(AddableCollection)
+      for _,obj := range t.Objs {
+		 aSet.Add(obj, t.EvalContext) 
+      }
+      t.Objs = nil
    }
 	return
 }
@@ -1064,7 +1101,17 @@ func (i *Interpreter) EvalMapConstruction(t *Thread, mapConstruction *ast.MapCon
        }		
 
        t.PopN(nElem * 2)
-	}
+	} else if mapConstruction.Generator != nil { // Generator expression to yield elements  
+      i.iterateGenerator(t, mapConstruction.Generator, 2)
+      n := len(t.Objs)
+      for k := 0; k < n; k+=2 {
+         key := t.Objs[k]
+         val := t.Objs[k+1] 
+		 theMap.Put(key, val, t.EvalContext) 
+      }
+      t.Objs = nil
+   }
+	
  
 	return
 }
@@ -1296,9 +1343,8 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 		i.ExecMethodCall(t, nil, stmt.(*ast.MethodCall))
 	case *ast.AssignmentStatement:
 		i.ExecAssignmentStatement(t, stmt.(*ast.AssignmentStatement))
-	case *ast.ReturnStatement:
-		i.ExecReturnStatement(t, stmt.(*ast.ReturnStatement)) // Need two kinds of return stmt with and without args
-		returnFrom = true
+	case *ast.ReturnStatement:		
+		returnFrom = i.ExecReturnStatement(t, stmt.(*ast.ReturnStatement)) 
 	case *ast.BlockStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecBlock(t, stmt.(*ast.BlockStatement))
 	case *ast.GoStatement:
@@ -2200,14 +2246,41 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 Executes expressions in left to right order then places them under the Base pointer on the stack, ready to be
 the results of the evaluation of the method.
 */
-func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) {
+func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) (returnFrom bool) {
 	defer UnM(t,TraceM(t,INTERP_TR, "ExecReturnStatement", "stack top index ==>", t.Base-1))
 
-	n := len(stmt.Results)
-	for j, resultExpr := range stmt.Results {
-		i.EvalExpr(t, resultExpr)
-		t.Stack[t.Base+j-n] = t.Pop()   // was t.Base-j-1  (return args in reverse order on stack)
-	}
+	p0 := t.Pos
+    for _, resultExpr := range stmt.Results {
+	   i.EvalExpr(t, resultExpr)
+    }	
+	p1 := t.Pos
+	n := p1 -p0
+		
+	if stmt.IsYield {
+		
+		if n != t.YieldCardinality {
+			rterr.Stopf("Generator expression should yield %d values but yields %d instead.",t.YieldCardinality,n)
+		}
+		
+		// TODO This may be a temporary implementation
+        for p := p0+1; p <= p1; p++ {
+			t.Objs = append(t.Objs, t.Stack[p])   
+		}
+		t.PopN(n)
+				
+	} else {
+		returnFrom = true
+		
+
+		for _, resultExpr := range stmt.Results {
+			i.EvalExpr(t, resultExpr)
+		}
+
+		for j := n-1; j >=0; j-- {	
+			t.Stack[t.Base+j-n] = t.Pop()   
+		}
+    }
+    return
 }
 
 /*
@@ -2251,7 +2324,11 @@ type Thread struct {
 	ExecutingMethod *RMethod       // Shortcut for dispatch efficiency
 	ExecutingPackage *RPackage   // Shortcut for dispatch efficiency
 
-
+    // This may be temporary - it is used for generators inside collection constructors, but may
+    // be replaced by proper go-routine-and-channel generators or closures.
+    Objs       []RObject   // A list of objects that will be built up then become owned by a proper collection object 
+                           // and detached from the Thread.
+	YieldCardinality int   // How many objects per iteration the current generator is expected to append to Objs
 }
 
 func (t *Thread) Push(obj RObject) {
