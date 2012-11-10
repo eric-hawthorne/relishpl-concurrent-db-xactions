@@ -342,6 +342,149 @@ func InitBuiltinFunctions() {
 	}
 	millisecondsMethod.PrimitiveCode = builtinMilliseconds	
 
+
+
+
+
+
+// date t Time > year Int month Int day Int
+//
+	timeDateMethod, err := RT.CreateMethod("","date", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeDateMethod.PrimitiveCode = builtinTimeDate
+
+// clock t Time > hour Int min Int sec Int
+//
+	timeClockMethod, err := RT.CreateMethod("","clock", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeClockMethod.PrimitiveCode = builtinTimeClock
+
+// day t Time > dayOfMonth Int  
+// """
+//  0..31
+// """
+//
+	timeDayMethod, err := RT.CreateMethod("","day", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeDayMethod.PrimitiveCode = builtinTimeDay
+
+
+// hour t Time >  Int  
+// """
+//  0..23
+// """
+//
+	timeHourMethod, err := RT.CreateMethod("","hour", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeHourMethod.PrimitiveCode = builtinTimeHour
+
+
+// minute t Time >  Int  
+// """
+//  0..59
+// """
+//
+	timeMinuteMethod, err := RT.CreateMethod("","minute", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeMinuteMethod.PrimitiveCode = builtinTimeMinute
+
+
+// second t Time >  Int  
+// """
+//  0..59
+// """
+//
+	timeSecondMethod, err := RT.CreateMethod("","second", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeSecondMethod.PrimitiveCode = builtinTimeSecond
+
+// nanosecond t Time >  Int  
+// """
+//  0..999999999
+// """
+//
+	timeNanosecondMethod, err := RT.CreateMethod("","nanosecond", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeNanosecondMethod.PrimitiveCode = builtinTimeNanosecond
+
+
+// weekday t Time >  Int  
+// """
+//  0..6  Sunday = 0 
+// """
+//
+	timeWeekdayMethod, err := RT.CreateMethod("","weekday", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeWeekdayMethod.PrimitiveCode = builtinTimeWeekday
+
+
+// year t Time >  Int  
+//
+	timeYearMethod, err := RT.CreateMethod("","year", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeYearMethod.PrimitiveCode = builtinTimeYear
+
+
+// month t Time >  Int  
+// """
+//  1..12  January = 1
+// """
+//
+	timeMonthMethod, err := RT.CreateMethod("","month", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeMonthMethod.PrimitiveCode = builtinTimeMonth
+	
+
+// zone t Time > name String offset Int
+// """
+//  EST secondsEastOfUTC
+// """  
+//
+	timeZoneMethod, err := RT.CreateMethod("","zone", []string{"t"}, []string{"Time"}, []string{"String","Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeZoneMethod.PrimitiveCode = builtinTimeZone
+
+
+// format t Time layout String > String
+// """
+//  Like Go time layouts (http://golang.org/pkg/time/)
+// """  
+//
+	timeFormatMethod, err := RT.CreateMethod("","format", []string{"t","layout"}, []string{"Time","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeFormatMethod.PrimitiveCode = builtinTimeFormat
+
+
+
+
+
+
+
+
     // duration hours Int minutes Int > durationNs Int
     // 
 	durationHoursMinutesMethod, err := RT.CreateMethod("","duration", []string{"h","m"}, []string{"Int","Int"}, []string{"Int"}, false, 0, false)
@@ -1685,6 +1828,12 @@ func builtinTick(objects []RObject) []RObject {
 	return []RObject{c}
 }	
 
+
+
+
+
+
+
 // plus t Time durationNs Int > Time
 //
 func builtinTimePlus(objects []RObject) []RObject {
@@ -1778,6 +1927,134 @@ func builtinMilliseconds(objects []RObject) []RObject {
 	return []RObject{Int(d)}		
 }	
 	
+
+
+// date t Time > year Int month Int day Int
+//
+func builtinTimeDate(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    year, month, day := t.Date()
+	return []RObject{Int(year),Int(month),Int(day)}
+}
+
+// clock t Time > hour Int min Int sec Int
+//
+func builtinTimeClock(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    hour, min, sec := t.Clock()
+	return []RObject{Int(hour),Int(min),Int(sec)}
+}
+
+// day t Time > dayOfMonth Int  
+// """
+//  0..31
+// """
+//
+func builtinTimeDay(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    day := t.Day()
+	return []RObject{Int(day)}
+}
+
+// hour t Time >  Int  
+// """
+//  0..23
+// """
+//
+func builtinTimeHour(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    hour := t.Hour()
+	return []RObject{Int(hour)}
+}
+
+// minute t Time >  Int  
+// """
+//  0..59
+// """
+//
+func builtinTimeMinute(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    min := t.Minute()
+	return []RObject{Int(min)}
+}
+
+// second t Time >  Int  
+// """
+//  0..59
+// """
+//
+func builtinTimeSecond(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    sec := t.Second()
+	return []RObject{Int(sec)}
+}
+
+// nanosecond t Time >  Int  
+// """
+//  0..999999999
+// """
+//
+func builtinTimeNanosecond(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    nsec := t.Nanosecond()
+	return []RObject{Int(nsec)}
+}
+
+// weekday t Time >  Int  
+// """
+//  0..6  Sunday = 0 
+// """
+//
+func builtinTimeWeekday(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    wd := t.Weekday()
+	return []RObject{Int(int64(int(wd)))}
+}
+
+// year t Time >  Int  
+//
+func builtinTimeYear(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    year := t.Year()
+	return []RObject{Int(year)}
+}
+
+// month t Time >  Int  
+// """
+//  1..12  January = 1
+// """
+//
+func builtinTimeMonth(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    month := t.Month()
+	return []RObject{Int(int64(int(month)))}
+}
+
+
+// zone t Time > name String offset Int
+// """
+//  EST secondsEastOfUTC
+// """  
+//
+func builtinTimeZone(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+    zoneName,offset := t.Zone()
+	return []RObject{String(zoneName),Int(offset)}
+}
+
+// format t Time layout String > String
+// """
+//  Like Go time layouts (http://golang.org/pkg/time/)
+// """  
+//
+func builtinTimeFormat(objects []RObject) []RObject {
+	t := time.Time(objects[0].(RTime))
+	layout := string(objects[1].(String))	
+    s := t.Format(layout)
+	return []RObject{String(s)}
+}
+
+
 
 // duration hours Int minutes Int > durationNs Int
 // 

@@ -151,6 +151,12 @@ h1 a
    text-decoration: none;
 }
 
+#index a.alt
+{
+   color: #678443;
+   text-decoration: none;
+}
+
 #content_left
 {       
    vertical-align: top;

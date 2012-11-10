@@ -537,6 +537,15 @@ aFinalList =
       "For me?"
       "I don't know!"
    ]	
+
+
+sales = [19.25 54.99 3.49 9.99 18.99 2.49]
+
+taxedLargeSales = [
+                     for sale in sales
+                        if gt sale 9.99
+                           times sale 1.12      
+                  ]Float
 </pre></code><br/>
 
 
@@ -581,28 +590,31 @@ If on one line, the element expressions must be separated from each other by one
 If expressed on multiple lines, the closing square bracket must fall directly below the opening square bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening square bracket.
 	</p>
 	<p>
+		Instead of listing elements, a multi-line list literal may instead contain a for-range generator expression, as illustrated in the last list literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one expression. The if is also constrained to either contain only another nested if, or one expression in the if-clauses. The expression must yield one value. The expression will be evaluated and become an element of the list. The list being constructed is populated by iterating the 'for' statement and putting the element expression into the list on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine a function of elements of other collections into a list, or to filter another collection to create the list.
+		</p>	
+	<p>
 List element selector expressions are also enclosed in square brackets immediately following the variable/attribute name that refers to the list. They must follow the same horizontal or vertical layout rules as a list construction literal, as described just above.
 	</p>
 	<p>
-		<span class="future">A List element selector expression can be used as an l-value (an assignable storage location) provided the list is mutable.</span>
+		A List element selector expression can be used as an l-value (an assignable storage location) <span class="future">provided the list is mutable.</span>
 	</p>
 <p>
 	<b>Semantics:</b>
 </p>
 <p>
-Lists are ordered, indexable, typed collections of elements. By default they are mutable, and they grow as needed to accommodate appended elements. They are indexed by an integer index beginning at index 0 for the first element of the list. An attempt to use an index out of range will cause a panic <span class="future">(should be a runtime error)</span>.
+Lists are ordered, indexable, typed collections of elements. By default they are mutable, and they grow as needed to accommodate appended elements. They are indexed by an integer index beginning at index 0 for the first element of the list. 
 </p>
 <p>
-	<span class="future">The += operator appends the value of its right-side expression on as the last element of the list. The -= operator removes its right-side value from the list if found in the list, otherwise it does nothing and does not complain.</span>
+The += operator appends the value of its right-side expression on as the last element of the list. The -= operator removes its right-side value from the list if found in the list, otherwise it does nothing and does not complain.
 </p>	
 <p>
 <span class="future">Lists can be specified when constructed to maintain their elements in a sorted order according to a) the natural order of their elements (which depends on the element type), or b) the natural order of a specified attribute of elements, or c) the natural order of a supplied unary function of elements, or d) an order-comparison method that is supplied.</span>
 </p>
 
 
-<h4><span class="future">Set literals</span></h4>
+<h4>Set literals</h4>
 <code><pre>
-<span class="future">aSet = {"Mercury" "Venus"}
+aSet = {"Mercury" "Venus"}
 
 anotherSet = {
                 "Mercury"
@@ -616,23 +628,35 @@ aFinalSet =
       19
       17
       36
-   }</span>
+   }
+
+
+words = ["balderdash" "rubbish" "lies" "tripe" "spew" "garbage" "balderdash" "lies"]
+
+shortWords = {
+                for word in words 
+                   if lt (len word) 6
+                      cat (title word) "!"      
+            }String 
 </pre></code>
 
 
 <p>
-	<b><span class="future">Syntax:</span></b>
+	<b>Syntax:</b>
 </p>
 <p>
-<span class="future">Set literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of set elements.</span>
+Set literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of set elements.
 </p>
 <p>
-<span class="future">If expressed on one line, the brackets must immediately surround the set element expressions, with no spaces just inside the brackets.
-If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.</span>
+If expressed on one line, the brackets must immediately surround the set element expressions, with no spaces just inside the brackets.
+If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
 </p>
 <p>
-<span class="future">If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.</span>
+If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.
 	</p>
+	<p>
+		Instead of listing elements, a multi-line set literal may instead contain a for-range generator expression, as illustrated in the last set literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one expression. The if is also constrained to either contain only another nested if, or one expression in the if-clauses. The expression must yield one value. The expression will be evaluated and become an element of the set. The set being constructed is populated by iterating the 'for' statement and putting the element expression into the set on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine a function of elements of other collections into a set, or to filter another collection to create the set.
+		</p>	
 	<p>
 <span class="future">Sorted-set element selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the sorted set. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.</span>
 	</p>
@@ -640,19 +664,19 @@ If on one line, the element expressions must be separated from each other by one
 		<span class="future">A sorted-set element selector expression cannot be used as an l-value (an assignable storage location).</span>
 	</p>
 <p>
-	<b><span class="future">Semantics:</span></b>
+	<b>Semantics:</b>
 </p>
 <p>
-	<span class="future">Sets are typed collections of elements, which can only have each object/value once in the collection. By default they are mutable, and they grow as needed to accommodate added elements. There are sorted sets, where the sorting criterion is specified at construction of the Set, in the same manner as for sorted lists. Sorted sets are indexed by an integer index beginning at index 0 for the first element of the list. An attempt to use an index out of range will cause a panic (should be a runtime error)</span>.
+Sets are typed collections of elements, which can only have each object/value once in the collection. By default they are mutable, and they grow as needed to accommodate added elements. There are sorted sets, where the sorting criterion is specified at construction of the Set, in the same manner as for sorted lists. Sorted sets are indexed by an integer index beginning at index 0 for the first element of the list. They also return their elements in the sort-order when ranged over in a for-range statement. 
 </p>
 <p>
-	<span class="future">The += operator adds the value of its right-side expression to the set if it is not already there, and does not complain if it is. The -= operator removes its right-side value from the set if found in the set, otherwise it does nothing and does not complain.</span>
+The += operator adds the value of its right-side expression to the set if it is not already there, and does not complain if it is. The -= operator removes its right-side value from the set if found in the set, otherwise it does nothing and does not complain.
 </p>
 
 
-<h4><span class="future">Map literals</span></h4>
+<h4>Map literals</h4>
 <code><pre>
-<span class="future">aMap = {"Mercury"=>1 "Venus"=>2 "Earth"=>3}
+aMap = {"Mercury"=>1 "Venus"=>2 "Earth"=>3}
 
 anotherMap = {
                 "Mercury" => 1
@@ -661,19 +685,48 @@ anotherMap = {
                 "Mars"    => 4
              }
 
-aFinalMap = 
+yetAnotherMap = {
+	               "Mercury" => Planet 1
+	               "Venus"   => Planet 2	
+                }String > Planet
+
+stillAnotherMap = {
+                     "Earth" => Planet 3
+                     "Mars"  => Planet 4	
+                  }String 
+                   > 
+                      Planet
+
+anotherPlanetMap = 
    {
       "Mercury" => 1
       "Venus"   => 2
       "Earth"   => 3
       "Mars"    => 4
-   }</span>
+   }
+
+words = ["up" "left" "back" "white"]
+antonyms = ["down" "right" "front" "black"]
+ 
+opposites = {
+               for w1 w2 
+                  in 
+                     words 
+                     antonyms
+                  if contains w1 "t"
+                     upper w1 
+                     w2
+                  else
+                     w1
+                     upper w2
+            }String > String
+
 </pre></code>
 
 
-<h4><span class="future">Map element selector expression</span></h4>
+<h4>Map element selector expression</h4>
 <code><pre>
-<span class="future">a = aMap["Earth"] 
+a = aMap["Earth"] 
 
 a = aMap[
            expr
@@ -687,37 +740,40 @@ aMap[
        expr
           like 
           this
-    ] = s</span>
+    ] = s
 </pre></code><br/>
 
 
 <p>
-	<b><span class="future">Syntax:</span></b>
+	<b>Syntax:</b>
 </p>
 <p>
-<span class="future">Map literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of keys and values.</span>
+Map literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of keys and values.
 </p>
 <p>
-<span class="future">Map literals are comprised of brackets surrounding a sequence of mapped-pairs. Each mapped pair is a key expression followed by "=>" followed by a value expression.</span>	
+Map literals are comprised of brackets surrounding a sequence of mapped-pairs. Each mapped pair is a key expression followed by "=>" followed by a value expression.	
 </p>
 <p>
-<span class="future">If expressed on one line, the brackets must immediately surround the mapped-pair expressions, with no spaces just inside the brackets.
-If on one line, the mapped-pair expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.</span>
+If expressed on one line, the brackets must immediately surround the mapped-pair expressions, with no spaces just inside the brackets.
+If on one line, the mapped-pair expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
 </p>
 <p>
-<span class="future">If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The mapped-pairs must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.</span>
+If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The mapped-pairs must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket. Additionally, the mapping arrows must be vertically aligned below each other.
 	</p>
 	<p>
-<span class="future">Map value selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the map. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.</span>
+		Instead of listing mapped pairs, a multi-line map literal may instead contain a for-range generator expression, as illustrated in the last map literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one or more expressions. The if is also constrained to either contain only another nested if, or one or more expressions in the if-clauses. The expression(s) must yield two values. The first of these will become the key, and the second value will be the value for the key. The map being constructed is populated by iterating the 'for' statement and putting the key and value expression into the map on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine other collections into a map, or to filter other collections to create the map.
+		</p>
+	<p>
+Map value selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the map. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.
 	</p>
 	<p>
-		<span class="future">A map value selector expression can be used as an l-value (an assignable storage location), provided the map is mutable.</span>
+	A map value selector expression can be used as an l-value (an assignable storage location), provided the map is mutable.
 	</p>
 <p>
-	<b><span class="future">Semantics:</span></b>
+	<b>Semantics:</b>
 </p>
 <p>
-	<span class="future">Maps are typed sets of mapped-pairs. By default they are mutable, and they grow as needed to accommodate added key-value pairs. There are sorted maps, where the sorting criterion is specified at construction of the Map, in the same manner as for sorted lists. Is it key sorting or value sorting????? Sorted maps are indexed by an integer index beginning at index 0 for the first element of the map. An attempt to use an index out of range will cause a panic (should be a runtime error)</span>.
+Maps are sets of keys, with each key mapped to a value. By default they are mutable, and they grow as needed to accommodate added key-value pairs. <span class="future">There are sorted maps, where the key-sorting criterion is specified at construction of the Map, in the same manner as for sorted lists. A sorted map will yield its keys in the sort-order when ranged over in a for-range statement.</span>
 </p>
 
 <br/>
@@ -1611,6 +1667,85 @@ milliseconds n Int > durationNs Int
 """
  Converts n milliseconds to the equivalent number of nanoseconds.
 """ 
+
+
+date t Time > year Int month Int day Int
+"""
+ Returns the date in which the time occurs.
+ Calculated using the time's location.
+"""
+
+
+clock t Time > hour Int min Int sec Int
+"""
+ Return the clock time 0:0:0 to 23:59:59 of the time. 
+ Calculated using the time's location.
+"""
+
+
+day t Time > dayOfMonth Int  
+"""
+ 0..31
+ Calculated using the time's location.
+"""
+
+
+hour t Time >  Int  
+"""
+ 0..23
+ Calculated using the time's location.
+"""
+
+
+minute t Time >  Int  
+"""
+ 0..59
+ Calculated using the time's location.
+"""
+
+
+second t Time >  Int  
+"""
+ 0..59
+"""
+
+
+nanosecond t Time >  Int  
+"""
+ 0..999999999
+"""
+
+
+weekday t Time >  Int  
+"""
+ 0..6  Sunday = 0 
+ Calculated using the time's location.
+"""
+
+
+year t Time >  Int  
+"""
+ The year in which the time occurs. Calculated using the time's location.
+"""
+
+
+month t Time >  Int  
+"""
+ 1..12  January = 1
+"""
+
+
+zone t Time > name String offset Int
+"""
+ EST secondsEastOfUTC
+"""  
+
+
+format t Time layout String > String
+"""
+ Produce a formatted string version of the time.
+ Understands Go time layouts (see http://golang.org/pkg/time/)
+"""  
 
 
 duration hours Int minutes Int > durationNs Int
