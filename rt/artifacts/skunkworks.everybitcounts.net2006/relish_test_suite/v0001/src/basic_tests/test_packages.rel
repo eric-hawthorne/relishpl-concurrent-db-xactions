@@ -179,6 +179,8 @@ main
          s = input "What is your first name?\n"
          print s      
 
+    
+
       v1 v2 = testReturns2
       print v1 v2
 
@@ -534,6 +536,11 @@ multi-line %s string in relish!!
       print numCodePoints s3
       print index s3 "世界"
       print index s3 "界"
+
+      print lower "HELL NO!"
+      print upper "Yahoo!"
+      print title "not on my watch!"
+      print cat ">" (trimSpace "  some important stuff   ") "<"
 
       print base64Hash s3
 

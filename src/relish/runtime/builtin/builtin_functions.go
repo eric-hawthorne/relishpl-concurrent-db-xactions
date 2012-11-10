@@ -825,6 +825,38 @@ replace s String old String new String n Int > String
 		panic(err)
 	}
 	stringLastMethod.PrimitiveCode = builtinStringLast	
+
+    stringLowerMethod, err := RT.CreateMethod("","lower", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringLowerMethod.PrimitiveCode = builtinStringLower	
+
+    stringUpperMethod, err := RT.CreateMethod("","upper", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringUpperMethod.PrimitiveCode = builtinStringUpper	
+
+    stringTitleMethod, err := RT.CreateMethod("","title", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringTitleMethod.PrimitiveCode = builtinStringTitle	
+
+    stringTrimSpaceMethod, err := RT.CreateMethod("","trimSpace", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringTrimSpaceMethod.PrimitiveCode = builtinStringTrimSpace			
+
+	
+
+
+
+
+
+
 	
 	
 	/*
@@ -2326,6 +2358,34 @@ func builtinStringLast(objects []RObject) []RObject {
 	substr := s[start:end]
     return []RObject{String(substr)}	
 }
+
+
+
+
+	
+func builtinStringLower(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	lowered := strings.ToLower(s)  
+    return []RObject{String(lowered)}	
+}	
+
+func builtinStringUpper(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	capitalized := strings.ToUpper(s)      
+    return []RObject{String(capitalized)}	
+}	
+
+func builtinStringTitle(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	t := strings.Title(strings.ToLower(s))   
+    return []RObject{String(t)}	
+}	
+
+func builtinStringTrimSpace(objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	trimmed := strings.TrimSpace(s)  
+    return []RObject{String(trimmed)}	
+}	
 
 
 

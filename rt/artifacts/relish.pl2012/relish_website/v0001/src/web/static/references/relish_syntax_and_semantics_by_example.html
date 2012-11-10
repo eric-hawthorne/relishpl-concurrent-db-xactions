@@ -1417,7 +1417,7 @@ appear on the same line as the end of the previous statement, separated from it 
 eq RelishPrimitive RelishPrimitive > Bool
 """
  Returns whether two primitive-type values are equal in value.
- Currently, applies to Numeric,String,Bool.
+ Currently, applies to Numeric,String,Bool,Time.
  Converts between numeric types if necessary before testing for numeric equality, 
  and converts a number to its string representation to compare with a string.
 """
@@ -1464,6 +1464,7 @@ or ...a Any > Any
  If all arguments are false-equivalent, returns false.
  All arguments are evaluated, unlike LISP's lazy or operator.
 """
+
 		
 		
 // Arithmetic operators		
@@ -1473,30 +1474,44 @@ times a Numeric b Numeric > Numeric
  Return value type is covariant with argument types.
 """
 
+
 div a Numeric b Numeric > Numeric
 """ 
  Return value type is covariant with argument types.
 """
+
 
 mod a Integer b Integer > Integer
 """ 
  Return value type is covariant with argument types.
 """
 
+
 plus a Numeric b Numeric > Numeric
 """ 
  Return value type is covariant with argument types.
 """
+
+
+sum numbers [] Numeric > Numeric
+"""
+ Returns the sum of the list of numbers.
+ The result type is co-variant with the input list element-type constraint,
+ so if a [] Int is supplied, an Int is returned. [] Float > Float
+"""
+
 
 minus a Numeric b Numeric > Numeric
 """ 
  Return value type is covariant with argument types.
 """
 
+
 neg a Numeric > Numeric
 """ 
  Return value type is covariant with (same as) argument type.
 """
+
 
 
 // Time and Duration functions
@@ -1585,15 +1600,18 @@ minutes n Int > durationNs Int
  Converts n minutes to the equivalent number of nanoseconds.
 """ 
 
+
 seconds n Int > durationNs Int
 """
  Converts n seconds to the equivalent number of nanoseconds.
 """
 
+
 milliseconds n Int > durationNs Int
 """
  Converts n milliseconds to the equivalent number of nanoseconds.
 """ 
+
 
 duration hours Int minutes Int > durationNs Int
 """
@@ -1601,11 +1619,13 @@ duration hours Int minutes Int > durationNs Int
  nanoseconds.
 """
 
+
 duration hours Int minutes Int seconds Int > durationNs Int
 """
  Converts the number of hours,minutes, and seconds to the equivalent number of
  nanoseconds.
 """
+
 
 duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
 """
@@ -1643,8 +1663,69 @@ timeParts durationNs Int > h Int m Int s Int ns Int
 		
 len c Collection > Int
 """
- Returns the number of elements in the collection <span class="future">or map</span>.
+ Returns the number of elements in the collection or map.
 """
+
+
+cap c Collection > Int
+"""
+ Returns the current capacity of the collection or map.
+ The interpretation of capacity depends on the kind of collection.
+ For a List, it is the length of the currently allocated array of object references.
+ Lists grow as needed, so cap is only advisory.
+"""
+
+
+
+// Concurrency and inter-goroutine communication methods
+
+len c Channel > Int
+"""
+ Returns the number of objects currently in the channel buffer. 0 always for an unbuffered channel?
+"""
+
+
+cap c Channel > Int
+"""
+ Returns the capacity channel. 0 means an unbuffered synchronous channel.
+"""
+
+
+lock m Mutex
+"""
+ Locks the mutex. When lock is acquired, go-routines attempting to lock this mutex will block.
+"""
+
+
+unlock m Mutex
+"""
+ Unlocks the write-lock on the mutex. A goroutine is free to lock the mutex now.
+"""
+
+
+lock m RWMutex
+"""
+ Locks the mutex. When lock is acquired, go-routines attempting to lock or rlock this mutex will block.
+"""
+
+
+unlock m RWMutex
+"""
+ Unlocks the write-lock on the mutex. A goroutine is free to lock the mutex now.
+"""
+
+
+rlock m RWMutex
+"""
+ Locks the mutex for reading. When lock is acquired, go-routines attempting to write-lock this mutex will block.
+"""
+
+
+runlock m RWMutex
+"""
+ Unlocks the read-lock on the mutex. A goroutine  is free to write-lock the mutex now.
+"""
+
 
 
 // I/O Methods
@@ -1652,8 +1733,19 @@ len c Collection > Int
 print ...a Any
 """
  Prints a representation of the argument object/value(s) on the standard output, with a space separating 
- each printed object/value.
+ each printed object/value. NOTE: Currently only accepts RelishPrimitive objects as arguments.
+ Note: Currently limited to no more than 7 arguments. See the cat or fill methods below to work around this.
 """	
+
+
+input promptMessage String > String
+"""
+ Prints the prompt message to stdout then reads a string (up to a linefeed) from stdin and returns the 
+ input string (without the linefeed character).
+ Used to get a line of input from the console. If stdin is coming from the console, waits till the
+ [Enter] button is pressed.
+""" 
+
 
 
 // String methods
@@ -1742,6 +1834,31 @@ cat ...obj Any > String
 """
 
 
+lower s String > String
+"""
+  Returns a copy of the string s with all Unicode letters mapped to their lower case.
+"""
+
+
+upper s String > String
+"""
+  Returns a copy of the string s with all Unicode letters mapped to their upper case.
+"""
+
+
+title s String > String
+"""
+ Returns a copy of the string s with all Unicode letters that begin words mapped to their title case,
+ and all other Unicode letters mapped to their lower case.
+""" 
+
+
+trimSpace s String > String
+"""
+ Returns a slice of the string s, with all leading and trailing white space removed, as defined by Unicode.
+""" 
+
+
 replace s String old String new String > String
 """
   Returns a copy of the string s with all non-overlapping instances of old replaced by new. 
@@ -1811,6 +1928,19 @@ Hello!
 
 My name is John Doe 
 and I am 19 years old.	
+
+
+base64Hash s String > String
+"""
+ Returns the SHA-256 hash of s as a bas-64 encoded string.
+"""
+
+
+hexHash s String > String
+"""
+ Returns the SHA-256 hash of s as a lowercase-hexadecimal-encoded string. 
+ Less compact than base64 but contains only alphanumeric characters.
+"""
 
 </pre></code>	
 <p>
