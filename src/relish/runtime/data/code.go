@@ -47,20 +47,21 @@ type RMultiMethod struct {
 	Pkg            *RPackage  // the package that this multimethod is owned by
 	                          // Note that a method may be referenced by multiple packages' multimethods
 	                          // the method itself points to one of these (does not matter which - it just gets its name from the mm)	
+    IsExported    bool  // If true, this is a public method exported to packages that import this package.
 }
 
 /*
    Constructor of a multi-method. Sets its name and makes its maps.
 */
-func newRMultiMethod(name string, numReturnArgs int, pkg *RPackage) *RMultiMethod {
-	return &RMultiMethod{Name: name, Methods: make(map[int][]*RMethod), CachedMethods: make(map[*RTypeTuple]*RMethod), NumReturnArgs: numReturnArgs}
+func newRMultiMethod(name string, numReturnArgs int, pkg *RPackage, isExported bool) *RMultiMethod {
+	return &RMultiMethod{Name: name, Methods: make(map[int][]*RMethod), CachedMethods: make(map[*RTypeTuple]*RMethod), NumReturnArgs: numReturnArgs, Pkg: pkg, IsExported: isExported}
 }
 
 /*
    Clone this multimethod to make an initially identical one but owned by the argument package.
 */ 
 func (p * RMultiMethod) Clone(pkg *RPackage) *RMultiMethod {
-	mm := newRMultiMethod(p.Name,p.NumReturnArgs,pkg)
+	mm := newRMultiMethod(p.Name,p.NumReturnArgs,pkg, p.IsExported)
 	
     for arity,methodList := range p.Methods {
 	   var ms []*RMethod
@@ -71,6 +72,7 @@ func (p * RMultiMethod) Clone(pkg *RPackage) *RMultiMethod {
 		mm.CachedMethods[tt] = method
 	}
 	mm.MaxArity = p.MaxArity
+	mm.IsExported = p.IsExported
 	return mm
 }
 
@@ -452,6 +454,8 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 	                  returnArgsNamed bool,
 	                  numLocalVars int, allowRedefinition bool) (*RMethod, error) {
 
+    isExported := true // Temporary: All multimethods are "public" - change this when __private__ is introduced to relish
+
 	if packageName == "" { 
 		packageName = "relish.pl2012/core/inbuilt"
 	}
@@ -478,7 +482,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 
 
 	if !found {
-		multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg)
+		multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
 		pkg.MultiMethods[methodName] = multiMethod
 	} else {
 		if multiMethod.NumReturnArgs != numReturnArgs {

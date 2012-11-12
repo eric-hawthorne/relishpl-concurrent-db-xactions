@@ -1615,7 +1615,13 @@ func (p *parser) parseMethodHeader(methodDecl **ast.MethodDeclaration) bool {
 
 
 
-
+/*
+Parses a method name which is either of form fooBar or vehicles.fooBar.
+If the former, creates an Ident whose Name is like "fooBar"
+If the latter, creates an Ident whose Name is like "the/full/pkg/packg/name/fooBar"
+Also accepts a (qualified or unqualified)type name.
+If it sees a  type name, creates an Ident whose Name is like "the/full/pkg/packg/name/Car"
+*/
 func (p *parser) parseMethodName(allowImported bool, methodName **ast.Ident) bool {
    if p.trace {
       defer un(trace(p, "MethodName"))

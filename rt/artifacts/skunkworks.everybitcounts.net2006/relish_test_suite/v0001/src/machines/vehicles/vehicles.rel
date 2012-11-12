@@ -11,6 +11,7 @@ package  machines/vehicles
 import
    relish.pl2012/things/pkg/physical_objects as phys 
    people
+   machines/engines
  
 
 ManufacturedObject
@@ -39,11 +40,7 @@ Wheel <: phys.MovementCapableObject ManufacturedObject
    num Int
 
 
-Engine
-"""
- An engine of a vehicle.
-"""
-   horsepower Int
+
 
 
 Car <: Automobile
@@ -51,8 +48,18 @@ Car <: Automobile
  A relatively small passenger-carrying automobile, typically capable of conveying 2 to 5 passengers.
  Car 0 1 -- N Wheel 
 """
-   engine Engine
+   engine engines.Engine
    wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
+
+addEngine car Car horsepower Int weightKg Float
+"""
+ Installs an engine in the car.
+"""
+   engine = engines.Engine
+   engine.horsepower = horsepower
+   engine.weightKg = weightKg
+   car.engine = engine
+
 
 PickupTruck <: Automobile
 """
@@ -67,4 +74,14 @@ Automobile 0 1 vehicleRiddenIn -- passengers 0 N {<lastName} people.Person
 
 Automobile 0 1 vehicleHungOnTo -- tailgaters 0 N [] people.Person
 
+
+numOccupants a Automobile > Int
+"""
+ Returns the number of occupants of the automobile.
+"""
+   if a.driver
+      => plus 1
+              len a.passengers
+   else
+      => len a.passengers
 

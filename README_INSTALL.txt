@@ -38,7 +38,7 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
 6. Choose where you will create your mercurial repository
 
-   You will probable want to have your relish root i.e. relish home directory be one of the standard
+   You will probably want to have your relish root i.e. relish home directory be one of the standard
    locations. Several standard locations are recognized by the relish tools, so that if you
    choose to create a standard-location relish home directory you don't have to set
    an environment variable to tell relish where the relish home is.
@@ -169,7 +169,7 @@ Steps for Apple Mac
 
 6. Choose where you will create your mercurial repository
 
-   You will probable want to have your relish root i.e. relish home directory be one of the standard
+   You will probably want to have your relish root i.e. relish home directory be one of the standard
    locations. Several standard locations are recognized by the relish tools, so that if you
    choose to create a standard-location relish home directory you don't have to set
    an environment variable to tell relish where the relish home is.

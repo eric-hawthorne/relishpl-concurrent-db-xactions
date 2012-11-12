@@ -108,17 +108,68 @@ func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 }
 
 /*
-Update the package's multimethod map to incorporate multimethods and methods from a dependency package.
+Update the package's multimethod map to incorporate exported multimethods and methods from a dependency package.
 Helper for updatePackageDependenciesAndMultiMethodMap.
 */
 func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage) {
+//   if strings.HasSuffix(g.pkg.Name,"basic_tests") {
+//      defer Un(Trace(ALWAYS_, "updatePackageMultiMethodMap of", g.pkg.Name,"from",dependencyPackage.Name))   
+//   }	
    for multiMethodName,multiMethod := range dependencyPackage.MultiMethods {
-   	   myMultiMethod := g.pkg.MultiMethods[multiMethodName]
-   	   if myMultiMethod == nil {
+   // Loop through all of the dependency package's multimethods.
+
+
+	
+      // Consider only those multi-methods which are actually owned directly by the dependency package
+
+      if multiMethod.Pkg != dependencyPackage {
+//	      if strings.HasSuffix(g.pkg.Name,"basic_tests") && multiMethod.Pkg != data.RT.InbuiltFunctionsPackage {
+//		     fmt.Println("multimethod is not owned by dependency package!") 
+//		     fmt.Println("it is owned by",multiMethod.Pkg) 		
+//		  }
+		
+	      continue  // must be a multimethod owned by a dependency of the dependency - ignore
+      }
+
+      // And consider only the exported multimethods of the dependency package
+
+      if ! multiMethod.IsExported {
+	     continue
+      }  
+
+
+//      if multiMethodName == multiMethod.Name {
+//         fmt.Println(multiMethodName)
+//      } else {
+//	     fmt.Println(multiMethodName,"->",multiMethod.Name)
+//      }
+	
+
+	  if multiMethod.MaxArity == 0 {
+			
+	     // This multimethod from the imported package takes no arguments, so we need to find it
+	     // it by its package-qualified name. In source code, a name like vehicles.startRace
+	     // will be needed to invoke this method.
+	     multiMethod = multiMethod.Clone(g.pkg)
+	     multiMethod.IsExported = false  // This cloned multimethod is still not "owned" by current package,
+	     // and it should not be re-exported, so mark it as non-exportable.
+	     qualifiedMethodName := dependencyPackage.Name + "/" + multiMethodName
+	     g.pkg.MultiMethods[qualifiedMethodName] = multiMethod 			
+         continue
+	  } 
+
+  	  myMultiMethod := g.pkg.MultiMethods[multiMethodName]
+
+
+   	  if myMultiMethod == nil {
+       // If current package does not yet have this multimethod at all...	
+	
    	   	   g.pkg.MultiMethods[multiMethodName] = multiMethod  // use the mm from dependency package
-   	   } else if myMultiMethod != multiMethod {
-	      	
-   	   	   // Merge them if possible, else complain!! panic!
+
+   	  } else if myMultiMethod != multiMethod {
+	   // Current package has a different mm instance than the dependency package's mm
+	      		
+   	   	   // Merge them if possible, else complain!! throw runtime error!
 
            if myMultiMethod.NumReturnArgs != multiMethod.NumReturnArgs {
 	          rterr.Stopf("Package %s defines %s to return %d values so can't be imported directly or indirectly into package %s which defines %s to return %d values.",dependencyPackage.Name,multiMethod.Name,multiMethod.NumReturnArgs,g.pkg.Name,myMultiMethod.Name,myMultiMethod.NumReturnArgs)
@@ -133,14 +184,21 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
    	   	   // it so I have to copy it.
 
            if myMultiMethod.Pkg != g.pkg {
+	       // The mm in current package's list does not belong to current package
+	       // So create a clone mm which is owned by the current package
+	
 	          myMultiMethod = myMultiMethod.Clone(g.pkg)
-	          g.pkg.MultiMethods[multiMethodName] = multiMethod	
+	          myMultiMethod.IsExported = false  // This merged multimethod is still not "owned" by current package,
+	          // and it should not be re-exported, so mark it as non-exportable.
+	
+	          g.pkg.MultiMethods[multiMethodName] = myMultiMethod	
            }
 
+           // Merge in methods from the dependency package's mm into current-package-owned mm of the same name.
            myMultiMethod.MergeInNewMethodsFrom(multiMethod)
 
-   	   }
-   	   // else I've already got the multimethod - everything's cool
+   	  }
+   	  // else I've (current package has) already got the multimethod - everything's cool
    }
 }
 

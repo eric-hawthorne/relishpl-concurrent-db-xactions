@@ -10,6 +10,7 @@ package  basic_tests
 
 import
    machines/vehicles
+   machines/engines
    relish.pl2012/things/pkg/physical_objects as phys
    people
 
@@ -198,9 +199,10 @@ main
       truck1.long = 123.778
       truck1.bedLength = 8.3
 
-      engine1 = vehicles.Engine
-      engine1.horsepower = 120
-      car1.engine = engine1
+      addEngine car1 120 243.5
+
+      print "horsepower" car1.engine.horsepower "weightKg" car1.engine.weightKg    
+      print powerToWeight car1.engine 
 
       wheel1 = vehicles.Wheel
       wheel1.num = 1
@@ -492,6 +494,8 @@ multi-line %s string in relish!!
 
       for person in youngsters
          print person.firstName person.lastName
+
+      print "numOccupants" (numOccupants car2)
 
       s1 = "How now brown cow?"
       
