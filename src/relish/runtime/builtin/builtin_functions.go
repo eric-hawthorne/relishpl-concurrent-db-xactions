@@ -1208,7 +1208,15 @@ replace s String old String new String n Int > String
 	}
 	channelInit1Method.PrimitiveCode = builtinInitChannel	
 
+
+
+	stringInitMethod, err := RT.CreateMethod("","initString", []string{"s","o"}, []string{"String","Any"},  []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringInitMethod.PrimitiveCode = builtinInitString  
 }
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
@@ -2884,4 +2892,18 @@ func builtinInitChannel(objects []RObject) []RObject {
 	} 
 	c.Ch = make(chan RObject, n)
 	return []RObject{c}
+}
+
+
+/*
+Convert any object to a String.
+Note: Ignoring string methods defined for programmer-defined datatypes for the moment,
+but should probably call that if it exists.
+For now, call the builtin string-ification of object Go method.
+*/
+func builtinInitString(objects []RObject) []RObject {
+   
+    // ignore the first String argument
+    obj := objects[1]
+	return []RObject{String(obj.String())}
 }

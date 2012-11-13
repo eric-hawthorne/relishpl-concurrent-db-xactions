@@ -30,18 +30,6 @@ main
    testMultimethods
 
 
-argTest
-   a Float
-   b String
-   bar Int = 0
-   ...v [] String
-> 
-   Float   
-"""
- Test arguments to functions.
-"""
-   => a
-
 
 
 
@@ -87,7 +75,7 @@ Polyline <: Shape2D Curve
 """
  An open curve in 2D space, defined with a list of line-segments. The two ends are distinct points.
 """
-	
+
 Polygon <: Shape2D Curve
 """
  A closed curve in 2D space, defined with a list of line-segments.
@@ -118,6 +106,7 @@ distance s1 Shape2D s2 Shape2D > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Shape2D Shape2D"
    => 0.0  // TODO Implement
 
@@ -125,6 +114,7 @@ distance s1 Point2D s2 Polyline > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Point2D Polyline"
    => 0.0  // TODO Implement
 
@@ -133,6 +123,7 @@ distance s1 Point2D s2 Polygon > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Point2D Polygon"
    => 0.0  // TODO Implement
 
@@ -141,6 +132,7 @@ distance s1 Point2D s2 Region > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Point2D Region"
    => 0.0  // TODO Implement
 
@@ -149,6 +141,7 @@ distance s1 Polyline s2 Polyline > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Polyline Polyline"
    => 0.0  // TODO Implement
 
@@ -158,6 +151,7 @@ distance s1 Polyline s2 Polygon > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Polyline Polygon"
    => 0.0  // TODO Implement
 
@@ -166,15 +160,25 @@ distance s1 Polyline s2 Region > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Polyline Region"
    => 0.0  // TODO Implement
 
+
+distance s1 StraightLine s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print (String s1) (String s2)
+   print "distance Straightline Region"
+   => 0.0  // TODO Implement
 
 
 distance s1 Polygon s2 Polygon > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Polygon Polygon"
    => 0.0  // TODO Implement
 
@@ -183,6 +187,7 @@ distance s1 Polygon s2 Region > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Polygon Region"
    => 0.0  // TODO Implement
 
@@ -192,6 +197,7 @@ distance s1 Region s2 Region > Float
 """
  Return the minimum linear distance between the shapes.
 """
+   print (String s1) (String s2)
    print "distance Region Region"
    => 0.0  // TODO Implement
 
@@ -201,6 +207,7 @@ touches s1 Shape2D s2 Shape2D > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Shape2D Shape2D"
    => false  // TODO Implement
 
@@ -209,6 +216,7 @@ touches s1 Point2D s2 Polyline > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Point2D Polyline"
    => false  // TODO Implement
 
@@ -217,6 +225,7 @@ touches s1 Point2D s2 Polygon > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Point2D Polygon"
    => false  // TODO Implement
 
@@ -225,6 +234,7 @@ touches s1 Point2D s2 Region > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Point2D Region"
    => false  // TODO Implement
 
@@ -233,6 +243,7 @@ touches s1 Polyline s2 Polyline > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Polyline Polyline"
    => false  // TODO Implement
 
@@ -241,6 +252,7 @@ touches s1 Polyline s2 Polygon > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Polyline Polygon"
    => false  // TODO Implement
 
@@ -257,6 +269,7 @@ touches s1 Polygon s2 Polygon > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Polygon Polygon"
    => false  // TODO Implement
 
@@ -265,6 +278,7 @@ touches s1 Polygon s2 Region > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Polygon Region"
    => false  // TODO Implement
 
@@ -273,18 +287,9 @@ touches s1 Region s2 Region > Bool
 """
  Whether one shape touches or overlaps with the other.
 """
+   print (String s1) (String s2)
    print "touches Region Region"
    => false  // TODO Implement
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -294,268 +299,47 @@ testMultimethods
  Test multiple inheritance and multi-argument multimethod dispatch, where the method to
  be executed is selected based on the run-time type of all of the required positional arguments.
 """
-   print "hello"
+   point1 = Point2D
+   
+   point2 = Point2D
+
+   polyline1 = Polyline 
+
+   polyline2 = StraightLine    
+   
+   polygon1 = Polygon   
+
+   polygon2 = Polygon   
+
+   region1 = Region
+
+   region2 = Doughnut
+
+   print distance point1 point2
+
+   print distance point1 polyline1
+
+   print distance point1 polygon1
+
+   print distance polyline1 region2
+
+   print distance polyline2 region2
+
+   print distance region2 region1   
+
+   print distance polygon1 region2   
 
 
 
-
-func TestCreateObjects(t *testing.T) { // distance overlaps touches contains
-
-	var err error
-	point1, err = RT.NewObject("Point2D")
-	if err != nil {
-		t.Error(err)
-	}
-	s := point1.String()
-	fmt.Println("The object point1")
-	fmt.Println(s)
-	/*
-	   point2,err = RT.NewObject("Point2D")
-	   if err != nil {
-	         t.Error(err)
-	   }
-	*/
-	polyline1, err = RT.NewObject("Polyline")
-	if err != nil {
-		t.Error(err)
-	}
-
-	polyline2, err = RT.NewObject("StraightLine")
-	if err != nil {
-		t.Error(err)
-	}
-	/*
-	   polygon1,err = RT.NewObject("Polygon")
-	   if err != nil {
-	         t.Error(err)
-	   }
-	   polygon2,err = RT.NewObject("Polygon")
-	   if err != nil {
-	         t.Error(err)
-	   }
-	*/
-	region1, err = RT.NewObject("Region")
-	if err != nil {
-		t.Error(err)
-	}
-
-	region2, err = RT.NewObject("Doughnut")
-	if err != nil {
-		t.Error(err)
-	}
-
-	intp := NewInterpreter(RT)
-
-	th := intp.NewThread()
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{point1, polyline1})
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{point1, polyline1})
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{polyline2, region2})
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{polyline2, region2})
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{region2, region1})
-
-	intp.Apply(th, RT.MultiMethods["distance"], []RObject{region2, region1})
-}
-
-func TestTypePersistence(t *testing.T) { // distance overlaps touches contains
-
-	fmt.Println(RT.Types)
-
-	intp := NewInterpreter(RT)
-	dispatcher := intp.Dispatcher()
-
-	_, err := RT.CreateAttribute("StraightLine",
-		"Int",
-		"length",
-		1,
-		1,
-		"",
-		"",
-		false,
-		false,
-		dispatcher)
-	if err != nil {
-		t.Error(err)
-	}
-	_, err = RT.CreateAttribute("StraightLine",
-		"String",
-		"name",
-		1,
-		1,
-		"",
-		"",
-		false,
-		false,
-		dispatcher)
-	if err != nil {
-		t.Error(err)
-	}
-	tPoint2D := RT.Types["Point2D"]
-	err = RT.DB().EnsureTypeTable(tPoint2D)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tStraightLine := RT.Types["StraightLine"]
-	err = RT.DB().EnsureTypeTable(tStraightLine)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tPolyline := RT.Types["Polyline"]
-	err = RT.DB().EnsureTypeTable(tPolyline)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tPoint := RT.Types["Point"]
-	err = RT.DB().EnsureTypeTable(tPoint)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tShape2D := RT.Types["Shape2D"]
-	err = RT.DB().EnsureTypeTable(tShape2D)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tShape := RT.Types["Shape"]
-	err = RT.DB().EnsureTypeTable(tShape)
-	if err != nil {
-		t.Error(err)
-	}
-
-	tCurve := RT.Types["Curve"]
-	err = RT.DB().EnsureTypeTable(tCurve)
-	if err != nil {
-		t.Error(err)
-	}
-
-	_, err = RT.CreateAttribute("StraightLine",
-		"Point2D",
-		"start",
-		1,
-		1,
-		"",
-		"",
-		false,
-		false,
-		dispatcher)
-	if err != nil {
-		t.Error(err)
-	}
-	_, err = RT.CreateAttribute("StraightLine",
-		"Point2D",
-		"end",
-		1,
-		1,
-		"",
-		"",
-		false,
-		false,
-		dispatcher)
-	if err != nil {
-		t.Error(err)
-	}
-
-	err = RT.DB().EnsureAttributeAndRelationTables(tStraightLine)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestObjectAttribute(t *testing.T) {
-
-	err := RT.DB().EnsurePersisted(polyline2)
-	if err != nil {
-		t.Error(err)
-	}
-
-	attr := polyline2.Type().AttributesByName["start"]
-
-	err = RT.SetAttrTypeChecked(polyline2, attr, point1)
-	if err != nil {
-		t.Error(err)
-		//
-	}
-
-	val1, found := RT.AttrVal(polyline2, attr)
-	if found {
-		t.Log(val1)
-	} else {
-		t.Log("Not Found!")
-	}
-
-	attr2 := polyline2.Type().AttributesByName["length"]
-
-	var anInt Int = 5
-	err = RT.SetAttrTypeChecked(polyline2, attr2, anInt)
-	if err != nil {
-		t.Error(err)
-		//
-	}
-
-	val2, found := RT.AttrVal(polyline2, attr2)
-	if found {
-		t.Log(val2)
-	} else {
-		t.Log("val2 Not Found!")
-	}
-
-	attr3 := polyline2.Type().AttributesByName["name"]
-
-	var aString String = "Hello World!"
-	err = RT.SetAttrTypeChecked(polyline2, attr3, aString)
-	if err != nil {
-		t.Error(err)
-		//
-	}
-
-	val3, found := RT.AttrVal(polyline2, attr3)
-	if found {
-		t.Log(val3)
-	} else {
-		t.Log("val3 Not Found!")
-	}
-
-	aString = "Goodbye Universe!"
-	err = RT.SetAttrTypeChecked(polyline2, attr3, aString)
-	if err != nil {
-		t.Error(err)
-		//
-	}
-
-	val3, found = RT.AttrVal(polyline2, attr3)
-	if found {
-		t.Log(val3)
-	} else {
-		t.Log("val3 Not Found!")
-	}
-
-	err = RT.SetAttrTypeChecked(polyline2, attr3, point1)
-	if err != nil {
-		t.Error(err)
-		//
-	}
-
-	val3, found = RT.AttrVal(polyline2, attr3)
-	if found {
-		t.Log(val3)
-	} else {
-		t.Log("val3 Not Found!")
-	}
-
-}
-
-
-
-
-
-
-
-
+argTest
+   a Float
+   b String
+   bar Int = 0
+   ...v [] String
+> 
+   Float   
+"""
+ Test defaulted-keyword and variadic arguments to functions. This is a TODO because these are not
+ supported in the generator and interpreter yet.
+"""
+   => a

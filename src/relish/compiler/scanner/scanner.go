@@ -1023,19 +1023,39 @@ func (S *Scanner) ScanTypeName() (bool, string) {
 		S.Next()
 	}
 
+    capsCount := 0
 	// Capital Letter
 	for IsAsciiCapitalLetter(S.ch) {
+		capsCount++
 		S.Next()
-		if !IsAsciiLowercaseLetter(S.ch) {
-			return S.Fail(st), ""
-		}
-		S.Next()
-		for IsAsciiLowercaseLetterOrAsciiDigit(S.ch) {
+		if IsAsciiLowercaseLetter(S.ch) {
+			if capsCount > 1 {
+			   return S.Fail(st), ""	// Allow multiple caps together only at end.						
+			}
+			capsCount = 0
 			S.Next()
-		}
+			for IsAsciiLowercaseLetterOrAsciiDigit(S.ch) {
+				S.Next()
+			}
+	    } else {
+	    	for IsAsciiDigit(S.ch) {
+		    	S.Next()	
+	            if IsAsciiLowercaseLetter(S.ch) {
+				   if capsCount > 1 {
+				      return S.Fail(st), ""	// Allow multiple caps together only at end.						
+				   }
+				   capsCount = 0
+				   S.Next()
+				   for IsAsciiLowercaseLetterOrAsciiDigit(S.ch) {
+					  S.Next()
+				   }
+				}	    	    	
+		    }    
+	    }
 	}
 	return true, string(S.src[st.Offset:S.offset])
 }
+
 
 func (S *Scanner) ScanMethodName() (bool, string) {
 	if S.Match2('<','-') {
