@@ -197,71 +197,88 @@ distance s1 Region s2 Region > Float
 
 
 
-	mDistance, err = RT.CreateMethod("","distance", []string{"s1", "s2"}, []string{"Region", "Region"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mDistance)
+touches s1 Shape2D s2 Shape2D > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Shape2D Shape2D"
+   => false  // TODO Implement
 
-	mTouches, err := RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Shape2D", "Shape2D"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Polyline"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
+touches s1 Point2D s2 Polyline > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Point2D Polyline"
+   => false  // TODO Implement
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Polygon"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Region"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
+touches s1 Point2D s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Point2D Polygon"
+   => false  // TODO Implement
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Polyline"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Polygon"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
+touches s1 Point2D s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Point2D Region"
+   => false  // TODO Implement
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Region"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polygon", "Polygon"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
+touches s1 Polyline s2 Polyline > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polyline Polyline"
+   => false  // TODO Implement
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polygon", "Region"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
 
-	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Region", "Region"}, 1, 0, true)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Log(mTouches)
+touches s1 Polyline s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polyline Polygon"
+   => false  // TODO Implement
+
+
+touches s1 Polyline s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polyline Region"
+   => false  // TODO Implement
+
+
+touches s1 Polygon s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polygon Polygon"
+   => false  // TODO Implement
+
+
+touches s1 Polygon s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polygon Region"
+   => false  // TODO Implement
+
+
+touches s1 Region s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Region Region"
+   => false  // TODO Implement
+
+
+
+
 
 
 
@@ -276,16 +293,6 @@ testMultimethods
 """
  Test multiple inheritance and multi-argument multimethod dispatch, where the method to
  be executed is selected based on the run-time type of all of the required positional arguments.
-
-The following data type specialization lattice will be created as test data
-for these tests:
-
-Shape                  distance overlaps distance contains
-  |    \     \     \  
-Shape2D Point Curve  Surface
-  |     /       |   \       \
-Point2D    Polyline Polygon  Region
-
 """
    print "hello"
 
