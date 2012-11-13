@@ -1,0 +1,554 @@
+origin   relish.pl2012
+artifact relish_tests
+package  multimethods
+
+""" 
+ inheritance_and_multimethods.rel
+
+ Test multiple inheritance of data types and their attributes and relations,
+ as well as multimethod dispatch. (multi-argument polymorphic dynamic method-dispatch)
+ where the method to be executed is selected based on the run-time type of all of the 
+ required positional arguments.
+
+ The following data type specialization lattice will be created as test data
+ for these tests:
+
+ Shape                  distance overlaps distance contains
+   |    \     \     \  
+ Shape2D Point Curve  Surface
+   |     /       |   \       \
+ Point2D    Polyline Polygon  Region
+                                 \
+                               Doughnut
+"""
+
+
+main
+"""
+ Main program.
+"""
+   testMultimethods
+
+
+argTest
+   a Float
+   b String
+   bar Int = 0
+   ...v [] String
+> 
+   Float   
+"""
+ Test arguments to functions.
+"""
+   => a
+
+
+
+
+
+Shape
+"""
+ A geometric shape.
+"""
+
+
+Point <: Shape
+"""
+ A shape which is topologically 0-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Curve <: Shape
+"""
+ A shape which is topologically 1-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Surface <: Shape
+"""
+ A shape which is topologically 2-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Shape2D <: Shape
+"""
+ A shape defined in a two-dimensional cartesian co-ordinate space.
+"""
+
+
+Point2D <: Shape2D Point
+"""
+ A point with 2-dimensional co-ordinates.
+"""
+
+
+
+Polyline <: Shape2D Curve
+"""
+ An open curve in 2D space, defined with a list of line-segments. The two ends are distinct points.
+"""
+	
+Polygon <: Shape2D Curve
+"""
+ A closed curve in 2D space, defined with a list of line-segments.
+"""
+
+
+Region <: Shape2D Surface
+"""
+ A contiguous surface in 2-dimensional space.
+"""
+
+Doughnut <: Region
+"""
+ A region with one or more holes in it.
+"""
+
+StraightLine <: Polyline
+"""
+ Actually a single line-segment in 2D space.
+"""
+
+// Define some geometric methods.
+//
+// distance overlaps touches contains
+
+
+distance s1 Shape2D s2 Shape2D > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Shape2D Shape2D"
+   => 0.0  // TODO Implement
+
+distance s1 Point2D s2 Polyline > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Point2D Polyline"
+   => 0.0  // TODO Implement
+
+
+distance s1 Point2D s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Point2D Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Point2D s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Point2D Region"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polyline s2 Polyline > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Polyline Polyline"
+   => 0.0  // TODO Implement
+
+
+
+distance s1 Polyline s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Polyline Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polyline s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Polyline Region"
+   => 0.0  // TODO Implement
+
+
+
+distance s1 Polygon s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Polygon Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polygon s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Polygon Region"
+   => 0.0  // TODO Implement
+
+
+
+distance s1 Region s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print "distance Region Region"
+   => 0.0  // TODO Implement
+
+
+
+	mDistance, err = RT.CreateMethod("","distance", []string{"s1", "s2"}, []string{"Region", "Region"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mDistance)
+
+	mTouches, err := RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Shape2D", "Shape2D"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Polyline"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Polygon"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Point2D", "Region"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Polyline"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Polygon"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polyline", "Region"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polygon", "Polygon"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Polygon", "Region"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+	mTouches, err = RT.CreateMethod("","touches", []string{"s1", "s2"}, []string{"Region", "Region"}, 1, 0, true)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Log(mTouches)
+
+
+
+
+
+
+
+
+
+
+testMultimethods
+"""
+ Test multiple inheritance and multi-argument multimethod dispatch, where the method to
+ be executed is selected based on the run-time type of all of the required positional arguments.
+
+The following data type specialization lattice will be created as test data
+for these tests:
+
+Shape                  distance overlaps distance contains
+  |    \     \     \  
+Shape2D Point Curve  Surface
+  |     /       |   \       \
+Point2D    Polyline Polygon  Region
+
+"""
+   print "hello"
+
+
+
+
+func TestCreateObjects(t *testing.T) { // distance overlaps touches contains
+
+	var err error
+	point1, err = RT.NewObject("Point2D")
+	if err != nil {
+		t.Error(err)
+	}
+	s := point1.String()
+	fmt.Println("The object point1")
+	fmt.Println(s)
+	/*
+	   point2,err = RT.NewObject("Point2D")
+	   if err != nil {
+	         t.Error(err)
+	   }
+	*/
+	polyline1, err = RT.NewObject("Polyline")
+	if err != nil {
+		t.Error(err)
+	}
+
+	polyline2, err = RT.NewObject("StraightLine")
+	if err != nil {
+		t.Error(err)
+	}
+	/*
+	   polygon1,err = RT.NewObject("Polygon")
+	   if err != nil {
+	         t.Error(err)
+	   }
+	   polygon2,err = RT.NewObject("Polygon")
+	   if err != nil {
+	         t.Error(err)
+	   }
+	*/
+	region1, err = RT.NewObject("Region")
+	if err != nil {
+		t.Error(err)
+	}
+
+	region2, err = RT.NewObject("Doughnut")
+	if err != nil {
+		t.Error(err)
+	}
+
+	intp := NewInterpreter(RT)
+
+	th := intp.NewThread()
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{point1, polyline1})
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{point1, polyline1})
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{polyline2, region2})
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{polyline2, region2})
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{region2, region1})
+
+	intp.Apply(th, RT.MultiMethods["distance"], []RObject{region2, region1})
+}
+
+func TestTypePersistence(t *testing.T) { // distance overlaps touches contains
+
+	fmt.Println(RT.Types)
+
+	intp := NewInterpreter(RT)
+	dispatcher := intp.Dispatcher()
+
+	_, err := RT.CreateAttribute("StraightLine",
+		"Int",
+		"length",
+		1,
+		1,
+		"",
+		"",
+		false,
+		false,
+		dispatcher)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = RT.CreateAttribute("StraightLine",
+		"String",
+		"name",
+		1,
+		1,
+		"",
+		"",
+		false,
+		false,
+		dispatcher)
+	if err != nil {
+		t.Error(err)
+	}
+	tPoint2D := RT.Types["Point2D"]
+	err = RT.DB().EnsureTypeTable(tPoint2D)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tStraightLine := RT.Types["StraightLine"]
+	err = RT.DB().EnsureTypeTable(tStraightLine)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tPolyline := RT.Types["Polyline"]
+	err = RT.DB().EnsureTypeTable(tPolyline)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tPoint := RT.Types["Point"]
+	err = RT.DB().EnsureTypeTable(tPoint)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tShape2D := RT.Types["Shape2D"]
+	err = RT.DB().EnsureTypeTable(tShape2D)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tShape := RT.Types["Shape"]
+	err = RT.DB().EnsureTypeTable(tShape)
+	if err != nil {
+		t.Error(err)
+	}
+
+	tCurve := RT.Types["Curve"]
+	err = RT.DB().EnsureTypeTable(tCurve)
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = RT.CreateAttribute("StraightLine",
+		"Point2D",
+		"start",
+		1,
+		1,
+		"",
+		"",
+		false,
+		false,
+		dispatcher)
+	if err != nil {
+		t.Error(err)
+	}
+	_, err = RT.CreateAttribute("StraightLine",
+		"Point2D",
+		"end",
+		1,
+		1,
+		"",
+		"",
+		false,
+		false,
+		dispatcher)
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = RT.DB().EnsureAttributeAndRelationTables(tStraightLine)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestObjectAttribute(t *testing.T) {
+
+	err := RT.DB().EnsurePersisted(polyline2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	attr := polyline2.Type().AttributesByName["start"]
+
+	err = RT.SetAttrTypeChecked(polyline2, attr, point1)
+	if err != nil {
+		t.Error(err)
+		//
+	}
+
+	val1, found := RT.AttrVal(polyline2, attr)
+	if found {
+		t.Log(val1)
+	} else {
+		t.Log("Not Found!")
+	}
+
+	attr2 := polyline2.Type().AttributesByName["length"]
+
+	var anInt Int = 5
+	err = RT.SetAttrTypeChecked(polyline2, attr2, anInt)
+	if err != nil {
+		t.Error(err)
+		//
+	}
+
+	val2, found := RT.AttrVal(polyline2, attr2)
+	if found {
+		t.Log(val2)
+	} else {
+		t.Log("val2 Not Found!")
+	}
+
+	attr3 := polyline2.Type().AttributesByName["name"]
+
+	var aString String = "Hello World!"
+	err = RT.SetAttrTypeChecked(polyline2, attr3, aString)
+	if err != nil {
+		t.Error(err)
+		//
+	}
+
+	val3, found := RT.AttrVal(polyline2, attr3)
+	if found {
+		t.Log(val3)
+	} else {
+		t.Log("val3 Not Found!")
+	}
+
+	aString = "Goodbye Universe!"
+	err = RT.SetAttrTypeChecked(polyline2, attr3, aString)
+	if err != nil {
+		t.Error(err)
+		//
+	}
+
+	val3, found = RT.AttrVal(polyline2, attr3)
+	if found {
+		t.Log(val3)
+	} else {
+		t.Log("val3 Not Found!")
+	}
+
+	err = RT.SetAttrTypeChecked(polyline2, attr3, point1)
+	if err != nil {
+		t.Error(err)
+		//
+	}
+
+	val3, found = RT.AttrVal(polyline2, attr3)
+	if found {
+		t.Log(val3)
+	} else {
+		t.Log("val3 Not Found!")
+	}
+
+}
+
+
+
+
+
+
+
+

@@ -1,5 +1,5 @@
 origin   relish.pl2012
-artifact things
+artifact relish_test_support/things
 package  physical_objects
 
 """ 

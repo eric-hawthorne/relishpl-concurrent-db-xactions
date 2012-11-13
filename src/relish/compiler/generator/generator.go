@@ -263,9 +263,13 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
     //
 	for file, fileRoot := range g.files { 
 		for _,typeDeclaration := range file.TypeDecls {
-		   typeName := g.packagePath + typeDeclaration.Spec.Name.Name
+		   // egh Nov 12, 12	
+		   //typeName := g.packagePath + typeDeclaration.Spec.Name.Name		
+		   typeName := typeDeclaration.Spec.Name.Name
 		   if allTypeDecls[typeName] != nil {
-		   	  rterr.Stopf("Type '%s' declaration in file %s.rel is 2nd declaration of this type found in package.",typeDeclaration.Spec.Name.Name,fileRoot)
+			  slashPos := strings.LastIndex(typeName, "/")
+			  typeLocalName := typeName[slashPos+1:]
+		   	  rterr.Stopf("Type '%s' declaration in file %s.rel is 2nd declaration of this type found in package.",typeLocalName,fileRoot)
 		   }
            allTypeDecls[typeName] = typeDeclaration
            typeDeclFile[typeName] = fileRoot

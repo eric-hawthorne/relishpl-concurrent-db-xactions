@@ -2265,7 +2265,10 @@ func (p *parser) parseTypeName(allowImported bool, typeName **ast.Ident) bool {
 
    if foundPackage {
        name = p.importPackageAliasExpansions[packageAlias.Name] + "/" + name	
+   } else if ! BuiltinTypeName[name] {	  
+       name = p.packagePath + name	     
    }
+
    *typeName = &ast.Ident{pos, name, nil, token.TYPE,-1}
    return true
 }

@@ -97,6 +97,25 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	eqMethod.PrimitiveCode = builtinEq
+	
+	eq1Method, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"Any", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	eq1Method.PrimitiveCode = builtinEqNo
+	
+	eq2Method, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	eq2Method.PrimitiveCode = builtinEqNo	
+	
+	eqObjMethod, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	eqObjMethod.PrimitiveCode = builtinEqObj
+			
 
 	ltNumMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
@@ -1306,6 +1325,26 @@ func builtinEq(objects []RObject) []RObject {
 	}
 	return []RObject{val}
 }
+
+/*
+A primitive is not eq to a non-primitive.
+*/
+func builtinEqNo(objects []RObject) []RObject {	
+	return []RObject{Bool(false)}
+}
+
+/*
+Non-primitives evaluate to eq if their RObject interfaces are == in Go.
+This is probably not what we want eventually.
+*/
+func builtinEqObj(objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	val := Bool(obj1 == obj2)
+	return []RObject{val}
+}
+
+
 
 /*
 Less-than operator for numeric types.

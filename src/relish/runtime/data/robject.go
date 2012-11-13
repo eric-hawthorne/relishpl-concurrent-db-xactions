@@ -501,6 +501,8 @@ Create a new unitary object.
 
 func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	
+	// fmt.Println("NewObject:",typeName)
+	
 	/*
     switch typeName {	
     case "Time": get rid od this switch at this level

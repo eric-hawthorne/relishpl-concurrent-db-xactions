@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"net/url"
 	"strings"
+	"errors"
 )
 
 const DEFAULT_STACK_DEPTH = 50 // DEFAULT INITIAL STACK DEPTH PER THREAD
@@ -53,10 +54,17 @@ Currently, when multimethods/methods are generated, "main" ones are prefixed by 
 func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	Logln(ANY_, " ")
 	Logln(ANY_, "==============================")
-	Logln(ANY_, "== RELISH Interpreter 0.0.1 ==")
+	Logln(ANY_, "== RELISH Interpreter 0.0.2 ==")
 	Logln(ANY_, "==============================")
-
-
+	Logln(GENERATE2_, " ")
+	Logln(GENERATE2_, "----------")
+	Logln(GENERATE2_, "Data Types")
+	Logln(GENERATE2_, "----------")
+	if Logging(GENERATE2_) {
+		i.rt.ListTypes()
+	}
+	Logln(GENERATE2_, "----------")	
+	
     pkg := i.rt.Packages[fullUnversionedPackagePath]
 	mm, found := pkg.MultiMethods[fullUnversionedPackagePath + "/main"]
 	if !found {
@@ -551,7 +559,11 @@ stack. Once at the current stack top, and once at the variable's position in the
 */
 func (i *Interpreter) EvalVar(t *Thread, ident *ast.Ident) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalVar", ident.Name))
-	t.Push(t.GetVar(ident.Offset))
+	obj, err := t.GetVar(ident.Offset)
+	if err != nil {
+		rterr.Stopf("Attempt to access the value of unassigned variable %s.",ident.Name)
+	}
+	t.Push(obj)
 }
 
 /*
@@ -1952,7 +1964,11 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 	   switch lhsExpr.(type) {
 	   case *ast.Ident: // A local variable or parameter or result parameter
 		   LogM(t,INTERP2_, "send to channel varname %s\n", lhsExpr.(*ast.Ident).Name)
-           c= t.GetVar(lhsExpr.(*ast.Ident).Offset).(*Channel)
+			obj, err := t.GetVar(lhsExpr.(*ast.Ident).Offset)
+			if err != nil {
+				rterr.Stopf("Attempt to access the value of unassigned variable %s.",lhsExpr.(*ast.Ident).Name)
+			}		
+            c= obj.(*Channel)
 		case *ast.SelectorExpr:
 		   selector := lhsExpr.(*ast.SelectorExpr)			
 		   LogM(t,INTERP2_, "send to channel attr name %s\n", selector.Sel.Name)			
@@ -2403,9 +2419,14 @@ func (t *Thread) PopBase() {
 Return the value of the local variable (or parameter) with the given offset from the current routine's 
 stack base.
 */
-func (t *Thread) GetVar(offset int) RObject {
+func (t *Thread) GetVar(offset int) (obj RObject, err error) {
 	defer UnM(t, TraceM(t, INTERP_TR3, "GetVar", "offset", offset, "stack index", t.Base+offset))
-	return t.Stack[t.Base+offset]
+	if offset == -99 {
+		err = errors.New("Unassigned variable.")
+		return
+	}
+	obj = t.Stack[t.Base+offset]
+	return
 }
 
 func (t *Thread) Pop() RObject {

@@ -17,6 +17,7 @@ import (
 	"hash/adler32"
 	. "relish/dbg"
 	// "relish/rterr"
+	"sort"
 )
 
 ///////////////////////////////////////////////////////////////////////////
@@ -586,6 +587,20 @@ func (rt *RuntimeEnv) CreateType(typeName string, typeShortName string, parentTy
 	rt.Typs[typ.ShortName()] = typ
 	return typ, nil
 
+}
+
+/*
+Debugging function.
+*/
+func (rt *RuntimeEnv) ListTypes() {
+	var typeNames []string
+	for typeName := range rt.Types {
+		typeNames = append(typeNames, typeName)
+	}
+	sort.Strings(typeNames)
+	for _,typeName := range typeNames {
+		fmt.Println(typeName)
+	}
 }
 
 /*

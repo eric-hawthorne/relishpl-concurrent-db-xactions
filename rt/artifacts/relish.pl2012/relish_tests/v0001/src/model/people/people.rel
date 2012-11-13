@@ -1,0 +1,36 @@
+origin   relish.pl2012
+artifact relish_tests
+package  model/people
+
+""" 
+ people.rel
+
+ People.
+"""
+
+import
+   relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+
+
+Person <: phys.SelfLocomotive
+"""
+ A human person.
+"""
+   firstName String
+
+   lastName String
+
+   dateOfBirth Time
+
+
+initPerson p Person firstName String lastName String dob Time > Person
+"""
+ Person constructor.
+"""
+   p.firstName = firstName
+   p.lastName = lastName
+   p.dateOfBirth = dob
+   => p
+
+
+Person 1 holder -- 0 N Role
