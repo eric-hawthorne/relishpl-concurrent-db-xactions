@@ -763,20 +763,21 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 
 			Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
 
-			// Now restore the values of the unary primitive attributes of the object.
-			// These attribute values are stored in the db rows that represent the object in the db.
-			// The object in the db consists of a single row in each of several database tables.
-			// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
-			// and a single row in each such table identified by the object's dbid.
-		
-		    objTyp := obj.Type()
-		    attrValsBytes = attrValsBytes[4:]
-	        db.restoreAttrs(obj, objTyp, attrValsBytes)		
-
+            if numPrimitiveAttrs > 0 {
+				// Now restore the values of the unary primitive attributes of the object.
+				// These attribute values are stored in the db rows that represent the object in the db.
+				// The object in the db consists of a single row in each of several database tables.
+				// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
+				// and a single row in each such table identified by the object's dbid.
+			
+			    objTyp := obj.Type()
+			    attrValsBytes = attrValsBytes[4:]
+		        db.restoreAttrs(obj, objTyp, attrValsBytes)		
+            }
 			// Have to set this here before confirmed in order to avoid attribute or relation reference loops causing
 			// infinite looping during fetching. 
 			// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
-
+            
 			obj.SetStoredLocally()
 
 			// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
@@ -866,71 +867,74 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 		}
 	}
 
-	// Figure out the total number of primitive attributes in all the types combined.
+	if numPrimAttributeColumns > 0 {
 
-	numPrimitiveAttrs := objTyp.NumPrimitiveAttributes
+		// Figure out the total number of primitive attributes in all the types combined.
 
-	// Now for the object's type and all types in the upchain, we need to 
-	// create a join statement on the type tables, then
-	// collect the primitive attributes, in the order they were put into the type tables.  
+		numPrimitiveAttrs := objTyp.NumPrimitiveAttributes
 
-	specificTypeTable := db.TableNameIfy(objTyp.ShortName())
-	from := " FROM " + specificTypeTable
+		// Now for the object's type and all types in the upchain, we need to 
+		// create a join statement on the type tables, then
+		// collect the primitive attributes, in the order they were put into the type tables.  
 
-	for _, typ := range objTyp.Up {
-		from += " JOIN " + db.TableNameIfy(typ.ShortName()) + " USING (id)"
-		numPrimitiveAttrs += typ.NumPrimitiveAttributes
-	}
+		specificTypeTable := db.TableNameIfy(objTyp.ShortName())
+		from := " FROM " + specificTypeTable
 
-	where := fmt.Sprintf(" WHERE %s.id=%v", specificTypeTable, id)
+		for _, typ := range objTyp.Up {
+			from += " JOIN " + db.TableNameIfy(typ.ShortName()) + " USING (id)"
+			numPrimitiveAttrs += typ.NumPrimitiveAttributes
+		}
 
-	stmt := selectClause + from + where
+		where := fmt.Sprintf(" WHERE %s.id=%v", specificTypeTable, id)
 
-	Logln(PERSIST2_, "query:", stmt)
+		stmt := selectClause + from + where
 
-	selectStmt, err := db.conn.Prepare(stmt)
-	if err != nil {
-		return
-	}
+		Logln(PERSIST2_, "query:", stmt)
 
-	defer selectStmt.Finalize()
+		selectStmt, queryErr := db.conn.Prepare(stmt)
+		if queryErr != nil {
+			err = queryErr
+			return
+		}
 
-	err = selectStmt.Exec()
-	if err != nil {
-		return
-	}
-	if !selectStmt.Next() {
-		panic(fmt.Sprintf("No object found in database with id=%v", id))
-	}
+		defer selectStmt.Finalize()
 
-	// Now construct a Scan call with [] *[]byte
-	/*
-	   attrValsBytes1 := make([]*[]byte,numPrimitiveAttrs)
+		err = selectStmt.Exec()
+		if err != nil {
+			return
+		}
+		if !selectStmt.Next() {
+			panic(fmt.Sprintf("No object found in database with id=%v", id))
+		}
 
-	   attrValsBytes := make([]interface{},numPrimitiveAttrs)
+		// Now construct a Scan call with [] *[]byte
+		/*
+		   attrValsBytes1 := make([]*[]byte,numPrimitiveAttrs)
 
-	   for i := 0; i < len(attrValsBytes1); i++ {
-	      attrValsBytes[i] = attrValsBytes1[i]	
-	   }
-	*/
+		   attrValsBytes := make([]interface{},numPrimitiveAttrs)
 
-	attrValsBytes1 := make([][]byte, numPrimAttributeColumns)
+		   for i := 0; i < len(attrValsBytes1); i++ {
+		      attrValsBytes[i] = attrValsBytes1[i]	
+		   }
+		*/
 
-	attrValsBytes := make([]interface{}, numPrimAttributeColumns)
+		attrValsBytes1 := make([][]byte, numPrimAttributeColumns)
 
-	for i := 0; i < len(attrValsBytes1); i++ {
-		attrValsBytes[i] = &attrValsBytes1[i]
-	}
+		attrValsBytes := make([]interface{}, numPrimAttributeColumns)
 
-	// have to make a slice whose length = the total number of attributes in all the types combined.
-	// 
-	err = selectStmt.Scan(attrValsBytes...)
-	if err != nil {
-		return
-	}
-	
-    db.restoreAttrs(obj, objTyp, attrValsBytes)
+		for i := 0; i < len(attrValsBytes1); i++ {
+			attrValsBytes[i] = &attrValsBytes1[i]
+		}
 
+		// have to make a slice whose length = the total number of attributes in all the types combined.
+		// 
+		err = selectStmt.Scan(attrValsBytes...)
+		if err != nil {
+			return
+		}
+		
+	    db.restoreAttrs(obj, objTyp, attrValsBytes)
+    }
 	return
 }
 

@@ -14,7 +14,7 @@ spew mx Mutex chin InChannel inNum Int chout OutChannel outNum Int n Int
  Exchanges data on channels and prints out what it is doing.
 """
    i = 0
-   while 1
+   while lt i 2000
       i = plus i 1 
       lock mx
       print i "about to send" n "to ch" outNum

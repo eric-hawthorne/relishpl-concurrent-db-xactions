@@ -303,7 +303,9 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
    typesBeingGenerated[typeName] = true
 
    typeSpec := typeDeclaration.Spec    	
-   typeShortName := g.pkg.ShortName + "/" + typeSpec.Name.Name
+   slashPos := strings.LastIndex(typeSpec.Name.Name,"/") 
+   typeLocalName := typeSpec.Name.Name[slashPos+1:]
+   typeShortName := g.pkg.ShortName + "/" + typeLocalName
 
    var parentTypeNames []string
 
@@ -454,128 +456,6 @@ func (g *Generator) ensureTypeTables(types map[*data.RType]bool) {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* DEPRECATED IN FAVOUR OF MULTI-FILE (AND ATTRIBUTES SEPARATED OUT) VERSION ABOVE - DELETE THE BELOW SOON
-Processes the TypeDecls list of a ast.File object (which has been created by the parser.)
-Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
-TODO prefix the g.packagePath onto the name of the type.!!!!!!!!!!!!!!
-
-func (g *Generator) GenerateTypes(types map[*data.RType]bool) {
-	 
-	for _,typeDeclaration := range g.file.TypeDecls {
-		
-	   typeSpec := typeDeclaration.Spec
-	   typeName := g.packagePath + typeSpec.Name.Name
-	   typeShortName :=g.pkg.ShortName + "/" + typeSpec.Name.Name
-	
-	   var parentTypeNames []string
-	
-	   for _,parentTypeSpec := range typeSpec.SuperTypes {
-		  parentTypeNames = append(parentTypeNames, g.qualifyTypeName(parentTypeSpec.Name.Name))
-	   } 
-		
-	   // Get the type name and the supertype names	
-	   theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
-       if err != nil {
-          panic(err)
-       }	
-
-	   for _,attrDecl := range typeDeclaration.Attributes {
-		  var minCard int32 = 1
-		  var maxCard int32 = 1
-		  
-          attributeName := attrDecl.Name.Name
-          multiValuedAttribute := (attrDecl.Arity != nil)
-          if multiValuedAttribute {
-	         minCard = int32(attrDecl.Arity.MinCard)
-	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
-          }
-          
-          var collectionType string 
-
-          var orderFuncOrAttrName string = ""
-          var isAscending bool 
-
-          if attrDecl.Type.CollectionSpec != nil {
-              switch attrDecl.Type.CollectionSpec.Kind {
-	             case token.SET:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedset"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending		
-		            } else {
-			           collectionType = "set"			
-		            }		
-		         case token.LIST:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedlist"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
-		            } else {
-			           collectionType = "list"			
-		            }
-			     case token.MAP:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
-			           collectionType = "sortedmap"
-                       orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
-                       isAscending = attrDecl.Type.CollectionSpec.IsAscending			
-		            } else {
-			           collectionType = "map"			
-		            }				
-	           }	
-          }
-
-
-
- 
-          attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
-
-         
-
-	      _,err = data.RT.CreateAttribute(typeName,
-									 	 attributeTypeName,
-										 attributeName,
-										 minCard,
-										 maxCard,   // Is the -1 meaning N respected in here???? TODO
-										 collectionType,
-				                         orderFuncOrAttrName,
-				                         isAscending,
-										 false,
-										 false,
-										 false,
-										 g.Interp.Dispatcher())
-		   if err != nil {
-		      panic(err)
-		   }
-
-        }
-
-        // Now ensure the persistence data model is created for the type.
-
-
-		err = data.RT.DB().EnsureTypeTable(theNewType) 
-		if err != nil {
-		      panic(err)
-		}
-		
-       types[theNewType] = true	
-    }
-}
-*/
 
 
 /*
