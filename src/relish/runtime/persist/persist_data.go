@@ -500,7 +500,7 @@ func (db *SqliteDB) Fetch(id int64, radius int) (obj RObject, err error) {
 		return
 	}
 	stmt := fmt.Sprintf("SELECT * FROM RObject where id=%v", id)
-	return db.fetch1(stmt, radius, fmt.Sprintf("id=%v", id), false)
+	return db.fetch1(stmt, radius, fmt.Sprintf("id=%v", id), true)
 }
 
 /*
@@ -774,6 +774,7 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 			    attrValsBytes = attrValsBytes[4:]
 		        db.restoreAttrs(obj, objTyp, attrValsBytes)		
             }
+
 			// Have to set this here before confirmed in order to avoid attribute or relation reference loops causing
 			// infinite looping during fetching. 
 			// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
