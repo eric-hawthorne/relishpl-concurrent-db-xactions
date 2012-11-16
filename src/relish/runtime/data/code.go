@@ -136,6 +136,10 @@ func (p *RMultiMethod) String() string {
 	return p.Name
 }
 
+func (p *RMultiMethod) Debug() string {
+	return fmt.Sprintf("%s.%s Exported:%v MaxArity:%v #RetArgs: %v", p.Pkg.ShortName, p.String(), p.IsExported, p.MaxArity, p.NumReturnArgs)
+}
+
 func (p *RMultiMethod) HasUUID() bool {
 	return false
 }
@@ -259,6 +263,10 @@ func (p *RMethod) IsZero() bool {
 
 func (m RMethod) String() string {
 	return fmt.Sprintf("%s %v %v", m.multiMethod.Name, m.ParameterNames, m.Signature)
+}
+
+func (p *RMethod) Debug() string {
+	return fmt.Sprintf("%s.%s (Multimethod: %s)", p.Pkg.ShortName, p.String(), p.multiMethod.Debug())
 }
 
 func (p *RMethod) Type() *RType {
@@ -527,6 +535,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 
 	methodsOfRightArity, multiMethodHasArity := multiMethod.Methods[arity]
 
+    // TODO This check does not seem correct. For one, how do we know the other methods have been put in the cache?
 	_, found = multiMethod.CachedMethods[typeTuple]
 	if found {
 		if !allowRedefinition {

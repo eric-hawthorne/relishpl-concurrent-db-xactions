@@ -29,6 +29,18 @@ var buf *bufio.Reader = bufio.NewReader(os.Stdin)
 
 func InitBuiltinFunctions() {
 
+	dbgMethod, err := RT.CreateMethod("","dbg", []string{"p"}, []string{"Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	dbgMethod.PrimitiveCode = builtinDbg
+
+	debugMethod, err := RT.CreateMethod("","debug", []string{"p"}, []string{"Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	debugMethod.PrimitiveCode = builtinDebug
+
 	printMethod, err := RT.CreateMethod("","print", []string{"p"}, []string{"RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -327,7 +339,7 @@ func InitBuiltinFunctions() {
 	if err != nil {
 		panic(err)
 	}
-	timeInMethod.PrimitiveCode = builtinTimeSince
+	timeInMethod.PrimitiveCode = builtinTimeIn
 
     // hours n Int > durationNs Int
     // 
@@ -1245,6 +1257,16 @@ func builtinInput(objects []RObject) []RObject {
       result = err.Error()
    }
    return []RObject{String(result)}
+}
+
+func builtinDbg(objects []RObject) []RObject {
+   fmt.Println(objects[0].Debug())
+   return []RObject{}
+}
+
+func builtinDebug(objects []RObject) []RObject {
+   s := objects[0].Debug()
+   return []RObject{String(s)}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////

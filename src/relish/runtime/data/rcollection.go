@@ -109,6 +109,12 @@ type RemovableCollection interface {
 		Used to refresh the collection from the db.
 	*/
 	ClearInMemory()
+
+	/*
+	Removes all members of the in-memory and local db version of the collection. 
+	Sets Length() to 0
+	*/
+	// Clear()
 }
 
 type OrderedCollection interface {
@@ -133,6 +139,7 @@ type List interface {
 A collection which can return its go map implementation
 */
 type Set interface {
+	RCollection
 	AddableCollection
 	RemovableCollection
 	BoolMap() map[RObject]bool
@@ -140,6 +147,7 @@ type Set interface {
 
 type Map interface {
 	RCollection
+	RemovableCollection
 	KeyType() *RType
 	ValType() *RType
 	Get(key RObject) (val RObject, found bool)
@@ -226,6 +234,12 @@ func (o *rcollection) String() string {
 	return (&(o.robject)).String()
 }
 
+func (o *rcollection) Debug() string {
+	return (&(o.robject)).Debug() 
+}
+
+
+
 func (c rcollection) IsUnit() bool {
 	return false
 }
@@ -269,6 +283,10 @@ Object address defines element equality. May want to fix that!!! It may not even
 type rset struct {
 	rcollection
 	m map[RObject]bool // use this as set 
+}
+
+func (o *rset) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
 func (s *rset) BoolMap() map[RObject]bool {
@@ -404,6 +422,10 @@ type rsortedset struct {
 	rcollection
 	m map[RObject]bool // use this as set 
 	v *RVector
+}
+
+func (o *rsortedset) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
 func (s *rsortedset) BoolMap() map[RObject]bool {
@@ -719,6 +741,11 @@ type rlist struct {
 	rcollection
 	v *RVector
 }
+
+func (o *rlist) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+}
+
 
 func (c *rlist) Iter() <-chan RObject {
 	ch := make(chan RObject)
@@ -1080,6 +1107,10 @@ type rstringmap struct {
 	m map[string]RObject
 }
 
+func (o *rstringmap) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+}
+
 func (c *rstringmap) Iter() <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
@@ -1146,10 +1177,26 @@ func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {
     return
 }
 
+func (s *rstringmap) Remove(key RObject) (removed bool, removedIndex int) {
+	k := string(key.(String))		
+	_,removed = s.m[k] 
+	delete(s.m, k) 
+	removedIndex = -1
+	return
+}
+
+func (s *rstringmap) ClearInMemory() {
+	s.m = nil
+}
+
 type ruint64map struct {
 	rcollection
 	valType *RType	
 	m map[uint64]RObject
+}
+
+func (o *ruint64map) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
 func (c *ruint64map) Iter() <-chan RObject {
@@ -1251,7 +1298,30 @@ func (s *ruint64map) PutSimple(key RObject, val RObject) (newLen int) {
 }
 
 
+func (s *ruint64map) Remove(key RObject) (removed bool, removedIndex int) {
+    var k uint64
+	switch key.(type) {
+	   case Uint:	
+	      k = uint64(key.(Uint))
+       case Uint32:
+	      k = uint64(uint32(key.(Uint32)))
+	   case Int:	
+	      k = uint64(int64(key.(Int)))
+       case Int32:
+	      k = uint64(int32(key.(Int32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	} 
 
+	_,removed = s.m[k] 
+	delete(s.m, k) 
+	removedIndex = -1
+	return
+}
+
+func (s *ruint64map) ClearInMemory() {
+	s.m = nil
+}
 
 
 
@@ -1273,6 +1343,10 @@ type rint64map struct {
 	rcollection
 	valType *RType	
 	m map[int64]RObject
+}
+
+func (o *rint64map) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
 func (c *rint64map) Iter() <-chan RObject {
@@ -1373,11 +1447,40 @@ func (s *rint64map) PutSimple(key RObject, val RObject) (newLen int) {
     return
 }
 
+func (s *rint64map) Remove(key RObject) (removed bool, removedIndex int) {
+    var k int64
+	switch key.(type) {
+	   case Int:	
+	      k = int64(key.(Int))
+       case Int32:
+	      k = int64(int32(key.(Int32)))
+	   case Uint:	
+	      k = int64(uint64(key.(Uint)))
+       case Uint32:
+	      k = int64(uint32(key.(Uint32)))	
+	   default:
+	     rterr.Stop("Invalid type for map key.")     
+	}
+
+	_,removed = s.m[k] 
+	delete(s.m, k) 
+	removedIndex = -1
+	return
+}
+
+func (s *rint64map) ClearInMemory() {
+	s.m = nil
+}
+
 
 type rpointermap struct {
 	rcollection
 	valType *RType	
 	m map[RObject]RObject
+}
+
+func (o *rpointermap) Debug() string {
+	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
 func (c *rpointermap) Iter() <-chan RObject {
@@ -1440,6 +1543,16 @@ func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {
     return
 }
 
+func (s *rpointermap) Remove(key RObject) (removed bool, removedIndex int) {
+	_,removed = s.m[key] 
+	delete(s.m, key) 
+	removedIndex = -1
+	return
+}
+
+func (s *rpointermap) ClearInMemory() {
+	s.m = nil
+}
 
 /*
 func (s *rpointermap) Get(key RObject) (val RObject, found bool) {

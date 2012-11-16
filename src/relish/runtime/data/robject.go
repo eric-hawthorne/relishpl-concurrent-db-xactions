@@ -52,7 +52,15 @@ type RObject interface {
 	*/
 	Iterable() (sliceOrMap interface{}, err error)
 
+    /*
+    A basic string representation of the object.
+    */
 	String() string
+
+    /*
+    A string containing detailed low-level information about the object.
+    */
+	Debug() string
 
 	Flags() int8 // version of flags byte suitable for storing in the db RObject row
 
@@ -251,6 +259,12 @@ func (o *robject) String() string {
 	}
 	return fmt.Sprintf("%v:%v", o.Type(), id)
 }
+
+
+func (o *robject) Debug() string {
+	return fmt.Sprintf("%s@%v",o.String(),&o)
+}
+
 
 /*
    Returns the localId. Creates the local id if it does not yet exist.
@@ -485,6 +499,10 @@ type runit struct {
 
 func (o *runit) String() string {
 	return (&(o.robject)).String()
+}
+
+func (o *runit) Debug() string {
+	return (&(o.robject)).Debug()
 }
 
 func (u runit) IsUnit() bool {

@@ -323,6 +323,10 @@ func (p Channel) String() string {
 	return fmt.Sprintf("Channel (%s) of %v", descriptor, p.ElementType)
 }
 
+func (p Channel) Debug() string {
+	return p.String()
+}
+
 func (p Channel) Length() int64 {
 	if p.Ch == nil {
 		return 0
@@ -494,6 +498,10 @@ func (p TimeChannel) String() string {
 	return fmt.Sprintf(" Channel (%s) of %v", descriptor, p.ElementType)
 }
 
+func (p TimeChannel) Debug() string {
+	return p.String()
+}
+
 func (p TimeChannel) Length() int64 {
 	if p.Ch == nil {
 		return 0
@@ -650,6 +658,10 @@ func (p Mutex) String() string {
    return fmt.Sprintf("%v",sync.Mutex(p))
 }
 
+func (p Mutex) Debug() string {
+	return p.String()
+}
+
 func (p Mutex) HasUUID() bool {
 	return false
 }
@@ -794,6 +806,10 @@ func (p RWMutex) IsCollection() bool {
 
 func (p RWMutex) String() string {
    return fmt.Sprintf("%v",sync.RWMutex(p))
+}
+
+func (p RWMutex) Debug() string {
+	return p.String()
 }
 
 func (p RWMutex) HasUUID() bool {
@@ -949,6 +965,10 @@ func (p RTime) String() string {
 	return Time(p).String() // TODO May want to change this: Formats as: "2006-01-02 15:04:05.999999999 -0700 MST"
 }
 
+func (p RTime) Debug() string {
+	return p.String()
+}
+
 func (p RTime) HasUUID() bool {
 	return false
 }
@@ -1082,7 +1102,11 @@ func (p Int) IsCollection() bool {
 }
 
 func (p Int) String() string {
-	return strconv.Itoa(int(p))
+	return strconv.FormatInt(int64(p),10)
+}
+
+func (p Int) Debug() string {
+	return p.String()
 }
 
 func (p Int) HasUUID() bool {
@@ -1209,7 +1233,11 @@ func (p Int32) IsCollection() bool {
 }
 
 func (p Int32) String() string {
-	return strconv.Itoa(int(p))
+	return strconv.FormatInt(int64(p),10)
+}
+
+func (p Int32) Debug() string {
+	return p.String()
 }
 
 func (p Int32) HasUUID() bool {
@@ -1336,7 +1364,11 @@ func (p Uint) IsCollection() bool {
 }
 
 func (p Uint) String() string {
-	return strconv.Itoa(int(p))
+	return strconv.FormatUint(uint64(p),10)
+}
+
+func (p Uint) Debug() string {
+	return p.String()
 }
 
 func (p Uint) HasUUID() bool {
@@ -1463,7 +1495,11 @@ func (p Uint32) IsCollection() bool {
 }
 
 func (p Uint32) String() string {
-	return strconv.Itoa(int(p))
+	return strconv.FormatUint(uint64(p),10)
+}
+
+func (p Uint32) Debug() string {
+	return p.String()
 }
 
 func (p Uint32) HasUUID() bool {
@@ -1593,6 +1629,10 @@ func (p Float) String() string {
 	return strconv.FormatFloat(float64(p), 'G', -1, 64)
 }
 
+func (p Float) Debug() string {
+	return p.String()
+}
+
 func (p Float) HasUUID() bool {
 	return false
 }
@@ -1718,6 +1758,10 @@ func (p Bool) IsCollection() bool {
 
 func (p Bool) String() string {
 	return strconv.FormatBool(bool(p))
+}
+
+func (p Bool) Debug() string {
+	return p.String()
 }
 
 func (p Bool) HasUUID() bool {
@@ -1849,6 +1893,10 @@ func (p Nil) IsCollection() bool {
 
 func (p Nil) String() string {
 	return "*nil*"
+}
+
+func (p Nil) Debug() string {
+	return p.String()
 }
 
 func (p Nil) HasUUID() bool {
@@ -1989,6 +2037,10 @@ func (p Complex) String() string {
     return fmt.Sprintf("%G",complex128(p))	
 }
 
+func (p Complex) Debug() string {
+	return p.String()
+}
+
 func (p Complex) HasUUID() bool {
 	return false
 }
@@ -2116,6 +2168,10 @@ func (p Complex32) IsCollection() bool {
 
 func (p Complex32) String() string {
     return fmt.Sprintf("%G",complex64(p))	
+}
+
+func (p Complex32) Debug() string {
+	return p.String()
 }
 
 func (p Complex32) HasUUID() bool {
@@ -2271,6 +2327,10 @@ func (p String) String() string {
 	return string(p)
 }
 
+func (p String) Debug() string {
+	return p.String()
+}
+
 func (p String) HasUUID() bool {
 	return false
 }
@@ -2411,7 +2471,12 @@ func (p Proxy) IsCollection() bool {
 }
 
 func (p Proxy) String() string {
-	return strconv.Itoa(int(p))
+	return strconv.FormatInt(int64(p),10)
+}
+
+
+func (p Proxy) Debug() string {
+	return p.String()
 }
 
 func (p Proxy) HasUUID() bool {
