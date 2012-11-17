@@ -62,6 +62,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#ImportRegexp">Import,Regular Expressions</a><br/>			
   <a href="#MapsListComprehensions" class="alt">Maps,List Comprehensions</a><br/>   
   <a href="#ConstRawStringsWhile">Constants, Multi-line Strings, While Loop</a><br/>
+  <a href="#DataTypesConstructors" class="alt">Programmer-defined Data Types, Constructors</a><br/>
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -235,8 +236,56 @@ main
       bottlesOfBeer = minus bottlesOfBeer 1
 </pre></code>
 
+<br/>
+<a name="DataTypesConstructors"><h3>Programmer-Defined Data Types, Constructors</h3></a>
+<code><pre>
+BankAccount
+"""
+ Unsurprisingly, represents a bank account.
+ I'm sure I would have something meaningful to say here
+ if this were part of a real application or s/w library.
+"""
+   balance Float
 
 
+initBankAccount acc BankAccount initialBalance Float > BankAccount
+"""
+ Constructor method for a bank account. Gives it an initial balance.
+"""
+   acc.balance = initialBalance
+
+
+deposit acc BankAccount amount Float
+"""
+ Deposit an amount of money in the bank account.
+"""
+   acc.balance = plus acc.balance amount
+
+
+withdraw acc BankAccount amount Float
+"""
+ Withdraw an amount of money from the bank account.
+"""
+   acc.balance = minus acc.balance amount
+
+
+overdrawn acc BankAccount > Bool
+"""
+ Return true if the bank account has a negative balance.
+ Return false otherwise.
+"""
+   => lt acc.balance 0.0
+
+
+main
+"""
+ Create, modify and check a bank account.
+"""
+   myAccount = BankAccount 15
+   withdraw myAccount 5
+   print myAccount.balance
+</pre></code>
+<br/>
 <!--
 	12 lines: Classes
 	class BankAccount(object):
