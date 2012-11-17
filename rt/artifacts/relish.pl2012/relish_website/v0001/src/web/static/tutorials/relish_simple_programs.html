@@ -60,22 +60,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#"FibonacciMultiAssign"">Fibonacci,Multiple-Assignment</a><br/>	
 	<a href="#Methods" class="alt">Methods</a><br/>	
 	<a href="#ImportRegexp">Import,Regular Expressions</a><br/>			
-  <a href="#MapsListComprehensions" class="alt">Maps,List Comprehensions</a><br/>   	
-  <a href="#ListsSetsMaps">Lists, Sets, and Maps</a><br/>  
-  <a href="#AssignmentStatements">Assignment Statements</a><br/>    
-  <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
-  <a href="#ControlStatements">Control Statements</a><br/>   
-  <a href="#MethodCalls">Method Calls</a><br/>    
-  <a href="#MethodDeclarations">Method Declarations</a><br/> 
-  <a href="#BuiltinMethods">Built-in Methods</a><br/> 
-  <a href="#DataPersistence">Data Persistence</a><br/>   
-  <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>  
-  <a href="#Attributes">Attributes</a><br/>    
-  <a href="#ObjectConstructors">Object Constructors</a><br/>  
-  <a href="#Relations">Relations</a><br/> 
-  <a href="#Concurrency">Concurrency</a><br/> 
-  <a href="#Packages">Packages</a><br/> 
-  <a href="#SoftwareArtifacts">Software Artifacts</a><br/> 
+  <a href="#MapsListComprehensions" class="alt">Maps,List Comprehensions</a><br/>   
+  <a href="#ConstRawStringsWhile">Constants, Multi-line Strings, While Loop</a><br/>
 </div>  
 <div id="content_manual">
 	<a name="Introduction"><h3>Introduction</h3></a>
@@ -96,18 +82,18 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 				</p>
 			
 
-
+<br/>
 <a name="Output"><h3>Output</h3></a>
 <code><pre>
    print “Hello, world!”
 </pre></code>
-
+<br/>
 <a name="InputAssignment"><h3>Input, assignment</h3></a>
 <code><pre>
    name = input “What is your name?\n”
    print fill “Hi, %s.” name
 </pre></code>
-
+<br/>
 <a name="LoopsEnumeration"><h3>For loop, built-in enumeration of elements of a collection</h3></a>
 <code><pre>
    friends = [“john” “pat” “gary” “michael”]
@@ -115,7 +101,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       print fill "iteration %s is %s" i name
 </pre></code>
 
-
+<br/>
 <a name="FibonacciMultiAssign"><h3>Fibonacci, multiple assignment</h3></a>
 <code><pre>
    parents babies = 1 1 
@@ -124,7 +110,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       parents babies = babies 
                        plus parents babies
 </pre></code>
-
+<br/>
 <a name="Methods"><h3>Methods</h3></a>
 <code><pre>
 greet name String 
@@ -141,7 +127,7 @@ main
    greet “Jack”
    greet “Jill”
 </pre></code>
-
+<br/>
 <a name="ImportRegexp"><h3>Import, regular expressions</h3></a>
 <code><pre>
 import re
@@ -156,7 +142,7 @@ main
       else
          print testString "rejected""
 </pre></code>
-
+<br/>
 <a name="MapsListComprehensions"><h3>Maps, list comprehensions</h3>
 <code><pre>
    prices = {"apple"=>0.40 "banana"=>0.50}
@@ -171,6 +157,7 @@ main
                      ]
    print fill "I owe the grocer $%s" groceryBill
 </pre></code>
+
 <!--
 <a name="MapsListComprehensions"><h3>Command line arguments, exception handling</h3></a>
 	#!/usr/bin/env python
@@ -196,9 +183,9 @@ main
 	            print '    ' + line.rstrip()
 
 	    print
--->
 
-<a name="TimeConditionalsForElse"><h3>Time, conditionals, for..else</h3></a>
+
+<a name="TimeConditionalsForElse"><h3>Time, conditionals</h3></a>
 <code><pre>
 import time
 
@@ -217,14 +204,18 @@ main
 
    timeNow = now "Local"
    hourNow = hour timeNow
-
+   found = false
    for activityTime in activities
       if lt hourNow activityTime
+         found = true
          print activities[activityTime]
          break
-   <span class="future">else
-      print "Unknown, AFK or sleeping!"</span>
+   if not found
+      print "Unknown, AFK or sleeping!"
 </pre></code>
+
+-->
+<br/>
 <a name="ConstRawStringsWhile"><h3>Constants, Multi-line strings, while loop</h3></a>
 <code><pre>
 REFRAIN = """
@@ -241,8 +232,11 @@ main
    bottlesOfBeer = 99
    while gt bottlesOfBeer 1
       print fill REFRAIN bottlesOfBeer bottlesOfBeer bottlesOfBeer (minus bottlesOfBeer 1)
-	  bottlesOfBeer = minus bottlesOfBeer 1
+      bottlesOfBeer = minus bottlesOfBeer 1
 </pre></code>
+
+
+
 <!--
 	12 lines: Classes
 	class BankAccount(object):
