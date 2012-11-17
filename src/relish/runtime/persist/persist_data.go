@@ -497,10 +497,12 @@ func (db *SqliteDB) Fetch(id int64, radius int) (obj RObject, err error) {
 	var found bool
 	obj, found = RT.GetObject(id)
 	if found {
+		// fmt.Printf("Fetch: found object %s in cache.\n",obj.Debug())
 		return
 	}
 	stmt := fmt.Sprintf("SELECT * FROM RObject where id=%v", id)
-	return db.fetch1(stmt, radius, fmt.Sprintf("id=%v", id), true)
+	obj, err = db.fetch1(stmt, radius, fmt.Sprintf("id=%v", id), false)
+	return 
 }
 
 /*
@@ -520,7 +522,10 @@ func (db *SqliteDB) Fetch(id int64, radius int) (obj RObject, err error) {
 func (db *SqliteDB) FetchByName(name string, radius int) (obj RObject, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchByName", name, radius))
 	stmt := fmt.Sprintf("SELECT * FROM RObject WHERE id IN (SELECT id FROM RName WHERE name='%s')", name)
+	//fmt.Printf("FetchByName:  %s\n",name)	
 	return db.fetch1(stmt, radius, fmt.Sprintf("name='%s'", name), true)
+	
+	
 }
 
 /*
@@ -582,12 +587,14 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		return
 	}
 
+    var dbid int64  // Made it a var for later debug print. Undo this? put inside if with :=
 	if checkCache {
-		dbid := DBID(id, id2, flags)
+		dbid = DBID(id, id2, flags)
 
 		var found bool
 		obj, found = RT.GetObject(dbid)
 		if found {
+		    // fmt.Printf("fetch1: using dbid %d found object %s in cache.\n",dbid, obj.Debug())			
 			return
 		}
 	}
@@ -598,6 +605,7 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 	if err != nil {
 		return
 	}
+	
 
 	// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
 
@@ -613,6 +621,14 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 
 	Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
 
+	// fmt.Printf("fetch1: cache miss w. DBID %d. created object %s from db. Its DBID is %d\n",dbid,obj.Debug(),obj.DBID())
+
+	
+	RT.Cache(obj) // Put in an in-memory object cache so that the runtime will only contain one object instance for each uuid.
+	// fmt.Println("fetch1: cached it.")
+
+	
+	
 	// Now fetch and restore the values of the unary primitive attributes of the object.
 	// These attribute values are stored in the db rows that represent the object in the db.
 	// The object in the db consists of a single row in each of several database tables.
@@ -780,6 +796,12 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 			// TODO consider replacing with SetStoringLocally and a later SetStoredLocally
             
 			obj.SetStoredLocally()
+			
+			
+			RT.Cache(obj) // Put in an in-memory object cache so that the runtime will only contain one object instance for each uuid.
+			// fmt.Printf("fetchMultiple: cached %s with DBID %d.\n",obj.Debug(), obj.DBID())			
+			
+			
 
 			// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
 			// Maybe this should be fully lazy. Wait until the attribute value is asked for.
