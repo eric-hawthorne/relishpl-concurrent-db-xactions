@@ -1256,6 +1256,7 @@ func builtinInput(objects []RObject) []RObject {
    if err != nil {
       result = err.Error()
    }
+   result = result[:len(result)-1]
    return []RObject{String(result)}
 }
 

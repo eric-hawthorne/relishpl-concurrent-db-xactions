@@ -1,0 +1,27 @@
+origin   examples.relish.pl2012
+artifact simple_programs
+package  stringsconsts
+
+"""
+ beer.rel
+
+ Constants, Multi-line strings, string value-substitution, while loop
+"""
+
+
+REFRAIN = """
+%s bottles of beer on the wall,
+%s bottles of beer,
+take one down, pass it around,
+%s bottles of beer on the wall!
+"""
+
+
+main
+"""
+ Sing!
+"""
+   bottlesOfBeer = 99
+   while gt bottlesOfBeer 1
+      print fill REFRAIN bottlesOfBeer bottlesOfBeer (minus bottlesOfBeer 1)
+      bottlesOfBeer = minus bottlesOfBeer 1
