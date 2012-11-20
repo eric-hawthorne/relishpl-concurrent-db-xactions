@@ -530,7 +530,7 @@ Need to decide how to persist collections and check if persisted and handle pers
 Helper method. Ensures that a collection exists in memory to manage the values of a multi-valued attribute of an object.
 */
 func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *AttributeSpec) (collection RCollection, err error) {
-
+    //defer Un(Trace(ALWAYS_,"EnsureMultiValuedAttributeCollection", attr.Part.Name))
 	attrVals, found := rt.attributes[attr]
 	if !found { // No assignment has ever happened (in this runtime) of a value to this attribute.
 		attrVals = make(map[RObject]RObject)
@@ -557,6 +557,8 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 		var binaryMethod *RMultiMethod
 		var orderAttr *AttributeSpec
 
+		fmt.Println(attr.Part.CollectionType)
+
 		if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
 			if attr.Part.OrderMethodArity == 1 {
 				unaryMethod = attr.Part.OrderMethod
@@ -564,7 +566,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 				binaryMethod = attr.Part.OrderMethod
 			} else { // must be an attribute
 				orderAttr = attr.Part.OrderAttr
-			}
+			}				
 
 			if binaryMethod == nil {
 				binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]

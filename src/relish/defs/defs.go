@@ -46,3 +46,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Mutex" : true,
 "RWMutex" : true,
 }
+
+
+// Implementation detail. Separator used in a map key composed of multiple parts we want to be able to separate later.
+const KEY_PART_SEPARATOR = "_|_"  

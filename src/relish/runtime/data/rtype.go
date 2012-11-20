@@ -16,6 +16,7 @@ import (
 	"hash"
 	"hash/adler32"
 	. "relish/dbg"
+	. "relish/defs"	
 	// "relish/rterr"
 	"sort"
 )
@@ -736,7 +737,6 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 	isReverseRelation bool,
 	orderings map[string]*AttributeSpec) (attr *AttributeSpec, err error) {
 
-	//fmt.Println(rt.Types)	
 	typ1, found := rt.Types[typeName1]
 	if !found {
 		err = fmt.Errorf("Type '%s' not found.", typeName1)
@@ -768,7 +768,10 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 	}
 
     if orderFuncOrAttrName != "" {
-	    orderings[orderFuncOrAttrName] = attr
+	
+	    key := typeName1 + KEY_PART_SEPARATOR + orderFuncOrAttrName
+	
+	    orderings[key] = attr
     }	
 	
 	err = typ1.addAttribute(attr)

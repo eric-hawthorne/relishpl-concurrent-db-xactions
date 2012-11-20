@@ -759,7 +759,9 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
   // end attribute names have been omitted from the relation declaration. 
   
 	if rel1EndName == nil {
-		 end1Name := strings.ToLower(rel1TypeName.Name[0:1]) + rel1TypeName.Name[1:]
+	    slashPos := strings.LastIndex(rel1TypeName.Name,"/") 
+	    typ1Name := rel1TypeName.Name[slashPos+1:]
+    	end1Name := strings.ToLower(typ1Name[0:1]) + typ1Name[1:]
      if arity1Spec.MaxCard != 1 {
         if strings.HasSuffix(end1Name,"s") {
            end1Name += "es"
@@ -771,7 +773,9 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
 	}
 
   if rel2EndName == nil {
-     end2Name := strings.ToLower(rel2TypeName.Name[0:1]) + rel2TypeName.Name[1:]
+		slashPos := strings.LastIndex(rel2TypeName.Name,"/") 
+	    typ2Name := rel2TypeName.Name[slashPos+1:]
+		end2Name := strings.ToLower(typ2Name[0:1]) + typ2Name[1:]
      if arity2Spec.MaxCard != 1 {
         if strings.HasSuffix(end2Name,"s") {
            end2Name += "es"

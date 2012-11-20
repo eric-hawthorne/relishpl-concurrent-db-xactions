@@ -20,6 +20,7 @@ import (
 )
 
 
+
 // The parser structure holds the parser's internal state.
 type Generator struct {
 	files map[*ast.File]string  // map from ast filenode to filename root without .rel or .rlc suffix
@@ -60,6 +61,7 @@ func (g *Generator) GenerateCode() {
    g.configureAttributeSortings(attributeOrderings)
    g.ensureAttributeAndRelationTables(types)
 }
+
 
 /*
 Checks to see if the package which this source code file says its in already
@@ -346,7 +348,6 @@ Generates the runtime environment's objects for attributes of datatypes.
 Assumes the RType objects have already been created in the runtime for each datatype by a previous pass over the intermediate-code files.
 */
 func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typeDeclFile map[string]string, orderings map[string]*data.AttributeSpec) {
-	 
     for theNewType := range types {
        typeName := theNewType.Name
        typeDeclaration := allTypeDecls[typeName]
@@ -363,6 +364,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
 	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
           }
           
+
           var collectionType string 
 
           var orderFuncOrAttrName string = ""
@@ -378,8 +380,8 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
 		            } else {
 			           collectionType = "set"			
 		            }		
-		         case token.LIST:
-			        if attrDecl.Type.CollectionSpec.IsSorting {
+		         case token.LIST:		
+			        if attrDecl.Type.CollectionSpec.IsSorting {			
 			           collectionType = "sortedlist"
                        orderFuncOrAttrName = attrDecl.Type.CollectionSpec.OrderFunc	
                        isAscending = attrDecl.Type.CollectionSpec.IsAscending			
@@ -464,7 +466,9 @@ This had to be delayed until all attributes and methods in the package were
 generated.
 */
 func (g *Generator) configureAttributeSortings(orderings map[string]*data.AttributeSpec) {
-	for orderFuncOrAttrName, attr := range orderings {
+	for key, attr := range orderings {
+       		
+       orderFuncOrAttrName := key[strings.LastIndex(key,KEY_PART_SEPARATOR)+len(KEY_PART_SEPARATOR):]		
        g.configureAttributeSorting(orderFuncOrAttrName, attr)        		
 	}
 }
