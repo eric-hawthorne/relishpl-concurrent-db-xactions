@@ -411,6 +411,14 @@ func (rt *RuntimeEnv) SetOrAddToAttr(obj RObject, attr *AttributeSpec, val RObje
 }
 
 
+/*
+ Remove all elements of the multivalued attribute, in memory and in the db.
+ If the attribute has an inverse, also removes the inverse attribute values.
+*/
+func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec, isInverse bool) (err error) {
+	return
+}
+
 
 
 /*

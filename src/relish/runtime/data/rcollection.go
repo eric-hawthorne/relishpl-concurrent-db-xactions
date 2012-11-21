@@ -323,6 +323,8 @@ func (s *rset) ClearInMemory() {
 	s.m = nil
 }
 
+
+
 /*
 Weird behaviour: Only if the iteration is allowed to complete (i.e. to exhaust the map) will proxies
 in the map be replaced by real objects.

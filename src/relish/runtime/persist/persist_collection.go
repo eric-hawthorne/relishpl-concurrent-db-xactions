@@ -108,6 +108,35 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 }
 
 /*
+   Persist the removing of all values from a multi-valued attribute.
+   Assumes that the the removal has happened from the in-memory collection or that this will happen shortly.
+
+   TODO create a map of prepared statements and look up the statement to use.
+*/
+func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
+	var stmt string
+
+	table := db.TableNameIfy(attr.ShortName())
+
+
+	if attr.Part.Type.IsPrimitive {
+
+		// TODO Have to handle different types, string, bool, int, float in different clauses
+
+	} else { // Non-Primitive part type
+
+		stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, obj.DBID())
+		if attr.Inverse != nil {
+		   inverseTable := db.TableNameIfy(attr.Inverse.ShortName())		
+		   stmt += fmt.Sprintf("; DELETE FROM %s WHERE id1=%v", inverseTable, obj.DBID())	
+		}	
+	}
+	db.QueueStatements(stmt)
+	return
+
+}
+
+/*
 JUST HERE FOR EXAMPLE
 func (db *SqliteDB) fetchPrimitiveAttributeValues(id int64, obj RObject) (err os.Error) {
    defer Un(Trace(PERSIST_TR2,"fetchPrimitiveAttributeValues",id))	
