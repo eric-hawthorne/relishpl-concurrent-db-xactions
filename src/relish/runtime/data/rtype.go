@@ -415,6 +415,10 @@ func (attr *AttributeSpec) IsOneWay() bool {
 	return ! attr.IsForwardRelation && ! attr.IsReverseRelation
 }
 
+func (attr *AttributeSpec) IsMultiValued() bool {
+	return attr.Part.CollectionType != ""
+}
+
 
 /*
 One end of a relation - specifies arity and type constraints and a few other details.

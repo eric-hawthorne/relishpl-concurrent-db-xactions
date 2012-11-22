@@ -415,7 +415,29 @@ func (rt *RuntimeEnv) SetOrAddToAttr(obj RObject, attr *AttributeSpec, val RObje
  Remove all elements of the multivalued attribute, in memory and in the db.
  If the attribute has an inverse, also removes the inverse attribute values.
 */
-func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec, isInverse bool) (err error) {
+func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec) (err error) {
+	
+    objColl, foundCollection := rt.AttrVal(obj, attr)
+
+ 	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute	
+                         // Must be already empty or unassigned?	
+	  return
+    }
+		
+	if attr.IsRelation() {
+	   inverseAttr := attr.Inverse
+
+       collection := objColl.(RCollection)
+	   for val := range collection.Iter() {
+           rt.RemoveAttrGeneral(val, inverseAttr, obj, true, false)		
+	   }
+    }
+
+	collection := objColl.(RemovableCollection) // Will throw an exception if collection type does not implement ClearInMemory()
+	collection.ClearInMemory()	
+	
+	
+	err = rt.DB().PersistClearAttr(obj, attr)
 	return
 }
 
@@ -647,8 +669,9 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 
 /*
 Removes val from the multi-valued attribute if val is in the collection. Does nothing and does not complain if val is not in the collection.
+If removePersistent is true, also removes the value from the persistent version of the attribute association.
 */
-func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, isInverse bool) (err error) {
+func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
 	objColl, foundCollection := rt.AttrVal(obj, attr)
 
 	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute		
@@ -659,36 +682,40 @@ func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObje
 	removed, removedIndex := collection.Remove(val)
 
 	if removed  {
-	   if obj.IsStoredLocally() {
+	   if removePersistent && obj.IsStoredLocally() {
 	    	rt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
 	   }
 	
 	   if ! isInverse && attr.Inverse != nil {
-	   	  err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true)
+	   	  err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true, removePersistent)
 	   }
 	}
 
 	return
 }
 
+
+
+
 /*
 
 Unsets the attribute. Used when setting to nil.
 Deletes the corresponding row from the attribute database table if it exists.
 Ok to call this even if attribute had no value.
+If removePersistent, removes the attribute association from the database if it was persisted.
 */
-func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool) (err error) {
+func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool, removePersistent bool) (err error) {
 	attrVals, found := rt.attributes[attr]
 	if found {
 		val, found := attrVals[obj]
 		if found {
 		   delete(attrVals,obj)
-           if obj.IsStoredLocally() {
+           if removePersistent && obj.IsStoredLocally() {
    	          err = rt.db.PersistRemoveAttr(obj, attr) 	 
            }
 
            if ! isInverse && attr.Inverse != nil {
-	           err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true)
+	           err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true, removePersistent)
            }
         }		
 	}
@@ -699,11 +726,11 @@ func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool
 If the attribute is multi-valued, removes the val from it, otherwise
 if single valued, unsets the attribute.
 */
-func (rt *RuntimeEnv) RemoveAttrGeneral(obj RObject, attr *AttributeSpec, val RObject, isInverse bool) (err error) {
+func (rt *RuntimeEnv) RemoveAttrGeneral(obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
    if attr.Part.CollectionType == "" {	
-	  err = rt.UnsetAttr(obj, attr, isInverse)
+	  err = rt.UnsetAttr(obj, attr, isInverse, removePersistent)
    } else {
-      err = rt.RemoveFromAttr(obj, attr, val, isInverse)	
+      err = rt.RemoveFromAttr(obj, attr, val, isInverse, removePersistent)	
    }
    return
 }

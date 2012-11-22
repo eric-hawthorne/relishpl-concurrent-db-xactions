@@ -2032,13 +2032,24 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 				switch stmt.Tok {
 				case token.ASSIGN:
-					err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-					if err != nil {
-						if strings.Contains(err.Error()," a value of type ") {
-							rterr.Stop(err)
-						} 
-						panic(err)
-					}
+	                if attr.Part.CollectionType != "" {
+		                val := t.Pop()
+		                if val != NIL {
+			               rterr.Stop("Cannot directly assign to a multi-valued attribute, unless assigning nil to clear it.")
+		                }
+		                err := i.rt.ClearAttr(assignee, attr)
+		                if err != nil {
+						   panic(err)	
+						}	
+	                } else {									
+						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						if err != nil {
+							if strings.Contains(err.Error()," a value of type ") {
+								rterr.Stop(err)
+							} 
+							panic(err)
+						}
+				    }
 				case token.ADD_ASSIGN:
 					err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
 					if err != nil {
@@ -2049,7 +2060,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}
 				case token.SUB_ASSIGN:
 					// TODO TODO	
-					err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
+					err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false, true)
 					if err != nil {
 						panic(err)
 					}
