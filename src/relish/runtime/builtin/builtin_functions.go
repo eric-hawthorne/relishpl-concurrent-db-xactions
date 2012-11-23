@@ -1071,6 +1071,14 @@ replace s String old String new String n Int > String
 	}
 	capMethod.PrimitiveCode = builtinCap	
 
+	// clear coll Collection 
+	//
+	clearMethod, err := RT.CreateMethod("","clear", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	clearMethod.PrimitiveCode = builtinClear
+
 
 /*
 	slice s List of T start Int end Int > List of T
@@ -2333,6 +2341,15 @@ func builtinCap(objects []RObject) []RObject {
 	var val RObject
 	val = Int(coll.Cap())
 	return []RObject{val}
+}
+
+func builtinClear(objects []RObject) []RObject {
+	coll,isRemovableCollection := objects[0].(RemovableCollection)
+    if ! isRemovableCollection {
+    	rterr.Stop("Can only apply clear to a mutable,clearable collection or map.")
+    }
+    coll.ClearInMemory()
+	return []RObject{}
 }
 
 ///////////////////////////////////////////////////////////////////////

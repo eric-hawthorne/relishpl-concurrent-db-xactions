@@ -159,6 +159,9 @@ testModel
 
    truck1.driver = driver2
 
+   // Clear the passengers
    car2.passengers = nil
 
    print len car2.passengers
+
+   print String passenger2.vehicleRiddenIn

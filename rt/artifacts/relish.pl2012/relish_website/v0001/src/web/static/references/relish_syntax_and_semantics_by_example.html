@@ -800,6 +800,7 @@ obj1.obj2.obj3.a = 143.65
 myList[3].myMap["Joe Bloggs"].a[i] = "3155 Kent Street"
 
 coord[0].lat = 49.5
+
     </pre></code>
 <p>
 <b>Syntax:</b>
@@ -1811,6 +1812,13 @@ cap c Collection > Int
 """
 
 
+clear c Collection
+"""
+ Empties the collection or map, so that its len method will report 0
+ Panics if called on object or value other than a mutable, clearable collection or map.
+"""
+
+
 
 // Concurrency and inter-goroutine communication methods
 
@@ -1880,6 +1888,16 @@ input promptMessage String > String
  Used to get a line of input from the console. If stdin is coming from the console, waits till the
  [Enter] button is pressed.
 """ 
+
+
+dbg val Any 
+"""
+ If val is a primitive value, prints the standard String representation of it.
+ If a structured object, prints a string representation of debugging innards of the object, 
+ including its uuid and dbid if applicable, and its memory address.
+ If a collection, also prints the length (number of elements) currently in the collection.
+ Prints a newline character after the debug representation of the value.
+"""
 
 
 
@@ -2075,6 +2093,15 @@ hexHash s String > String
 """
  Returns the SHA-256 hash of s as a lowercase-hexadecimal-encoded string. 
  Less compact than base64 but contains only alphanumeric characters.
+"""
+
+
+debug val Any > string
+"""
+ If val is a primitive value, returns the standard String representation of it, 
+ If a structured object, returns a string representation of debugging innards of the object, 
+ including its uuid and dbid if applicable, and its memory address.
+ If a collection, also returns the length (number of elements) currently in the collection.
 """
 
 </pre></code>	
@@ -2393,6 +2420,11 @@ car1.wheels += wheel3
 car1.wheels -= wheel1
 </pre></code>
 
+<h4>Clearing all elements from a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels = nil  // len car.wheels is now 0
+</pre></code>
+
 
 <br/>
 
@@ -2549,7 +2581,13 @@ for horse in cart.horses
 
 print horse1.cart.driver.name  // prints Slim Pickens 	
 
-print horse2.cart  // prints &lt;nil>
+print horse2.cart  // prints *nil*
+
+cart.horses = nil  // clears the multi-valued horses attribute. No horses for this cart.
+
+print len cart.horses  // prints 0
+
+print horse1.cart  // prints *nil*
 
 print student1.courses[2].name  // Prints Biology 101 assuming courses is a List relation-end 
                                 // therefore indexable.

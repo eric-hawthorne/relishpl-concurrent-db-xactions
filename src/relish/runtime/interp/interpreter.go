@@ -547,7 +547,19 @@ func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
 	
 	val, found := RT.AttrVal(obj, attr)
 	if !found {
-		panic(fmt.Sprintf("Object %v has no value for attribute %s", obj, selector.Sel.Name))
+		if attr.Part.ArityLow > 0 {
+		    // pos = t.ExecutingMethod.File.Position(selector.Pos())
+		    if attr.IsRelation() {		
+		       rterr.Stopf("Object %v has no value for attribute %s. The declared relation with type %s requires the attribute to have a value.", obj, selector.Sel.Name, attr.Part.Type.Name)
+		    } else {
+		       rterr.Stopf("Object %v has no value for attribute %s. The attribute declaration requires the attribute to have a value.", obj, selector.Sel.Name)
+		    }
+		}
+		val = attr.Part.Type.Zero()
+
+        // Now obsolete, until we start implementing mandatory attribute types. i.e. if not b Car? then it expects a car,
+        // and should complain if there is a nil.
+		// rterr.Stopf("Object %v has no value for attribute %s", obj, selector.Sel.Name)
 	}		
 
 	t.Push(val)

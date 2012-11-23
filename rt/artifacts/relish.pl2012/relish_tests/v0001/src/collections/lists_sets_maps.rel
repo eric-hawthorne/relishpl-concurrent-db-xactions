@@ -208,3 +208,11 @@ testCollections
 
    for person in youngsters
       print person.firstName person.lastName
+
+   clear allWheels
+
+   print len allWheels
+
+   clear opps4
+
+   print len opps4

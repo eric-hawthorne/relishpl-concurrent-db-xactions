@@ -222,7 +222,7 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 		if found {
 			return
 		} else if (! checkPersistence) && (! allowNoValue) {
-			panic(fmt.Sprintf("Error: attribute %s.%s does not exist.", attr.Part.Name, obj))			
+			panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
 		}
 	}
 
