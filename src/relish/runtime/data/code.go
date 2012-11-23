@@ -13,6 +13,7 @@ package data
 import (
 	"fmt"
 	"errors"
+	"strings"
 	"relish/compiler/ast"
 )
 
@@ -471,8 +472,10 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
     // Set the package into which the method is to be added.
     // If it is the default inbuilt functions package and does not exist, create it.
 	pkg := rt.Packages[packageName]
-	if pkg == nil && packageName == "relish.pl2012/core/inbuilt" {
-		pkg = rt.CreatePackage("relish.pl2012/core/inbuilt")
+	if pkg == nil {
+		if packageName == "relish.pl2012/core/inbuilt" || strings.HasPrefix(packageName, "relish/pkg/") {
+		    pkg = rt.CreatePackage(packageName)
+	    }
 	}
 
 

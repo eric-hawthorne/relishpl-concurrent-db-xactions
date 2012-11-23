@@ -6,6 +6,14 @@
 
 package defs
 
+// Lookup table of relish standard library package pathnames.
+
+var StandardLibPackagePath map[string]bool = map[string]bool {
+	"strings" : true,
+	"time" : true,
+}
+
+
 // Lookup table of relish language builtin type names
 
 var BuiltinTypeName map[string]bool = map[string]bool {
@@ -46,6 +54,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Mutex" : true,
 "RWMutex" : true,
 }
+
 
 
 // Implementation detail. Separator used in a map key composed of multiple parts we want to be able to separate later.
