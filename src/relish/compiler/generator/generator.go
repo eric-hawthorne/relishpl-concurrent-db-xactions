@@ -78,7 +78,7 @@ func (g *Generator) generatePackage() {
     if g.pkg != nil {
     	rterr.Stopf("Package %s has already been loaded. Error to load it again.",g.packageName)
     }
-	g.pkg = data.RT.CreatePackage(g.packageName)  // This should init MMMap from core/builtin package   
+	g.pkg = data.RT.CreatePackage(g.packageName, false)  // This should init MMMap from core/builtin package   
 	
 	g.updatePackageDependenciesAndMultiMethodMap()
 }

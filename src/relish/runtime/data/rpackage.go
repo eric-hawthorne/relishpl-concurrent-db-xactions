@@ -83,7 +83,7 @@ THIS IS OBSOLETE COMMENT
    they will get a different uuid and may be defined in different order giving them a different
    shortName, and package shortnames are part of the name of type tables and relation tables. 
 */
-func (rt *RuntimeEnv) CreatePackage(path string) *RPackage {
+func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPackage {
 
 	typ, typFound := rt.Types["relish.pl2012/core/pkg/relish/lang/Package"]
 	var err error
@@ -107,7 +107,12 @@ func (rt *RuntimeEnv) CreatePackage(path string) *RPackage {
 		panic(fmt.Sprintf("Attempt to redefine package '%s'", pkg.Name))
 	}
 
-    shortName := rt.PkgNameToShortName[pkg.Name]
+    var shortName string
+    if isStandardLibPackage {    
+	    shortName = pkg.Name[11:]
+    } else {
+	    shortName = rt.PkgNameToShortName[pkg.Name]
+	}
     if shortName != "" {
        	pkg.ShortName = shortName
     } else {
@@ -130,17 +135,18 @@ func (rt *RuntimeEnv) CreatePackage(path string) *RPackage {
 			}
 		}
 		pkg.ShortName = candidateShortName
-		
+	
 	    rt.DB().RecordPackageName(pkg.Name, pkg.ShortName)
     	if err != nil {
 		   panic(fmt.Sprintf("Unable to record package name in db: %v", err))
 	    }	
     }
+    
 
     // Note that this package name is not a legal package name. Maybe that's ok.
     if pkg.Name == "relish.pl2012/core/inbuilt" {
     	rt.InbuiltFunctionsPackage = pkg
-    } else {
+    } else if ! isStandardLibPackage {
        // Copy multimethod map from inbuilt functions package
        inbuiltPkg := rt.Packages["relish.pl2012/core/inbuilt"]	
        for multiMethodName, multiMethod := range inbuiltPkg.MultiMethods {

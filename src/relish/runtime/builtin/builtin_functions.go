@@ -270,7 +270,7 @@ func InitBuiltinFunctions() {
     //
     // t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
     //
-	timeNowMethod, err := RT.CreateMethod("relish/pkg/time","now", []string{"loc"}, []string{"String"}, []string{"Time"}, false, 0, false)
+	timeNowMethod, err := RT.CreateMethod("relish/pkg/datetime","now", []string{"loc"}, []string{"String"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -278,7 +278,7 @@ func InitBuiltinFunctions() {
 
     // sleep durationNs Int
     //
-	sleepMethod, err := RT.CreateMethod("relish/pkg/time","sleep", []string{"ns"}, []string{"Int"}, nil, false, 0, false)
+	sleepMethod, err := RT.CreateMethod("relish/pkg/datetime","sleep", []string{"ns"}, []string{"Int"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -286,7 +286,7 @@ func InitBuiltinFunctions() {
 
     // tick durationNs Int > InChannel of Time
     //
-	tickMethod, err := RT.CreateMethod("relish/pkg/time","tick", []string{"ns"}, []string{"Int"},  []string{"InChannel"}, false, 0, false)
+	tickMethod, err := RT.CreateMethod("relish/pkg/datetime","tick", []string{"ns"}, []string{"Int"},  []string{"InChannel"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -295,7 +295,7 @@ func InitBuiltinFunctions() {
 
     // plus t Time durationNs Int > Time
     //
-	timePlusMethod, err := RT.CreateMethod("relish/pkg/time","plus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
+	timePlusMethod, err := RT.CreateMethod("relish/pkg/datetime","plus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -303,7 +303,7 @@ func InitBuiltinFunctions() {
 
     // addDate t Time years Int months Int days Int > Time
     //
-	timeAddDateMethod, err := RT.CreateMethod("relish/pkg/time","addDate", []string{"t", "years","months","days"}, []string{"Time", "Int", "Int", "Int"}, []string{"Time"}, false, 0, false)
+	timeAddDateMethod, err := RT.CreateMethod("relish/pkg/datetime","addDate", []string{"t", "years","months","days"}, []string{"Time", "Int", "Int", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -311,7 +311,7 @@ func InitBuiltinFunctions() {
 
     // minus t Time durationNs Int > Time
     //
-	timeMinusDurationMethod, err := RT.CreateMethod("relish/pkg/time","minus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
+	timeMinusDurationMethod, err := RT.CreateMethod("relish/pkg/datetime","minus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -319,7 +319,7 @@ func InitBuiltinFunctions() {
 
     // minus t2 Time t2 Time > durationNs Int
     //
-	timeMinusTimeMethod, err := RT.CreateMethod("relish/pkg/time","minus", []string{"t", "t"}, []string{"Time", "Time"}, []string{"Int"}, false, 0, false)
+	timeMinusTimeMethod, err := RT.CreateMethod("relish/pkg/datetime","minus", []string{"t", "t"}, []string{"Time", "Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -327,7 +327,7 @@ func InitBuiltinFunctions() {
 
     // since t Time > durationNs Int
     //
-	timeSinceMethod, err := RT.CreateMethod("relish/pkg/time","since", []string{"t"}, []string{"Time"},  []string{"Int"}, false, 0, false)
+	timeSinceMethod, err := RT.CreateMethod("relish/pkg/datetime","since", []string{"t"}, []string{"Time"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -335,7 +335,7 @@ func InitBuiltinFunctions() {
 
     // timeIn t Time location String > Time
     //
-	timeInMethod, err := RT.CreateMethod("relish/pkg/time","timeIn", []string{"t","location"}, []string{"Time","String"}, []string{"Time"}, false, 0, false)
+	timeInMethod, err := RT.CreateMethod("relish/pkg/datetime","timeIn", []string{"t","location"}, []string{"Time","String"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -343,7 +343,7 @@ func InitBuiltinFunctions() {
 
     // hours n Int > durationNs Int
     // 
-	hoursMethod, err := RT.CreateMethod("relish/pkg/time","hours", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	hoursMethod, err := RT.CreateMethod("relish/pkg/datetime","hours", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -351,7 +351,7 @@ func InitBuiltinFunctions() {
 
     // minutes n Int > durationNs Int
     // 
-	minutesMethod, err := RT.CreateMethod("relish/pkg/time","minutes", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	minutesMethod, err := RT.CreateMethod("relish/pkg/datetime","minutes", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -359,7 +359,7 @@ func InitBuiltinFunctions() {
 
     // seconds n Int > durationNs Int
     // 
-	secondsMethod, err := RT.CreateMethod("relish/pkg/time","seconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	secondsMethod, err := RT.CreateMethod("relish/pkg/datetime","seconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -367,7 +367,7 @@ func InitBuiltinFunctions() {
 
     // milliseconds n Int > durationNs Int
     // 
-	millisecondsMethod, err := RT.CreateMethod("relish/pkg/time","milliseconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	millisecondsMethod, err := RT.CreateMethod("relish/pkg/datetime","milliseconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -380,7 +380,7 @@ func InitBuiltinFunctions() {
 
 // date t Time > year Int month Int day Int
 //
-	timeDateMethod, err := RT.CreateMethod("relish/pkg/time","date", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	timeDateMethod, err := RT.CreateMethod("relish/pkg/datetime","date", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -388,7 +388,7 @@ func InitBuiltinFunctions() {
 
 // clock t Time > hour Int min Int sec Int
 //
-	timeClockMethod, err := RT.CreateMethod("relish/pkg/time","clock", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	timeClockMethod, err := RT.CreateMethod("relish/pkg/datetime","clock", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -399,7 +399,7 @@ func InitBuiltinFunctions() {
 //  0..31
 // """
 //
-	timeDayMethod, err := RT.CreateMethod("relish/pkg/time","day", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeDayMethod, err := RT.CreateMethod("relish/pkg/datetime","day", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -411,7 +411,7 @@ func InitBuiltinFunctions() {
 //  0..23
 // """
 //
-	timeHourMethod, err := RT.CreateMethod("relish/pkg/time","hour", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeHourMethod, err := RT.CreateMethod("relish/pkg/datetime","hour", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -423,7 +423,7 @@ func InitBuiltinFunctions() {
 //  0..59
 // """
 //
-	timeMinuteMethod, err := RT.CreateMethod("relish/pkg/time","minute", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeMinuteMethod, err := RT.CreateMethod("relish/pkg/datetime","minute", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -435,7 +435,7 @@ func InitBuiltinFunctions() {
 //  0..59
 // """
 //
-	timeSecondMethod, err := RT.CreateMethod("relish/pkg/time","second", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeSecondMethod, err := RT.CreateMethod("relish/pkg/datetime","second", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -446,7 +446,7 @@ func InitBuiltinFunctions() {
 //  0..999999999
 // """
 //
-	timeNanosecondMethod, err := RT.CreateMethod("relish/pkg/time","nanosecond", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeNanosecondMethod, err := RT.CreateMethod("relish/pkg/datetime","nanosecond", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -458,7 +458,7 @@ func InitBuiltinFunctions() {
 //  0..6  Sunday = 0 
 // """
 //
-	timeWeekdayMethod, err := RT.CreateMethod("relish/pkg/time","weekday", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeWeekdayMethod, err := RT.CreateMethod("relish/pkg/datetime","weekday", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -467,7 +467,7 @@ func InitBuiltinFunctions() {
 
 // year t Time >  Int  
 //
-	timeYearMethod, err := RT.CreateMethod("relish/pkg/time","year", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeYearMethod, err := RT.CreateMethod("relish/pkg/datetime","year", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -479,7 +479,7 @@ func InitBuiltinFunctions() {
 //  1..12  January = 1
 // """
 //
-	timeMonthMethod, err := RT.CreateMethod("relish/pkg/time","month", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeMonthMethod, err := RT.CreateMethod("relish/pkg/datetime","month", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -491,7 +491,7 @@ func InitBuiltinFunctions() {
 //  EST secondsEastOfUTC
 // """  
 //
-	timeZoneMethod, err := RT.CreateMethod("relish/pkg/time","zone", []string{"t"}, []string{"Time"}, []string{"String","Int"}, false, 0, false)
+	timeZoneMethod, err := RT.CreateMethod("relish/pkg/datetime","zone", []string{"t"}, []string{"Time"}, []string{"String","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -503,7 +503,7 @@ func InitBuiltinFunctions() {
 //  Like Go time layouts (http://golang.org/pkg/time/)
 // """  
 //
-	timeFormatMethod, err := RT.CreateMethod("relish/pkg/time","format", []string{"t","layout"}, []string{"Time","String"}, []string{"String"}, false, 0, false)
+	timeFormatMethod, err := RT.CreateMethod("relish/pkg/datetime","format", []string{"t","layout"}, []string{"Time","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -518,7 +518,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int > durationNs Int
     // 
-	durationHoursMinutesMethod, err := RT.CreateMethod("relish/pkg/time","duration", []string{"h","m"}, []string{"Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m"}, []string{"Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -526,7 +526,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int seconds Int > durationNs Int
     // 
-	durationHoursMinutesSecondsMethod, err := RT.CreateMethod("relish/pkg/time","duration", []string{"h","m","s"}, []string{"Int","Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesSecondsMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m","s"}, []string{"Int","Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -534,7 +534,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
     // 
-	durationHoursMinutesSecondsNsMethod, err := RT.CreateMethod("relish/pkg/time","duration", []string{"h","m","s","ns"}, []string{"Int","Int","Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesSecondsNsMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m","s","ns"}, []string{"Int","Int","Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -545,7 +545,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of hours.
     // 
-	hoursEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/time","hoursEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	hoursEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","hoursEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -555,7 +555,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of minutes.
     // 
-	minutesEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/time","minutesEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	minutesEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","minutesEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -565,7 +565,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of seconds.
     // 
-	secondsEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/time","secondsEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	secondsEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","secondsEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -576,7 +576,7 @@ func InitBuiltinFunctions() {
     // Returns the duration as the number of hours, remaining minutes, remaining seconds, 
     // and remaining nanoseconds
     // 
-	timePartsMethod, err := RT.CreateMethod("relish/pkg/time","timeParts", []string{"ns"}, []string{"Int"}, []string{"Int","Int","Int","Int"}, false, 0, false)
+	timePartsMethod, err := RT.CreateMethod("relish/pkg/datetime","timeParts", []string{"ns"}, []string{"Int"}, []string{"Int","Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}

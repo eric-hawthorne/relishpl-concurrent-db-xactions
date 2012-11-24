@@ -832,7 +832,9 @@ Requires consultation of the current package's artifact's built.txt information 
 func (ldr *Loader) ensureImportsAreLoaded(fileNode *ast.File) (err error) {
 	imports := fileNode.RelishImports  // package specifications
 	for _,importedPackageSpec := range imports {
-		
+		if importedPackageSpec.OriginAndArtifactName == "relish" {
+			continue
+		}
 		importedArtifactVersion := ldr.ArtifactVersion(importedPackageSpec.OriginAndArtifactName)	
 		
 		_,err = ldr.LoadPackage(importedPackageSpec.OriginAndArtifactName,

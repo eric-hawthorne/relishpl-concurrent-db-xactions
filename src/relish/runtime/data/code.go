@@ -473,8 +473,10 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
     // If it is the default inbuilt functions package and does not exist, create it.
 	pkg := rt.Packages[packageName]
 	if pkg == nil {
-		if packageName == "relish.pl2012/core/inbuilt" || strings.HasPrefix(packageName, "relish/pkg/") {
-		    pkg = rt.CreatePackage(packageName)
+		if packageName == "relish.pl2012/core/inbuilt"  {
+		    pkg = rt.CreatePackage(packageName, false)
+	    } else if strings.HasPrefix(packageName, "relish/pkg/") {
+		   pkg = rt.CreatePackage(packageName, true)
 	    }
 	}
 
