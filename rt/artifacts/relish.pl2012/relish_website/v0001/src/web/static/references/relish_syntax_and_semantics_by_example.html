@@ -2100,6 +2100,19 @@ Author N writers -- contributedTo N Book    // attribute names still needed here
 
 Publisher 1 -- published N Book    // 1 means 1..1
 
+// These result in automatically declared attributes for the data types:
+
+anAuthor.publisher
+thePublisher.authors   // a set of Authors
+thePublisher.published  // a set of Books
+aBook.publisher
+aBook.writers  // a set of Authors
+anAuthor.contributedTo   // a set of Books
+
+// When the attributes are assigned to or the multi-valued attributes added to/removed from,
+// the other end of the relation (and the corresponding attribute of the other object) is
+// automatically maintained. You can view the relationship from the object at either end.
+
 
 // More examples, showing additional features like sort-order of relation.
 	
