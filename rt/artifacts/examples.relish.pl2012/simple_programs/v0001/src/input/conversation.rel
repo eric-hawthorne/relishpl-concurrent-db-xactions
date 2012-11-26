@@ -8,6 +8,9 @@ package  input
  Input, assignment
 """
 
+import
+   strings
+
 
 main
 """

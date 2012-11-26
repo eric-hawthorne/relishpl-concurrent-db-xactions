@@ -8,6 +8,9 @@ package  fibonacci
  Fibonacci, multiple assignment
 """
 
+import 
+   strings
+
 
 main
 """

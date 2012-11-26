@@ -8,6 +8,9 @@ package  loops
  "for" loop; built-in enumeration of elements of a collection
 """
 
+import
+   strings
+
 
 main
 """

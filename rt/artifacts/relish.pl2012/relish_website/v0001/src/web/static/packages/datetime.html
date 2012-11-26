@@ -1,0 +1,508 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+datetime - the relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Package datetime</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </div>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </div>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </div>
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Summary">Summary</a><br/>	
+	<a href="#addDate">addDate</a><br/>	
+	<a href="#clock" class="alt">clock</a><br/>
+	<a href="#date">date</a><br/>
+	<a href="#day" class="alt">day</a><br/>	
+	<a href="#duration">duration</a><br/>	
+	<a href="#format" class="alt">format</a><br/>			
+  <a href="#hour">hour</a><br/>   
+  <a href="#hours" class="alt">hours</a><br/>
+  <a href="#hoursEquivalentOf">hoursEquivalentOf</a><br/>
+	<a href="#milliseconds" class="alt">milliseconds</a><br/>	
+	<a href="#minus">minus</a><br/>	
+	<a href="#minute" class="alt">minute</a><br/>			
+  <a href="#minutes">minutes</a><br/>   
+  <a href="#minutesEquivalentOf" class="alt">minutesEquivalentOf</a><br/>
+  <a href="#month">month</a><br/>
+	<a href="#now" class="alt">now</a><br/>			
+  <a href="#plus">plus</a><br/>   
+  <a href="#nanosecond" class="alt">nanosecond</a><br/>
+  <a href="#second">second</a><br/>
+	<a href="#seconds" class="alt">seconds</a><br/>	
+	<a href="#secondsEquivalentOf">secondsEquivalentOf</a><br/>	
+	<a href="#since" class="alt">since</a><br/>			
+  <a href="#sleep">sleep</a><br/>   
+  <a href="#tick" class="alt">tick</a><br/>
+  <a href="#timeIn">timeIn</a><br/>
+	<a href="#timeParts" class="alt">timeParts</a><br/>			
+  <a href="#weekday">weekday</a><br/>   
+  <a href="#year" class="alt">year</a><br/>
+  <a href="#zone">zone</a><br/>
+</div>  
+<div id="content_manual">
+<a name="Summary"><h3>Summary</h3></a>
+<p>
+	Provides functionality for measuring and displaying time. These methods operate on relish's built-in Time data-type (which is a primitive value type like Int, rather than a by-reference object type.)
+</p>
+<p>
+	The calendrical calculations always assume a Gregorian calendar.	
+</p>
+<p>
+    Based on the data types and methods in the Go time package. The Time data-type represents a moment in time as well as a reference to a location on Earth. The location determines how the time will be displayed. Converting a Time to have a different location does not change the moment in time, just how it will be displayed when formatted as a String. It will be formatted as a local time in the location, accounting for time zones, daylight-savings rules, etc. The special location "UTC" will display a time in universal coordinated time (Greenwich Mean Time). See <a href="http://golang.org/pkg/time/" target="_blank">Go time package documentation</a> for further details.
+</p>
+<p>
+The zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC. As this time is unlikely to come up in practice, this  gives a simple way<br/> 
+<code><pre>   if not t
+      ...</pre></code>
+of detecting a time that has not been initialized explicitly. 
+</p>
+<p>
+    <em>Important Note: In relish, if a Time is persisted in the local database (as an attribute of some persisted object), the precision of the Time will be reduced to a whole number of milliseconds. Further precision in the former in-memory Time moment will be lost upon restoration of the Time into memory from the database. A time such as 1983-09-25 21:13:45.875983291Z will 
+	become 1983-09-25 21:13:45.876Z. So precise nanosecond time moments and calculations can be used in programming with relish Time, in methods that manipulate non-persistent Time values, but the nanoseconds-precision will be lost if the Time is persisted as an attribute of some object.</em>
+</p>
+<p>
+    <em>Note: This relish time package uses the 64-bit Int data-type to represent durations, rather than a dedicated Duration type as Go uses. Ints are also used for Month numbers and Weekdays, unlike Go's dedicated types.</em>
+</p>	
+	<center>
+<table>
+<tr>
+   <td><a href="#addDate">addDate</a></td><td> - the time from adding the # of years, months, and days to the arg time</td>
+</tr>
+<tr>
+   <td><a href="#clock">clock</a></td><td> - the clock time 0:0:0 to 23:59:59 of the time</td>
+</tr>
+<tr> 
+   <td><a href="#date">date</a></td><td> - the date in which the time occurs</td>
+</tr>
+<tr>
+   <td><a href="#day">day</a></td><td> - the day of the month in which the time occurs. 0..31</td>
+</tr>
+<tr>
+   <td><a href="#duration">duration</a></td><td> - converts the # of hours + # of minutes (optionally + s + ns) to nanoseconds</td>
+</tr>
+<tr>
+   <td><a href="#format">format</a></td><td> - produce a formatted string version of the time, using a layout string</td>
+</tr>
+<tr>
+   <td><a href="#hour">hour</a></td><td> - the hour of the day of the time: 0..23</td>
+</tr>
+<tr>
+   <td><a href="#hours">hours </a></td><td> - converts n hours to the equivalent number of nanoseconds</td>
+</tr>
+<tr>
+   <td><a href="#hoursEquivalentOf">hoursEquivalentOf</a></td><td> - the duration as a floating point number of hours</td>
+</tr>
+<tr>
+   <td><a href="#milliseconds">milliseconds</a></td><td> - converts n milliseconds to the equivalent number of nanoseconds</td>
+</tr>
+<tr>
+   <td><a href="#minus">minus</a></td><td> - time obtained by subtracting a duration (ns) from a time. Or the duration (ns) obtained by subtracting an earlier time from a later time</td>
+</tr>
+<tr>
+   <td><a href="#minute">minute</a></td><td> - the minute-of-the-hour in which the time occurs: 0..59</td>
+</tr>
+<tr>
+   <td><a href="#minutes">minutes</a></td><td> - converts n minutes to the equivalent number of nanoseconds</td>
+</tr>
+<tr>
+   <td><a href="#minutesEquivalentOf">minutesEquivalentOf</a></td><td> - the duration as a floating point number of minutes</td>
+</tr>
+<tr>
+   <td><a href="#month">month</a></td><td> - the month-of-the-year in which the time occurs: 1..12  January = 1</td>
+</tr>
+<tr>
+   <td><a href="#now">now</a></td><td> - the current time in the specified location on Earth</td>
+</tr>
+<tr>
+   <td><a href="#plus">plus</a></td><td> - the time obtained by adding the duration (ns) to the argument time</td>
+</tr>
+<tr>
+   <td><a href="#nanosecond">nanosecond</a></td><td> - the nanoseconds-remainder component of the time</td>
+</tr>
+<tr>
+   <td><a href="#second">second</a></td><td> - the second-in-the-minute at which the time occurs: 0..59</td>
+</tr>
+<tr>	
+   <td><a href="#seconds">seconds</a></td><td> - converts n seconds to the equivalent number of nanoseconds</td>
+</tr>
+<tr>
+   <td><a href="#secondsEquivalentOf">secondsEquivalentOf</a></td><td> - the duration as a floating point number of seconds</td>
+</tr>
+<tr>
+   <td><a href="#since">since</a></td><td> - the time elapsed since t (in nanoseconds)</td>
+</tr>
+<tr>
+   <td><a href="#sleep">sleep</a></td><td> - pauses execution of the current go-routine for the duration (ns)</td>
+</tr>
+<tr>
+   <td><a href="#tick">tick</a></td><td> - returns a Channel that acts as a timer, yielding a value every time interval</td>
+</tr>
+<tr>	
+   <td><a href="#timeIn">timeIn</a></td><td> - returns time t with the location information set to the named location</td>
+</tr>
+<tr> 
+   <td><a href="#timeParts">timeParts</a></td><td> - the duration (ns) returned as the # of hours, minutes, s, and ns</td>
+</tr>
+<tr>
+   <td><a href="#weekday">weekday</a></td><td> - the day of the week in which the time occurs: 0..6  Sunday = 0</td>
+</tr>
+<tr>
+   <td><a href="#year">year</a></td><td> - the year in which the time occurs</td>
+</tr>
+<tr>	
+   <td><a href="#zone">zone</a></td><td> - name and secondsEastOfUTC of timezone in effect at location of the time</td>
+</tr>
+</table>	
+</center>
+
+<br/>
+<h3>Methods</h3>
+<code><pre>
+
+<a name="addDate">addDate t Time years Int months Int days Int > Time</a>
+"""
+ Returns the time obtained by adding the specified number of years, months, and days to the 
+ input argument time.
+"""
+
+
+<a name="clock">clock t Time > hour Int min Int sec Int</a>
+"""
+ Returns the clock time 0:0:0 to 23:59:59 of the time. 
+ Calculated using the time's location.
+"""
+ 
+
+<a name="date">date t Time > year Int month Int day Int</a>
+"""
+ Returns the date in which the time occurs.
+ Calculated using the time's location.
+"""
+
+
+<a name="day">day t Time > dayOfMonth Int</a>  
+"""
+ Returns the day of the month in which the time occurs. 0..31
+ Calculated using the time's location.
+"""
+
+
+<a name="duration">duration hours Int minutes Int > durationNs Int</a>
+"""
+ Converts the number of hours + the number of minutes to the equivalent number of 
+ nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T21:13:45.875Z"
+    t1 = plus t0 (duration 2 20)
+    ...t1 is set to the Time that prints as "1983-09-25T23:33:45.875Z"
+"""
+
+
+duration hours Int minutes Int seconds Int > durationNs Int
+"""
+ Converts the number of hours,minutes, and seconds to the equivalent number of
+ nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T21:13:45.875Z"
+    t1 = plus t0 (duration 2 20 4)
+    ...t1 is set to the Time that prints as "1983-09-25T23:33:49.875Z"
+"""
+
+
+duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
+"""
+ Converts the number of hours, minutes, seconds, and nanoseconds to the equivalent 
+ number of nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T21:13:45.875Z"
+    t1 = plus t0 (duration 2 20 4 112000000)
+    ...t1 is set to the Time that prints as "1983-09-25T23:33:49.987Z"
+"""
+
+
+<a name="format">format t Time layout String > String</a>
+"""
+ Produce a formatted string version of the time.
+ Understands Go time layouts (see http://golang.org/pkg/time/)
+"""
+
+
+<a name="hour">hour t Time >  Int</a>  
+"""
+ The hour of the day of the time: 0..23
+ Calculated using the time's location.
+"""
+
+
+<a name="hours">hours n Int > durationNs Int</a>
+"""
+ Converts n hours to the equivalent number of nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T21:13:45.875Z"
+    t1 = plus t0 (hours 2)
+    ...t1 is set to the Time that prints as "1983-09-25T23:13:45.875Z"
+"""
+
+
+<a name="hoursEquivalentOf">hoursEquivalentOf durationNs Int > Float</a>
+"""
+ Returns the duration as a floating point number of hours.
+""" 
+
+
+<a name="milliseconds">milliseconds n Int > durationNs Int</a>
+"""
+ Converts n milliseconds to the equivalent number of nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T22:13:45.075Z"
+    t1 = plus t0 (milliseconds 925)
+    ...t1 is set to the Time that prints as "1983-09-25T22:13:46.000Z"
+"""
+
+
+<a name="minus">minus t Time durationNs Int > Time</a>
+"""
+ Returns the time obtained by subtracting the duration (in nanoseconds) from the input 
+ argument time. i.e. Moving backwards in time by the number of nanoseconds.
+"""  
+
+
+minus t2 Time t1 Time > durationNs Int
+"""
+ Returns the duration in nanoseconds computed as t2 - t1. If t2 is before t1, the 
+ duration returned will be negative. "How many nanoseconds elapsed from t1 to t2 ?"
+"""
+
+
+<a name="minute">minute t Time >  Int</a>
+"""
+ The minute-of-the-hour in which the time occurs: 0..59
+ Calculated using the time's location.
+"""
+
+
+<a name="minutes">minutes n Int > durationNs Int</a>
+"""
+ Converts n minutes to the equivalent number of nanoseconds.
+
+ e.g.
+    t0 = Time Time "1983-09-25T21:13:45.875Z"
+    t1 = plus t0 (minutes 14)
+    ...t1 is set to the Time that prints as "1983-09-25T21:27:45.875Z"
+"""
+
+
+<a name="minutesEquivalentOf">minutesEquivalentOf durationNs Int > Float</a>
+"""
+ Returns the duration as a floating point number of minutes.
+"""
+
+
+<a name="month">month t Time >  Int</a>
+"""
+ The month-of-the-year in which the time occurs: 1..12  January = 1
+ Calculated using the time's location.
+"""
+
+
+<a name="now">now location String > Time</a>
+"""
+ Returns the current time in the specified location.
+ Locations are IANA timezone database locations, 
+ such as "America/Los_Angeles" or the special locations "UTC" or "Local" 
+ 
+ t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
+
+
+ See <a href="http://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">http://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a>
+"""
+
+
+<a name="plus">plus t Time durationNs Int > Time</a>
+"""
+ Returns the time obtained by adding the duration (in nanoseconds) to the input argument 
+ time.
+ (The duration argument can be negative.)
+"""
+
+
+<a name="nanosecond">nanosecond t Time >  Int</a>
+"""
+ The nanoseconds-remainder component of the time.
+ i.e. the small amount (if any) by which the time is later than the whole second that is
+ part of the time's definition.
+ 0..999999999
+"""
+
+
+<a name="second">second t Time >  Int</a>
+"""
+ The second-in-the-minute at which the time occurs: 0..59
+"""
+
+
+<a name="seconds">seconds n Int > durationNs Int</a>
+"""
+ Converts n seconds to the equivalent number of nanoseconds.
+"""
+
+
+<a name="secondsEquivalentOf">secondsEquivalentOf durationNs Int > Float</a>
+"""
+ Returns the duration as a floating point number of seconds.
+"""
+
+
+<a name="since">since t Time > durationNs Int</a>
+"""
+ Returns the time elapsed since t (in nanoseconds). 
+ It is shorthand for 
+ minus 
+    now "UTC"
+    t
+"""
+
+
+<a name="sleep">sleep durationNs Int</a>
+"""
+ Pauses execution of the current go-routine for the duration (specified in nanoseconds).
+"""
+
+
+<a name="tick">tick durationNs Int > InChannel of Time</a>
+"""
+ Returns a channel that will yield the current time, then will block for the specified 
+ duration (nanoseconds) before yielding the next current time, and will repeat doing 
+ that ad infinitum. 
+
+    timer = tick 500000000
+    while true
+       tNow = &lt;- timer
+       print tNow
+       // This will print the current time every half-second.
+       // This go-routine is blocked (sleeping) in between.   
+"""
+
+
+<a name="timeIn">timeIn t Time location String > Time</a>
+"""
+ Returns t with the location information set to the named location.
+ The same absolute moment in time is returned, just with a different locale reference.
+ Locations are IANA timezone database locations, 
+ such as "America/Los_Angeles" or the special locations "UTC" or "LOCAL" 
+
+ timeIn panics if the location name is invalid.
+
+ See <a href="http://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">http://en.wikipedia.org/wiki/List_of_tz_database_time_zones</a>
+"""
+
+
+<a name="timeParts">timeParts durationNs Int > h Int m Int s Int ns Int</a>
+"""
+ Returns the duration as the number of hours, remaining minutes, remaining seconds, 
+ and remaining nanoseconds
+ e.g. 192 59 33 875234951
+"""
+
+
+<a name="weekday">weekday t Time >  Int</a>
+"""
+ The day of the week in which the time occurs: 0..6  Sunday = 0 
+ Calculated using the time's location.
+"""
+
+
+<a name="year">year t Time >  Int</a>
+"""
+ The year in which the time occurs. Calculated using the time's location.
+"""
+
+
+<a name="zone">zone t Time > name String offset Int</a>
+"""
+ Returns information about the time zone currently in effect at the location of the Time.
+ Specifically, returns the abbreviated local name of the time zone, as well as
+ the number of seconds east of UTC time.
+ 
+ EST secondsEastOfUTC
+
+ "EST" -18000
+
+ "EST" -14400  // During summer daylight savings time,
+               // Same name returned, different offset from UTC.
+
+ "CET" 3600
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre></code>
+
+
+</div>
+
+</body>
+</html>
+

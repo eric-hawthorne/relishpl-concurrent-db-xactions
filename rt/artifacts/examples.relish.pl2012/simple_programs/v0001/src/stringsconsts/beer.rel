@@ -8,6 +8,8 @@ package  stringsconsts
  Constants, Multi-line strings, string value-substitution, while loop
 """
 
+import
+   strings
 
 REFRAIN = """
 %s bottles of beer on the wall,

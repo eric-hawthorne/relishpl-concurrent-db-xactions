@@ -8,6 +8,9 @@ package  strings
  Test the String datatype and String methods.
 """
 
+import
+   strings
+
 
 main
 """
