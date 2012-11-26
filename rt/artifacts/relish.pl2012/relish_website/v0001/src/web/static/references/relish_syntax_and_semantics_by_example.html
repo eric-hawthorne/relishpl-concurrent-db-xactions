@@ -2078,7 +2078,29 @@ An init&lt;TypeName&gt; method can also be called explicitly, in case re-initial
 <br/>
 <br/>
 <h4>Relation declarations</h4>
+<p>
+	In relish, to create the data model of your application's domain, just start expressing the the relation-lines of an entity-relation diagram directly in the source code, at the top-level of a relish source code file. 
+</p>
 <code><pre>
+	
+Author 1 N authors -- publisher 0 N Publisher
+
+Author 1 N writers -- contributedTo N Book
+
+Publisher 1 1 publisher -- published 1 N Book
+		
+		
+// Or, using available syntax defaults...
+		
+Author N -- 0 N Publisher     // attribute names default to properly pluralized lowercase type names. N means 1..N
+
+Author N writers -- contributedTo N Book    // attribute names still needed here since not just using type names
+
+Publisher 1 -- published N Book    // 1 means 1..1
+
+
+// More examples, showing additional features like sort-order of relation.
+	
 Cart 0 1 cart -- horses {&lt;age} 0 N Horse
 
 Student 1 500 enrollees -- courses 1 8 Course
