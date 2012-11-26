@@ -2092,9 +2092,11 @@ Publisher 1 1 publisher -- published 1 N Book
 		
 // Or, using available syntax defaults...
 		
-Author N -- 0 N Publisher     // attribute names default to properly pluralized lowercase type names. N means 1..N
+Author N -- 0 N Publisher     // attribute names default to properly pluralized lowercase 
+                              // type names (authors, publisher). N means 1..N
 
-Author N writers -- contributedTo N Book    // attribute names still needed here since not just using type names
+Author N writers -- contributedTo N Book    // attribute names still needed here since not 
+                                            // just using type names
 
 Publisher 1 -- published N Book    // 1 means 1..1
 
