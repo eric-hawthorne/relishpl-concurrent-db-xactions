@@ -2216,6 +2216,11 @@ print len cart.horses  // prints 0
 
 print horse1.cart  // prints *nil*
 
+horsesList = [horse1 horse2]Horse
+
+cart.horses = horsesList  // adds the horses from the list into the relation. 
+                          // The list itself is not assigned. Its elements are.
+
 print student1.courses[2].name  // Prints Biology 101 assuming courses is a List relation-end 
                                 // therefore indexable.
 </pre></code>

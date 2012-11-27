@@ -2046,13 +2046,25 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				case token.ASSIGN:
 	                if attr.Part.CollectionType != "" {
 		                val := t.Pop()
-		                if val != NIL {
-			               rterr.Stop("Cannot directly assign to a multi-valued attribute, unless assigning nil to clear it.")
-		                }
-		                err := i.rt.ClearAttr(assignee, attr)
-		                if err != nil {
-						   panic(err)	
-						}	
+		                if val.IsCollection() {
+			                coll := val.(RCollection)
+			                for v := range coll.Iter() {
+								err := RT.AddToAttr(assignee, attr, v, true, t.EvalContext, false)
+								if err != nil {
+									if strings.Contains(err.Error()," a value of type ") {
+										rterr.Stop(err)
+									} 					
+									panic(err)
+								}				               
+			                }
+		                } else if val == NIL {
+			                err := i.rt.ClearAttr(assignee, attr)
+			                if err != nil {
+							   panic(err)	
+							}	
+					    } else {
+			               rterr.Stop("Only nil or a collection can be assigned to a multi-valued attribute.")						
+						}
 	                } else {									
 						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
 						if err != nil {

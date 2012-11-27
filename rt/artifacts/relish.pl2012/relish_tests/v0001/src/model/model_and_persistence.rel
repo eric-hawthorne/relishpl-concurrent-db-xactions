@@ -165,3 +165,12 @@ testModel
    print len car2.passengers
 
    print String passenger2.vehicleRiddenIn
+
+   passengerList = [passenger1 passenger2]people.Person
+
+   car2.passengers = passengerList
+
+   print len car2.passengers
+
+   car3 = passenger2.vehicleRiddenIn
+   print car3.vin
