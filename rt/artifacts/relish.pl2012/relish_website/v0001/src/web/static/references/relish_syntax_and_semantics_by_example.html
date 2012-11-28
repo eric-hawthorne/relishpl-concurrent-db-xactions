@@ -1686,6 +1686,70 @@ dbg val Any
 """
 
 
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, without attempting username+password authentication 
+ with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, 
+ without attempting username+password authentication with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
 
 // String methods
 	

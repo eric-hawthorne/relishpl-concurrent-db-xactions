@@ -21,6 +21,7 @@ import (
     "encoding/base64"
 	"os"
 	"bufio"
+	"net/smtp"
 )
 
 // Reader for reading from standard input
@@ -93,13 +94,49 @@ func InitBuiltinFunctions() {
 
 
 
+	email1Method, err := RT.CreateMethod("",
+	                                     "sendEmail", 
+	                                     []string{"smtpServerAddr","from","recipient","subject","messageBody"}, 
+	                                     []string{"String","String","String","String","String"}, 
+	                                     []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	email1Method.PrimitiveCode = builtinSendEmail
 
 
 
+	email2Method, err := RT.CreateMethod("",
+	                                     "sendEmail", 
+	                                     []string{"smtpServerAddr","from","recipients","subject","messageBody"}, 
+	                                     []string{"String","String","List_of_String","String","String"}, 
+	                                     []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	email2Method.PrimitiveCode = builtinSendEmail
 
 
+	email3Method, err := RT.CreateMethod("",
+	                                     "sendEmail", 
+	                                     []string{"smtpServerAddr","user","password","from","recipient","subject","messageBody"}, 
+	                                     []string{"String","String","String","String","String","String","String"}, 
+	                                     []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	email3Method.PrimitiveCode = builtinSendEmail
 
 
+	email4Method, err := RT.CreateMethod("",
+	                                     "sendEmail", 
+	                                     []string{"smtpServerAddr","user","password","from","recipients","subject","messageBody"}, 
+	                                     []string{"String","String","String","String","List_of_String","String","String"}, 
+	                                     []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	email4Method.PrimitiveCode = builtinSendEmail
 
 
 
@@ -2787,12 +2824,126 @@ func builtinStringHashSha256Hex(objects []RObject) []RObject {
     return []RObject{String(hex)}	
 }
 
+/*
 
 
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, without attempting username+password authentication 
+ with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
 
 
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, 
+ without attempting username+password authentication with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
 
 
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+email4Method, err := RT.CreateMethod("",
+                                     "sendEmail", 
+                                     []string{"smtpServerAddr","user","password","from","recipients","subject","messageBody"}, 
+                                     []string{"String","String","String","String","List_of_String","String","String"}, 
+                                     []string{"String"}, false, 0, false)
+*/
+func builtinSendEmail(objects []RObject) []RObject {
+   var auth smtp.Auth = nil
+   var serverAddr string 
+   var serverName string // without the :port part
+   var recipients [] string
+   var errStr string
+   var offset int = 0
+   serverAddr = string(objects[0].(String))
+   colonPos := strings.LastIndex(serverAddr,":")
+   if colonPos > 0 {
+      serverName = serverAddr[:colonPos]	
+   } else {
+      serverName = serverAddr	
+   }
+  
+   if len(objects) == 7 { // username and password authentication 
+	  userName := string(objects[1].(String))
+	  password := string(objects[2].(String))
+	  auth = smtp.PlainAuth("", userName, password, serverName)
+	  offset = 2
+   } 
+   from := string(objects[1 + offset].(String))
+   switch objects[2 + offset].(type) {
+      case String:
+	     recipients = []string{string(objects[2 + offset].(String))}
+	  default:	
+	     coll :=  objects[2 + offset].(RCollection)
+	     for val := range coll.Iter() {
+		     recipients = append(recipients, string(val.(String)))
+	     }
+   }
+   subject := string(objects[3 + offset].(String)) 
+   body := string(objects[4 + offset].(String))
+   subject = "Subject: " + subject + "\r\n\r\n"
+
+   err := smtp.SendMail(serverAddr, 
+	                    auth,
+                        from,
+                        recipients,
+                        []byte(subject + body))
+   
+   if err != nil {
+      	errStr = err.Error()
+   }
+
+   return []RObject{String(errStr)}
+}
 
 
 
