@@ -184,6 +184,78 @@ func InitBuiltinFunctions() {
 	}
 	ltStrMethod.PrimitiveCode = builtinLtStr
 	
+	
+	
+	lessNumMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessNumMethod.PrimitiveCode = builtinLtNum
+
+	lessTimeMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessTimeMethod.PrimitiveCode = builtinLtTime	
+
+	lessStrMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessStrMethod.PrimitiveCode = builtinLtStr	
+	
+	beforeTimeMethod, err := RT.CreateMethod("","before", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	beforeTimeMethod.PrimitiveCode = builtinLtTime	
+	
+	
+	
+
+	lteNumMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lteNumMethod.PrimitiveCode = builtinLteNum
+
+	lteTimeMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lteTimeMethod.PrimitiveCode = builtinLteTime	
+
+	lteStrMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lteStrMethod.PrimitiveCode = builtinLteStr
+	
+	
+	
+	lessEqNumMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessEqNumMethod.PrimitiveCode = builtinLteNum
+
+	lessEqTimeMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessEqTimeMethod.PrimitiveCode = builtinLteTime	
+
+	lessEqStrMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lessEqStrMethod.PrimitiveCode = builtinLteStr	
+	
+	
+	
+	
+
+	
 	gtNumMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -201,6 +273,88 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	gtStrMethod.PrimitiveCode = builtinGtStr	
+	
+	
+	
+	
+	greaterNumMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterNumMethod.PrimitiveCode = builtinGtNum
+
+	greaterTimeMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterTimeMethod.PrimitiveCode = builtinGtTime	
+
+	greaterStrMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterStrMethod.PrimitiveCode = builtinGtStr
+		
+	afterTimeMethod, err := RT.CreateMethod("","after", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	afterTimeMethod.PrimitiveCode = builtinGtTime		
+
+
+
+
+	gteNumMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	gteNumMethod.PrimitiveCode = builtinGteNum
+
+	gteTimeMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	gteTimeMethod.PrimitiveCode = builtinGteTime	
+
+	gteStrMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	gteStrMethod.PrimitiveCode = builtinGteStr	
+	
+	
+	
+	
+	
+	greaterEqNumMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterEqNumMethod.PrimitiveCode = builtinGteNum
+
+	greaterEqTimeMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterEqTimeMethod.PrimitiveCode = builtinGteTime	
+
+	greaterEqStrMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	greaterEqStrMethod.PrimitiveCode = builtinGteStr
+		
+
+
+
+
+
+
+
+
+
+
+
 
     /////////////////////////////////////////////////////////
     // Numeric arithmetic functions
@@ -1481,6 +1635,18 @@ func builtinLtNum(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
+
+func builtinLteNum(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinLtNum(objects) 
+}
+
+
+
+
+
 /*
 Less-than operator for time types.
 */
@@ -1502,6 +1668,14 @@ func builtinLtTime(objects []RObject) []RObject {
 }
 
 
+func builtinLteTime(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinLtTime(objects) 
+}
+
+
 /*
 Less-than operator (strings).
 TODO !!!
@@ -1515,6 +1689,15 @@ func builtinLtStr(objects []RObject) []RObject {
 	val = Bool(string(obj1) < string(obj2))
 	return []RObject{val}
 }
+
+
+func builtinLteStr(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinLtStr(objects) 
+}
+
 
 /*
 Less-than operator for numeric types.
@@ -1565,6 +1748,15 @@ func builtinGtNum(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
+
+func builtinGteNum(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinGtNum(objects) 
+}
+
+
 /*
 Greater-than operator for time types.
 */
@@ -1585,6 +1777,15 @@ func builtinGtTime(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
+
+func builtinGteTime(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinGtTime(objects) 
+}
+
+
 /*
 Greater-than operator (strings).
 TODO !!!
@@ -1597,6 +1798,14 @@ func builtinGtStr(objects []RObject) []RObject {
 	var val RObject
 	val = Bool(string(obj1) > string(obj2))
 	return []RObject{val}
+}
+
+
+func builtinGteStr(objects []RObject) []RObject {
+	if bool( (builtinEq(objects))[0].(Bool)) {
+		return []RObject{Bool(true)}
+	}
+	return builtinGtStr(objects) 
 }
 
 

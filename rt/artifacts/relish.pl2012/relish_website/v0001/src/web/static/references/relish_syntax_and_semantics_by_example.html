@@ -1471,17 +1471,102 @@ appear on the same line as the end of the previous statement, separated from it 
 		
 // Comparison operators
 		
-eq RelishPrimitive RelishPrimitive > Bool
+eq a Any b Any > Bool
 """
- Returns whether two primitive-type values are equal in value.
- Currently, applies to Numeric,String,Bool,Time.
+ Returns whether two values are equal in value.
+ Currently, applies to Numeric,String,Bool,Time, and structured object types.
  Converts between numeric types if necessary before testing for numeric equality, 
  and converts a number to its string representation to compare with a string.
+ If applied to two structured objects, returns true if they are 
+ reference-equal (same memory location.)
 """
+
+
+less a Numeric b Numeric > Bool 
+"""
+ Numeric less-than operator.
+"""
+
+less a Time b Time > Bool 
+"""
+ Time less-than operator.
+"""
+
+before a Time b Time > Bool 
+"""
+ Time less-than operator. An alias for 'less'.
+"""
+
+less s1 String s2 String > Bool
+"""
+ Lexicographical less-than operator. Compares two strings.
+"""
+
+
+greater a Numeric b Numeric > Bool
+"""
+ Numeric greater-than operator.
+"""
+
+greater a Time b Time > Bool 
+"""
+ Time greater-than operator.
+"""
+
+after a Time b Time > Bool 
+"""
+ Time greater-than operator. An alias for 'greater'.
+"""
+
+greater s1 String s2 String > Bool
+"""
+ Lexicographical greater-than operator. Compares two strings.
+"""
+
+
+lessEq a Numeric b Numeric > Bool 
+"""
+ Numeric less-than-or-equal-to operator.
+"""
+
+lessEq a Time b Time > Bool 
+"""
+ Time less-than-or-equal-to operator.
+"""
+
+lessEq s1 String s2 String > Bool
+"""
+ Lexicographical less-than-or-equal-to operator. Compares two strings.
+"""
+
+
+greaterEq a Numeric b Numeric > Bool
+"""
+ Numeric greater-than-or-equal-to operator.
+"""
+
+greaterEq a Time b Time > Bool 
+"""
+ Time greater-than-or-equal-to operator.
+"""
+
+greaterEq s1 String s2 String > Bool
+"""
+ Lexicographical greater-than-or-equal-to operator. Compares two strings.
+"""
+
+
+
+// Abbreviated forms of comparison operators
 
 lt a Numeric b Numeric > Bool 
 """
  Numeric less-than operator.
+"""
+
+lt a Time b Time > Bool 
+"""
+ Time less-than operator.
 """
 
 lt s1 String s2 String > Bool
@@ -1489,15 +1574,54 @@ lt s1 String s2 String > Bool
  Lexicographical less-than operator. Compares two strings.
 """
 
+
 gt a Numeric b Numeric > Bool
 """
  Numeric greater-than operator.
+"""
+
+gt a Time b Time > Bool 
+"""
+ Time greater-than operator.
 """
 
 gt s1 String s2 String > Bool
 """
  Lexicographical greater-than operator. Compares two strings.
 """
+
+
+lte a Numeric b Numeric > Bool 
+"""
+ Numeric less-than-or-equal-to operator.
+"""
+
+lte a Time b Time > Bool 
+"""
+ Time less-than-or-equal-to operator.
+"""
+
+lte s1 String s2 String > Bool
+"""
+ Lexicographical less-than-or-equal-to operator. Compares two strings.
+"""
+
+
+gte a Numeric b Numeric > Bool
+"""
+ Numeric greater-than-or-equal-to operator.
+"""
+
+gte a Time b Time > Bool 
+"""
+ Time greater-than-or-equal-to operator.
+"""
+
+gte s1 String s2 String > Bool
+"""
+ Lexicographical greater-than-or-equal-to operator. Compares two strings.
+"""
+
 
 
 // Boolean logic operators
@@ -1508,12 +1632,14 @@ not a Any > Bool
  Any false-equivalent object/value passed in results in true.
 """
 
+
 and ...a Any > Any
 """
  Boolean logical and operator. If any of its arguments are false-equivalent, returns false,
  otherwise returns the last argument.
  All arguments are evaluated, unlike LISP's lazy and operator.
 """
+
 
 or ...a Any > Any		
 """
@@ -1748,6 +1874,7 @@ sendEmail
  to establish that we are a permitted sender by using "plain auth" username+password authentication.
  Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
 """
+
 
 
 

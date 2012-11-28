@@ -40,13 +40,13 @@ const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
 {<less} Widget        Sorted set using binary comparison function over widgets (if "less" unary func defined it will be used instead)
 
 
-{} String=>Widget     Map
+{} String > Widget    Map
 
-{} name=>Widget       Map using name attribute of Widget (but does not update itself if widget.name is changed) 
+{} name > Widget      Map using name attribute of Widget (but does not update itself if widget.name is changed) 
 
-{<} String=>Widget    Sorted map using natural order of Strings (which must be defined)
+{<} String > Widget   Sorted map using natural order of Strings (which must be defined)
 
-{<} name=>Widget      Sorted map using name attribute/unary function of Widget (but does not update itself if widget.name is changed) 
+{<} name > Widget     Sorted map using name attribute/unary function of Widget (but does not update itself if widget.name is changed) 
 
 */
 
