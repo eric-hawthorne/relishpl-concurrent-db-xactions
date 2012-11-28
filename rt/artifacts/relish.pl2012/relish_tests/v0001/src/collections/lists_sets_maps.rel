@@ -55,8 +55,14 @@ testCollections
 
    for i wheel in bigWheels
       print "bigWheels[" i "] =" wheel.num
+      if eq i 0
+         theWheel = wheel
+
+   print contains bigWheels theWheel  // Should print true
 
    smallWheels = []vehicles.Wheel  // An empty list of Wheels
+
+   print contains smallWheels theWheel  // Should print false
 
    print "len bigWheels =" (len bigWheels)
    print "len smallWheels =" (len smallWheels)
@@ -121,6 +127,8 @@ testCollections
 
    scores = [22 9 0 13]
    print sum scores  // should print 44
+
+   print contains scores 22  // should print true
 
    taxedSales = [
                    for sale in sales

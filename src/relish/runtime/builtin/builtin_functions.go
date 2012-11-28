@@ -1071,6 +1071,16 @@ replace s String old String new String n Int > String
 	}
 	capMethod.PrimitiveCode = builtinCap	
 
+
+	// contains coll Collection val Any > Bool	
+	//
+	containsMethod, err := RT.CreateMethod("","contains", []string{"c","v"}, []string{"Collection","Any"},  []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	containsMethod.PrimitiveCode = builtinContains
+
+
 	// clear coll Collection 
 	//
 	clearMethod, err := RT.CreateMethod("","clear", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
@@ -2341,6 +2351,12 @@ func builtinCap(objects []RObject) []RObject {
 	var val RObject
 	val = Int(coll.Cap())
 	return []RObject{val}
+}
+
+func builtinContains(objects []RObject) []RObject {
+	coll := objects[0].(RCollection)
+    found := coll.Contains(objects[1])
+	return []RObject{Bool(found)}
 }
 
 func builtinClear(objects []RObject) []RObject {

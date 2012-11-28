@@ -76,6 +76,9 @@ type RCollection interface {
 	// Returns an iterator that yields the objects in the collection. A Map iterator returns the keys.
 	Iter() <-chan RObject // Usage: for obj := range s.Iter()  or ch := s.Iter(); x, ok = <-ch
 
+    Contains(obj RObject) bool // true if the collection contains the element, false otherwise
+                               // uses value equality for primitive element types, reference equality otherwise.
+                               // for maps, it is whether the map contains a key equal to the argument object. 
 }
 
 /*
@@ -387,6 +390,17 @@ func (s *rset) Iterable() (interface{},error) {
 }
 
 
+
+func (c *rset) Contains(obj RObject) (found bool) {
+	if c.m == nil {
+		found = false
+		return
+	}
+	_,found = c.m[obj]
+	return
+}
+
+
 /*
    Constructor
 */
@@ -612,6 +626,8 @@ func (s *rsortedset) Swap(i, j int) {
 Returns the index of the first-found occurrence of the argument object with the search beginning at the start index.
 TODO Should make this more efficient by doing a binary search. !!!!!!!
 
+TODO !! This DOES NOT HANDLE a collection that has been lazily restored from persistence as a bunch of Proxy objects.
+
 */
 func (s *rsortedset) Index(obj RObject, start int) int {
 	if s.m != nil {
@@ -624,6 +640,18 @@ func (s *rsortedset) Index(obj RObject, start int) int {
 	}
 	return -1
 }
+
+
+func (c *rsortedset) Contains(obj RObject) (found bool) {
+	if c.m == nil {
+		found = false
+		return
+	}
+	_,found = c.m[obj]
+	return
+}
+
+
 
 func (s *rsortedset) Remove(obj RObject) (removed bool, removedIndex int) {
 	if s.v == nil {
@@ -844,6 +872,18 @@ func (s *rlist) AsSlice() []RObject {
 		return []RObject{}
 	}
 	return []RObject(*(s.v))
+}
+
+func (s *rlist) Contains(obj RObject) bool {
+	if s.v == nil {
+		return false
+	}
+	for _,element := range s.AsSlice() {
+       if obj == element {
+       	   return true
+       }
+	}
+    return false
 }
 
 func (s *rlist) Iterable() (interface{},error) {
@@ -1167,6 +1207,12 @@ func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationConte
     return
 }
 
+func (s *rstringmap) Contains(key RObject) (found bool) {
+	k := string(key.(String))
+	_, found = s.m[k]
+	return
+}
+
 /*
 	This version of the put method does not sort. It assumes that it is being called with key and val objects
 	already known to be simply insertable (at the end of if applicable) the collection.
@@ -1273,6 +1319,11 @@ func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationConte
     s.m[k] = val
     newLen = len(s.m)
     return
+}
+
+func (s *ruint64map) Contains(key RObject) (found bool) {
+	_,found = s.Get(key)
+	return
 }
 
 /*
@@ -1425,6 +1476,11 @@ func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContex
     return
 }
 
+func (s *rint64map) Contains(key RObject) (found bool) {
+	_,found = s.Get(key)
+	return
+}
+
 /*
 	This version of the put method does not sort. It assumes that it is being called with key and val objects
 	already known to be simply insertable (at the end of if applicable) the collection.
@@ -1532,6 +1588,11 @@ func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationCont
     s.m[key] = val
     newLen = len(s.m)
     return
+}
+
+func (s *rpointermap) Contains(key RObject) (found bool) {
+	_,found = s.m[key] 
+	return
 }
 
 /*

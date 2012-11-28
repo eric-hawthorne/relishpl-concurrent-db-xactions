@@ -1588,6 +1588,15 @@ cap c Collection > Int
 """
 
 
+contains coll Collection val Any > Bool  
+"""
+ Returns true if val is an element of the collection. false otherwise.
+ If coll is a Map, returns true if val is a key of the map. false otherwise.
+ If val is a primitive value type, value equality is used, otherwise
+ reference equality is used.
+"""
+
+
 clear c Collection
 """
  Empties the collection or map, so that its len method will report 0

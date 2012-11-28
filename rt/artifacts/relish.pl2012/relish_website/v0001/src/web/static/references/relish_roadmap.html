@@ -87,6 +87,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<dt>Schema Migration</dt> 
 	<dd>Schema migration support will be provided by the language environment, so that data in an artifact's local database can be upgraded when data type and relation schemas are changed in relish source code. Schema migration will take place by means of relish-code methods written by the developer. The relish runtime environment will detect schema-migration code via strong conventions for the naming and placement of such code. The runtime environment will also detect that there is a need for schema migration code to be run, due to a detected difference in the database's schema version compared to the loaded relish code's schema version. Data reversion to compatibility with earlier schema versions may also be supported.</dd>
 	
+	<dt>Variadic functions</dt> 
+	<dd>A method will be able to be declared with an extra parameter e.g. <code>...a SomeType</code> whose type will be a list of SomeType. This argument will hold any number of additional arguments supplied to the method after required positional parameter slots have
+	 been filled by arguments. An accompanying expression <code>someList...</code> or equivalent may also be introduced, which allows a collection to be used to supply arguments to the variadic parameter of a method.</dd>	
+
 	<dt>Feature N</dt> 
 	<dd>Description.</dd>		
 </dl>
@@ -133,6 +137,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
 <dt>Code quality "inner circle" </dt> 
 <dd>The plan is to have vetted and peer-reviewed relish software artifacts (applications, libraries, frameworks) promoted into concentric circles of code quality, reliability, and usefulness, with such artifacts tagged according to standard tags.</dd>
+
+	<dt>Keyword-style parameters and arguments to methods</dt> 
+	<dd>Similar to Python, some parameters to methods may be declarable to have a default value to be used if the corresponding argument is not supplied in the method call. Unlike in Python, there will likely be a clear distinction between keyword-style parameters and required positional parameters. keyword-style parameters MUST be called using <code>keyword = expr</code> syntax in the method call. Positional
+	parameters are not allowed to be supplied with that style, but rather, take only an expression in the call.</dd>	
 
 	<dt>Feature N</dt> 
 	<dd>Description.</dd>		
