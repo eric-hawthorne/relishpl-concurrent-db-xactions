@@ -56,7 +56,7 @@ func (db *SqliteDB) EnsureTypeTable(typ *RType) (err error) {
 	// Loop over primitive-valued attributes - for each, make a column in the table - TBD
 
 	for _, attr := range typ.Attributes {
-		if attr.Part.Type.IsPrimitive {
+		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
 			s += ",\n" + attr.Part.DbColumnDef()
 
 		}
@@ -183,84 +183,26 @@ of the type.
 func (db *SqliteDB) EnsureAttributeAndRelationTables(t *RType) (err error) {
 
 	for _, attr := range t.Attributes {
-		if !attr.IsTransient && !attr.Part.Type.IsPrimitive {
-			err = db.EnsureAttributeTable(attr)
-			if err != nil {
-				return
-			}
-		}
-	}
-
-	for _, rel := range t.ForwardRelations {
-		if !rel.IsTransient {
-			err = db.EnsureRelationTable(rel)
-			if err != nil {
-				return
-			}
+		if !attr.IsTransient {
+			if attr.Part.Type.IsPrimitive {
+				if attr.Part.ArityHigh != 1 { // a multi-valued primitive-type attribute
+				   err = db.EnsureMultiValuedPrimitiveAttributeTable(attr)
+				   if err != nil {
+			  		  return
+				   }					
+				}
+			} else {
+			   err = db.EnsureNonPrimitiveAttributeTable(attr)
+			   if err != nil {
+		  		  return
+			   }
+		   }
 		}
 	}
 	return
 }
 
-/*
-Name string
-  Type *RType
-  ArityLow int32
-  ArityHigh int32
-  CollectionType string // "list", "sortedlist","set", "sortedset", "map", "stringmap", "sortedmap","sortedstringmap", ""
-  OrderAttrName string   // What is this?
 
-  // End 0
-
-  // 0,1,or set or attribute
-  id0 INTEGER
-
-  // list or sortedset 
-  id0 INTEGER, ord0 INTEGER
-
-  // End 1    can also have a map or string map as the collection type
-
-  // 0,1,or set or attribute
-  id1 INTEGER
-
-  // list or sortedset or non-string-map
-  id1 INTEGER, ord1 INTEGER
-
-  // string-map 
-  id1 INTEGER, key1 TEXT
-
-*/
-func (db *SqliteDB) EnsureRelationTable(rel *RelationSpec) (err error) {
-
-	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(rel.ShortName()) + "("
-
-	// Prepare End[0]
-
-	s += "id0 INTEGER NOT NULL,\n"
-
-	switch rel.End[0].CollectionType {
-	case "list", "sortedlist", "sortedset":
-		s += "ord0 INTEGER NOT NULL,\n"
-	}
-
-	// Prepare End[1]
-
-	s += "id1 INTEGER NOT NULL"
-
-	switch rel.End[1].CollectionType {
-	case "list", "sortedlist", "sortedset", "map", "sortedmap":
-		s += ",\nord1 INTEGER NOT NULL"
-	case "stringmap", "sortedstringmap":
-		s += ",\nkey1 TEXT NOT NULL"
-	}
-
-	s += ");"
-	err = db.conn.Exec(s)
-	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
-	}
-	return
-}
 
 /*
 Name string
@@ -270,7 +212,7 @@ Name string
   CollectionType string // "list","sortedlist", "set", "sortedset", "map", "stringmap","sortedmap","sortedstringmap",""
   OrderAttrName string   // What is this?
 */
-func (db *SqliteDB) EnsureAttributeTable(attr *AttributeSpec) (err error) {
+func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
 
 	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
 
@@ -296,6 +238,45 @@ func (db *SqliteDB) EnsureAttributeTable(attr *AttributeSpec) (err error) {
 	}
 	return
 }
+
+
+/*
+*/
+func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
+
+	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
+
+	// Prepare Whole end
+
+	s += "id INTEGER NOT NULL,\n"
+	
+	// Prepare column for Part
+		
+	s += attr.Part.DbCollectionColumnDef()	 
+		
+	// and add a sorting/ordering column if appropriate
+		
+    switch attr.Part.CollectionType {
+    case "list", "map", "sortedmap":
+	s += ",\nord1 INTEGER NOT NULL"
+    case "stringmap", "sortedstringmap":
+	s += ",\nkey1 TEXT NOT NULL"
+    }	
+
+	s += ");"
+	
+	err = db.conn.Exec(s)
+	if err != nil {
+		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+	}
+	return
+}
+
+
+
+
+
+
 
 // maybe use RObject interface instead of robject
 

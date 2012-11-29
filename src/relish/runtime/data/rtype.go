@@ -41,11 +41,7 @@ type RType struct {
 	// type belongs to, with a reference to this type's node in each chain.
 	Package                *RPackage
 	Attributes             []*AttributeSpec
-	ForwardRelations       []*RelationSpec
-	ReverseRelations       []*RelationSpec
 	AttributesByName       map[string]*AttributeSpec
-	ForwardRelationsByName map[string]*RelationSpec
-	ReverseRelationsByName map[string]*RelationSpec
 	NumPrimitiveAttributes int
 	IsParameterized        bool
 }
@@ -210,11 +206,7 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 		Up:          upChain,
 		SpecializationPathNodes: make([]*SpecializationPathNode, 0, 10),
 		Attributes:              make([]*AttributeSpec, 0, 10),
-		ForwardRelations:        make([]*RelationSpec, 0, 10),
-		ReverseRelations:        make([]*RelationSpec, 0, 10),
 		AttributesByName:        make(map[string]*AttributeSpec),
-		ForwardRelationsByName:  make(map[string]*RelationSpec),
-		ReverseRelationsByName:  make(map[string]*RelationSpec),
 	}
 	
 	for _,parent := range parents {
@@ -275,29 +267,6 @@ func (t *RType) DbColumnType() (sqlType string) {
 	return
 }
 
-// DEPRECATED
-func (t *RType) addForwardRelation(rel *RelationSpec) (err error) {
-	_, found := t.ForwardRelationsByName[rel.End[1].Name]
-	if found {
-		err = fmt.Errorf("Attempt to redefine forward relation '%s' of type '%s'.", rel.End[1].Name, t.Name)
-		return
-	}
-	t.ForwardRelations = append(t.ForwardRelations, rel)
-	t.ForwardRelationsByName[rel.End[1].Name] = rel
-	return
-}
-
-// DEPRECATED
-func (t *RType) addReverseRelation(rel *RelationSpec) (err error) {
-	_, found := t.ReverseRelationsByName[rel.End[0].Name]
-	if found {
-		err = fmt.Errorf("Attempt to redefine reverse relation '%s' of type '%s'.", rel.End[0].Name, t.Name)
-		return
-	}
-	t.ReverseRelations = append(t.ReverseRelations, rel)
-	t.ReverseRelationsByName[rel.End[0].Name] = rel
-	return
-}
 
 /*
    Note that this does not check for attribute name overriding (hiding) of supertype attributes.
@@ -357,41 +326,6 @@ func (t *RType) GetAttribute(attrName string) (attr *AttributeSpec, found bool) 
 	return
 }
 
-
-/*
-DEPRECATED
-
-This is a HIGHLY UNOPTIMIZED way of getting the attribute spec from the type given the attribute name.
-It searches the type's AttributesByName hashtable, and if not found there, traverses the type's Up chain
-of supertypes, searching each's  AttributesByName hashtable in turn until an attribute of the specified name
-is found. Returns nil if not found
-
-We have to see how we can cache this dispatch, similar to how we cache multi-method dispatch. TODO TODO
-*/
-func (t *RType) GetRelation(relName string) (rel *RelationSpec, found bool, isForward bool) {
-	rel, found = t.ForwardRelationsByName[relName]
-	if !found {
-		for _, supertype := range t.Up {
-			rel, found = supertype.ForwardRelationsByName[relName]
-			if found {
-				isForward = true
-				return
-			}
-		}
-	}
-	
-	rel, found = t.ReverseRelationsByName[relName]
-	if !found {
-		for _, supertype := range t.Up {
-			rel, found = supertype.ReverseRelationsByName[relName]
-			if found {
-				return
-			}
-		}
-	}	
-	
-	return
-}
 
 
 /*
@@ -461,6 +395,24 @@ func (end RelEnd) DbColumnDef() (colDef string) {
 }
 
 /*
+   Return the sqlite column definition of the part-end of a multi-valued primitive-type attribute
+   or the value column(s) of a primitive value collection.
+*/
+func (end RelEnd) DbCollectionColumnDef() (colDef string) {
+	if end.Type == ComplexType {
+		colDef = "val_r DOUBLE,\nval_i DOUBLE"
+	} else if end.Type == Complex32Type {
+		colDef = "val_r DOUBLE,\nval_i DOUBLE"		
+	} else if end.Type == TimeType {
+		colDef = "val TEXT,\nval_loc TEXT"
+	} else {
+		colDef = "val "
+		colDef += end.Type.DbColumnType()
+	}
+	return
+}
+
+/*
    The name for this attribute that will become the db table name.
    (only applicable if the attribute's Part Type is non-primitive.)
 
@@ -471,35 +423,7 @@ func (attr *AttributeSpec) ShortName() string {
 		attr.Part.Name, attr.Part.Type.ShortName())
 }
 
-/*
 
-DEPRECATED
-
-A specification of a relationship between two types.
-Note that probably it is constrained to have set or sortedset as the collectiontype (why not list with order manually managed?)
-
-
-Cart 0 1 cart -- horses 1 N Horse
-
-end[0] -- end[1]
-
-*/
-type RelationSpec struct {
-	End         [2]RelEnd
-	IsTransient bool
-}
-
-/*
-   The name for this relation that will become the db table name.
-   TODO Consider only using the end[1].Name so that we can turn an attribute table into
-   a relation table with no change.
-
-   Currently the name is e.g. "Cart__cart__horse__Horse"
-*/
-func (rel *RelationSpec) ShortName() string {
-	return fmt.Sprintf("%s__%s__%s__%s", rel.End[0].Type.ShortName(),
-		rel.End[0].Name, rel.End[1].Name, rel.End[1].Type.ShortName())
-}
 
 /*
    Create a new relish type.
