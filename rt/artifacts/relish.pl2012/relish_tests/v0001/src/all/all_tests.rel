@@ -17,6 +17,7 @@ import
    collections
    multimethods
    concurrency
+   email
     
 
 
@@ -35,6 +36,7 @@ testAll
  Note that testModel is implied by testCollections
 """
    console.testInput
+   email.testEmail
    arithmetic.testArithmeticAndLogic
    string.testStrings
    time.testTime

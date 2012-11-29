@@ -1856,6 +1856,7 @@ sendEmail
  Send an email message to a single recipient, first authenticating with the sending smtp mail server
  to establish that we are a permitted sender by using "plain auth" username+password authentication.
  Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+ Note: If sendingMailAccountUserName is an empty string, does unauthenticated send.
 """
 
 
@@ -1873,6 +1874,7 @@ sendEmail
  Send an email message to possibly multiple recipients, first authenticating with the sending smtp mail server
  to establish that we are a permitted sender by using "plain auth" username+password authentication.
  Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+ Note: If sendingMailAccountUserName is an empty string, does unauthenticated send. 
 """
 
 
@@ -2003,7 +2005,7 @@ of a relish program.
 <li>The first is to summon the object by its official canonical name.</li>
 <li> The second is to follow the chain of reference from a retrieved persisted object, to find associated objects. You just use ordinary object attribute accessing notation in the programming language to do this (e.g. car.owner) and the associated object is automatically fetched into memory from the database.</li>
 <li>The third retrieval method is to construct a list of the type of object you want e.g. cars = []Car but to include a String argument after the []Car list constructor. The argument String should contain SQL selection criteria (i.e. the tests that occur in a WHERE clause) and can also have a SQL order by clause.
-  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><em>IMPORTANT NOTE: The current implementation of SELECT-style object retrieval is not polymorphic. You must currently construct a list of a most-specific data type which has no subtypes. This restriction should disappear.</em> 
+  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><em>IMPORTANT NOTE: There is a performance distinction in SELECT-style object retrieval: If the list element-type has subtypes,the fetch from the database is polymorphic, meaning that instances of objects of different subtypes of the list element-type may need to be retrieved. Each element may have a different specific data type. Therefore, n+1 database queries are done; one to fetch the list of object ids, and n to fetch the attributes of each of the n objects. If on the other hand you ask to retrieve by query a list whose element-type is a most-specific data type with no subtypes, the whole list of objects can be fetched from the database using one SQL join query.</em> 
   </li>
 </ul>
 </p>

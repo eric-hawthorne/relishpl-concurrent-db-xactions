@@ -3124,7 +3124,9 @@ func builtinSendEmail(objects []RObject) []RObject {
    if len(objects) == 7 { // username and password authentication 
 	  userName := string(objects[1].(String))
 	  password := string(objects[2].(String))
-	  auth = smtp.PlainAuth("", userName, password, serverName)
+	  if userName != "" {
+	     auth = smtp.PlainAuth("", userName, password, serverName)
+	  }
 	  offset = 2
    } 
    from := string(objects[1 + offset].(String))
