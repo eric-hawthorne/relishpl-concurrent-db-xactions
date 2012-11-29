@@ -1,6 +1,6 @@
 origin   relish.pl2012
 artifact relish_tests
-package  strings
+package  string
 
 """ 
  strings.rel

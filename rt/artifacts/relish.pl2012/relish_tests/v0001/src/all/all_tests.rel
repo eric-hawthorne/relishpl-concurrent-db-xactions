@@ -12,7 +12,7 @@ package  all
 import
    console
    arithmetic
-   strings
+   string
    time
    collections
    multimethods
@@ -36,7 +36,7 @@ testAll
 """
    console.testInput
    arithmetic.testArithmeticAndLogic
-   strings.testStrings
+   string.testStrings
    time.testTime
    multimethods.testMultimethods
    collections.testCollections
