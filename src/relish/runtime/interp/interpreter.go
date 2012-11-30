@@ -1346,7 +1346,7 @@ returned from.
 func (i *Interpreter) ExecBlock(t *Thread, b *ast.BlockStatement) (breakLoop, continueLoop, returnFrom bool) {
 	defer UnM(t,TraceM(t,INTERP_TR2, "ExecBlock"))
 	for _, statement := range b.List {
-		breakLoop, continueLoop, returnFrom := i.ExecStatement(t, statement)
+		breakLoop, continueLoop, returnFrom = i.ExecStatement(t, statement)
 		if breakLoop || continueLoop || returnFrom {
 			break
 		}
