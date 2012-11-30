@@ -3141,13 +3141,21 @@ func builtinSendEmail(objects []RObject) []RObject {
    }
    subject := string(objects[3 + offset].(String)) 
    body := string(objects[4 + offset].(String))
-   subject = "Subject: " + subject + "\r\n\r\n"
+
+   fromHeader := "From: " + from
+   toHeader := "To: "
+   sep := ""
+   for _,recipient := range recipients {
+	  toHeader += sep + recipient
+	  sep = ","
+   }
+   headers := "Subject: " + subject + "\r\n" + fromHeader + "\r\n" + toHeader +  "\r\n\r\n"
 
    err := smtp.SendMail(serverAddr, 
 	                    auth,
                         from,
                         recipients,
-                        []byte(subject + body))
+                        []byte(headers + body))
    
    if err != nil {
       	errStr = err.Error()

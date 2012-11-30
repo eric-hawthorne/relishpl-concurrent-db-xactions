@@ -47,6 +47,7 @@ testCollections
    model.testModel  // Create some objects 
 
    allWheels = []vehicles.Wheel "num > 0 order by num"
+
    print "All wheels:"
    for aWheel in allWheels
       print aWheel.num

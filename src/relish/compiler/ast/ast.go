@@ -1421,7 +1421,7 @@ func (f *File) StoreSourceFilePositionInfo(file *token.File) {
 */
 func (f *File) tokenFile() (file *token.File) {
    fset := token.NewFileSet()
-   file = fset.AddFile(f.FileName, 0, f.FileSize)
+   file = fset.AddFile(f.FileName, fset.Base(), f.FileSize)
    if ! file.SetLines(f.FileLines) {
    	   panic("Invalid source file line positions info for file " + f.FileName)
    }
