@@ -197,6 +197,12 @@ func (f *File) LineCount() int {
 	return n
 }
 
+// egh added so that the guts of a token.File can be stored in an ast.File.
+func (f *File) Lines() []int {
+	return f.lines
+}
+
+
 // AddLine adds the line offset for a new line.
 // The line offset must be larger than the offset for the previous line
 // and smaller than the file size; otherwise the line offset is ignored.

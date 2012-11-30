@@ -586,6 +586,7 @@ func (g *Generator) generateMethods() {
 	   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
 	
 		   rMethod, err := data.RT.CreateMethod(g.packageName,
+		   	                                    file,
 		   	                                    methodName,
 		   	                                    parameterNames, 
 			                                    parameterTypes, 

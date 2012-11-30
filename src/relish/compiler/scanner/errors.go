@@ -15,7 +15,7 @@ import (
 	"os"
 	"relish/compiler/token"
 	"sort"
-	"strings"
+	"relish/dbg"
 )
 
 // An implementation of an ErrorHandler may be provided to the Scanner.
@@ -57,6 +57,9 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
+    return dbg.FmtErr(e.Pos, e.Msg)
+
+/*
 	if e.Pos.Filename != "" || e.Pos.IsValid() {
 		// don't print "<unknown position>"
 		// TODO(gri) reconsider the semantics of Position.IsValid
@@ -69,6 +72,7 @@ func (e *Error) Error() string {
 		return "\n" + packageFilePos + ":\n\n" + e.Msg + "\n\nError in software artifact\n" + artifactDir + "\n"
 	}
 	return e.Msg
+*/
 }
 
 // An ErrorList is a (possibly sorted) list of Errors.

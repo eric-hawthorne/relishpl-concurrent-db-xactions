@@ -256,6 +256,15 @@ type RMethod struct {
 	NumLocalVars   int
 	PrimitiveCode  func([]RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
+	File           *ast.File
+}
+
+/*
+Obtain the ast.File node for the source code file this method was found in.
+Used in printing context info for runtime error messages.
+*/
+func (p *RMethod) CodeFile() *ast.File {
+	return p.File
 }
 
 func (p *RMethod) IsZero() bool {
@@ -412,10 +421,10 @@ func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
    TODO How do we handle incremental compilation that includes redefinitions of method
    implementations?
 */
-func (rt *RuntimeEnv) CreateMethod(packageName string, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
-		return rt.CreateMethodGeneral(packageName, methodName, parameterNames, parameterTypes, 
+		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
 						                  nil,
 						                  nil,
 						                  "",
@@ -450,7 +459,7 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, methodName string, parame
    TODO How do we handle incremental compilation that includes redefinitions of method
    implementations?
 */
-func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
 	                  // FROM HERE DOWN IS NEW
 	                  keyWordParameterDefaults map[string] RObject,
 	                  keyWordParameterTypes map[string]string,
@@ -536,6 +545,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, methodName string,
 		NumReturnArgs:  numReturnArgs,
 		NumLocalVars:   numLocalVars,
 		Pkg:            pkg,
+		File:           file,
 	}
 
 	methodsOfRightArity, multiMethodHasArity := multiMethod.Methods[arity]

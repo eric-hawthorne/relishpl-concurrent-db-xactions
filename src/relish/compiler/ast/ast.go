@@ -1388,7 +1388,46 @@ type File struct {
 	RelishImports []*RelishImportSpec        // imports in this file	
 	Unresolved    []*Ident             // unresolved identifiers in this file
 	Comments      []*CommentGroup      // list of all comments in the source file
+	FileName      string
+	FileSize      int
+	FileLines     []int
 }
+
+
+
+/*
+Converts a compact token.Pos representation of a position in a source code file to the expanded
+token.Position form of the info. This can then be used in formatting error messages.
+*/
+func (f *File) Position(p token.Pos) token.Position {
+   file := f.tokenFile()
+   return file.Position(p)
+}
+
+/*
+Stores the file name and source line position info into the ast.File in a form that can
+be persisted with the ast.File when it is GOB-serialized into a .rlc file.
+*/
+func (f *File) StoreSourceFilePositionInfo(file *token.File) {
+   f.FileName = file.Name()
+   f.FileSize = file.Size()
+   f.FileLines = file.Lines()
+}
+
+/*
+  Reconstructs a token.File from the FileName, FileSize, FileLines values.
+  This token.File can then be used to convert a token.Pos value of an ast Node into
+  a token.Position value which can be used to give meaningful source file location info for runtime errors. 
+*/
+func (f *File) tokenFile() (file *token.File) {
+   fset := token.NewFileSet()
+   file = fset.AddFile(f.FileName, 0, f.FileSize)
+   if ! file.SetLines(f.FileLines) {
+   	   panic("Invalid source file line positions info for file " + f.FileName)
+   }
+   return
+}
+
 
 func (f *File) Pos() token.Pos { return f.Top }
 func (f *File) End() token.Pos {

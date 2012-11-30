@@ -30,55 +30,55 @@ var buf *bufio.Reader = bufio.NewReader(os.Stdin)
 
 func InitBuiltinFunctions() {
 
-	dbgMethod, err := RT.CreateMethod("","dbg", []string{"p"}, []string{"Any"}, nil, false, 0, false)
+	dbgMethod, err := RT.CreateMethod("",nil,"dbg", []string{"p"}, []string{"Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	dbgMethod.PrimitiveCode = builtinDbg
 
-	debugMethod, err := RT.CreateMethod("","debug", []string{"p"}, []string{"Any"}, []string{"String"}, false, 0, false)
+	debugMethod, err := RT.CreateMethod("",nil,"debug", []string{"p"}, []string{"Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	debugMethod.PrimitiveCode = builtinDebug
 
-	printMethod, err := RT.CreateMethod("","print", []string{"p"}, []string{"RelishPrimitive"}, nil, false, 0, false)
+	printMethod, err := RT.CreateMethod("",nil,"print", []string{"p"}, []string{"RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	printMethod.PrimitiveCode = builtinPrint
 
-	print2Method, err := RT.CreateMethod("","print", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print2Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print2Method.PrimitiveCode = builtinPrint
 
-	print3Method, err := RT.CreateMethod("","print", []string{"p1", "p2", "p3"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print3Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print3Method.PrimitiveCode = builtinPrint
 
-	print4Method, err := RT.CreateMethod("","print", []string{"p1", "p2", "p3", "p4"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print4Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print4Method.PrimitiveCode = builtinPrint
 
-	print5Method, err := RT.CreateMethod("","print", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print5Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print5Method.PrimitiveCode = builtinPrint
 
-	print6Method, err := RT.CreateMethod("","print", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print6Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print6Method.PrimitiveCode = builtinPrint
 
-	print7Method, err := RT.CreateMethod("","print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print7Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -86,7 +86,7 @@ func InitBuiltinFunctions() {
 
 
 
-	inputMethod, err := RT.CreateMethod("","input", []string{"message"}, []string{"String"}, []string{"String"}, false, 0, false)
+	inputMethod, err := RT.CreateMethod("",nil,"input", []string{"message"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +94,7 @@ func InitBuiltinFunctions() {
 
 
 
-	email1Method, err := RT.CreateMethod("",
+	email1Method, err := RT.CreateMethod("",nil,
 	                                     "sendEmail", 
 	                                     []string{"smtpServerAddr","from","recipient","subject","messageBody"}, 
 	                                     []string{"String","String","String","String","String"}, 
@@ -106,7 +106,7 @@ func InitBuiltinFunctions() {
 
 
 
-	email2Method, err := RT.CreateMethod("",
+	email2Method, err := RT.CreateMethod("",nil,
 	                                     "sendEmail", 
 	                                     []string{"smtpServerAddr","from","recipients","subject","messageBody"}, 
 	                                     []string{"String","String","List_of_String","String","String"}, 
@@ -117,7 +117,7 @@ func InitBuiltinFunctions() {
 	email2Method.PrimitiveCode = builtinSendEmail
 
 
-	email3Method, err := RT.CreateMethod("",
+	email3Method, err := RT.CreateMethod("",nil,
 	                                     "sendEmail", 
 	                                     []string{"smtpServerAddr","user","password","from","recipient","subject","messageBody"}, 
 	                                     []string{"String","String","String","String","String","String","String"}, 
@@ -128,7 +128,7 @@ func InitBuiltinFunctions() {
 	email3Method.PrimitiveCode = builtinSendEmail
 
 
-	email4Method, err := RT.CreateMethod("",
+	email4Method, err := RT.CreateMethod("",nil,
 	                                     "sendEmail", 
 	                                     []string{"smtpServerAddr","user","password","from","recipients","subject","messageBody"}, 
 	                                     []string{"String","String","String","String","List_of_String","String","String"}, 
@@ -141,44 +141,44 @@ func InitBuiltinFunctions() {
 
 
 
-	eqMethod, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
+	eqMethod, err := RT.CreateMethod("",nil,"eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	eqMethod.PrimitiveCode = builtinEq
 	
-	eq1Method, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"Any", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
+	eq1Method, err := RT.CreateMethod("",nil,"eq", []string{"p1", "p2"}, []string{"Any", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	eq1Method.PrimitiveCode = builtinEqNo
 	
-	eq2Method, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "Any"}, []string{"Bool"}, false, 0, false)
+	eq2Method, err := RT.CreateMethod("",nil,"eq", []string{"p1", "p2"}, []string{"RelishPrimitive", "Any"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	eq2Method.PrimitiveCode = builtinEqNo	
 	
-	eqObjMethod, err := RT.CreateMethod("","eq", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Bool"}, false, 0, false)
+	eqObjMethod, err := RT.CreateMethod("",nil,"eq", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	eqObjMethod.PrimitiveCode = builtinEqObj
 			
 
-	ltNumMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	ltNumMethod, err := RT.CreateMethod("",nil,"lt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	ltNumMethod.PrimitiveCode = builtinLtNum
 
-	ltTimeMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	ltTimeMethod, err := RT.CreateMethod("",nil,"lt", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	ltTimeMethod.PrimitiveCode = builtinLtTime	
 
-	ltStrMethod, err := RT.CreateMethod("","lt", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	ltStrMethod, err := RT.CreateMethod("",nil,"lt", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -186,25 +186,25 @@ func InitBuiltinFunctions() {
 	
 	
 	
-	lessNumMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	lessNumMethod, err := RT.CreateMethod("",nil,"less", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lessNumMethod.PrimitiveCode = builtinLtNum
 
-	lessTimeMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	lessTimeMethod, err := RT.CreateMethod("",nil,"less", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lessTimeMethod.PrimitiveCode = builtinLtTime	
 
-	lessStrMethod, err := RT.CreateMethod("","less", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	lessStrMethod, err := RT.CreateMethod("",nil,"less", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lessStrMethod.PrimitiveCode = builtinLtStr	
 	
-	beforeTimeMethod, err := RT.CreateMethod("","before", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	beforeTimeMethod, err := RT.CreateMethod("",nil,"before", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -213,19 +213,19 @@ func InitBuiltinFunctions() {
 	
 	
 
-	lteNumMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	lteNumMethod, err := RT.CreateMethod("",nil,"lte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lteNumMethod.PrimitiveCode = builtinLteNum
 
-	lteTimeMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	lteTimeMethod, err := RT.CreateMethod("",nil,"lte", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lteTimeMethod.PrimitiveCode = builtinLteTime	
 
-	lteStrMethod, err := RT.CreateMethod("","lte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	lteStrMethod, err := RT.CreateMethod("",nil,"lte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -233,19 +233,19 @@ func InitBuiltinFunctions() {
 	
 	
 	
-	lessEqNumMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	lessEqNumMethod, err := RT.CreateMethod("",nil,"lessEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lessEqNumMethod.PrimitiveCode = builtinLteNum
 
-	lessEqTimeMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
+	lessEqTimeMethod, err := RT.CreateMethod("",nil,"lessEq", []string{"p1", "p2"}, []string{"Time","Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	lessEqTimeMethod.PrimitiveCode = builtinLteTime	
 
-	lessEqStrMethod, err := RT.CreateMethod("","lessEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	lessEqStrMethod, err := RT.CreateMethod("",nil,"lessEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -256,19 +256,19 @@ func InitBuiltinFunctions() {
 	
 
 	
-	gtNumMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	gtNumMethod, err := RT.CreateMethod("",nil,"gt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	gtNumMethod.PrimitiveCode = builtinGtNum
 
-	gtTimeMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	gtTimeMethod, err := RT.CreateMethod("",nil,"gt", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	gtTimeMethod.PrimitiveCode = builtinGtTime	
 
-	gtStrMethod, err := RT.CreateMethod("","gt", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	gtStrMethod, err := RT.CreateMethod("",nil,"gt", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -277,25 +277,25 @@ func InitBuiltinFunctions() {
 	
 	
 	
-	greaterNumMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	greaterNumMethod, err := RT.CreateMethod("",nil,"greater", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	greaterNumMethod.PrimitiveCode = builtinGtNum
 
-	greaterTimeMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	greaterTimeMethod, err := RT.CreateMethod("",nil,"greater", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	greaterTimeMethod.PrimitiveCode = builtinGtTime	
 
-	greaterStrMethod, err := RT.CreateMethod("","greater", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	greaterStrMethod, err := RT.CreateMethod("",nil,"greater", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	greaterStrMethod.PrimitiveCode = builtinGtStr
 		
-	afterTimeMethod, err := RT.CreateMethod("","after", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	afterTimeMethod, err := RT.CreateMethod("",nil,"after", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -304,19 +304,19 @@ func InitBuiltinFunctions() {
 
 
 
-	gteNumMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	gteNumMethod, err := RT.CreateMethod("",nil,"gte", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	gteNumMethod.PrimitiveCode = builtinGteNum
 
-	gteTimeMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	gteTimeMethod, err := RT.CreateMethod("",nil,"gte", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	gteTimeMethod.PrimitiveCode = builtinGteTime	
 
-	gteStrMethod, err := RT.CreateMethod("","gte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	gteStrMethod, err := RT.CreateMethod("",nil,"gte", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -326,19 +326,19 @@ func InitBuiltinFunctions() {
 	
 	
 	
-	greaterEqNumMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
+	greaterEqNumMethod, err := RT.CreateMethod("",nil,"greaterEq", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	greaterEqNumMethod.PrimitiveCode = builtinGteNum
 
-	greaterEqTimeMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
+	greaterEqTimeMethod, err := RT.CreateMethod("",nil,"greaterEq", []string{"p1", "p2"}, []string{"Time", "Time"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	greaterEqTimeMethod.PrimitiveCode = builtinGteTime	
 
-	greaterEqStrMethod, err := RT.CreateMethod("","greaterEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+	greaterEqStrMethod, err := RT.CreateMethod("",nil,"greaterEq", []string{"p1", "p2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -366,62 +366,62 @@ func InitBuiltinFunctions() {
     // What does that imply for static type checking of return values?
     //
 
-	timesMethod, err := RT.CreateMethod("","times", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Numeric"}, false, 0, false)
+	timesMethod, err := RT.CreateMethod("",nil,"times", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	timesMethod.PrimitiveCode = builtinTimes
 
 
-	plusMethod, err := RT.CreateMethod("","plus", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
+	plusMethod, err := RT.CreateMethod("",nil,"plus", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	plusMethod.PrimitiveCode = builtinPlus	
 
-	sumNumericMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Numeric"},  []string{"Numeric"}, false, 0, false)
+	sumNumericMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"List_of_Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumNumericMethod.PrimitiveCode = builtinSum	
 
-	sumFloatMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Float"},  []string{"Float"}, false, 0, false)
+	sumFloatMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"List_of_Float"},  []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumFloatMethod.PrimitiveCode = builtinSum
 
-	sumIntMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Int"},  []string{"Int"}, false, 0, false)
+	sumIntMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"List_of_Int"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumIntMethod.PrimitiveCode = builtinSum
 
-	sumUintMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"List_of_Uint"},  []string{"Uint"}, false, 0, false)
+	sumUintMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"List_of_Uint"},  []string{"Uint"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumUintMethod.PrimitiveCode = builtinSum	
 
-	sumNumericSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Numeric"},  []string{"Numeric"}, false, 0, false)
+	sumNumericSetMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"Set_of_Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumNumericSetMethod.PrimitiveCode = builtinSum	
 
-	sumFloatSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Float"},  []string{"Float"}, false, 0, false)
+	sumFloatSetMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"Set_of_Float"},  []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumFloatSetMethod.PrimitiveCode = builtinSum
 
-	sumIntSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Int"},  []string{"Int"}, false, 0, false)
+	sumIntSetMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"Set_of_Int"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	sumIntSetMethod.PrimitiveCode = builtinSum
 
-	sumUintSetMethod, err := RT.CreateMethod("","sum", []string{"nums"}, []string{"Set_of_Uint"},  []string{"Uint"}, false, 0, false)
+	sumUintSetMethod, err := RT.CreateMethod("",nil,"sum", []string{"nums"}, []string{"Set_of_Uint"},  []string{"Uint"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -429,25 +429,25 @@ func InitBuiltinFunctions() {
 
 
 
-	minusMethod, err := RT.CreateMethod("","minus", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
+	minusMethod, err := RT.CreateMethod("",nil,"minus", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	minusMethod.PrimitiveCode = builtinMinus	
 
-	divMethod, err := RT.CreateMethod("","div", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
+	divMethod, err := RT.CreateMethod("",nil,"div", []string{"p1", "p2"}, []string{"Numeric", "Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	divMethod.PrimitiveCode = builtinDiv	
 
-	modMethod, err := RT.CreateMethod("","mod", []string{"p1", "p2"}, []string{"Integer", "Integer"},  []string{"Integer"}, false, 0, false)
+	modMethod, err := RT.CreateMethod("",nil,"mod", []string{"p1", "p2"}, []string{"Integer", "Integer"},  []string{"Integer"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	modMethod.PrimitiveCode = builtinMod	
 
-	negMethod, err := RT.CreateMethod("","neg", []string{"p1"}, []string{"Numeric"},  []string{"Numeric"}, false, 0, false)
+	negMethod, err := RT.CreateMethod("",nil,"neg", []string{"p1"}, []string{"Numeric"},  []string{"Numeric"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -461,7 +461,7 @@ func InitBuiltinFunctions() {
     //
     // t = now "America/Los_Angeles"       t = now "Local"      t = now "UTC"
     //
-	timeNowMethod, err := RT.CreateMethod("relish/pkg/datetime","now", []string{"loc"}, []string{"String"}, []string{"Time"}, false, 0, false)
+	timeNowMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"now", []string{"loc"}, []string{"String"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -469,7 +469,7 @@ func InitBuiltinFunctions() {
 
     // sleep durationNs Int
     //
-	sleepMethod, err := RT.CreateMethod("relish/pkg/datetime","sleep", []string{"ns"}, []string{"Int"}, nil, false, 0, false)
+	sleepMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"sleep", []string{"ns"}, []string{"Int"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -477,7 +477,7 @@ func InitBuiltinFunctions() {
 
     // tick durationNs Int > InChannel of Time
     //
-	tickMethod, err := RT.CreateMethod("relish/pkg/datetime","tick", []string{"ns"}, []string{"Int"},  []string{"InChannel"}, false, 0, false)
+	tickMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"tick", []string{"ns"}, []string{"Int"},  []string{"InChannel"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -486,7 +486,7 @@ func InitBuiltinFunctions() {
 
     // plus t Time durationNs Int > Time
     //
-	timePlusMethod, err := RT.CreateMethod("relish/pkg/datetime","plus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
+	timePlusMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"plus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -494,7 +494,7 @@ func InitBuiltinFunctions() {
 
     // addDate t Time years Int months Int days Int > Time
     //
-	timeAddDateMethod, err := RT.CreateMethod("relish/pkg/datetime","addDate", []string{"t", "years","months","days"}, []string{"Time", "Int", "Int", "Int"}, []string{"Time"}, false, 0, false)
+	timeAddDateMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"addDate", []string{"t", "years","months","days"}, []string{"Time", "Int", "Int", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -502,7 +502,7 @@ func InitBuiltinFunctions() {
 
     // minus t Time durationNs Int > Time
     //
-	timeMinusDurationMethod, err := RT.CreateMethod("relish/pkg/datetime","minus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
+	timeMinusDurationMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"minus", []string{"t", "ns"}, []string{"Time", "Int"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -510,7 +510,7 @@ func InitBuiltinFunctions() {
 
     // minus t2 Time t2 Time > durationNs Int
     //
-	timeMinusTimeMethod, err := RT.CreateMethod("relish/pkg/datetime","minus", []string{"t", "t"}, []string{"Time", "Time"}, []string{"Int"}, false, 0, false)
+	timeMinusTimeMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"minus", []string{"t", "t"}, []string{"Time", "Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -518,7 +518,7 @@ func InitBuiltinFunctions() {
 
     // since t Time > durationNs Int
     //
-	timeSinceMethod, err := RT.CreateMethod("relish/pkg/datetime","since", []string{"t"}, []string{"Time"},  []string{"Int"}, false, 0, false)
+	timeSinceMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"since", []string{"t"}, []string{"Time"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -526,7 +526,7 @@ func InitBuiltinFunctions() {
 
     // timeIn t Time location String > Time
     //
-	timeInMethod, err := RT.CreateMethod("relish/pkg/datetime","timeIn", []string{"t","location"}, []string{"Time","String"}, []string{"Time"}, false, 0, false)
+	timeInMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"timeIn", []string{"t","location"}, []string{"Time","String"}, []string{"Time"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -534,7 +534,7 @@ func InitBuiltinFunctions() {
 
     // hours n Int > durationNs Int
     // 
-	hoursMethod, err := RT.CreateMethod("relish/pkg/datetime","hours", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	hoursMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"hours", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -542,7 +542,7 @@ func InitBuiltinFunctions() {
 
     // minutes n Int > durationNs Int
     // 
-	minutesMethod, err := RT.CreateMethod("relish/pkg/datetime","minutes", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	minutesMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"minutes", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -550,7 +550,7 @@ func InitBuiltinFunctions() {
 
     // seconds n Int > durationNs Int
     // 
-	secondsMethod, err := RT.CreateMethod("relish/pkg/datetime","seconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	secondsMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"seconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -558,7 +558,7 @@ func InitBuiltinFunctions() {
 
     // milliseconds n Int > durationNs Int
     // 
-	millisecondsMethod, err := RT.CreateMethod("relish/pkg/datetime","milliseconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
+	millisecondsMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"milliseconds", []string{"n"}, []string{"Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -571,7 +571,7 @@ func InitBuiltinFunctions() {
 
 // date t Time > year Int month Int day Int
 //
-	timeDateMethod, err := RT.CreateMethod("relish/pkg/datetime","date", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	timeDateMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"date", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -579,7 +579,7 @@ func InitBuiltinFunctions() {
 
 // clock t Time > hour Int min Int sec Int
 //
-	timeClockMethod, err := RT.CreateMethod("relish/pkg/datetime","clock", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
+	timeClockMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"clock", []string{"t"}, []string{"Time"}, []string{"Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -590,7 +590,7 @@ func InitBuiltinFunctions() {
 //  0..31
 // """
 //
-	timeDayMethod, err := RT.CreateMethod("relish/pkg/datetime","day", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeDayMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"day", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -602,7 +602,7 @@ func InitBuiltinFunctions() {
 //  0..23
 // """
 //
-	timeHourMethod, err := RT.CreateMethod("relish/pkg/datetime","hour", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeHourMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"hour", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -614,7 +614,7 @@ func InitBuiltinFunctions() {
 //  0..59
 // """
 //
-	timeMinuteMethod, err := RT.CreateMethod("relish/pkg/datetime","minute", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeMinuteMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"minute", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -626,7 +626,7 @@ func InitBuiltinFunctions() {
 //  0..59
 // """
 //
-	timeSecondMethod, err := RT.CreateMethod("relish/pkg/datetime","second", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeSecondMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"second", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -637,7 +637,7 @@ func InitBuiltinFunctions() {
 //  0..999999999
 // """
 //
-	timeNanosecondMethod, err := RT.CreateMethod("relish/pkg/datetime","nanosecond", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeNanosecondMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"nanosecond", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -649,7 +649,7 @@ func InitBuiltinFunctions() {
 //  0..6  Sunday = 0 
 // """
 //
-	timeWeekdayMethod, err := RT.CreateMethod("relish/pkg/datetime","weekday", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeWeekdayMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"weekday", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -658,7 +658,7 @@ func InitBuiltinFunctions() {
 
 // year t Time >  Int  
 //
-	timeYearMethod, err := RT.CreateMethod("relish/pkg/datetime","year", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeYearMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"year", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -670,7 +670,7 @@ func InitBuiltinFunctions() {
 //  1..12  January = 1
 // """
 //
-	timeMonthMethod, err := RT.CreateMethod("relish/pkg/datetime","month", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
+	timeMonthMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"month", []string{"t"}, []string{"Time"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -682,7 +682,7 @@ func InitBuiltinFunctions() {
 //  EST secondsEastOfUTC
 // """  
 //
-	timeZoneMethod, err := RT.CreateMethod("relish/pkg/datetime","zone", []string{"t"}, []string{"Time"}, []string{"String","Int"}, false, 0, false)
+	timeZoneMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"zone", []string{"t"}, []string{"Time"}, []string{"String","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -694,7 +694,7 @@ func InitBuiltinFunctions() {
 //  Like Go time layouts (http://golang.org/pkg/time/)
 // """  
 //
-	timeFormatMethod, err := RT.CreateMethod("relish/pkg/datetime","format", []string{"t","layout"}, []string{"Time","String"}, []string{"String"}, false, 0, false)
+	timeFormatMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"format", []string{"t","layout"}, []string{"Time","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -709,7 +709,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int > durationNs Int
     // 
-	durationHoursMinutesMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m"}, []string{"Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"duration", []string{"h","m"}, []string{"Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -717,7 +717,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int seconds Int > durationNs Int
     // 
-	durationHoursMinutesSecondsMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m","s"}, []string{"Int","Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesSecondsMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"duration", []string{"h","m","s"}, []string{"Int","Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -725,7 +725,7 @@ func InitBuiltinFunctions() {
 
     // duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
     // 
-	durationHoursMinutesSecondsNsMethod, err := RT.CreateMethod("relish/pkg/datetime","duration", []string{"h","m","s","ns"}, []string{"Int","Int","Int","Int"}, []string{"Int"}, false, 0, false)
+	durationHoursMinutesSecondsNsMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"duration", []string{"h","m","s","ns"}, []string{"Int","Int","Int","Int"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -736,7 +736,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of hours.
     // 
-	hoursEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","hoursEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	hoursEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"hoursEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -746,7 +746,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of minutes.
     // 
-	minutesEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","minutesEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	minutesEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"minutesEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -756,7 +756,7 @@ func InitBuiltinFunctions() {
     //
     // Returns the duration as a floating point number of seconds.
     // 
-	secondsEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime","secondsEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
+	secondsEquivalentOfMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"secondsEquivalentOf", []string{"ns"}, []string{"Int"}, []string{"Float"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -767,7 +767,7 @@ func InitBuiltinFunctions() {
     // Returns the duration as the number of hours, remaining minutes, remaining seconds, 
     // and remaining nanoseconds
     // 
-	timePartsMethod, err := RT.CreateMethod("relish/pkg/datetime","timeParts", []string{"ns"}, []string{"Int"}, []string{"Int","Int","Int","Int"}, false, 0, false)
+	timePartsMethod, err := RT.CreateMethod("relish/pkg/datetime",nil,"timeParts", []string{"ns"}, []string{"Int"}, []string{"Int","Int","Int","Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -779,19 +779,19 @@ func InitBuiltinFunctions() {
     ///////////////////////////////////////////////////////////
     // Persistence functions
 
-	dubMethod, err := RT.CreateMethod("","dub", []string{"obj", "name"}, []string{"NonPrimitive", "String"}, nil, false, 0, false)
+	dubMethod, err := RT.CreateMethod("",nil,"dub", []string{"obj", "name"}, []string{"NonPrimitive", "String"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	dubMethod.PrimitiveCode = builtinDub
 
-	summonMethod, err := RT.CreateMethod("","summon", []string{"name"}, []string{"String"}, []string{"Any"}, false, 0, false)
+	summonMethod, err := RT.CreateMethod("",nil,"summon", []string{"name"}, []string{"String"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	summonMethod.PrimitiveCode = builtinSummon
 
-	existsMethod, err := RT.CreateMethod("","exists", []string{"name"}, []string{"String"}, []string{"Bool"}, false, 0, false)
+	existsMethod, err := RT.CreateMethod("",nil,"exists", []string{"name"}, []string{"String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -801,7 +801,7 @@ func InitBuiltinFunctions() {
     ///////////////////////////////////////////////////////////////////
     // Boolean Logical functions - not and or
 
-	notMethod, err := RT.CreateMethod("","not", []string{"p"}, []string{"Any"}, []string{"Bool"}, false, 0, false)
+	notMethod, err := RT.CreateMethod("",nil,"not", []string{"p"}, []string{"Any"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -812,37 +812,37 @@ func InitBuiltinFunctions() {
 /*
    TODO Replace these with proper variadic function creations.
 */
-	and2Method, err := RT.CreateMethod("","and", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Any"}, false, 0, false)
+	and2Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	and2Method.PrimitiveCode = builtinAnd
 
-	and3Method, err := RT.CreateMethod("","and", []string{"p1", "p2", "p3"}, []string{"Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	and3Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2", "p3"}, []string{"Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	and3Method.PrimitiveCode = builtinAnd
 
-	and4Method, err := RT.CreateMethod("","and", []string{"p1", "p2", "p3", "p4"}, []string{"Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	and4Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2", "p3", "p4"}, []string{"Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	and4Method.PrimitiveCode = builtinAnd
 
-	and5Method, err := RT.CreateMethod("","and", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	and5Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	and5Method.PrimitiveCode = builtinAnd
 
-	and6Method, err := RT.CreateMethod("","and", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	and6Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	and6Method.PrimitiveCode = builtinAnd
 
-	and7Method, err := RT.CreateMethod("","and", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	and7Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -850,37 +850,37 @@ func InitBuiltinFunctions() {
 
 	
 
-	or2Method, err := RT.CreateMethod("","or", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Any"}, false, 0, false)
+	or2Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	or2Method.PrimitiveCode = builtinOr
 
-	or3Method, err := RT.CreateMethod("","or", []string{"p1", "p2", "p3"}, []string{"Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	or3Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2", "p3"}, []string{"Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	or3Method.PrimitiveCode = builtinOr
 
-	or4Method, err := RT.CreateMethod("","or", []string{"p1", "p2", "p3", "p4"}, []string{"Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	or4Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2", "p3", "p4"}, []string{"Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	or4Method.PrimitiveCode = builtinOr
 
-	or5Method, err := RT.CreateMethod("","or", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	or5Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	or5Method.PrimitiveCode = builtinOr
 
-	or6Method, err := RT.CreateMethod("","or", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	or6Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	or6Method.PrimitiveCode = builtinOr
 
-	or7Method, err := RT.CreateMethod("","or", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
+	or7Method, err := RT.CreateMethod("",nil,"or", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -901,7 +901,7 @@ func InitBuiltinFunctions() {
 	
 	// contains s String substr String > Bool	
 	//
-	stringContainsMethod, err := RT.CreateMethod("relish/pkg/strings","contains", []string{"s","substr"}, []string{"String","String"}, []string{"Bool"}, false, 0, false)
+	stringContainsMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"contains", []string{"s","substr"}, []string{"String","String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -924,13 +924,13 @@ replace s String old String new String n Int > String
 */
 
 
-    stringReplace3Method, err := RT.CreateMethod("relish/pkg/strings","replace", []string{"s","old","new"}, []string{"String","String","String"}, []string{"String"}, false, 0, false)
+    stringReplace3Method, err := RT.CreateMethod("relish/pkg/strings",nil,"replace", []string{"s","old","new"}, []string{"String","String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringReplace3Method.PrimitiveCode = builtinStringReplace
 
-    stringReplace4Method, err := RT.CreateMethod("relish/pkg/strings","replace", []string{"s","old","new","n"}, []string{"String","String","String","Int"}, []string{"String"}, false, 0, false)
+    stringReplace4Method, err := RT.CreateMethod("relish/pkg/strings",nil,"replace", []string{"s","old","new","n"}, []string{"String","String","String","Int"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -951,7 +951,7 @@ replace s String old String new String n Int > String
 // but we don't have covariant collection type compatibility in input args yet. should have, for immutable input args	
 
 
-    stringJoin1Method, err := RT.CreateMethod("relish/pkg/strings","join", []string{"a"}, []string{"List_of_String"}, []string{"String"}, false, 0, false)
+    stringJoin1Method, err := RT.CreateMethod("relish/pkg/strings",nil,"join", []string{"a"}, []string{"List_of_String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -959,14 +959,14 @@ replace s String old String new String n Int > String
 
 
 
-    stringJoin2Method, err := RT.CreateMethod("relish/pkg/strings","join", []string{"a","sep"}, []string{"List_of_String","String"}, []string{"String"}, false, 0, false)
+    stringJoin2Method, err := RT.CreateMethod("relish/pkg/strings",nil,"join", []string{"a","sep"}, []string{"List_of_String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringJoin2Method.PrimitiveCode = builtinStringJoin
 
 
-    stringJoin2AnyMethod, err := RT.CreateMethod("relish/pkg/strings","join", []string{"a","sep"}, []string{"List_of_Any","String"}, []string{"String"}, false, 0, false)
+    stringJoin2AnyMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"join", []string{"a","sep"}, []string{"List_of_Any","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1011,49 +1011,49 @@ replace s String old String new String n Int > String
 	
     // substituting values for %s 
     //
-    stringFill2Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2"}, []string{"String", "Any"}, []string{"String"}, false, 0, false)
+    stringFill2Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2"}, []string{"String", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill2Method.PrimitiveCode = builtinStringFill
 
-	stringFill3Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3"}, []string{"String", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill3Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3"}, []string{"String", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill3Method.PrimitiveCode = builtinStringFill
 
-	stringFill4Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4"}, []string{"String", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill4Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4"}, []string{"String", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill4Method.PrimitiveCode = builtinStringFill
 
-	stringFill5Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"String", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill5Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"String", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill5Method.PrimitiveCode = builtinStringFill
 
-	stringFill6Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill6Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill6Method.PrimitiveCode = builtinStringFill
 
-	stringFill7Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill7Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill7Method.PrimitiveCode = builtinStringFill	
 
-	stringFill8Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringFill8Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFill8Method.PrimitiveCode = builtinStringFill	
 
-		stringFill9Method, err := RT.CreateMethod("relish/pkg/strings","fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+		stringFill9Method, err := RT.CreateMethod("relish/pkg/strings",nil,"fill", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1063,7 +1063,7 @@ replace s String old String new String n Int > String
     // length of a string
     //
     // in bytes
-	stringLenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"String"}, []string{"Int"}, false, 0, false)
+	stringLenMethod, err := RT.CreateMethod("",nil,"len", []string{"c"}, []string{"String"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1071,7 +1071,7 @@ replace s String old String new String n Int > String
 	
     // in characters (codepoints)
     //
-	stringNumCodePointsMethod, err := RT.CreateMethod("relish/pkg/strings","numCodePoints", []string{"c"}, []string{"String"}, []string{"Int"}, false, 0, false)
+	stringNumCodePointsMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"numCodePoints", []string{"c"}, []string{"String"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1081,62 +1081,62 @@ replace s String old String new String n Int > String
 	
     // s = cat s1 String s2 String s3 String s4 String s5 String s6 String s7 String s8 String s9 String > String  
 	
-    stringCat2Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2"}, []string{"Any", "Any"},  []string{"String"}, false, 0, false)
+    stringCat2Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2"}, []string{"Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat2Method.PrimitiveCode = builtinStringCat
 
-	stringCat3Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3"}, []string{"Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	stringCat3Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3"}, []string{"Any", "Any", "Any"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat3Method.PrimitiveCode = builtinStringCat
 
-	stringCat4Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4"}, []string{"Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+	stringCat4Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4"}, []string{"Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat4Method.PrimitiveCode = builtinStringCat
 
-	stringCat5Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+	stringCat5Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4", "s5"}, []string{"Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat5Method.PrimitiveCode = builtinStringCat
 
-	stringCat6Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+	stringCat6Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4", "s5", "s6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat6Method.PrimitiveCode = builtinStringCat
 
-	stringCat7Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+	stringCat7Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat7Method.PrimitiveCode = builtinStringCat	
 
-	stringCat8Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+	stringCat8Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat8Method.PrimitiveCode = builtinStringCat	
 
-		stringCat9Method, err := RT.CreateMethod("relish/pkg/strings","cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
+		stringCat9Method, err := RT.CreateMethod("relish/pkg/strings",nil,"cat", []string{"s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any", "Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringCat9Method.PrimitiveCode = builtinStringCat	
 	
 	
-    stringHasPrefixMethod, err := RT.CreateMethod("relish/pkg/strings","hasPrefix", []string{"s1", "s2"}, []string{"String", "String"},  []string{"Bool"}, false, 0, false)
+    stringHasPrefixMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"hasPrefix", []string{"s1", "s2"}, []string{"String", "String"},  []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringHasPrefixMethod.PrimitiveCode = builtinStringHasPrefix	
 	
-    stringHasSuffixMethod, err := RT.CreateMethod("relish/pkg/strings","hasSuffix", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
+    stringHasSuffixMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"hasSuffix", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1150,13 +1150,13 @@ replace s String old String new String n Int > String
 	 index of first occurrence of t in s or -1 if t not found in s 
 	"""
 */
-    stringIndexMethod, err := RT.CreateMethod("relish/pkg/strings","index", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Int"}, false, 0, false)
+    stringIndexMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"index", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringIndexMethod.PrimitiveCode = builtinStringIndex
 	
-    stringLastIndexMethod, err := RT.CreateMethod("relish/pkg/strings","lastIndex", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Int"}, false, 0, false)
+    stringLastIndexMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"lastIndex", []string{"s1", "s2"}, []string{"String", "String"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1167,49 +1167,49 @@ replace s String old String new String n Int > String
 /*
 	slice s String start Int end Int > String
 */
-    stringSlice2Method, err := RT.CreateMethod("relish/pkg/strings","slice", []string{"s", "start"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
+    stringSlice2Method, err := RT.CreateMethod("relish/pkg/strings",nil,"slice", []string{"s", "start"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringSlice2Method.PrimitiveCode = builtinStringSlice	
 	
-    stringSlice3Method, err := RT.CreateMethod("relish/pkg/strings","slice", []string{"s", "start", "end"}, []string{"String", "Int", "Int"}, []string{"String"}, false, 0, false)
+    stringSlice3Method, err := RT.CreateMethod("relish/pkg/strings",nil,"slice", []string{"s", "start", "end"}, []string{"String", "Int", "Int"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringSlice3Method.PrimitiveCode = builtinStringSlice	
 	
-    stringFirstMethod, err := RT.CreateMethod("relish/pkg/strings","first", []string{"s", "n"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
+    stringFirstMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"first", []string{"s", "n"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringFirstMethod.PrimitiveCode = builtinStringFirst	
 	
-    stringLastMethod, err := RT.CreateMethod("relish/pkg/strings","last", []string{"s", "n"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
+    stringLastMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"last", []string{"s", "n"}, []string{"String", "Int"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringLastMethod.PrimitiveCode = builtinStringLast	
 
-    stringLowerMethod, err := RT.CreateMethod("relish/pkg/strings","lower", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+    stringLowerMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"lower", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringLowerMethod.PrimitiveCode = builtinStringLower	
 
-    stringUpperMethod, err := RT.CreateMethod("relish/pkg/strings","upper", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+    stringUpperMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"upper", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringUpperMethod.PrimitiveCode = builtinStringUpper	
 
-    stringTitleMethod, err := RT.CreateMethod("relish/pkg/strings","title", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+    stringTitleMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"title", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	stringTitleMethod.PrimitiveCode = builtinStringTitle	
 
-    stringTrimSpaceMethod, err := RT.CreateMethod("relish/pkg/strings","trimSpace", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+    stringTrimSpaceMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"trimSpace", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1227,7 +1227,7 @@ replace s String old String new String n Int > String
 	/*
 	    returns a String - the base64-encoded sha25 hash of the input argument String.
 	*/
-	stringBase64HashMethod, err := RT.CreateMethod("relish/pkg/strings","base64Hash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	stringBase64HashMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"base64Hash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1236,7 +1236,7 @@ replace s String old String new String n Int > String
 	/*
 	    returns a String - the hexadecimal-encoded sha25 hash of the input argument String.
 	*/
-	stringHexHashMethod, err := RT.CreateMethod("relish/pkg/strings","hexHash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	stringHexHashMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"hexHash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1247,7 +1247,7 @@ replace s String old String new String n Int > String
 	
 	// len coll Collection > Int	
 	//
-	lenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"Collection"}, []string{"Int"}, false, 0, false)
+	lenMethod, err := RT.CreateMethod("",nil,"len", []string{"c"}, []string{"Collection"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1256,7 +1256,7 @@ replace s String old String new String n Int > String
 
 	// cap coll Collection > Int	
 	//
-	capMethod, err := RT.CreateMethod("","cap", []string{"c"}, []string{"Collection"},  []string{"Int"}, false, 0, false)
+	capMethod, err := RT.CreateMethod("",nil,"cap", []string{"c"}, []string{"Collection"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1265,7 +1265,7 @@ replace s String old String new String n Int > String
 
 	// contains coll Collection val Any > Bool	
 	//
-	containsMethod, err := RT.CreateMethod("","contains", []string{"c","v"}, []string{"Collection","Any"},  []string{"Bool"}, false, 0, false)
+	containsMethod, err := RT.CreateMethod("",nil,"contains", []string{"c","v"}, []string{"Collection","Any"},  []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1274,7 +1274,7 @@ replace s String old String new String n Int > String
 
 	// clear coll Collection 
 	//
-	clearMethod, err := RT.CreateMethod("","clear", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
+	clearMethod, err := RT.CreateMethod("",nil,"clear", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1288,25 +1288,25 @@ replace s String old String new String n Int > String
 
 	Cannot proceed with these things overall til sort our parameterized types.
 
-    listSlice2Method, err := RT.CreateMethod("","slice", []string{"s", "start"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+    listSlice2Method, err := RT.CreateMethod("",nil,"slice", []string{"s", "start"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	listSlice2Method.PrimitiveCode = builtinListSlice	
 	
-    listSlice3Method, err := RT.CreateMethod("","slice", []string{"s", "start", "end"}, []string{"List_of_Any", "Int", "Int"}, []string{"List_of_Any"}, false, 0, false)
+    listSlice3Method, err := RT.CreateMethod("",nil,"slice", []string{"s", "start", "end"}, []string{"List_of_Any", "Int", "Int"}, []string{"List_of_Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	listSlice3Method.PrimitiveCode = builtinListSlice	
 	
-    listFirstMethod, err := RT.CreateMethod("","first", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+    listFirstMethod, err := RT.CreateMethod("",nil,"first", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	listFirstMethod.PrimitiveCode = builtinListFirst	
 	
-    listLastMethod, err := RT.CreateMethod("","last", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
+    listLastMethod, err := RT.CreateMethod("",nil,"last", []string{"s", "n"}, []string{"List_of_Any", "Int"}, []string{"List_of_Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1320,7 +1320,7 @@ replace s String old String new String n Int > String
 
 	// len c Channel > Int	
 	//
-	channelLenMethod, err := RT.CreateMethod("","len", []string{"c"}, []string{"Channel"}, []string{"Int"}, false, 0, false)
+	channelLenMethod, err := RT.CreateMethod("",nil,"len", []string{"c"}, []string{"Channel"}, []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1328,7 +1328,7 @@ replace s String old String new String n Int > String
 
 	// cap c Channel > Int	
 	//
-	channelCapMethod, err := RT.CreateMethod("","cap", []string{"c"}, []string{"Channel"},  []string{"Int"}, false, 0, false)
+	channelCapMethod, err := RT.CreateMethod("",nil,"cap", []string{"c"}, []string{"Channel"},  []string{"Int"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1337,7 +1337,7 @@ replace s String old String new String n Int > String
 
 	// from c InChannel of T > T	
 	//
-	channelFromMethod, err := RT.CreateMethod("","<-", []string{"c"}, []string{"InChannel"},  []string{"Any"}, false, 0, false)
+	channelFromMethod, err := RT.CreateMethod("",nil,"<-", []string{"c"}, []string{"InChannel"},  []string{"Any"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1347,7 +1347,7 @@ replace s String old String new String n Int > String
 
     // to c OutChannel of T obj T 	
 	//
-	channelToMethod, err := RT.CreateMethod("","to", []string{"c","v"}, []string{"OutChannel","Any"}, 1, false, 0, false)
+	channelToMethod, err := RT.CreateMethod("",nil,"to", []string{"c","v"}, []string{"OutChannel","Any"}, 1, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1355,37 +1355,37 @@ replace s String old String new String n Int > String
 */
 
 
-	mutexLockMethod, err := RT.CreateMethod("","lock", []string{"m"}, []string{"Mutex"}, nil, false, 0, false)
+	mutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"Mutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	mutexLockMethod.PrimitiveCode = builtinMutexLock
 
-	mutexUnlockMethod, err := RT.CreateMethod("","unlock", []string{"m"}, []string{"Mutex"}, nil, false, 0, false)
+	mutexUnlockMethod, err := RT.CreateMethod("",nil,"unlock", []string{"m"}, []string{"Mutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	mutexUnlockMethod.PrimitiveCode = builtinMutexUnlock
 
-	rwmutexLockMethod, err := RT.CreateMethod("","lock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexLockMethod.PrimitiveCode = builtinRWMutexLock
 
-	rwmutexUnlockMethod, err := RT.CreateMethod("","unlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexUnlockMethod, err := RT.CreateMethod("",nil,"unlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexUnlockMethod.PrimitiveCode = builtinRWMutexUnlock
 
-	rwmutexRLockMethod, err := RT.CreateMethod("","rlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexRLockMethod, err := RT.CreateMethod("",nil,"rlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexRLockMethod.PrimitiveCode = builtinRWMutexRLock
 
-	rwmutexRUnlockMethod, err := RT.CreateMethod("","runlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexRUnlockMethod, err := RT.CreateMethod("",nil,"runlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1397,19 +1397,19 @@ replace s String old String new String n Int > String
     /////////////////////////////////////////////////////////////////////
     // Type init functions
 
-	timeInit1Method, err := RT.CreateMethod("","initTime", []string{"t","timeString"}, []string{"Time","String"},  []string{"Time","String"}, false, 0, false)
+	timeInit1Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","timeString"}, []string{"Time","String"},  []string{"Time","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	timeInit1Method.PrimitiveCode = builtinInitTimeParse    
 	
-	timeInit2Method, err := RT.CreateMethod("","initTime", []string{"t","timeString","layout"}, []string{"Time","String","String"},  []string{"Time","String"}, false, 0, false)
+	timeInit2Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","timeString","layout"}, []string{"Time","String","String"},  []string{"Time","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	timeInit2Method.PrimitiveCode = builtinInitTimeParse	
 
-	timeInit3Method, err := RT.CreateMethod("","initTime", []string{"t","year","month","day","hour","min","sec","nsec","loc"}, []string{"Time","Int","Int","Int","Int","Int","Int","Int","String"},  []string{"Time","String"}, false, 0, false)
+	timeInit3Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","year","month","day","hour","min","sec","nsec","loc"}, []string{"Time","Int","Int","Int","Int","Int","Int","Int","String"},  []string{"Time","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1417,13 +1417,13 @@ replace s String old String new String n Int > String
 
 
 
-	channelInit0Method, err := RT.CreateMethod("","initChannel", []string{"c"}, []string{"Channel"}, []string{"Channel"}, false, 0, false)
+	channelInit0Method, err := RT.CreateMethod("",nil,"initChannel", []string{"c"}, []string{"Channel"}, []string{"Channel"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	channelInit0Method.PrimitiveCode = builtinInitChannel 
 
-	channelInit1Method, err := RT.CreateMethod("","initChannel", []string{"c","n"}, []string{"Channel","Int"}, []string{"Channel"}, false, 0, false)
+	channelInit1Method, err := RT.CreateMethod("",nil,"initChannel", []string{"c","n"}, []string{"Channel","Int"}, []string{"Channel"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1431,7 +1431,7 @@ replace s String old String new String n Int > String
 
 
 
-	stringInitMethod, err := RT.CreateMethod("","initString", []string{"s","o"}, []string{"String","Any"},  []string{"String"}, false, 0, false)
+	stringInitMethod, err := RT.CreateMethod("",nil,"initString", []string{"s","o"}, []string{"String","Any"},  []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -3100,7 +3100,7 @@ sendEmail
 """
 
 
-email4Method, err := RT.CreateMethod("",
+email4Method, err := RT.CreateMethod("",nil,
                                      "sendEmail", 
                                      []string{"smtpServerAddr","user","password","from","recipients","subject","messageBody"}, 
                                      []string{"String","String","String","String","List_of_String","String","String"}, 

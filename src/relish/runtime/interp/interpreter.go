@@ -293,8 +293,8 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Int32(int32(v64))				
 
-	case Int16Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
-	case Int8Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case Int16Type : rterr.Stop("Int16 Parameter type not yet allowed in a web service handler method.")
+	case Int8Type : rterr.Stop("Int8 Parameter type not yet allowed in a web service handler method.")
 	case UintType : 
        var v64 uint64
        v64, err = strconv.ParseUint(valStr, 0, 64)  
@@ -311,9 +311,9 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Uint32(uint32(v64))
 
-	case Uint16Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
-	case ByteType : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
-	case BitType : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case Uint16Type : rterr.Stop("Uint16 Parameter type not yet allowed in a web service handler method.")
+	case ByteType : rterr.Stop("Byte Parameter type not yet allowed in a web service handler method.")
+	case BitType : rterr.Stop("Bit Parameter type not yet allowed in a web service handler method.")
 	case BoolType : 
        var v bool
        v, err = strconv.ParseBool(valStr)  
@@ -330,7 +330,7 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 	   }
 	   args[i] = Float(v64)
 
-	case Float32Type : rterr.Stop("Parameter type not yet allowed in a web service handler method.")
+	case Float32Type : rterr.Stop("Float32 Parameter type not yet allowed in a web service handler method.")
 	case StringType :
        args[i] = String(valStr)
 
@@ -470,7 +470,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 
    collection,isCollection := obj.(RCollection)
    if ! isCollection {
-		rterr.Stopf("[ ] (access by index/key) applies to a collection or map; not to an object of type %v. ", obj.Type())
+		rterr.Stopf1(t,idxExpr,"[ ] (access by index/key) applies to a collection or map; not to an object of type %v. ", obj.Type())
    }
 
    if collection.IsOrdered() {
@@ -486,7 +486,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
         case Uint32:
         	ix = int(uint32(idx.(Uint32)))
         default:
-		   rterr.Stop("Index value must be an Integer")
+		   rterr.Stop1(t,idxExpr,"Index value must be an Integer")
 		}
         val = coll.At(ix)
 
@@ -520,7 +520,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 	    }        
 
    } else {
-		rterr.Stopf("[ ] (access by index/key) applies to an ordered collection or a map; not to a %v. ", obj.Type())
+		rterr.Stopf1(t,idxExpr,"[ ] (access by index/key) applies to an ordered collection or a map; not to a %v. ", obj.Type())
    }
 }
 
@@ -550,9 +550,9 @@ func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
 		if attr.Part.ArityLow > 0 {
 		    // pos = t.ExecutingMethod.File.Position(selector.Pos())
 		    if attr.IsRelation() {		
-		       rterr.Stopf("Object %v has no value for attribute %s. The declared relation with type %s requires the attribute to have a value.", obj, selector.Sel.Name, attr.Part.Type.Name)
+		       rterr.Stopf1(t,selector,"Object %v has no value for attribute %s. The declared relation with type %s requires the attribute to have a value.", obj, selector.Sel.Name, attr.Part.Type.Name)
 		    } else {
-		       rterr.Stopf("Object %v has no value for attribute %s. The attribute declaration requires the attribute to have a value.", obj, selector.Sel.Name)
+		       rterr.Stopf1(t,selector,"Object %v has no value for attribute %s. The attribute declaration requires the attribute to have a value.", obj, selector.Sel.Name)
 		    }
 		}
 		val = attr.Part.Type.Zero()
@@ -573,7 +573,7 @@ func (i *Interpreter) EvalVar(t *Thread, ident *ast.Ident) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalVar", ident.Name))
 	obj, err := t.GetVar(ident.Offset)
 	if err != nil {
-		rterr.Stopf("Attempt to access the value of unassigned variable %s.",ident.Name)
+		rterr.Stopf1(t,ident,"Attempt to access the value of unassigned variable %s.",ident.Name)
 	}
 	t.Push(obj)
 }
@@ -789,7 +789,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
             // This is actually a no-compatible method found dynamic-dispatch error (i.e. a runtime-detected type compatibility error).
 			//
-			rterr.Stopf("No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
+			rterr.Stopf1(t, call, "No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
 		}
 		LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 	case *RMethod:
@@ -845,11 +845,11 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
 }
 
 
-func (i *Interpreter) CreateList(elementType *ast.TypeSpec) (List, error) {
+func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, error) {
 	// Find the type
    typ, typFound := i.rt.Types[elementType.Name.Name]
    if ! typFound {
-      rterr.Stopf("List Element Type '%s' not found.",elementType.Name.Name)	
+      rterr.Stopf1(t, elementType, "List Element Type '%s' not found.",elementType.Name.Name)	
    }
 
    // TODO sorting-lists
@@ -859,11 +859,11 @@ func (i *Interpreter) CreateList(elementType *ast.TypeSpec) (List, error) {
 /*
 Not handling sorting sets yet.
 */
-func (i *Interpreter) CreateSet(elementType *ast.TypeSpec) (RCollection, error) {
+func (i *Interpreter) CreateSet(t *Thread, elementType *ast.TypeSpec) (RCollection, error) {
 	// Find the type
    typ, typFound := i.rt.Types[elementType.Name.Name]
    if ! typFound {
-      rterr.Stopf("Set Element Type '%s' not found.",elementType.Name.Name)	
+      rterr.Stopf1(t, elementType, "Set Element Type '%s' not found.",elementType.Name.Name)	
    }
 
    // TODO sorting-sets
@@ -873,16 +873,16 @@ func (i *Interpreter) CreateSet(elementType *ast.TypeSpec) (RCollection, error) 
 /*
 Note it is not really the key type, since the type of the keyType typeSpec has a collectionTypeSpec
 */
-func (i *Interpreter) CreateMap(keyType *ast.TypeSpec, valType *ast.TypeSpec) (Map, error) {
+func (i *Interpreter) CreateMap(t *Thread, keyType *ast.TypeSpec, valType *ast.TypeSpec) (Map, error) {
 	// Find the key and value types
 	
    keyTyp, typFound := i.rt.Types[keyType.Name.Name]
    if ! typFound {
-      rterr.Stopf("Map Key Type '%s' not found.",keyType.Name.Name)	
+      rterr.Stopf1(t,keyType,"Map Key Type '%s' not found.",keyType.Name.Name)	
    }	
    valTyp, typFound := i.rt.Types[valType.Name.Name]
    if ! typFound {
-      rterr.Stopf("Map Value Type '%s' not found.",valType.Name.Name)	
+      rterr.Stopf1(t,valType,"Map Value Type '%s' not found.",valType.Name.Name)	
    }
 
    // TODO sorting-maps
@@ -908,7 +908,7 @@ ListConstruction struct {
 func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.ListConstruction) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalListConstruction"))
 
-    list, err := i.CreateList(listConstruction.Type)
+    list, err := i.CreateList(t, listConstruction.Type)
     if err != nil {
 	   panic(err)
     }
@@ -922,7 +922,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 		
        err = i.rt.ExtendCollectionTypeChecked(list, t.TopN(nElem), t.EvalContext) 	
        if err != nil {
-	      rterr.Stop(err)
+	      rterr.Stop1(t, listConstruction, err)
        }		
 
        t.PopN(nElem)
@@ -942,7 +942,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 	
 	  qS,isString := qExpr.(String)
 	  if ! isString {
-	     rterr.Stop("Query expression used in list construction must evaluate to a String.")	
+	     rterr.Stop1(t, listConstruction, "Query expression used in list construction must evaluate to a String.")	
 	  }
 	  query := string(qS)
 	  radius := 1
@@ -964,7 +964,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
       err = i.rt.DB().FetchN(list.ElementType(), query, radius, &objs)		
       if err != nil {
-	      rterr.Stop(err)
+	      rterr.Stop1(t, listConstruction, err)
       }	
 
       list.ReplaceContents(objs)
@@ -1011,7 +1011,7 @@ SetConstruction struct {
 func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetConstruction) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalSetConstruction"))
 
-    set, err := i.CreateSet(setConstruction.Type)
+    set, err := i.CreateSet(t, setConstruction.Type)
     if err != nil {
 	   panic(err)
     }
@@ -1025,7 +1025,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 		
        err = i.rt.ExtendCollectionTypeChecked(set, t.TopN(nElem), t.EvalContext) 	
        if err != nil {
-	      rterr.Stop(err)
+	      rterr.Stop1(t, setConstruction, err)
        }		
 
        t.PopN(nElem)
@@ -1045,7 +1045,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 	
 	  qS,isString := qExpr.(String)
 	  if ! isString {
-	     rterr.Stop("Query expression used in set construction must evaluate to a String.")	
+	     rterr.Stop1(t, setConstruction, "Query expression used in set construction must evaluate to a String.")	
 	  }
 	  query := string(qS)
 	  radius := 1
@@ -1067,7 +1067,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
       err = i.rt.DB().FetchN(set.ElementType(), query, radius, &objs)		
       if err != nil {
-	      rterr.Stop(err)
+	      rterr.Stop1(t, setConstruction, err)
       }	
 
       aSet := set.(AddableCollection)
@@ -1106,7 +1106,7 @@ MapConstruction struct {
 func (i *Interpreter) EvalMapConstruction(t *Thread, mapConstruction *ast.MapConstruction) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalMapConstruction"))
 
-    theMap, err := i.CreateMap(mapConstruction.Type, mapConstruction.ValType)
+    theMap, err := i.CreateMap(t, mapConstruction.Type, mapConstruction.ValType)
     if err != nil {
 	   panic(err)
     }
@@ -1121,7 +1121,7 @@ func (i *Interpreter) EvalMapConstruction(t *Thread, mapConstruction *ast.MapCon
 		
        err = i.rt.ExtendMapTypeChecked(theMap, t.TopN(nElem *2), t.EvalContext) 	
        if err != nil {
-	      rterr.Stop(err)
+	      rterr.Stop1(t, mapConstruction, err)
        }		
 
        t.PopN(nElem * 2)
@@ -1203,7 +1203,7 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 
 	method, typeTuple = i.dispatcher.GetMethod(mm, args) // len call.Args is WRONG! Use Type.Param except vararg
 	if method == nil {
-		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
+		rterr.Stopf1(t, t.ExecutingMethod.File, "No method '%s' is compatible with %s", mm.Name, typeTuple)
 	}
 	LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 
@@ -1246,7 +1246,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bo
 		case token.FUNC:
 			multiMethod, found := t.ExecutingPackage.MultiMethods[id.Name]
 			if !found {
-				rterr.Stopf("No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name)
+				rterr.Stopf1(t, fun, "No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name)
 			}
 			t.Push(multiMethod)
 			
@@ -1482,13 +1482,13 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 		// 1. for i key val in orderedMap  // keyOffset == 2, 1 coll, coll[0] is map		
 
 		if nCollections != 1 {
-			rterr.Stop("Expecting only one collection, (an ordered map), when there are two more vars than collections.")
+			rterr.Stop1(t,stmt,"Expecting only one collection, (an ordered map), when there are two more vars than collections.")
 		}
 		if !collection.IsMap() {
-			rterr.Stop("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
+			rterr.Stop1(t,stmt,"Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
 		}
 		if !collection.IsOrdered() {
-			rterr.Stop("Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
+			rterr.Stop1(t,stmt,"Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
 		}
 
 		// now do the looping
@@ -1593,7 +1593,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 				// 3. for i val in listOrOrderedSet 
 
 				if !collection.IsOrdered() {
-					rterr.Stop("Expecting a list or ordered set when construct is 'for i val in listOrOrderedSet'.")
+					rterr.Stop1(t,stmt,"Expecting a list or ordered set when construct is 'for i val in listOrOrderedSet'.")
 				}
 
 				// now do the looping
@@ -1644,7 +1644,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
 				collection := t.Stack[collPos].(RCollection)
 				if !collection.IsOrdered() {
-					rterr.Stop("Expecting lists or other ordered collections when construct is 'for i val1 val2 ... in coll1 coll2 ...'.")
+					rterr.Stop1(t,stmt,"Expecting lists or other ordered collections when construct is 'for i val1 val2 ... in coll1 coll2 ...'.")
 				}
 			}
 
@@ -1741,7 +1741,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
 				collection := t.Stack[collPos].(RCollection)
 				if !collection.IsOrdered() {
-					rterr.Stop("Expecting lists or other ordered collections when construct is 'for val1 val2 ... in coll1 coll2 ...'.")
+					rterr.Stop1(t,stmt,"Expecting lists or other ordered collections when construct is 'for val1 val2 ... in coll1 coll2 ...'.")
 				}
 			}
 
@@ -1787,7 +1787,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 		}
 
 	default:
-		rterr.Stop("too many or too few variables in for statement.")
+		rterr.Stop1(t,stmt,"too many or too few variables in for statement.")
 	}
 
 	/*	
@@ -1967,7 +1967,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
     if stmt.Tok == token.ARROW { // send to channel
        if numLhsLocations != 1 || numRhsValues != 1 {   // Channel send operator only accepts one lhs channel and one rhs expr
- 		   rterr.Stop("Can only send a single value to a single channel in each invocation of '<-' operator.")  
+ 		   rterr.Stop1(t, stmt, "Can only send a single value to a single channel in each invocation of '<-' operator.")  
        }
 
 	   lhsExpr := stmt.Lhs[0]
@@ -1978,7 +1978,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		   LogM(t,INTERP2_, "send to channel varname %s\n", lhsExpr.(*ast.Ident).Name)
 			obj, err := t.GetVar(lhsExpr.(*ast.Ident).Offset)
 			if err != nil {
-				rterr.Stopf("Attempt to access the value of unassigned variable %s.",lhsExpr.(*ast.Ident).Name)
+				rterr.Stopf1(t, lhsExpr, "Attempt to access the value of unassigned variable %s.",lhsExpr.(*ast.Ident).Name)
 			}		
             c= obj.(*Channel)
 		case *ast.SelectorExpr:
@@ -2004,7 +2004,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 	    	} else {
 	            errMessage = fmt.Sprintf("Cannot assign %d right-hand-side values to %d left-hand-side variables/attributes.",numRhsValues, numLhsLocations)  
 	        }    	
-	 		rterr.Stop(errMessage)   	
+	 		rterr.Stop1(t,stmt,errMessage)   	
 	    }
 
 	    // Pop rhs values of the stack one by one, assigning each of them to a successive lhs location, starting with the last lhs expr and going
@@ -2039,7 +2039,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				//
 				attr, found := assignee.Type().GetAttribute(selector.Sel.Name)
 				if !found {
-					rterr.Stop(fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
+					rterr.Stop1(t,selector,fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
 				}
 
 				switch stmt.Tok {
@@ -2052,7 +2052,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 								err := RT.AddToAttr(assignee, attr, v, true, t.EvalContext, false)
 								if err != nil {
 									if strings.Contains(err.Error()," a value of type ") {
-										rterr.Stop(err)
+										rterr.Stop1(t, selector, err)
 									} 					
 									panic(err)
 								}				               
@@ -2063,13 +2063,13 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 							   panic(err)	
 							}	
 					    } else {
-			               rterr.Stop("Only nil or a collection can be assigned to a multi-valued attribute.")						
+			               rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
 						}
 	                } else {									
 						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
 						if err != nil {
 							if strings.Contains(err.Error()," a value of type ") {
-								rterr.Stop(err)
+								rterr.Stop1(t,selector, err)
 							} 
 							panic(err)
 						}
@@ -2078,7 +2078,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
 					if err != nil {
 						if strings.Contains(err.Error()," a value of type ") {
-							rterr.Stop(err)
+							rterr.Stop1(t,selector,err)
 						} 					
 						panic(err)
 					}
@@ -2101,7 +2101,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 				collection,isCollection := assignee.(RCollection)
 				if ! isCollection {
-					rterr.Stopf("Cannot [index] into a non-collection of type %v.", assignee.Type())
+					rterr.Stopf1(t, indexExpr,"Cannot [index] into a non-collection of type %v.", assignee.Type())
 				}
 
 				if collection.IsIndexSettable() {
@@ -2117,16 +2117,16 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
                     case Uint32:
                     	ix = int(uint32(idx.(Uint32)))
                     default:
-					   rterr.Stop("Index value must be an Integer")
+					   rterr.Stop1(t,indexExpr,"Index value must be an Integer")
 					}
 
 					switch stmt.Tok {
 					case token.ASSIGN:
 					   // No problem
 					case token.ADD_ASSIGN:
-						rterr.Stop("[index] += val  is not supported yet.")
+						rterr.Stop1(t, indexExpr,"[index] += val  is not supported yet.")
 					case token.SUB_ASSIGN:
-						rterr.Stop("[index] -= val  is not supported yet.")
+						rterr.Stop1(t, indexExpr,"[index] -= val  is not supported yet.")
 					default:
 						panic("Unrecognized assignment operator")
 					}	
@@ -2171,7 +2171,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					case token.ADD_ASSIGN:
 						rterr.Stop("[Key] += val  is not supported yet.")
 					case token.SUB_ASSIGN:
-						rterr.Stop("[Key] -= val  is not supported yet.")
+						rterr.Stop1(t, indexExpr, "[Key] -= val  is not supported yet.")
 					default:
 						panic("Unrecognized assignment operator")
 					}			
@@ -2211,9 +2211,9 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 				} else {
 					if collection.IsList() { // Must be a sorting list
-					   rterr.Stop("Cannot set element at [index] of a sorting list.")	
+					   rterr.Stop1(t, indexExpr,"Cannot set element at [index] of a sorting list.")	
 					} 				
-					rterr.Stopf("Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
+					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
 				}
 
 
@@ -2221,7 +2221,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			
 
 			default:
-				rterr.Stop("Left-hand side expr must be variable, attribute, or indexed position in map/collection.")
+				rterr.Stop1(t, lhsExpr, "Left-hand side expr must be variable, attribute, or indexed position in map/collection.")
 
 			}       
 	    }
@@ -2310,7 +2310,7 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 	if stmt.IsYield {
 		
 		if n != t.YieldCardinality {
-			rterr.Stopf("Generator expression should yield %d values but yields %d instead.",t.YieldCardinality,n)
+			rterr.Stopf1(t, stmt, "Generator expression should yield %d values but yields %d instead.",t.YieldCardinality,n)
 		}
 		
 		// TODO This may be a temporary implementation
@@ -2524,4 +2524,8 @@ func (t *Thread) Dump() {
 	fmt.Printf("Base : %d\n", t.Base)
 	fmt.Println("---------------------")
 	LogMutex.Unlock()
+}
+
+func (t *Thread) CodeFile() *ast.File {
+   return t.ExecutingMethod.CodeFile()
 }

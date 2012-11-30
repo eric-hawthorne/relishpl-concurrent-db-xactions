@@ -308,7 +308,7 @@ func (p *parser) parseFile() *ast.File {
     }
     p.required(p.BlankOrCommentsToEOF(),"end of file, or type, method, relation, or constant declaration, or a line comment, at column 1 after a blank line")
 
-    return &ast.File{
+    astFileNode := &ast.File{
 	   // Doc        *CommentGroup   // associated documentation; or nil (for relish should be a single comment)	
 	   Top: pos,      // position of first character of file
    	   Name: &ast.Ident{Name: packageName, Kind:token.PACKAGE},    // package name
@@ -322,6 +322,10 @@ func (p *parser) parseFile() *ast.File {
 	   // Unresolved []*Ident        // unresolved identifiers in this file
 	   // Comments   []*CommentGroup // list of all comments in the source file
     }
+
+    astFileNode.StoreSourceFilePositionInfo(p.file)
+
+    return astFileNode
 
     // return &ast.File{doc, pos, ident, decls, p.pkgScope, p.imports, p.unresolved[0:i], p.comments}
 }	
