@@ -11,6 +11,7 @@ package  stringsconsts
 import
    strings
 
+
 REFRAIN = """
 %s bottles of beer on the wall,
 %s bottles of beer,

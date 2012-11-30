@@ -32,8 +32,6 @@ main
 
 
 
-
-
 Shape
 """
  A geometric shape.
@@ -76,6 +74,7 @@ Polyline <: Shape2D Curve
  An open curve in 2D space, defined with a list of line-segments. The two ends are distinct points.
 """
 
+
 Polygon <: Shape2D Curve
 """
  A closed curve in 2D space, defined with a list of line-segments.
@@ -87,15 +86,18 @@ Region <: Shape2D Surface
  A contiguous surface in 2-dimensional space.
 """
 
+
 Doughnut <: Region
 """
  A region with one or more holes in it.
 """
 
+
 StraightLine <: Polyline
 """
  Actually a single line-segment in 2D space.
 """
+
 
 // Define some geometric methods.
 //
@@ -109,6 +111,7 @@ distance s1 Shape2D s2 Shape2D > Float
    print (String s1) (String s2)
    print "distance Shape2D Shape2D"
    => 0.0  // TODO Implement
+
 
 distance s1 Point2D s2 Polyline > Float
 """
@@ -144,7 +147,6 @@ distance s1 Polyline s2 Polyline > Float
    print (String s1) (String s2)
    print "distance Polyline Polyline"
    => 0.0  // TODO Implement
-
 
 
 distance s1 Polyline s2 Polygon > Float
@@ -190,7 +192,6 @@ distance s1 Polygon s2 Region > Float
    print (String s1) (String s2)
    print "distance Polygon Region"
    => 0.0  // TODO Implement
-
 
 
 distance s1 Region s2 Region > Float

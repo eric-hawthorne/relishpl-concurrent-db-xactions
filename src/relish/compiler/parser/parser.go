@@ -274,8 +274,9 @@ func (p *parser) parseFile() *ast.File {
 
     p.optional(p.parseImports(&importSpecs) && 
                p.required(p.BlankLine() && 
+                          p.BlankLine() && 
                           p.BlanksAndBelow(1,false),
-                         "type, method, relation, or constant declaration, or a line comment, at column 1 of file, after a blank line"))
+                         "type, method, relation, or constant declaration, or a line comment, at column 1 of file, after a gap of at least two blank lines"))
 
     
 
@@ -295,6 +296,9 @@ func (p *parser) parseFile() *ast.File {
        if ! p.BlankLine() {
           break	
        }
+       if ! p.BlankLine() {
+         break	
+       }
        if ! p.BlanksAndBelow(1,false) {
 	      break
        }
@@ -306,7 +310,7 @@ func (p *parser) parseFile() *ast.File {
 	      break
        }
     }
-    p.required(p.BlankOrCommentsToEOF(),"end of file, or type, method, relation, or constant declaration, or a line comment, at column 1 after a blank line")
+    p.required(p.BlankOrCommentsToEOF(),"end of file, or type, method, relation, or constant declaration, or a line comment, at column 1 after a gap of at least two blank lines")
 
     astFileNode := &ast.File{
 	   // Doc        *CommentGroup   // associated documentation; or nil (for relish should be a single comment)	
@@ -762,6 +766,8 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
 	p.parseTypeName(true, &rel2TypeName) ) {
 	   return p.Fail(st)		
 	}
+    p.optional(p.parseMethodComment(1,nil))
+	
 	
   // Generate relation-end "attribute" names from (properly pluralized as needed) end-type names, if
   // end attribute names have been omitted from the relation declaration. 

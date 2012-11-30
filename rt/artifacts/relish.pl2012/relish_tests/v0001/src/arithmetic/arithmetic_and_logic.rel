@@ -17,6 +17,7 @@ import
 // It must be separated from other things by oat least 
 // one blank/empty line before it and one after it.
 
+
 MAX_RADIUS = 10
 
 
@@ -56,6 +57,7 @@ testReturns2More > Int Int
  method.
 """
    => 4 5
+
 
 testReturns2 > Int Int
 """
