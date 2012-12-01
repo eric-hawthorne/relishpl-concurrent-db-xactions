@@ -106,13 +106,24 @@ type MethodDeclaration struct {
 	NumLocalVars int
 }
 
+
+
 // EGH A Closure node represents a closure expression which when evaluated at runtime will return
 // an RClosure object with a reference to an RMethod and a bindings map.
 type Closure struct {
-	Method *MethodDeclaration
-	Bindings map[string]int  // a map from local-var or param name of enclosing method to stack-offset
-	                         // in the enclosing method's stack frame
+	FuncPos token.Pos   // position of the func keyword
+	MethodName string
+	Bindings []int  // a list of varable/param stack-offsets
+	                // in the enclosing method's stack frame
+	                // These are the enclosing vars whose values must be captured
+	                // each time the closure is encountered in code execution.
 }
+
+func (c *Closure) exprNode() {}
+
+func (c *Closure) Pos() token.Pos { return c.FuncPos }
+func (c *Closure) End() token.Pos { return c.FuncPos + 4 }
+
 
 func (d *MethodDeclaration) ReturnArgsAreNamed() bool {
    rslts := d.Type.Results

@@ -40,6 +40,7 @@ func registerAstNodeTypes() {
 	gob.Register(&RelationDecl{})
 	gob.Register(&TypeDecl{})
 	gob.Register(&MethodDeclaration{})
+	gob.Register(&Closure{})	
 	gob.Register(&ConstantDecl{})
 	gob.Register(&InputArgDecl{})
 	gob.Register(&ReturnArgDecl{})
