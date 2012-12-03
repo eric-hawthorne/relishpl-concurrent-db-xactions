@@ -40,6 +40,8 @@ type RPackage struct {
 	
 	MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
 	
+	ClosureMethods map[string]*RMethod  // map from method name to RMethod object
+	
 	Dependencies map[string]*RPackage   // Packages that this package is dependent on		
 
 }
@@ -98,7 +100,8 @@ func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPa
 	}
 	pkg := &RPackage{runit: runit{robject: robject{rtype: typ}},
 		Name:  path,
-        MultiMethods: make(map[string]*RMultiMethod),		
+        MultiMethods: make(map[string]*RMultiMethod),	
+        ClosureMethods: make(map[string]*RMethod),	
         Dependencies: make(map[string]*RPackage),
 	}
 	pkg.runit.robject.this = pkg

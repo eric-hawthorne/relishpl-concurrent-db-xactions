@@ -54,7 +54,7 @@ Currently, when multimethods/methods are generated, "main" ones are prefixed by 
 func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	Logln(ANY_, " ")
 	Logln(ANY_, "==============================")
-	Logln(ANY_, "== RELISH Interpreter 0.0.2 ==")
+	Logln(ANY_, "== RELISH Interpreter 0.0.3 ==")
 	Logln(ANY_, "==============================")
 	Logln(GENERATE2_, " ")
 	Logln(GENERATE2_, "----------")
@@ -437,7 +437,11 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 		i.EvalSetConstruction(t, expr.(*ast.SetConstruction))
 		
 	case *ast.MapConstruction:
-		i.EvalMapConstruction(t, expr.(*ast.MapConstruction))				
+		i.EvalMapConstruction(t, expr.(*ast.MapConstruction))	
+		
+	case *ast.Closure:
+		i.EvalClosure(t, expr.(*ast.Closure))	
+					
 	}
 
 }
@@ -627,6 +631,29 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 	}
 }
 
+
+/*
+Push the value of the variable onto the top of the stack. This means the object is referred to at least twice on the 
+stack. Once at the current stack top, and once at the variable's position in the stack frame.
+*/
+func (i *Interpreter) EvalClosure(t *Thread, clos *ast.Closure) {
+	defer UnM(t,TraceM(t,INTERP_TR, "EvalClosure", clos.MethodName))
+	
+	method := t.ExecutingPackage.ClosureMethods[clos.MethodName]
+	var bindings []RObject
+	for _,offset := range clos.Bindings {
+		obj, err := t.GetVar(offset)
+		// fmt.Printf("closure.Binding offset: %d holds: %s\n",offset,obj.Debug())		
+		if err != nil {
+			rterr.Stop1(t,clos,"While creating closure, one of its free variables has not yet been assigned a value in enclosing method.")
+		}
+		bindings = append(bindings, obj)
+	}
+	obj := &RClosure{method, bindings}
+	t.Push(obj)
+}
+
+
 /*
    Evaluate a method call or type constructor call, including evaluation of the arguments. 
    Place the result(s) on the stack.
@@ -685,7 +712,7 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
    and the method application to the arguments will be performed in the new thread (go-routine actually) using t2's stack.
 
 
-TODO Put nArgs in variants of this method !!!!!!!!!!!!
+TODO Put nArgs in variants of this method !!!!!!!!!!!!  !!!!!!!!!!!! !!!!!!!!!!! !!!!!!!!!!!!!
 
 */
 func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall) (nReturnArgs int) {
@@ -693,10 +720,11 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
     // Evaluate the function expression - function name, lambda (TBD), or type name
     // and put the method or multimethod on the stack,
-    // TODO or, if it is a type constructor, should put the type constructor function on the
-    // stack. This is TBD.
+    // If it is a type constructor, puts the type constructor function and the new object on the
+    // stack. 
 
-	isTypeConstructor, hasInitFunction := i.EvalFunExpr(t, call.Fun) // token.FUN (regular method) or token.TYPE (constructor)
+    // TODO PASS THE WHOLE call , return the remaining args
+	isTypeConstructor, hasInitFunction, isClosureApplication, args := i.EvalFunExpr(t, call) // token.FUN (regular method) or token.TYPE (constructor) or token.CLOSURE (closure application)
 	
 	
 
@@ -706,6 +734,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	
 	var newObject RObject
 	var meth RObject
+	var closure *RClosure
 	
 	if isTypeConstructor {
 		if ! hasInitFunction {
@@ -728,6 +757,9 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 		nReturnArgs = meth.(*RMultiMethod).NumReturnArgs
 	case *RMethod:
 		nReturnArgs = meth.(*RMethod).NumReturnArgs
+	case *RClosure:
+		closure = meth.(*RClosure)
+		nReturnArgs = closure.Method.NumReturnArgs		
 	default:
 		panic("Expecting a Method or MultiMethod.")
 	}
@@ -747,7 +779,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
     }  
 
     p0 := t.Pos
-	for _, expr := range call.Args {
+	for _, expr := range args {
 		i.EvalExpr(t, expr)
 	}
 	p1 := t.Pos
@@ -794,6 +826,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 		LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 	case *RMethod:
 		method = meth.(*RMethod)
+	case *RClosure:
+		method = closure.Method		
 	default:
 		panic("Expecting a Method or MultiMethod.")
 	}
@@ -808,6 +842,12 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
 		t.Reserve(method.NumLocalVars) // This only works with next TopN call because builtin methods have 0 local vars.
 
+        if isClosureApplication {
+	        for _,obj := range closure.Bindings {
+		       t.Push(obj)
+	        }
+        }
+
 		i.apply1(t, method, t.TopN(constructorArg + nArgs)) // Puts results on stack BELOW the current stack frame.	
 
     } else { // This is a go statement execution
@@ -821,11 +861,18 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	return
 }
 
+
+
+
+
 /*
 Assumes that the base pointer for executing the new method has been set in thread t,
 but that the method has not been pushed onto t's stack nor has the space for the method's local vars been reserved on t's stack.
 
 Applies the method using thread t to pre-evaluated arguments that are in the current frame of t's stack.
+
+TODO This is NOT updated to handle closure applications yet !!!
+
 */
 func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
     
@@ -1235,9 +1282,10 @@ If additionally an init<TypeName> function was found, set the hasInitFunc = true
 and place the init<TypeName> multimethod on the stack.
 If it is not a constructor call, place the found multimethod on the stack. 
 */
-func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bool, hasInitFunc bool) {
+func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstructor bool, hasInitFunc bool, isClosureApplication bool, args []ast.Expr) {
 	defer UnM(t,TraceM(t,INTERP_TR2, "EvalFunExpr"))
 	var methodKind token.Token
+	fun := call.Fun
 	switch fun.(type) {
 	case *ast.Ident:
 		id := fun.(*ast.Ident)
@@ -1249,6 +1297,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bo
 				rterr.Stopf1(t, fun, "No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name)
 			}
 			t.Push(multiMethod)
+			args = call.Args
 			
 		case token.TYPE:
 			var obj RObject
@@ -1276,9 +1325,15 @@ func (i *Interpreter) EvalFunExpr(t *Thread, fun ast.Expr) (isTypeConstructor bo
 			if found {
 			   t.Push(multiMethod)	
 			   hasInitFunc = true	
-			}	
-			
-			
+			}
+			args = call.Args			
+				
+		case token.CLOSURE:	
+		    isClosureApplication = true
+		    
+		    i.EvalExpr(t, call.Args[0])	 // Leave the RClosure on the stack	
+		
+			args = call.Args[1:]
 		default:
 			panic("Wrong type of ident for function name.")
 		}

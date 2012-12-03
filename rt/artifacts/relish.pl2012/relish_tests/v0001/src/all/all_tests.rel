@@ -18,7 +18,7 @@ import
    multimethods
    concurrency
    email
-    
+   closures 
 
 
 main
@@ -42,4 +42,5 @@ testAll
    time.testTime
    multimethods.testMultimethods
    collections.testCollections
+   closures.testClosures
    concurrency.testConcurrency

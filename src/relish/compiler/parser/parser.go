@@ -98,7 +98,20 @@ type parser struct {
 	currentScopeVariableOffset int
 	currentScopeReturnArgOffset int	
 	
+	currentClosureMethodNum int
 	
+	// Names of variables in the enclosing method definition of a closure method decl 
+	outerScopeVariables map[string] bool
+	outerScopeVariableOffsets map[string] int
+	outerScopeVariableOffset int
+	outerScopeReturnArgOffset int	
+	
+	parsingClosure bool
+	closureMethodName string  // package-unique name assigned to the current closure method declaration
+	closureFreeVars []*ast.Ident
+	closureFreeVarBindings []int  // list of enclosing-method var offsets of free vars in closure-method
+
+    closureMethodDecls []*ast.MethodDeclaration
 
 	// Label scope
 	// (maintained by open/close LabelScope)
@@ -154,14 +167,74 @@ func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode uin
        "true": true,
        "false": true,
        "nil": true,
+       "func": true,
+       "apply": true,
    }	
 }
 
+/*
+Initialize a new variable scope.
+*/
 func (p *parser) clearVariableScope() {
     p.currentScopeVariables = make(map[string] bool)
     p.currentScopeVariableOffsets = make(map[string] int)	
     p.currentScopeVariableOffset = 3 // room for base pointer + pushed method ref + code offset in current method
     p.currentScopeReturnArgOffset = -1 // below the base pointer
+}
+
+/*
+...About to parse a nested closure-method declaration, save variable scope of the enclosing method
+   declaration.
+*/
+func (p *parser) pushVariableScope() {
+    p.outerScopeVariables = p.currentScopeVariables 
+    p.outerScopeVariableOffsets = p.currentScopeVariableOffsets	
+    p.outerScopeVariableOffset = p.currentScopeVariableOffset
+    p.outerScopeReturnArgOffset = p.currentScopeReturnArgOffset
+    p.parsingClosure = true
+}
+
+/*
+...After parsing a nested closure-method declaration, restore variable scope of the enclosing method
+   declaration.
+*/
+func (p *parser) popVariableScope() {
+    p.currentScopeVariables = p.outerScopeVariables 
+    p.currentScopeVariableOffsets = p.outerScopeVariableOffsets	
+    p.currentScopeVariableOffset = p.outerScopeVariableOffset 
+    p.currentScopeReturnArgOffset = p.outerScopeReturnArgOffset 
+    p.parsingClosure = false
+    p.closureFreeVars = nil
+}
+
+/*
+Magic for closure free-variable binding specifications...
+Repairs the offsets of the idents that represent free vars inside the closure-method.
+Sets the p.closureFreeVarBindings list 
+- the enclosing-method var offsets of the free vars in the closure-method declaration.
+- These should be used as the Closure.Bindings
+
+TODO NEED TO CALL THIS AT END OF parseMethodDeclaration - before the popVariableScope() call happens!
+*/
+func (p *parser) fixUpFreeVarOffsets(startingFreeVarOffset int) {
+	freeVarOuterMethodOffsetToNewOffset := make(map[int]int)
+	p.closureFreeVarBindings = nil 
+	currentFreeVarOffset := startingFreeVarOffset
+	for _,freeVar := range p.closureFreeVars {
+		
+		// fmt.Println("currentFreeVarOffset=",currentFreeVarOffset)
+		
+		newOffset, offsetEncountered := freeVarOuterMethodOffsetToNewOffset[freeVar.Offset] 
+		if offsetEncountered {
+			freeVar.Offset = newOffset
+		} else {
+			p.closureFreeVarBindings = append(p.closureFreeVarBindings, freeVar.Offset)
+			// fmt.Println("p.closureFreeVarBindings=",p.closureFreeVarBindings)
+			freeVarOuterMethodOffsetToNewOffset[freeVar.Offset] = currentFreeVarOffset
+			freeVar.Offset = currentFreeVarOffset
+			currentFreeVarOffset++
+		}
+	}
 }
 
 
@@ -311,6 +384,8 @@ func (p *parser) parseFile() *ast.File {
        }
     }
     p.required(p.BlankOrCommentsToEOF(),"end of file, or type, method, relation, or constant declaration, or a line comment, at column 1 after a gap of at least two blank lines")
+
+    methodDecls = append(methodDecls, p.closureMethodDecls...)
 
     astFileNode := &ast.File{
 	   // Doc        *CommentGroup   // associated documentation; or nil (for relish should be a single comment)	
@@ -663,11 +738,11 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
    }
    st2 := p.State()
  
-   if ! p.required(p.BlanksAndBelow(2, false),"comment content - Must begin at column 2 of file") {
+   if ! p.required(p.BlanksAndBelow(col+1, false),fmt.Sprintf("comment content - Must begin at column %d of file",col+1)) {
        return p.Fail(st)    	
    }
 
-   found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,1)
+   found,contentEndOffset := p.ConsumeTilMatchAtColumn(`"""`,col)
    if ! found {
 	  dbg.Logln(dbg.PARSE_,`Did not consume till """.`)	
       return p.Fail(st)	
@@ -1547,13 +1622,25 @@ func (p *parser) parseMethodDeclaration(methodDecls *[]*ast.MethodDeclaration) b
     if p.trace {
        defer un(trace(p, "MethodDeclaration"))
     }	
+
     var methodDecl *ast.MethodDeclaration 
     col := p.Col()
-    if p.parseMethodHeader(&methodDecl) &&
-       p.optional(p.parseMethodBody(col,methodDecl)) {
+    if p.parseMethodHeader(&methodDecl) {
+       foundMethodBody := p.parseMethodBody(col,methodDecl)
 	
-	    // TODO check if we have a method body if no input args.
+	    // if no input params, must have a method body - abstract method w no params does not make sense
+        if len(methodDecl.Type.Params) == 0 {
+	       p.required(foundMethodBody, "method body statements")	
+        }
 	
+ 	    if p.parsingClosure {
+	       // A closure declaration must have some method body statements
+	       p.required(foundMethodBody, "method body statements")
+
+           p.fixUpFreeVarOffsets(p.currentScopeVariableOffset)	
+           methodDecl.NumFreeVars = len(p.closureFreeVarBindings)
+           methodDecl.IsClosureMethod = true
+        }
 	    methodDecl.NumLocalVars = p.currentScopeVariableOffset - 3 - len(methodDecl.Type.Params)
 		
 	    *methodDecls = append(*methodDecls,methodDecl)
@@ -1563,6 +1650,45 @@ func (p *parser) parseMethodDeclaration(methodDecls *[]*ast.MethodDeclaration) b
     } 
     return false
 }
+
+/*
+Parse a closure expression.
+If succeeds, sets the closure var to point to the Closure ast node, and also
+has added the closure-method declaration to the file's method declarations.
+*/
+func (p *parser) parseClosure(closure **ast.Closure) bool {
+	if p.trace {
+	   defer un(trace(p, "Closure"))
+	}	
+	
+	alreadyInClosureDeclaration := false
+	if p.parsingClosure {
+	   alreadyInClosureDeclaration = true
+	}
+	if ! alreadyInClosureDeclaration {
+       p.pushVariableScope()
+       defer p.popVariableScope()
+    }
+	
+   if p.parseMethodDeclaration(&(p.closureMethodDecls)) {
+	 
+	  closureMethodDecl := p.closureMethodDecls[len(p.closureMethodDecls)-1]
+	
+	  // generate 
+	
+	  // fmt.Println("In parseClosure: p.closureFreeVarBindings", p.closureFreeVarBindings)
+	  *closure = &ast.Closure{closureMethodDecl.Name.NamePos, p.closureMethodName, p.closureFreeVarBindings}
+	  // fmt.Println("closure.Bindings",(*closure).Bindings)
+	
+      if alreadyInClosureDeclaration {
+	     p.stop("A closure cannot be nested in another closure declaration")
+      }	
+	
+	  return true
+   }
+   return false
+}
+
 
 /*
 
@@ -1612,10 +1738,20 @@ func (p *parser) parseMethodHeader(methodDecl **ast.MethodDeclaration) bool {
     }
     st := p.State()
     col := st.RuneColumn
+    pos := p.Pos()
 
     var methodName *ast.Ident
 
-    if ! p.parseMethodName(false,&methodName) {
+    if p.parsingClosure {
+	   if ! p.MatchWord("func") {
+	      return false	
+	   } else {
+		  // Generate a unique-in-package name for the method.
+		  p.closureMethodName = fmt.Sprintf("Func__%s__%d", p.file.Name(), p.currentClosureMethodNum)
+		  p.currentClosureMethodNum++
+          methodName = &ast.Ident{pos, p.closureMethodName, nil, token.FUNC, -1}	
+	   }
+    } else if ! p.parseMethodName(false,&methodName) {
 	   return false
     }
 
@@ -1667,7 +1803,11 @@ func (p *parser) parseMethodName(allowImported bool, methodName **ast.Ident) boo
 	   if p.importPackageAliases[name] {
 	      return p.Fail(st)	
 	   }
-	   kind = token.FUNC
+	   if name == "apply" {
+	      kind = token.CLOSURE
+	   } else {
+	      kind = token.FUNC
+       }
    }
    if ! foundMethodName {
       foundTypeName,name = p.ScanTypeName()    
@@ -1747,17 +1887,35 @@ func (p *parser) parseVarName(varName **ast.Ident, mustBeDefined bool) bool {
 
    offset := -99
 
+   foundFreeVar := false  
+
    if p.currentScopeVariables[name] { // set the Offset to the right local var or return arg
-      offset = p.currentScopeVariableOffsets[name]	
+      offset = p.currentScopeVariableOffsets[name] 	
+   } else if p.parsingClosure {
+      if p.outerScopeVariables[name] {
+	      foundFreeVar = true	
+	      offset = p.outerScopeVariableOffsets[name] 	
+	   	  dbg.Log(dbg.PARSE_,"------free var name %s --------",name)
+     } else if mustBeDefined {
+   	    dbg.Logln(dbg.PARSE_,"------while parsingClosure name not found as outer local var or outer return arg --------")
+	    dbg.Logln(dbg.PARSE_,p.outerScopeVariables)
+	    dbg.Logln(dbg.PARSE_,name)
+	    dbg.Logln(dbg.PARSE_,"-----------------------------------------------------------------------------------------")	
+        return p.Fail(st)	
+     }
    } else if mustBeDefined {
    	    dbg.Logln(dbg.PARSE_,"------name not found as local var or return arg --------")
 	    dbg.Logln(dbg.PARSE_,p.currentScopeVariables)
 	    dbg.Logln(dbg.PARSE_,name)
 	    dbg.Logln(dbg.PARSE_,"--------------------------------------------------------")
-       return p.Fail(st)	
+        return p.Fail(st)	
    }
 
    *varName = &ast.Ident{pos, name, nil, token.VAR, offset}
+   
+   if foundFreeVar {
+      p.closureFreeVars = append(p.closureFreeVars, *varName)	
+   }
 
    return true
 }
@@ -2833,6 +2991,15 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
     if p.parseIndentedVariableReference(false, true, x) {  
 	   return true
     }
+
+    var clos *ast.Closure
+    if p.parseClosure(&clos) {
+	   *x = clos	
+	   return true
+    }
+
+
+    // Need an apply expression - apply myClosure arg arg arg
 
     var mcs *ast.MethodCall
     if p.parseIndentedMethodCall(&mcs) {

@@ -70,6 +70,7 @@ var ProxyType *RType
 var CallableType *RType
 var MultiMethodType *RType
 var MethodType *RType
+var ClosureType *RType
 
 var AnyType *RType
 var NothingType *RType
@@ -136,7 +137,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	CallableType, _ = rt.CreateType("Callable", "", []string{"Text"})
 	MultiMethodType, _ = rt.CreateType("MultiMethod", "", []string{"Callable"})
 	MethodType, _ = rt.CreateType("Method", "", []string{"Callable"})
-	// Do I need a "Closure" type???
+	ClosureType, _ = rt.CreateType("Closure", "", []string{"Callable"})	
 
 	AnyType, _ = rt.CreateType("Any", "", []string{})
 	NothingType, _ = rt.CreateType("Nothing", "", []string{})	

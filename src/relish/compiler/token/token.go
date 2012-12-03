@@ -131,6 +131,7 @@ const (
 	TYPEVAR
 	BOOL
 	NIL
+	CLOSURE	
 	keyword_end
 )
 
@@ -237,6 +238,7 @@ var tokens = [...]string{
 	TYPEVAR: "typevar",
 	BOOL: "BOOL",
 	NIL: "NIL",
+	CLOSURE: "CLOSURE",	
 }
 
 // String returns the string corresponding to the token tok.

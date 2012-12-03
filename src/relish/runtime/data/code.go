@@ -254,6 +254,7 @@ type RMethod struct {
 	Code           *ast.MethodDeclaration // abstract syntax tree
 	NumReturnArgs  int
 	NumLocalVars   int
+	NumFreeVars    int
 	PrimitiveCode  func([]RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
 	File           *ast.File
@@ -572,4 +573,225 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 		}
 	}
 	return method, nil
+}
+
+
+
+
+
+
+
+
+	
+	
+func (rt *RuntimeEnv) CreateClosureMethod(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+	returnValTypes []string,
+	                  returnValNamed bool, numLocalVars int, numFreeVars int) (*RMethod, error) {
+		return rt.CreateClosureMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
+						                  nil,
+						                  nil,
+						                  "",
+						                  "",
+						                  "",
+						                  "",
+						                  returnValTypes,
+						                  returnValNamed, 
+						                  numLocalVars, 
+						                  numFreeVars)
+}	
+
+
+func (rt *RuntimeEnv) CreateClosureMethodGeneral(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+	                  // FROM HERE DOWN IS NEW
+	                  keyWordParameterDefaults map[string] RObject,
+	                  keyWordParameterTypes map[string]string,
+	                  wildcardKeywordsParameterName string,
+	                  wildcardKeywordsParameterType string,
+	                  variadicParameterName string,
+	                  variadicParameterType string,
+	                  // FROM HERE UP IS NEW
+	                  returnValTypes []string,
+	                  returnArgsNamed bool,
+	                  numLocalVars int, 
+	                  numFreeVars int) (*RMethod, error) {
+
+    // Set the package into which the method is to be added.
+    // If it is the default inbuilt functions package and does not exist, create it.
+	pkg := rt.Packages[packageName]
+
+    numReturnArgs := len(returnValTypes)
+
+    // TODO - Have to find and/or create this in the pkg object !!!!!!!!!!!!!!!!!
+    //
+    //
+    //
+    //
+	
+
+	typeTuple, err := rt.getTypeTupleFromTypes(parameterTypes)
+	if err != nil {
+		return nil, err
+	}
+	resultTypeTuple, err := rt.getTypeTupleFromTypes(returnValTypes)
+	if err != nil {
+		return nil, err
+	}	
+	method := &RMethod{
+		multiMethod:    nil,
+		ParameterNames: parameterNames,
+		Signature:      typeTuple,
+		ReturnSignature: resultTypeTuple,
+		ReturnArgsNamed: returnArgsNamed,		
+		NumReturnArgs:  numReturnArgs,
+		NumLocalVars:   numLocalVars,
+		NumFreeVars:    numFreeVars,
+		Pkg:            pkg,
+		File:           file,
+	}
+
+    pkg.ClosureMethods[methodName] = method
+
+	return method, nil
+}
+
+
+/*
+Represents a closure with bound free variables.
+*/
+type RClosure struct {
+	Method *RMethod
+	Bindings []RObject
+}
+
+func (p *RClosure) IsZero() bool {
+	return false
+}
+
+func (m RClosure) String() string {
+	return fmt.Sprintf("%v %v", m.Method.ParameterNames, m.Method.Signature)
+}
+
+func (p *RClosure) Debug() string {
+	s := p.String() + "\n"
+	for _,obj := range p.Bindings {
+		s += "   " + obj.Debug() + "\n"
+	}
+	return s
+}
+
+func (p *RClosure) Type() *RType {
+	return ClosureType
+}
+
+func (p *RClosure) This() RObject {
+	return p
+}
+
+func (p *RClosure) IsUnit() bool {
+	return true
+}
+
+func (p *RClosure) IsCollection() bool {
+	return false
+}
+
+func (p *RClosure) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p *RClosure) UUID() []byte {
+	panic("A Closure cannot have a UUID.")
+	return nil
+}
+
+func (p *RClosure) DBID() int64 {
+	panic("A Closure cannot have a DBID.")
+	return 0
+}
+
+func (p *RClosure) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Closure cannot have a UUID.")
+	return
+}
+
+func (p *RClosure) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Closure cannot have a UUID.")
+	return
+}
+
+func (p *RClosure) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Closure cannot have a UUID.")
+	return
+}
+
+func (p *RClosure) UUIDstr() string {
+	panic("A Closure cannot have a UUID.")
+	return ""
+}
+
+func (p *RClosure) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Closure cannot have a UUID.")
+	return
+}
+
+func (p *RClosure) UUIDabbrev() string {
+	panic("A Closure cannot have a UUID.")
+	return ""
+}
+
+func (p *RClosure) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Closure cannot have a UUID.")
+	return
+}
+
+func (p *RClosure) RemoveUUID() {
+	panic("A Closure does not have a UUID.")
+	return
+}
+
+func (p *RClosure) Flags() int8 {
+	panic("A Closure has no Flags.")
+	return 0
+}
+
+func (p *RClosure) IsDirty() bool {
+	return false
+}
+func (p *RClosure) SetDirty() {
+}
+func (p *RClosure) ClearDirty() {
+}
+
+func (p *RClosure) IsIdReversed() bool {
+	return false
+}
+
+func (p *RClosure) SetIdReversed() {}
+
+func (p *RClosure) ClearIdReversed() {}
+
+func (p *RClosure) IsLoadNeeded() bool {
+	return false
+}
+
+func (p *RClosure) SetLoadNeeded()   {}
+func (p *RClosure) ClearLoadNeeded() {}
+
+func (p *RClosure) IsValid() bool { return true }
+func (p *RClosure) SetValid()     {}
+func (p *RClosure) ClearValid()   {}
+
+func (p *RClosure) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p *RClosure) SetStoredLocally()     {}
+func (p *RClosure) ClearStoredLocally()   {}
+
+func (p *RClosure) IsProxy() bool { return false }
+
+func (o *RClosure) IsTransient() bool { return true }
+
+func (o *RClosure) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
 }

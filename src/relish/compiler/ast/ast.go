@@ -104,6 +104,8 @@ type MethodDeclaration struct {
 	Type         *FuncType       // parameters and results, position of function declaration
 	Body         *BlockStatement // function body; or nil (abstract subroutine interface declaration)
 	NumLocalVars int
+	NumFreeVars int  // may be > 0 if this is a closure method
+	IsClosureMethod bool
 }
 
 
@@ -348,7 +350,7 @@ type (
 		NamePos token.Pos   // identifier position
 		Name    string      // identifier name
 		Obj     *Object     // denoted object; or nil
-		Kind    token.Token // CONST,VAR,TYPE,PACKAGE,FUNC,TYPEVAR	
+		Kind    token.Token // CONST,VAR,TYPE,PACKAGE,FUNC,CLOSURE,TYPEVAR	
 		Offset  int         // if a local var or parameter, the stack offset in the current frame
 	}
 

@@ -579,21 +579,37 @@ func (g *Generator) generateMethods() {
                }
 			   returnValTypes = append(returnValTypes, g.qualifyTypeName(returnArgDecl.Type.Name.Name))               
 		   }
+
+           var rMethod *data.RMethod
+           var err error
+
+           if methodDeclaration.IsClosureMethod {
+               rMethod, err = data.RT.CreateClosureMethod(g.packageName,
+			   	                                          file,
+			   	                                          methodName,
+			   	                                          parameterNames, 
+				                                          parameterTypes, 
+				                                          returnValTypes,
+				                                          returnArgsAreNamed,
+				                                          methodDeclaration.NumLocalVars,
+				                                          methodDeclaration.NumFreeVars )				
+	       } else {
+		       allowRedefinition := false	
+
+			   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
+		   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
 	
-		   allowRedefinition := false	
-	
-		   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
-	   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
-	
-		   rMethod, err := data.RT.CreateMethod(g.packageName,
-		   	                                    file,
-		   	                                    methodName,
-		   	                                    parameterNames, 
-			                                    parameterTypes, 
-			                                    returnValTypes,
-			                                    returnArgsAreNamed,
-			                                    methodDeclaration.NumLocalVars,
-			                                    allowRedefinition  )
+			   rMethod, err = data.RT.CreateMethod(g.packageName,
+			   	                                   file,
+			   	                                   methodName,
+			   	                                   parameterNames, 
+				                                   parameterTypes, 
+				                                   returnValTypes,
+				                                   returnArgsAreNamed,
+				                                   methodDeclaration.NumLocalVars,
+				                                   allowRedefinition  )
+		   }
+		
 		   if err != nil {
 		       // panic(err)
 			   rterr.Stopf("Error creating method %s (%s): %s", methodName, fileNameRoot +".rel", err.Error())	
