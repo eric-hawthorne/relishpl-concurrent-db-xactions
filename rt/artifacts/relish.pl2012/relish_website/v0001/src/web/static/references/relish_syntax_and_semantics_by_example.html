@@ -67,6 +67,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#ControlStatements">Control Statements</a><br/>   
   <a href="#MethodCalls">Method Calls</a><br/>    
   <a href="#MethodDeclarations">Method Declarations</a><br/> 
+  <a href="#Closures">Closures</a><br/>
   <a href="#BuiltinMethods">Built-in Methods</a><br/> 
   <a href="#DataPersistence">Data Persistence</a><br/>   
   <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>  
@@ -1459,6 +1460,79 @@ appear on the same line as the end of the previous statement, separated from it 
       =>  // ...and exit
    moreMethodStuff here</span> 
  </pre></code>
+<br/>
+
+<a name="Closures"><h3>Closures</h3></a>
+<p>
+A closure is a declaration of an anonymous function (method), where such declaration is nested as an expression inside the body of another method. A closure can be passed around as a value in the program, then eventually executed (applied to some	arguments).
+</p>	
+<code><pre>
+myOuterMethod tree TreeNode
+"""
+ A method declaration.
+"""	
+   b = 1  // variables declared in the outer method can be referred to inside
+   c = 2  // the nested anonymous function declaration
+
+   f = func a Int > Int 
+       """
+        Yes, a header comment is mandatory for an anonymous func declaration.
+       """
+          => plus a (times c b)  // b and c are free variables in the nested function
+
+   // f now refers to a function closure which has bound its b to 1 and c to 2.
+
+   // We can now pass f in as an argument to another method
+
+   preorderVisit tree f
+
+
+preorderVisit tree TreeNode f Callable
+"""   
+ Within preorderVisit we can now apply f
+"""
+   ...  // some other code presumably to do with visiting tree nodes
+   ...
+   n = apply f 7
+   print n  // Prints 9
+</pre></code>
+
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+	Function closures (also known as Lambda expressions) are declared as
+	an anonymous method declaration (with the special "func" method name)
+	inside the body of an enclosing method. 
+	They can occur wherever an expression (of type Callable) would be permitted.
+</p>
+<p>	 
+	Inside the body of the nested function declaration (i.e. in the Lambda expression),
+	variables which were declared in the enclosing method body prior to the nested 
+	function declaration can be referred to. Such a use of an enclosing-method
+	variable inside a Lambda expression is known as a free variable of the Lambda expression.
+</p>	
+<p>
+	<b>Semantics:</b>
+</p>	
+<p>
+	A closure (or Lambda expression) is a first-class data object in the language, representing
+	the function with bindings of its free variables. The expression can be assigned to 
+	a variable and/or passed as an argument to another method before the function is 
+	eventually executed by "applying" the lambda expression (the function closure) to 
+	some arguments later on. The special builtin method "apply" takes a closure (Lambda expression) as its
+	first argument and as many additional arguments as the closure needs, and 
+	calls the closure's function on the additional arguments.
+</p>
+<p>
+	The binding of free variables:
+	If an enclosing-method variable is referred to inside the body of a Lambda expression, whatever 
+	value the enclosing-method variable has at the time the Lambda expression is encountered in enclosing-method
+	execution is bound to the variable-name inside the Lambda expression. 
+	That value (or object reference) is now snapshotted and "carried along with" the Lambda expression,
+	to be used whenever the Lambda expression function is eventually executed by being "applied".
+</p>
+
 <br/>
 		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
 		<p>

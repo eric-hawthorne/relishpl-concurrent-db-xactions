@@ -72,8 +72,6 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
 <h4>Definitely Planned Major Features</h4>
 <dl>
-	<dt>Closures</dt> 
-	<dd>Definition of anonymous "lambda" functions. A "lambda" definition forms a closure that captures the current value (when the definition is encountered by the running program) of local variables/parameters of the enclosing method which are referenced inside the closure body. The closure is a first-class object which can be applied (evaluated) anywhere else in the program at any future time, as long as reference to the closure is maintained.</dd>
 
 	<dt>Transactions</dt> 
 	<dd>Implementation of deferred-commit and abortable transactions in the transparent local persistence support. The tricky bit is how this interacts with relish's in-memory cache of persistent objects. It would be bad to have a db transaction abort but the in-memory cached objects retain their changed state (where the changes were made in the context of the transaction that is now aborted). So in-memory objects need to be declarable (automatically by a transaction abort) as dirty and needing to be refreshed from the db. <br/>One likely decision is that web handler method executions will automatically be one-db-transaction-per-http-request</dd>
@@ -86,6 +84,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
 	<dt>Schema Migration</dt> 
 	<dd>Schema migration support will be provided by the language environment, so that data in an artifact's local database can be upgraded when data type and relation schemas are changed in relish source code. Schema migration will take place by means of relish-code methods written by the developer. The relish runtime environment will detect schema-migration code via strong conventions for the naming and placement of such code. The runtime environment will also detect that there is a need for schema migration code to be run, due to a detected difference in the database's schema version compared to the loaded relish code's schema version. Data reversion to compatibility with earlier schema versions may also be supported.</dd>
+	
+	<dt>Type Inference and Stricter Type Checking</dt> 
+	<dd>Currently, type checking is limited and dynamic (checked at program runtime). Collections have element-type specifications and potential elements are checked for type-compatibility as they are inserted into the collection. Also, methods are dispatched based on the runtime (dynamic) type of each argument to the method call. If there is no method that can handle the type tuple of the arguments, that is a type compatibility error. The language however has been designed to accommodate stricter type checking, including some static type checking and type inference. Some of this may eventually be implemented.</dd>	
 	
 	<dt>Variadic functions</dt> 
 	<dd>A method will be able to be declared with an extra parameter e.g. <code>...a SomeType</code> whose type will be a list of SomeType. This argument will hold any number of additional arguments supplied to the method after required positional parameter slots have
