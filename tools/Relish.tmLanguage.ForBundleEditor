@@ -54,7 +54,7 @@
 		};
 		multiline_string = {
 			begin = '[^"]+(""" *$)';
-			end = '(^""" *$)';
+			end = '(""" *$)';
 			beginCaptures = { 1 = { name = 'string.quoted.triple.relish'; }; };
 			endCaptures = { 1 = { name = 'string.quoted.triple.relish'; }; };
 			patterns = (
