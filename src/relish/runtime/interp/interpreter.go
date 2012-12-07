@@ -1387,7 +1387,7 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	} else {
 		// TODO: Will have to supply the Thread to the PrimitiveCode function, or the thread's DbThread
 		// Which must firstly be an interface in persist_interface file.
-		objs := m.PrimitiveCode(args)
+		objs := m.PrimitiveCode(t, args)
 		n := len(objs)
 		for j, obj := range objs {
 			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
@@ -2405,7 +2405,8 @@ If parent is nil, something else must take care of initializing
 the ExecutingMethod and ExecutingPackage attributes of the new thread.
 */
 func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
-	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil}
+	dbt := &dbThread{db:i.rt.DB()}
+	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionthread: dbt}
 	if parent != nil {
 		t.ExecutingMethod = parent.ExecutingMethod
 		t.ExecutingPackage = parent.ExecutingPackage
@@ -2431,6 +2432,9 @@ type Thread struct {
 
 	ExecutingMethod *RMethod       // Shortcut for dispatch efficiency
 	ExecutingPackage *RPackage   // Shortcut for dispatch efficiency
+
+	dbConnectionThread *dbThread  // Manages serialized and transactional access to the database in
+	                              // multi-threaded environment
 
     // This may be temporary - it is used for generators inside collection constructors, but may
     // be replaced by proper go-routine-and-channel generators or closures.
@@ -2586,3 +2590,218 @@ func (t *Thread) Dump() {
 func (t *Thread) CodeFile() *ast.File {
    return t.ExecutingMethod.CodeFile()
 }
+
+/*
+The package context of the executing method.
+*/
+func (t *Thread) Package() *RPackage {
+	return t.ExecutingPackage
+}
+	
+/*
+The executing method.
+*/
+func (t *Thread) Method() *RMethod {
+	return t.ExecutingMethod
+}
+
+/*
+The DBThread which can execute db queries in a serialized fashion in a multi-threaded environment.
+*/
+func (t *Thread) DB() {
+   return t.dbConnectionThread
+}
+
+
+
+
+
+/*
+    Has a reference to the DB. 
+    Executes DB queries in a serialized fashion in a multi-threaded environment.
+    Also manages database transactions.
+*/
+type dbThread struct {
+	db DB  // the database connection-managing object
+
+	acquiringDbLock bool  // This thread is in the process of acquiring and locking the dbMutex 
+	                      // (but may still be blocked waiting for the mutex to be unlocked by another thread)
+	haveDbLock bool  // This thread owns and has locked the dbMutex.
+	                 // Note: thread "ownership" of dbMutex is an abstract concept imposed by this dbThread s/w,
+	                 // because Go Mutexes are not inherently owned by any particular goroutine.
+
+
+    // !!!!!!!!!!!!!!!!!!!!!!
+    //
+	// TODO TODO TODO We are going to need an int to represent the number of nested times this thread has
+	// tried to lock the mutex. We only release (unlock) it when back down to 1, otherwise we just
+	// decrement the number. 
+	//
+	// !!!!!!!!!!!!!!!!!!!!!!
+}
+
+/*
+Grabs the dbMutex when it can (blocking until then) then executes a BEGIN IMMEDIATE TRANSACTION sql statement.
+Does not unlock the dbMutex or release this thread's ownership of the mutex. 
+Use CommitTransaction or RollbackTransaction to do that.
+*/
+func (dbt * dbThread) BeginTransaction() (err error) {
+   dbt.UseDB()	
+   err = dbt.db.BeginTransaction() 
+   if err != nil {
+   	   dbt.ReleaseDB()
+   }
+}
+
+/*
+Executes a COMMIT TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
+of the mutex.
+If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
+
+In the error case, the correct behaviour is to either retry the commit, do a rollback, or just call ReleaseDB to
+unlock the dbMutex and release this thread's ownership of the mutex.
+*/
+func (dbt * dbThread) CommitTransaction() (err error) {
+	err = dbt.db.CommitTransaction()
+	if err != nil {
+	   dbt.ReleaseDB()
+    }
+}
+
+/*
+Executes a ROLLBACK TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
+of the mutex.
+If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
+
+In the error case, the correct behaviour is to either retry the rollback, or just call ReleaseDB to
+unlock the dbMutex and release this thread's ownership of the mutex.
+*/
+func (dbt * dbThread) RollbackTransaction() (err error) {
+	err = dbt.db.RollbackTransaction()
+	if err != nil {
+		dbt.ReleaseDB()
+	}
+}
+
+/*
+If the thread does not already own the dbMutex, lock the mutex and
+flag that this thread owns it.
+Used to ensure exlusive access to db for single db reads / writes 
+for which we don't want to manually start a long-running transaction.
+
+This method will block until no other DBThread is using the database.
+*/
+func (dbt * dbThread) UseDB() {
+   if ! (dbt.haveDbLock || dbt.acquiringDbLock) {
+   	   dbt.acquiringDbLock = true
+   	   dbt.db.UseDB()
+   	   dbt.haveDbLock = true
+   	   dbt.acquiringDbLock = false
+   }
+}
+
+/*
+If the thread owns the dbMutex, unlock the mutex and
+flag that this thread no longer owns it.
+*/	
+func (dbt * dbThread) ReleaseDB() {
+	if haveDbLock {
+		dbt.db.ReleaseDB()
+		dbt.haveDbLock = false
+	}
+}
+
+
+
+func (dbt * dbThread) EnsureTypeTable(typ *RType) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.EnsureTypeTable(typ)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) QueueStatements(statementGroup string) {
+   dbt.UseDB()
+   dbt.db.QueueStatements(statementGroup)
+   dbt.ReleaseDB()
+}
+
+func (dbt * dbThread) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistSetAttr(obj, attr, val, attrHadValue)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistAddToAttr(obj, attr, val, insertedIndex)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistRemoveAttr(obj, attr)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistClearAttr(obj, attr)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) EnsurePersisted(obj RObject) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.EnsurePersisted(obj)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) EnsureAttributeAndRelationTables(t *RType) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.EnsureAttributeAndRelationTables(t)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) ObjectNameExists(name string) (found bool, err error) {
+   dbt.UseDB()
+   found,err = dbt.db.ObjectNameExists(name)
+   dbt.ReleaseDB()
+}
+
+func (dbt * dbThread) NameObject(obj RObject, name string) {
+   dbt.UseDB()
+   dbt.db.NameObject(obj, name)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) RecordPackageName(name string, shortName string) {
+   dbt.UseDB()
+   dbt.db.RecordPackageName(name, shortName)
+   dbt.ReleaseDB()   	
+}
+
+func (dbt * dbThread) FetchByName(name string, radius int) (obj RObject, err error) {
+   dbt.UseDB()
+   obj, err = dbt.db.FetchByName(name, radius)   
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) Fetch(id int64, radius int) (obj RObject, err error) {
+   dbt.UseDB()
+   obj, err = dbt.db.Fetch(id, radius)
+   dbt.ReleaseDB()   
+}
+
+func (dbt * dbThread) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
+   dbt.UseDB()
+   val, err = dbt.db.FetchAttribute(objId, obj, attr, radius)
+   dbt.ReleaseDB()   
+}
+
+
+

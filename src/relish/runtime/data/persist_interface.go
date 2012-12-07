@@ -34,13 +34,58 @@ type DB interface {
 	
     FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) 
 
+    /*
+    Close the connection to the database.
+    */
 	Close()
+
+
+	/*
+    Begins an immediate-mode database transaction.	
+    Implementations may also first lock program access to the database to ensure a single goroutine at a time
+    runs a database transaction and no other goroutines interact with the database at all during the transaction.
+	*/
+	BeginTransaction() (err error)
+
+	/*
+    Implementations may also unlock program access to the database to allow other goroutines to use the database.
+	*/
+	CommitTransaction() (err error)
+
+	/*
+    Implementations may also unlock program access to the database to allow other goroutines to use the database.
+	*/
+	RollbackTransaction() (err error)
+	
+	/*
+	Lock the dbMutex.
+	Used to ensure exlusive access to db for single db reads / writes 
+	for which we don't want to manually start a long-running transaction.
+	(Or may also be used in multi-threaded extensions of the Begin,Commit,RollbackTransaction methods.)
+
+	This method will block until no other goroutine is using the database.
+	*/
+	UseDB()
+	
+	/*
+	Unlock the dbMutex.
+	*/	
+	ReleaseDB()
 }
 
 
 /*
+A single "thread" of execution of the relish interpreter, complete with its own relish data stack (hidden).
+This interface provides access to the package whose method is currently executing, 
+to the actual RMethod that is currently executing, and to the DBThread which can execute
+database queries in a multi-threaded context. 
+
+Note that each InterpreterThread actually corresponds to one goroutine. Goroutines are lightweight userspace
+threads in Go which may be cooperative coroutines or may be mapped onto separate processor threads and/or cores.
+Typically, multiple goroutines will execute in a single OS thread, but if multiple cores are available and
+Go is configured to use them, then groups of goroutines may be apportioned across multiple OS-threads and cores. 
 */
-type Thread interface {
+type InterpreterThread interface {
 	/*
 	The package context of the executing method.
 	*/
@@ -50,13 +95,42 @@ type Thread interface {
 	The executing method.
 	*/
 	Method() *RMethod
+
+    /*
+    A db connection thread. Used to serialize access to the database in a multi-threaded environment,
+    and to manage database transactions.
+    */
+	DB() DB
 }
 
 type DBThread interface {
 	DB
-	Thread
+
+	/*
+	Grabs the dbMutex when it can (blocking until then) then executes a BEGIN IMMEDIATE TRANSACTION sql statement.
+	Does not unlock the dbMutex or release this thread's ownership of the mutex. 
+	Use CommitTransaction or RollbackTransaction to do that.
+	*/
 	BeginTransaction() (err error)
+
+	/*
+	Executes a COMMIT TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
+	of the mutex.
+	If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
+
+	In the error case, the correct behaviour is to either retry the commit, do a rollback, or just call ReleaseDB to
+	unlock the dbMutex and release this thread's ownership of the mutex.
+	*/
 	CommitTransaction() (err error)
+
+	/*
+	Executes a ROLLBACK TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
+	of the mutex.
+	If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
+
+	In the error case, the correct behaviour is to either retry the rollback, or just call ReleaseDB to
+	unlock the dbMutex and release this thread's ownership of the mutex.
+	*/
 	RollbackTransaction() (err error)
 	
 	/*
@@ -64,8 +138,10 @@ type DBThread interface {
 	flag that this thread owns it.
 	Used to ensure exlusive access to db for single db reads / writes 
 	for which we don't want to manually start a long-running transaction.
+
+	This method will block until no other DBThread is using the database.
 	*/
-	GrabDB()
+	UseDB()
 	
 	/*
 	If the thread owns the dbMutex, unlock the mutex and

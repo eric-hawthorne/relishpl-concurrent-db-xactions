@@ -1442,7 +1442,7 @@ replace s String old String new String n Int > String
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
 
-func builtinPrint(objects []RObject) []RObject {
+func builtinPrint(t InterpreterThread, objects []RObject) []RObject {
 	for i, obj := range objects {
 		if i > 0 {
 			fmt.Print(" ")
@@ -1458,7 +1458,7 @@ func builtinPrint(objects []RObject) []RObject {
 	return nil
 }
 
-func builtinInput(objects []RObject) []RObject {
+func builtinInput(t InterpreterThread, objects []RObject) []RObject {
    message := string(objects[0].(String))	
    fmt.Print(message)
    result,err := buf.ReadString('\n')
@@ -1469,12 +1469,12 @@ func builtinInput(objects []RObject) []RObject {
    return []RObject{String(result)}
 }
 
-func builtinDbg(objects []RObject) []RObject {
+func builtinDbg(t InterpreterThread, objects []RObject) []RObject {
    fmt.Println(objects[0].Debug())
    return []RObject{}
 }
 
-func builtinDebug(objects []RObject) []RObject {
+func builtinDebug(t InterpreterThread, objects []RObject) []RObject {
    s := objects[0].Debug()
    return []RObject{String(s)}
 }
@@ -1488,7 +1488,7 @@ TODO !!!
 Really have to study which kinds of equality we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
 */
-func builtinEq(objects []RObject) []RObject {
+func builtinEq(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1569,7 +1569,7 @@ func builtinEq(objects []RObject) []RObject {
 /*
 A primitive is not eq to a non-primitive.
 */
-func builtinEqNo(objects []RObject) []RObject {	
+func builtinEqNo(t InterpreterThread, objects []RObject) []RObject {	
 	return []RObject{Bool(false)}
 }
 
@@ -1577,7 +1577,7 @@ func builtinEqNo(objects []RObject) []RObject {
 Non-primitives evaluate to eq if their RObject interfaces are == in Go.
 This is probably not what we want eventually.
 */
-func builtinEqObj(objects []RObject) []RObject {
+func builtinEqObj(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	val := Bool(obj1 == obj2)
@@ -1592,7 +1592,7 @@ TODO !!!
 Really have to study which kinds of order we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
 */
-func builtinLtNum(objects []RObject) []RObject {
+func builtinLtNum(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1636,11 +1636,11 @@ func builtinLtNum(objects []RObject) []RObject {
 }
 
 
-func builtinLteNum(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinLteNum(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinLtNum(objects) 
+	return builtinLtNum(t,objects) 
 }
 
 
@@ -1650,7 +1650,7 @@ func builtinLteNum(objects []RObject) []RObject {
 /*
 Less-than operator for time types.
 */
-func builtinLtTime(objects []RObject) []RObject {
+func builtinLtTime(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1668,11 +1668,11 @@ func builtinLtTime(objects []RObject) []RObject {
 }
 
 
-func builtinLteTime(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinLteTime(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinLtTime(objects) 
+	return builtinLtTime(t,objects) 
 }
 
 
@@ -1682,7 +1682,7 @@ TODO !!!
 Really have to study which kinds of order we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
 */
-func builtinLtStr(objects []RObject) []RObject {
+func builtinLtStr(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0].(String)
 	obj2 := objects[1].(String)
 	var val RObject
@@ -1691,11 +1691,11 @@ func builtinLtStr(objects []RObject) []RObject {
 }
 
 
-func builtinLteStr(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinLteStr(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinLtStr(objects) 
+	return builtinLtStr(t,objects) 
 }
 
 
@@ -1705,7 +1705,7 @@ TODO !!!
 Really have to study which kinds of order we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
 */
-func builtinGtNum(objects []RObject) []RObject {
+func builtinGtNum(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1749,18 +1749,18 @@ func builtinGtNum(objects []RObject) []RObject {
 }
 
 
-func builtinGteNum(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinGteNum(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinGtNum(objects) 
+	return builtinGtNum(t,objects) 
 }
 
 
 /*
 Greater-than operator for time types.
 */
-func builtinGtTime(objects []RObject) []RObject {
+func builtinGtTime(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1778,11 +1778,11 @@ func builtinGtTime(objects []RObject) []RObject {
 }
 
 
-func builtinGteTime(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinGteTime(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinGtTime(objects) 
+	return builtinGtTime(t,objects) 
 }
 
 
@@ -1792,7 +1792,7 @@ TODO !!!
 Really have to study which kinds of order we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
 */
-func builtinGtStr(objects []RObject) []RObject {
+func builtinGtStr(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0].(String)
 	obj2 := objects[1].(String)
 	var val RObject
@@ -1801,11 +1801,11 @@ func builtinGtStr(objects []RObject) []RObject {
 }
 
 
-func builtinGteStr(objects []RObject) []RObject {
-	if bool( (builtinEq(objects))[0].(Bool)) {
+func builtinGteStr(t InterpreterThread, objects []RObject) []RObject {
+	if bool( (builtinEq(t,objects))[0].(Bool)) {
 		return []RObject{Bool(true)}
 	}
-	return builtinGtStr(objects) 
+	return builtinGtStr(t,objects) 
 }
 
 
@@ -1816,7 +1816,7 @@ func builtinGteStr(objects []RObject) []RObject {
 Multiply operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinTimes(objects []RObject) []RObject {
+func builtinTimes(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -1865,7 +1865,7 @@ func builtinTimes(objects []RObject) []RObject {
 Arithmetic Addition operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinPlus(objects []RObject) []RObject {
+func builtinPlus(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	return []RObject{plus(obj1,obj2)}
@@ -1936,7 +1936,7 @@ var ListOfUIntType *RType
 var SetOfUIntType *RType
 
 */
-func builtinSum(objects []RObject) []RObject {
+func builtinSum(t InterpreterThread, objects []RObject) []RObject {
 	collection := objects[0].(RCollection)
 	t := collection.ElementType()
 	var n RObject	
@@ -1973,7 +1973,7 @@ func builtinSum(objects []RObject) []RObject {
 Arithmetic Subtraction operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinMinus(objects []RObject) []RObject {
+func builtinMinus(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -2021,7 +2021,7 @@ func builtinMinus(objects []RObject) []RObject {
 Arithmetic division operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinDiv(objects []RObject) []RObject {
+func builtinDiv(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -2069,7 +2069,7 @@ func builtinDiv(objects []RObject) []RObject {
 Arithmetic modulo operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinMod(objects []RObject) []RObject {
+func builtinMod(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	obj2 := objects[1]
 	var val RObject
@@ -2104,7 +2104,7 @@ func builtinMod(objects []RObject) []RObject {
 Numeric negation operator. Note: Result type varies (is covariant with argument type variation). All results are Numeric but result is a different
 subtype of numeric depending on the argument types.
 */
-func builtinNeg(objects []RObject) []RObject {
+func builtinNeg(t InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
 	var val RObject
 	switch obj1.(type) {
@@ -2131,7 +2131,7 @@ func builtinNeg(objects []RObject) []RObject {
 //
 // Will throw a runtime error and halt the relish program if the location string is invalid.
 //
-func builtinTimeNow(objects []RObject) []RObject {
+func builtinTimeNow(t InterpreterThread, objects []RObject) []RObject {
 	loc := string(objects[0].(String))
     location,err := time.LoadLocation(loc) 
     if err != nil {
@@ -2144,7 +2144,7 @@ func builtinTimeNow(objects []RObject) []RObject {
 
 // sleep durationNs Int
 //
-func builtinSleep(objects []RObject) []RObject {
+func builtinSleep(t InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))
     time.Sleep(d)
 	return []RObject{}
@@ -2153,7 +2153,7 @@ func builtinSleep(objects []RObject) []RObject {
 
 // tick durationNs Int > Inchannel of Time
 //
-func builtinTick(objects []RObject) []RObject {
+func builtinTick(t InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))
     ch := time.Tick(d)
 
@@ -2170,7 +2170,7 @@ func builtinTick(objects []RObject) []RObject {
 
 // plus t Time durationNs Int > Time
 //
-func builtinTimePlus(objects []RObject) []RObject {
+func builtinTimePlus(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
 	d := time.Duration(int64(objects[1].(Int)))
     t2 := t.Add(d)
@@ -2179,7 +2179,7 @@ func builtinTimePlus(objects []RObject) []RObject {
 
 // addDate t Time years Int months Int days Int > Time
 //
-func builtinTimeAddDate(objects []RObject) []RObject {
+func builtinTimeAddDate(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
 	years := int(objects[1].(Int))
 	months := int(objects[2].(Int))
@@ -2190,7 +2190,7 @@ func builtinTimeAddDate(objects []RObject) []RObject {
 
 // minus t Time durationNs Int > Time
 //
-func builtinTimeMinusDuration(objects []RObject) []RObject {
+func builtinTimeMinusDuration(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))	
 	d := time.Duration(int64(objects[1].(Int)))
     t2 := t.Add(-d)
@@ -2199,7 +2199,7 @@ func builtinTimeMinusDuration(objects []RObject) []RObject {
 
 // minus t2 Time t1 Time > durationNs Int
 //
-func builtinTimeMinusTime(objects []RObject) []RObject {
+func builtinTimeMinusTime(t InterpreterThread, objects []RObject) []RObject {
 	t2 := time.Time(objects[0].(RTime))
 	t1 := time.Time(objects[1].(RTime))	
     d := t2.Sub(t1)
@@ -2208,7 +2208,7 @@ func builtinTimeMinusTime(objects []RObject) []RObject {
 
 // since t Time > durationNs Int
 //
-func builtinTimeSince(objects []RObject) []RObject {
+func builtinTimeSince(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     d := time.Since(t)
 	return []RObject{Int(int64(d))}		
@@ -2218,7 +2218,7 @@ func builtinTimeSince(objects []RObject) []RObject {
 // 
 // Will throw a runtime error and halt the relish program if the location string is invalid.
 //
-func builtinTimeIn(objects []RObject) []RObject {
+func builtinTimeIn(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
 	loc := string(objects[1].(String))	
     location,err := time.LoadLocation(loc) 
@@ -2231,7 +2231,7 @@ func builtinTimeIn(objects []RObject) []RObject {
 
 // hours n Int > durationNs Int
 // 
-func builtinHours(objects []RObject) []RObject {
+func builtinHours(t InterpreterThread, objects []RObject) []RObject {
 	h := int64(objects[0].(Int))	
 	d := h * 3600 * 1000000000 
 	return []RObject{Int(d)}		
@@ -2239,7 +2239,7 @@ func builtinHours(objects []RObject) []RObject {
 
 // minutes n Int > durationNs Int
 // 
-func builtinMinutes(objects []RObject) []RObject {
+func builtinMinutes(t InterpreterThread, objects []RObject) []RObject {
 	m := int64(objects[0].(Int))	
 	d := m * 60 * 1000000000 
 	return []RObject{Int(d)}		
@@ -2247,7 +2247,7 @@ func builtinMinutes(objects []RObject) []RObject {
 
 // seconds n Int > durationNs Int
 // 
-func builtinSeconds(objects []RObject) []RObject {
+func builtinSeconds(t InterpreterThread, objects []RObject) []RObject {
 	s := int64(objects[0].(Int))	
 	d := s * 1000000000 	
 	return []RObject{Int(d)}		
@@ -2255,7 +2255,7 @@ func builtinSeconds(objects []RObject) []RObject {
 
 // milliseconds n Int > durationNs Int
 // 
-func builtinMilliseconds(objects []RObject) []RObject {
+func builtinMilliseconds(t InterpreterThread, objects []RObject) []RObject {
 	ms := int64(objects[0].(Int))	
 	d := ms * 1000000 	
 	return []RObject{Int(d)}		
@@ -2265,7 +2265,7 @@ func builtinMilliseconds(objects []RObject) []RObject {
 
 // date t Time > year Int month Int day Int
 //
-func builtinTimeDate(objects []RObject) []RObject {
+func builtinTimeDate(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     year, month, day := t.Date()
 	return []RObject{Int(year),Int(month),Int(day)}
@@ -2273,7 +2273,7 @@ func builtinTimeDate(objects []RObject) []RObject {
 
 // clock t Time > hour Int min Int sec Int
 //
-func builtinTimeClock(objects []RObject) []RObject {
+func builtinTimeClock(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     hour, min, sec := t.Clock()
 	return []RObject{Int(hour),Int(min),Int(sec)}
@@ -2284,7 +2284,7 @@ func builtinTimeClock(objects []RObject) []RObject {
 //  0..31
 // """
 //
-func builtinTimeDay(objects []RObject) []RObject {
+func builtinTimeDay(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     day := t.Day()
 	return []RObject{Int(day)}
@@ -2295,7 +2295,7 @@ func builtinTimeDay(objects []RObject) []RObject {
 //  0..23
 // """
 //
-func builtinTimeHour(objects []RObject) []RObject {
+func builtinTimeHour(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     hour := t.Hour()
 	return []RObject{Int(hour)}
@@ -2306,7 +2306,7 @@ func builtinTimeHour(objects []RObject) []RObject {
 //  0..59
 // """
 //
-func builtinTimeMinute(objects []RObject) []RObject {
+func builtinTimeMinute(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     min := t.Minute()
 	return []RObject{Int(min)}
@@ -2317,7 +2317,7 @@ func builtinTimeMinute(objects []RObject) []RObject {
 //  0..59
 // """
 //
-func builtinTimeSecond(objects []RObject) []RObject {
+func builtinTimeSecond(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     sec := t.Second()
 	return []RObject{Int(sec)}
@@ -2328,7 +2328,7 @@ func builtinTimeSecond(objects []RObject) []RObject {
 //  0..999999999
 // """
 //
-func builtinTimeNanosecond(objects []RObject) []RObject {
+func builtinTimeNanosecond(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     nsec := t.Nanosecond()
 	return []RObject{Int(nsec)}
@@ -2339,7 +2339,7 @@ func builtinTimeNanosecond(objects []RObject) []RObject {
 //  0..6  Sunday = 0 
 // """
 //
-func builtinTimeWeekday(objects []RObject) []RObject {
+func builtinTimeWeekday(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     wd := t.Weekday()
 	return []RObject{Int(int64(int(wd)))}
@@ -2347,7 +2347,7 @@ func builtinTimeWeekday(objects []RObject) []RObject {
 
 // year t Time >  Int  
 //
-func builtinTimeYear(objects []RObject) []RObject {
+func builtinTimeYear(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     year := t.Year()
 	return []RObject{Int(year)}
@@ -2358,7 +2358,7 @@ func builtinTimeYear(objects []RObject) []RObject {
 //  1..12  January = 1
 // """
 //
-func builtinTimeMonth(objects []RObject) []RObject {
+func builtinTimeMonth(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     month := t.Month()
 	return []RObject{Int(int64(int(month)))}
@@ -2370,7 +2370,7 @@ func builtinTimeMonth(objects []RObject) []RObject {
 //  EST secondsEastOfUTC
 // """  
 //
-func builtinTimeZone(objects []RObject) []RObject {
+func builtinTimeZone(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
     zoneName,offset := t.Zone()
 	return []RObject{String(zoneName),Int(offset)}
@@ -2381,7 +2381,7 @@ func builtinTimeZone(objects []RObject) []RObject {
 //  Like Go time layouts (http://golang.org/pkg/time/)
 // """  
 //
-func builtinTimeFormat(objects []RObject) []RObject {
+func builtinTimeFormat(t InterpreterThread, objects []RObject) []RObject {
 	t := time.Time(objects[0].(RTime))
 	layout := string(objects[1].(String))	
     s := t.Format(layout)
@@ -2396,7 +2396,7 @@ func builtinTimeFormat(objects []RObject) []RObject {
 // 	
 // duration hours Int minutes Int seconds Int nanoseconds Int > durationNs Int
 // 
-func builtinDuration(objects []RObject) []RObject {
+func builtinDuration(t InterpreterThread, objects []RObject) []RObject {
 	var h,m,s,ns int64
 	h = int64(objects[0].(Int))
 	m = int64(objects[1].(Int))
@@ -2410,25 +2410,25 @@ func builtinDuration(objects []RObject) []RObject {
 	return []RObject{Int(d)}	
 }		
 
-func builtinHoursEquivalentOf(objects []RObject) []RObject {
+func builtinHoursEquivalentOf(t InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))	
 	h := d.Hours()
     return []RObject{Float(h)}	
 }
 
-func builtinMinutesEquivalentOf(objects []RObject) []RObject {
+func builtinMinutesEquivalentOf(t InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))	
 	m := d.Minutes()	
     return []RObject{Float(m)}		
 }
 
-func builtinSecondsEquivalentOf(objects []RObject) []RObject {
+func builtinSecondsEquivalentOf(t InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))	
 	s := d.Seconds()
     return []RObject{Float(s)}		
 }
 
-func builtinTimeParts(objects []RObject) []RObject {
+func builtinTimeParts(t InterpreterThread, objects []RObject) []RObject {
 	d := int64(objects[0].(Int))
     h := d / (3600 * 1000000000)	
     excess := d % (3600 * 1000000000)	
@@ -2458,7 +2458,7 @@ Q: Is it an error to dub the same object more than once? Even if same name? Mayb
 it indicates that the programmer did not know the object was already persistent.
 
 */
-func builtinDub(objects []RObject) []RObject {
+func builtinDub(t InterpreterThread, objects []RObject) []RObject {
 
 	relish.EnsureDatabase()
 	obj := objects[0]
@@ -2501,7 +2501,7 @@ Right now is using radius=0 meaning fetch the object with its primitive (and non
 currently fetched from DB lazily.
 
 */
-func builtinSummon(objects []RObject) []RObject {
+func builtinSummon(t InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	name := objects[0].String()
 
@@ -2521,7 +2521,7 @@ if exists "FEC 092"
 
 
 */
-func builtinExists(objects []RObject) []RObject {
+func builtinExists(t InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	name := objects[0].String()
 
@@ -2540,7 +2540,7 @@ func builtinExists(objects []RObject) []RObject {
 Boolean logic not. 
 Return type is Bool
 */
-func builtinNot(objects []RObject) []RObject {
+func builtinNot(t InterpreterThread, objects []RObject) []RObject {
 	return []RObject{Bool(objects[0].IsZero())}
 }
 
@@ -2551,7 +2551,7 @@ Returns false if any argument is zero,
 otherwise returns the last argument.
 Return type is Any
 */
-func builtinAnd(objects []RObject) []RObject {
+func builtinAnd(t InterpreterThread, objects []RObject) []RObject {
 
     var obj RObject
 	for _,obj = range objects {
@@ -2569,7 +2569,7 @@ Returns false if all arguments are zero,
 otherwise returns the first argument which is non-zero.
 Return type is Any
 */
-func builtinOr(objects []RObject) []RObject {
+func builtinOr(t InterpreterThread, objects []RObject) []RObject {
 
     var obj RObject
 	for _,obj = range objects {
@@ -2585,27 +2585,27 @@ func builtinOr(objects []RObject) []RObject {
 ///////////////////////////////////////////////////////////////////////  
 // Collection functions
 
-func builtinLen(objects []RObject) []RObject {
+func builtinLen(t InterpreterThread, objects []RObject) []RObject {
 	coll := objects[0].(RCollection)
 	var val RObject
 	val = Int(coll.Length())
 	return []RObject{val}
 }
 
-func builtinCap(objects []RObject) []RObject {
+func builtinCap(t InterpreterThread, objects []RObject) []RObject {
 	coll := objects[0].(RCollection)
 	var val RObject
 	val = Int(coll.Cap())
 	return []RObject{val}
 }
 
-func builtinContains(objects []RObject) []RObject {
+func builtinContains(t InterpreterThread, objects []RObject) []RObject {
 	coll := objects[0].(RCollection)
     found := coll.Contains(objects[1])
 	return []RObject{Bool(found)}
 }
 
-func builtinClear(objects []RObject) []RObject {
+func builtinClear(t InterpreterThread, objects []RObject) []RObject {
 	coll,isRemovableCollection := objects[0].(RemovableCollection)
     if ! isRemovableCollection {
     	rterr.Stop("Can only apply clear to a mutable,clearable collection or map.")
@@ -2625,7 +2625,7 @@ val = from ch
 
 TODO DUMMY Implementation 
 */
-func builtinFrom(objects []RObject) []RObject {
+func builtinFrom(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(RInChannel)
     val := c.From()
 	return []RObject{val}
@@ -2651,51 +2651,51 @@ func builtinTo(objects []RObject) []RObject {
 }
 */
 
-func builtinChannelLen(objects []RObject) []RObject {
+func builtinChannelLen(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*Channel)
 	var val RObject
 	val = Int(c.Length())
 	return []RObject{val}
 }
 
-func builtinChannelCap(objects []RObject) []RObject {
+func builtinChannelCap(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*Channel)
 	var val RObject
 	val = Int(c.Cap())
 	return []RObject{val}
 }
 
-func builtinMutexLock(objects []RObject) []RObject {
+func builtinMutexLock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*Mutex)
 	c.Lock()
 	return []RObject{}
 }
 
-func builtinMutexUnlock(objects []RObject) []RObject {
+func builtinMutexUnlock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*Mutex)
 	c.Unlock()
 	return []RObject{}
 }
 
-func builtinRWMutexLock(objects []RObject) []RObject {
+func builtinRWMutexLock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
 	c.Lock()
 	return []RObject{}
 }
 
-func builtinRWMutexUnlock(objects []RObject) []RObject {
+func builtinRWMutexUnlock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
 	c.Unlock()
 	return []RObject{}
 }
 
-func builtinRWMutexRLock(objects []RObject) []RObject {
+func builtinRWMutexRLock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
 	c.RLock()
 	return []RObject{}
 }
 
-func builtinRWMutexRUnlock(objects []RObject) []RObject {
+func builtinRWMutexRUnlock(t InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
 	c.RUnlock()
 	return []RObject{}
@@ -2706,7 +2706,7 @@ func builtinRWMutexRUnlock(objects []RObject) []RObject {
 
 // length in bytes
 
-func builtinStringLen(objects []RObject) []RObject {
+func builtinStringLen(t InterpreterThread, objects []RObject) []RObject {
 	obj := objects[0].(String)
     s := string(obj)
 	var val RObject
@@ -2716,7 +2716,7 @@ func builtinStringLen(objects []RObject) []RObject {
 
 // count of unicode codepoints
 
-func builtinStringNumCodePoints(objects []RObject) []RObject {
+func builtinStringNumCodePoints(t InterpreterThread, objects []RObject) []RObject {
 	obj := objects[0].(String)
     s := string(obj)
 	var val RObject
@@ -2730,7 +2730,7 @@ contains operator (strings).
 contains s String substr String > Bool	
 
 */
-func builtinStringContains(objects []RObject) []RObject {
+func builtinStringContains(t InterpreterThread, objects []RObject) []RObject {
 	s := objects[0].(String)
 	substr := objects[1].(String)
 	var val RObject
@@ -2738,7 +2738,7 @@ func builtinStringContains(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
-func builtinStringHasPrefix(objects []RObject) []RObject {
+func builtinStringHasPrefix(t InterpreterThread, objects []RObject) []RObject {
 	s := objects[0].(String)
 	substr := objects[1].(String)
 	var val RObject
@@ -2746,7 +2746,7 @@ func builtinStringHasPrefix(objects []RObject) []RObject {
 	return []RObject{val}
 }
 
-func builtinStringHasSuffix(objects []RObject) []RObject {
+func builtinStringHasSuffix(t InterpreterThread, objects []RObject) []RObject {
 	s := objects[0].(String)
 	substr := objects[1].(String)
 	var val RObject
@@ -2768,7 +2768,7 @@ replace s String old String new String n Int > String
 """
 */
 
-func builtinStringReplace(objects []RObject) []RObject {
+func builtinStringReplace(t InterpreterThread, objects []RObject) []RObject {
     var n int = -1
 	s := string(objects[0].(String))
 	oldPiece := string(objects[1].(String))
@@ -2794,7 +2794,7 @@ join a []Any sep String > String
 """
 */
 
-func builtinStringJoin(objects []RObject) []RObject {
+func builtinStringJoin(t InterpreterThread, objects []RObject) []RObject {
     list := objects[0].(List)
     objSlice := list.AsSlice()
     stringSlice := make([]string,len(objSlice))
@@ -2840,7 +2840,7 @@ result = template templateString singleArgObject
 */
 
 
-func builtinStringFill(objects []RObject) []RObject {
+func builtinStringFill(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 
 	nFillers := len(objects) - 1
@@ -2870,7 +2870,7 @@ func builtinStringFill(objects []RObject) []RObject {
 
 	    // s = cat s1 String s2 String s3 String s4 String s5 String s6 String s7 String s8 String s9 String > String  
 
-func builtinStringCat(objects []RObject) []RObject {
+func builtinStringCat(t InterpreterThread, objects []RObject) []RObject {
 	s := objects[0].String()
     n := len(objects) 
 	for i := 1; i < n; i++ {
@@ -2888,7 +2888,7 @@ func builtinStringCat(objects []RObject) []RObject {
 		"""
 	*/
 	
-func builtinStringIndex(objects []RObject) []RObject {
+func builtinStringIndex(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	substr := string(objects[1].(String))
 	var val RObject
@@ -2897,7 +2897,7 @@ func builtinStringIndex(objects []RObject) []RObject {
 }
 
 
-func builtinStringLastIndex(objects []RObject) []RObject {
+func builtinStringLastIndex(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	substr := string(objects[1].(String))
 	var val RObject
@@ -2916,7 +2916,7 @@ func builtinStringLastIndex(objects []RObject) []RObject {
 /*
 Counts in bytes.
 */
-func builtinStringSlice(objects []RObject) []RObject {
+func builtinStringSlice(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	start := int(objects[1].(Int))
 	length := len(s)
@@ -2935,7 +2935,7 @@ func builtinStringSlice(objects []RObject) []RObject {
 Counts in utf-8 encoded codepoints.
 Does not mind if the actual string is shorter than n codepoints.
 */
-func builtinStringFirst(objects []RObject) []RObject {
+func builtinStringFirst(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	n := int(objects[1].(Int))
     i := 0
@@ -2957,7 +2957,7 @@ func builtinStringFirst(objects []RObject) []RObject {
 Counts in utf-8 encoded codepoints.
 Does not mind if the actual string is shorter than n codepoints.
 */
-func builtinStringLast(objects []RObject) []RObject {
+func builtinStringLast(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	n := int(objects[1].(Int))
     if n == 0 {
@@ -2989,25 +2989,25 @@ func builtinStringLast(objects []RObject) []RObject {
 
 
 	
-func builtinStringLower(objects []RObject) []RObject {
+func builtinStringLower(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	lowered := strings.ToLower(s)  
     return []RObject{String(lowered)}	
 }	
 
-func builtinStringUpper(objects []RObject) []RObject {
+func builtinStringUpper(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	capitalized := strings.ToUpper(s)      
     return []RObject{String(capitalized)}	
 }	
 
-func builtinStringTitle(objects []RObject) []RObject {
+func builtinStringTitle(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	t := strings.Title(strings.ToLower(s))   
     return []RObject{String(t)}	
 }	
 
-func builtinStringTrimSpace(objects []RObject) []RObject {
+func builtinStringTrimSpace(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	trimmed := strings.TrimSpace(s)  
     return []RObject{String(trimmed)}	
@@ -3015,7 +3015,7 @@ func builtinStringTrimSpace(objects []RObject) []RObject {
 
 
 
-func builtinStringHashSha256Base64(objects []RObject) []RObject {
+func builtinStringHashSha256Base64(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	hasher := sha256.New()
 	hasher.Write([]byte(s))
@@ -3024,7 +3024,7 @@ func builtinStringHashSha256Base64(objects []RObject) []RObject {
     return []RObject{String(b64)}	
 }
 
-func builtinStringHashSha256Hex(objects []RObject) []RObject {
+func builtinStringHashSha256Hex(t InterpreterThread, objects []RObject) []RObject {
 	s := string(objects[0].(String))
 	hasher := sha256.New()
 	hasher.Write([]byte(s))
@@ -3106,7 +3106,7 @@ email4Method, err := RT.CreateMethod("",nil,
                                      []string{"String","String","String","String","List_of_String","String","String"}, 
                                      []string{"String"}, false, 0, false)
 */
-func builtinSendEmail(objects []RObject) []RObject {
+func builtinSendEmail(t InterpreterThread, objects []RObject) []RObject {
    var auth smtp.Auth = nil
    var serverAddr string 
    var serverName string // without the :port part
@@ -3195,7 +3195,7 @@ initTime t0 Time inKey String location String > t Time err String
 
 */
 
-func builtinInitTimeParse(objects []RObject) []RObject {
+func builtinInitTimeParse(t InterpreterThread, objects []RObject) []RObject {
 // ignore first Time arg
 	if len(objects) == 2 {
 		return initTimeParse1(objects[1].String())
@@ -3278,7 +3278,7 @@ t err = Time 2012 12 30 18 36 29 0 "UTC"
 
 initTime t0 Time year Int month Int day Int hour Int min Int sec Int nsec Int location String > t Time err String
 */
-func builtinInitTimeDate(objects []RObject) []RObject {
+func builtinInitTimeDate(t InterpreterThread, objects []RObject) []RObject {
 
    // ignore first Time argument
   
@@ -3305,7 +3305,7 @@ func builtinInitTimeDate(objects []RObject) []RObject {
 
 
 
-func builtinInitChannel(objects []RObject) []RObject {
+func builtinInitChannel(t InterpreterThread, objects []RObject) []RObject {
    
     c := objects[0].(*Channel)
 
@@ -3327,7 +3327,7 @@ Note: Ignoring string methods defined for programmer-defined datatypes for the m
 but should probably call that if it exists.
 For now, call the builtin string-ification of object Go method.
 */
-func builtinInitString(objects []RObject) []RObject {
+func builtinInitString(t InterpreterThread, objects []RObject) []RObject {
    
     // ignore the first String argument
     obj := objects[1]

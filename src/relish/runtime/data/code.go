@@ -255,7 +255,7 @@ type RMethod struct {
 	NumReturnArgs  int
 	NumLocalVars   int
 	NumFreeVars    int
-	PrimitiveCode  func([]RObject) []RObject
+	PrimitiveCode  func(InterpreterThread,[]RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
 	File           *ast.File
 }
