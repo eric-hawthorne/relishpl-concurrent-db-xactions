@@ -36,3 +36,40 @@ type DB interface {
 
 	Close()
 }
+
+
+/*
+*/
+type Thread interface {
+	/*
+	The package context of the executing method.
+	*/
+	Package() *RPackage
+	
+	/*
+	The executing method.
+	*/
+	Method() *RMethod
+}
+
+type DBThread interface {
+	DB
+	Thread
+	BeginTransaction() (err error)
+	CommitTransaction() (err error)
+	RollbackTransaction() (err error)
+	
+	/*
+	If the thread does not already own the dbMutex, lock the mutex and
+	flag that this thread owns it.
+	Used to ensure exlusive access to db for single db reads / writes 
+	for which we don't want to manually start a long-running transaction.
+	*/
+	GrabDB()
+	
+	/*
+	If the thread owns the dbMutex, unlock the mutex and
+	flag that this thread no longer owns it.
+	*/	
+	ReleaseDB()
+}

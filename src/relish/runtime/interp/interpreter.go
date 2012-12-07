@@ -1385,6 +1385,8 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
+		// TODO: Will have to supply the Thread to the PrimitiveCode function, or the thread's DbThread
+		// Which must firstly be an interface in persist_interface file.
 		objs := m.PrimitiveCode(args)
 		n := len(objs)
 		for j, obj := range objs {
