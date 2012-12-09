@@ -441,7 +441,7 @@ func (p Channel) IsProxy() bool { return false }
 func (p Channel) IsTransient() bool { return true }
 
 
-func (p Channel) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -616,7 +616,7 @@ func (p TimeChannel) IsProxy() bool { return false }
 func (p TimeChannel) IsTransient() bool { return true }
 
 
-func (p TimeChannel) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p TimeChannel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -762,7 +762,7 @@ func (p Mutex) IsProxy() bool { return false }
 func (p Mutex) IsTransient() bool { return true }
 
 
-func (p Mutex) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Mutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -912,7 +912,7 @@ func (p RWMutex) IsProxy() bool { return false }
 func (p RWMutex) IsTransient() bool { return true }
 
 
-func (p RWMutex) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p RWMutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1067,7 +1067,7 @@ func (p RTime) IsProxy() bool { return false }
 
 func (p RTime) IsTransient() bool { return false }
 
-func (p RTime) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p RTime) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1207,7 +1207,7 @@ func (p Int) IsProxy() bool { return false }
 
 func (p Int) IsTransient() bool { return false }
 
-func (p Int) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Int) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1338,7 +1338,7 @@ func (p Int32) IsProxy() bool { return false }
 
 func (p Int32) IsTransient() bool { return false }
 
-func (p Int32) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Int32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1469,7 +1469,7 @@ func (p Uint) IsProxy() bool { return false }
 
 func (p Uint) IsTransient() bool { return false }
 
-func (p Uint) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Uint) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1600,7 +1600,7 @@ func (p Uint32) IsProxy() bool { return false }
 
 func (p Uint32) IsTransient() bool { return false }
 
-func (p Uint32) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Uint32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1731,7 +1731,7 @@ func (p Float) IsProxy() bool { return false }
 
 func (p Float) IsTransient() bool { return false }
 
-func (p Float) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Float) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1862,7 +1862,7 @@ func (p Bool) IsProxy() bool { return false }
 
 func (p Bool) IsTransient() bool { return false }
 
-func (p Bool) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -1997,7 +1997,7 @@ func (p Nil) IsProxy() bool { return false }
 
 func (p Nil) IsTransient() bool { return false }
 
-func (p Nil) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Nil) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -2139,7 +2139,7 @@ func (p Complex) IsProxy() bool { return false }
 
 func (p Complex) IsTransient() bool { return false }
 
-func (p Complex) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Complex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -2272,7 +2272,7 @@ func (p Complex32) IsProxy() bool { return false }
 
 func (p Complex32) IsTransient() bool { return false }
 
-func (p Complex32) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Complex32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -2429,7 +2429,7 @@ func (p String) IsProxy() bool { return false }
 
 func (p String) IsTransient() bool { return false }
 
-func (p String) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p String) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -2576,7 +2576,7 @@ func (p Proxy) IsProxy() bool { return true }
 
 func (p Proxy) IsTransient() bool { return false }
 
-func (p Proxy) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (p Proxy) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 

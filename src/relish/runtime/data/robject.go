@@ -50,7 +50,7 @@ type RObject interface {
     Note. This needs to fetch all Proxy objects in the collection before returning the slice.
     Or wait a minute...
 	*/
-	Iterable(th InterpreterThread) (sliceOrMap interface{}, err error)
+	Iterable() (sliceOrMap interface{}, err error)
 
     /*
     A basic string representation of the object.
@@ -220,7 +220,7 @@ func (o robject) Flags() int8 {
 	return int8(o.flags)
 }
 
-func (o robject) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
+func (o robject) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 

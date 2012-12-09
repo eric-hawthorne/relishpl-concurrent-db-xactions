@@ -15,6 +15,7 @@ package persist
 
 import (
 	"sync"
+	. "relish/dbg"
 )
 
 
@@ -57,8 +58,10 @@ for which we don't want to manually start a long-running transaction.
 
 This method will block until no other goroutine is using the database.
 */
-func (db *SqliteDB) UseDB() {
+func (db *SqliteDB) UseDB() {	
+   Logln(PERSIST2_,"About to lock the dbMutex") 	
    dbMutex.Lock()
+   Logln(PERSIST2_,"Locked the dbMutex")
 }
 
 /*
@@ -66,6 +69,7 @@ Unlock the dbMutex.
 */	
 func (db *SqliteDB) ReleaseDB() bool{
    dbMutex.Unlock()
+   Logln(PERSIST2_,"Unlocked the dbMutex") 	
    return true
 }
 

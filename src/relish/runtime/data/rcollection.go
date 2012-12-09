@@ -388,8 +388,9 @@ func (c *rset) AsSlice(th InterpreterThread) []RObject {
 
 /*
 */
-func (s *rset) Iterable(th InterpreterThread) (interface{},error) {
-	return s.AsSlice(th),nil
+func (s *rset) Iterable() (interface{},error) {
+	var fakeThread FakeInterpreterThread	
+	return s.AsSlice(fakeThread),nil
 }
 
 
@@ -731,8 +732,9 @@ func (s *rsortedset) AsSlice(th InterpreterThread) []RObject {
 /*
 Do not modify the returned slice
 */
-func (s *rsortedset) Iterable(th InterpreterThread) (interface{},error) {
-	return s.AsSlice(th),nil
+func (s *rsortedset) Iterable() (interface{},error) {
+	var fakeThread FakeInterpreterThread	
+	return s.AsSlice(fakeThread),nil
 }
 
 
@@ -887,8 +889,12 @@ func (s *rlist) Contains(th InterpreterThread, obj RObject) bool {
     return false
 }
 
-func (s *rlist) Iterable(th InterpreterThread) (interface{},error) {
-	return s.AsSlice(th),nil
+
+
+
+func (s *rlist) Iterable() (interface{},error) {
+	var fakeThread FakeInterpreterThread
+	return s.AsSlice(fakeThread),nil
 }
 
 // RT.SetEvalContext(obj, context)
@@ -1160,7 +1166,7 @@ func (c *rstringmap) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
-func (s *rstringmap) Iterable(th InterpreterThread) (interface{},error) {
+func (s *rstringmap) Iterable() (interface{},error) {
 	return s.m,nil
 }
 
@@ -1254,7 +1260,7 @@ func (c *ruint64map) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
-func (s *ruint64map) Iterable(th InterpreterThread) (interface{},error) {
+func (s *ruint64map) Iterable() (interface{},error) {
 	return s.m,nil
 }
 
@@ -1409,7 +1415,7 @@ func (c *rint64map) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
-func (s *rint64map) Iterable(th InterpreterThread) (interface{},error) {
+func (s *rint64map) Iterable() (interface{},error) {
 	return s.m,nil
 }
 
@@ -1548,7 +1554,7 @@ func (c *rpointermap) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
-func (s *rpointermap) Iterable(th InterpreterThread) (interface{},error) {
+func (s *rpointermap) Iterable() (interface{},error) {
 	return s.m,nil
 }
 
@@ -1620,3 +1626,36 @@ func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
 	return
 }
 */
+
+
+/*
+==========================================================================================
+
+Used to get a reference to the database for the Iterable method.
+Relies on the fact that the whole web request should be handled inside a single
+database transaction, so no need to manage transactions or db access for the iteration.
+*/
+type FakeInterpreterThread int 
+
+func (f FakeInterpreterThread) Package() *RPackage {
+	return nil
+}
+
+/*
+The executing method.
+*/
+func (f FakeInterpreterThread) Method() *RMethod {
+	return nil
+}
+
+/*
+A db connection thread. Used to serialize access to the database in a multi-threaded environment,
+and to manage database transactions.
+*/
+func (f FakeInterpreterThread) DB() DB {
+   return RT.DB()	
+}
+
+func (f FakeInterpreterThread) Err() string {
+	return ""
+}

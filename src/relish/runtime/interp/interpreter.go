@@ -2680,6 +2680,7 @@ Does not unlock the dbMutex or release this thread's ownership of the mutex.
 Use CommitTransaction or RollbackTransaction to do that.
 */
 func (dbt * dbThread) BeginTransaction() (err error) {
+   Logln(PERSIST2_,"dbThread.BeginTransaction") 	
    dbt.UseDB()	
    err = dbt.db.BeginTransaction() 
    if err != nil {
@@ -2697,8 +2698,9 @@ In the error case, the correct behaviour is to either retry the commit, do a rol
 unlock the dbMutex and release this thread's ownership of the mutex.
 */
 func (dbt * dbThread) CommitTransaction() (err error) {
+    Logln(PERSIST2_,"dbThread.CommitTransaction") 		
 	err = dbt.db.CommitTransaction()
-	if err != nil {
+	if err == nil {
 	   dbt.ReleaseDB()
     }
    return
@@ -2713,8 +2715,9 @@ In the error case, the correct behaviour is to either retry the rollback, or jus
 unlock the dbMutex and release this thread's ownership of the mutex.
 */
 func (dbt * dbThread) RollbackTransaction() (err error) {
+    Logln(PERSIST2_,"dbThread.RollbackTransaction") 	
 	err = dbt.db.RollbackTransaction()
-	if err != nil {
+	if err == nil {
 		dbt.ReleaseDB()
 	}
 	return
@@ -2729,6 +2732,7 @@ for which we don't want to manually start a long-running transaction.
 This method will block until no other DBThread is using the database.
 */
 func (dbt * dbThread) UseDB() {
+   Logln(PERSIST2_,"dbThread.UseDB when ownership level is",dbt.dbLockOwnershipDepth) 		
    if dbt.acquiringDbLock {
       return	
    }	
@@ -2738,6 +2742,7 @@ func (dbt * dbThread) UseDB() {
        dbt.acquiringDbLock = false      	
    }
    dbt.dbLockOwnershipDepth++
+   Logln(PERSIST2_,"dbThread.UseDB: Set ownership level to",dbt.dbLockOwnershipDepth)    
 }
 
 /*
@@ -2749,8 +2754,10 @@ flag that this thread no longer owns it.
 Returns false if this thread still has an interest in and lock on the dbMutex.
 */	
 func (dbt * dbThread) ReleaseDB() bool {
+    Logln(PERSIST2_,"dbThread.ReleaseDB when ownership level is",dbt.dbLockOwnershipDepth) 		
     if dbt.dbLockOwnershipDepth > 0 {
 	   dbt.dbLockOwnershipDepth--
+       Logln(PERSIST2_,"dbThread.ReleaseDB: Set ownership level to",dbt.dbLockOwnershipDepth)  	
 	   if dbt.dbLockOwnershipDepth == 0 {
 		  dbt.db.ReleaseDB()	
 	   } else {
