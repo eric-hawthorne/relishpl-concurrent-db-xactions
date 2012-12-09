@@ -68,9 +68,13 @@ type DB interface {
 	UseDB()
 	
 	/*
-	Unlock the dbMutex.
+	If this db connection or thread-of-connection has no further interest in owning the database,
+	unlock the dbMutex.
+	If this db connection or thread-of-connection still has an interest in owning the database,
+	returns false. A series of calls to this should eventually return true meaning no further
+	calls to it by this thread-of-connection are appropriate until UseDB() is called again.
 	*/	
-	ReleaseDB()
+	ReleaseDB() bool
 }
 
 
@@ -101,51 +105,10 @@ type InterpreterThread interface {
     and to manage database transactions.
     */
 	DB() DB
-}
-
-type DBThread interface {
-	DB
-
-	/*
-	Grabs the dbMutex when it can (blocking until then) then executes a BEGIN IMMEDIATE TRANSACTION sql statement.
-	Does not unlock the dbMutex or release this thread's ownership of the mutex. 
-	Use CommitTransaction or RollbackTransaction to do that.
-	*/
-	BeginTransaction() (err error)
-
-	/*
-	Executes a COMMIT TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
-	of the mutex.
-	If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
-
-	In the error case, the correct behaviour is to either retry the commit, do a rollback, or just call ReleaseDB to
-	unlock the dbMutex and release this thread's ownership of the mutex.
-	*/
-	CommitTransaction() (err error)
-
-	/*
-	Executes a ROLLBACK TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
-	of the mutex.
-	If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
-
-	In the error case, the correct behaviour is to either retry the rollback, or just call ReleaseDB to
-	unlock the dbMutex and release this thread's ownership of the mutex.
-	*/
-	RollbackTransaction() (err error)
 	
 	/*
-	If the thread does not already own the dbMutex, lock the mutex and
-	flag that this thread owns it.
-	Used to ensure exlusive access to db for single db reads / writes 
-	for which we don't want to manually start a long-running transaction.
-
-	This method will block until no other DBThread is using the database.
+	Will be "" unless we are in a stack-unrolling panic, in which case, should be the error message.
 	*/
-	UseDB()
-	
-	/*
-	If the thread owns the dbMutex, unlock the mutex and
-	flag that this thread no longer owns it.
-	*/	
-	ReleaseDB()
+	Err() string
 }
+

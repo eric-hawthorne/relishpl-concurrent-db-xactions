@@ -320,7 +320,7 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject
 /*
 Typechecked assignment. Never used in inverse.
 */
-func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
+func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
 
 	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
@@ -335,11 +335,11 @@ func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, typ
 	} 
 	attrVals[obj] = val
 	if obj.IsStoredLocally() {
-		rt.db.PersistSetAttr(obj, attr, val, found)
+		th.DB().PersistSetAttr(obj, attr, val, found)
 	}
 	
 	if ! isInverse && attr.Inverse != nil {
-		err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
+		err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
 	}	
 	return
 }
@@ -355,7 +355,7 @@ Create the collection on demand.
 context is a context for evaluating a sorting comparison operator on the collection.
 
 */
-func (rt *RuntimeEnv) AddToAttr(obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
+func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
 
     
 	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
@@ -385,10 +385,10 @@ func (rt *RuntimeEnv) AddToAttr(obj RObject, attr *AttributeSpec, val RObject, t
 			} else {
 				insertIndex = newLen - 1
 			}
-			rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
+			th.DB().PersistAddToAttr(obj, attr, val, insertIndex)
 		}
 		if ! isInverse && attr.Inverse != nil {
-			err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
+			err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
 		}
 	}
 
@@ -400,12 +400,12 @@ func (rt *RuntimeEnv) AddToAttr(obj RObject, attr *AttributeSpec, val RObject, t
    If the attribute is multi-valued, val will be added to the collection of values.
    If the attribute is single-valued, val will be set as the value of the attribute. 
 */
-func (rt *RuntimeEnv) SetOrAddToAttr(obj RObject, attr *AttributeSpec, val RObject, context MethodEvaluationContext, isInverse bool) (err error) {
+func (rt *RuntimeEnv) SetOrAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, context MethodEvaluationContext, isInverse bool) (err error) {
 	
    if attr.Part.CollectionType == "" {	
-      err = rt.SetAttr(obj, attr, val, false, context, isInverse) 
+      err = rt.SetAttr(th, obj, attr, val, false, context, isInverse) 
    } else {	
-      err = rt.AddToAttr(obj, attr, val, false, context, isInverse)
+      err = rt.AddToAttr(th, obj, attr, val, false, context, isInverse)
    }	
    return
 }
@@ -415,7 +415,7 @@ func (rt *RuntimeEnv) SetOrAddToAttr(obj RObject, attr *AttributeSpec, val RObje
  Remove all elements of the multivalued attribute, in memory and in the db.
  If the attribute has an inverse, also removes the inverse attribute values.
 */
-func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec) (err error) {
+func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *AttributeSpec) (err error) {
 	
     objColl, foundCollection := rt.AttrVal(obj, attr)
 
@@ -428,8 +428,8 @@ func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec) (err error) {
 	   inverseAttr := attr.Inverse
 
        collection := objColl.(RCollection)
-	   for val := range collection.Iter() {
-           rt.RemoveAttrGeneral(val, inverseAttr, obj, true, false)		
+	   for val := range collection.Iter(th) {
+           rt.RemoveAttrGeneral(th, val, inverseAttr, obj, true, false)		
 	   }
     }
 
@@ -437,7 +437,7 @@ func (rt *RuntimeEnv) ClearAttr(obj RObject, attr *AttributeSpec) (err error) {
 	collection.ClearInMemory()	
 	
 	
-	err = rt.DB().PersistClearAttr(obj, attr)
+	err = th.DB().PersistClearAttr(obj, attr)
 	return
 }
 
@@ -671,7 +671,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 Removes val from the multi-valued attribute if val is in the collection. Does nothing and does not complain if val is not in the collection.
 If removePersistent is true, also removes the value from the persistent version of the attribute association.
 */
-func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
+func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
 	objColl, foundCollection := rt.AttrVal(obj, attr)
 
 	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute		
@@ -683,11 +683,11 @@ func (rt *RuntimeEnv) RemoveFromAttr(obj RObject, attr *AttributeSpec, val RObje
 
 	if removed  {
 	   if removePersistent && obj.IsStoredLocally() {
-	    	rt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	    	th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)
 	   }
 	
 	   if ! isInverse && attr.Inverse != nil {
-	   	  err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true, removePersistent)
+	   	  err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
 	   }
 	}
 
@@ -704,18 +704,18 @@ Deletes the corresponding row from the attribute database table if it exists.
 Ok to call this even if attribute had no value.
 If removePersistent, removes the attribute association from the database if it was persisted.
 */
-func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool, removePersistent bool) (err error) {
+func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, isInverse bool, removePersistent bool) (err error) {
 	attrVals, found := rt.attributes[attr]
 	if found {
 		val, found := attrVals[obj]
 		if found {
 		   delete(attrVals,obj)
            if removePersistent && obj.IsStoredLocally() {
-   	          err = rt.db.PersistRemoveAttr(obj, attr) 	 
+   	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
            }
 
            if ! isInverse && attr.Inverse != nil {
-	           err = rt.RemoveAttrGeneral(val, attr.Inverse, obj, true, removePersistent)
+	           err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
            }
         }		
 	}
@@ -726,11 +726,11 @@ func (rt *RuntimeEnv) UnsetAttr(obj RObject, attr *AttributeSpec, isInverse bool
 If the attribute is multi-valued, removes the val from it, otherwise
 if single valued, unsets the attribute.
 */
-func (rt *RuntimeEnv) RemoveAttrGeneral(obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
+func (rt *RuntimeEnv) RemoveAttrGeneral(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) {
    if attr.Part.CollectionType == "" {	
-	  err = rt.UnsetAttr(obj, attr, isInverse, removePersistent)
+	  err = rt.UnsetAttr(th, obj, attr, isInverse, removePersistent)
    } else {
-      err = rt.RemoveFromAttr(obj, attr, val, isInverse, removePersistent)	
+      err = rt.RemoveFromAttr(th, obj, attr, val, isInverse, removePersistent)	
    }
    return
 }
@@ -793,6 +793,11 @@ type MethodEvaluationContext interface {
 	   Returns the result of the method call.
 	*/
 	EvalMultiMethodCall(mm *RMultiMethod, args []RObject) RObject
+	
+	/*
+	   Return the interpreter thread aspect of the evaluation context.
+	*/
+    InterpThread() InterpreterThread 	
 }
 
 type Dispatcher interface {

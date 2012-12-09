@@ -14,10 +14,6 @@ package persist
 */
 
 import (
-	"code.google.com/p/gosqlite/sqlite"
-	"fmt"
-	. "relish/dbg"
-	"strings"
 	"sync"
 )
 
@@ -32,6 +28,7 @@ TODO: Should get this out of QueueStatements so we can properly handle errors.
 */
 func (db *SqliteDB) BeginTransaction() (err error) {
    db.QueueStatements("BEGIN IMMEDIATE TRANSACTION")
+   return
 }
 
 /*
@@ -40,6 +37,7 @@ TODO: Should get this out of QueueStatements so we can properly handle errors.
 */
 func (db *SqliteDB) CommitTransaction() (err error) {
    db.QueueStatements("COMMIT TRANSACTION")
+   return
 }
 
 /*
@@ -48,6 +46,7 @@ TODO: Should get this out of QueueStatements so we can properly handle errors.
 */
 func (db *SqliteDB) RollbackTransaction() (err error) {
    db.QueueStatements("ROLLBACK TRANSACTION")
+   return
 }
 
 /*
@@ -65,8 +64,9 @@ func (db *SqliteDB) UseDB() {
 /*
 Unlock the dbMutex.
 */	
-func (db *SqliteDB) ReleaseDB() {
+func (db *SqliteDB) ReleaseDB() bool{
    dbMutex.Unlock()
+   return true
 }
 
 

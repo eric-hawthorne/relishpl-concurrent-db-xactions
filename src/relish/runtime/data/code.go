@@ -238,7 +238,7 @@ func (p *RMultiMethod) IsProxy() bool { return false }
 
 func (o *RMultiMethod) IsTransient() bool { return true }
 
-func (o *RMultiMethod) Iterable() (sliceOrMap interface{}, err error) {
+func (o *RMultiMethod) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -255,7 +255,7 @@ type RMethod struct {
 	NumReturnArgs  int
 	NumLocalVars   int
 	NumFreeVars    int
-	PrimitiveCode  func(InterpreterThread,[]RObject) []RObject
+	PrimitiveCode  func(InterpreterThread, []RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
 	File           *ast.File
 }
@@ -393,7 +393,7 @@ func (p *RMethod) IsProxy() bool { return false }
 
 func (o *RMethod) IsTransient() bool { return true }
 
-func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
+func (o *RMethod) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
@@ -792,6 +792,6 @@ func (p *RClosure) IsProxy() bool { return false }
 
 func (o *RClosure) IsTransient() bool { return true }
 
-func (o *RClosure) Iterable() (sliceOrMap interface{}, err error) {
+func (o *RClosure) Iterable(th InterpreterThread) (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }

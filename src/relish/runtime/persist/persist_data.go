@@ -220,7 +220,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				isMap := collection.IsMap()
 				if isMap {
 					theMap := collection.(Map)
-					for key := range theMap.Iter() {
+					for key := range theMap.Iter(nil) {
 						val, _ := theMap.Get(key)
 						err = db.EnsurePersisted(val)
 						if err != nil {
@@ -239,7 +239,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					}
 				} else {
 					i := 0
-					for val := range collection.Iter() {
+					for val := range collection.Iter(nil) {
 						err = db.EnsurePersisted(val)
 						if err != nil {
 							return
@@ -285,7 +285,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					isMap := collection.IsMap()
 					if isMap {
 						theMap := collection.(Map)
-						for key := range theMap.Iter() {
+						for key := range theMap.Iter(nil) {
 							val, _ := theMap.Get(key)
 							err = db.EnsurePersisted(val)
 							if err != nil {
@@ -304,7 +304,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 						}
 					} else {
 						i := 0
-						for val := range collection.Iter() {
+						for val := range collection.Iter(nil) {
 							err = db.EnsurePersisted(val)
 							if err != nil {
 								return

@@ -112,6 +112,8 @@ Matching discrepencies such as unmapped leftover arguments, or not enough argume
 Runs the method in a new stack and returns a slice of the method's return values.
 
 TODO WE HAVE SOME SERIOUS DRY VIOLATIONS between this method and a few others in this file.
+
+TODO See EvalMethodCall for updates (to nArgs etc) that have not been applied here yet!!!!
 */
 func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValues []string, keywordArgStringValues url.Values) (resultObjects []RObject, err error) {
 	defer Un(Trace(INTERP_TR, "RunServiceMethod", fmt.Sprintf("%s", mm.Name)))	
@@ -162,6 +164,11 @@ func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValu
 	t.ExecutingMethod = method
 	t.ExecutingPackage = method.Pkg
 
+
+    t.DB().BeginTransaction()
+
+    defer i.commitOrRollback(t)
+
 	i.apply1(t, method, args)
 	
 	
@@ -169,6 +176,27 @@ func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValu
 	
     resultObjects = t.TopN(nReturnArgs)  // Note we are hanging on to the stack array here.
 	return 
+}
+
+/*
+In future, a thread panic would cause t.Err to be an error message.
+
+TODO: Make some way of setting t.err when relish-panicking.
+
+TODO: If error on the commit, wait, try again a couple of times, backing off,
+then try a rollback.
+If error on the rollback, wait, try again a couple of times, backing off, 
+then do a releaseDB.
+*/
+func (i *Interpreter) commitOrRollback(t *Thread) {
+	if t.err == "" {
+	   t.DB().CommitTransaction()
+    } else {
+	   t.DB().RollbackTransaction()
+	
+	
+	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
+    }
 }
 
 
@@ -492,7 +520,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
         default:
 		   rterr.Stop1(t,idxExpr,"Index value must be an Integer")
 		}
-        val = coll.At(ix)
+        val = coll.At(t, ix)
 
         if val == nil {
         	val = collection.ElementType().Zero()
@@ -1009,7 +1037,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 	
 
-      err = i.rt.DB().FetchN(list.ElementType(), query, radius, &objs)		
+      err = t.DB().FetchN(list.ElementType(), query, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
       }	
@@ -1112,7 +1140,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
 	
 
-      err = i.rt.DB().FetchN(set.ElementType(), query, radius, &objs)		
+      err = t.DB().FetchN(set.ElementType(), query, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
       }	
@@ -1206,6 +1234,10 @@ Evaluates a single-valued function after dispatching to find the correct functio
 */
 func (context *methodEvaluationContext) EvalMultiMethodCall(mm *RMultiMethod, args []RObject) RObject {
 	return context.interpreter.evalMultiMethodCall1ReturnVal(context.thread, mm, args)
+}
+
+func (context *methodEvaluationContext) InterpThread() InterpreterThread {
+	return context.thread
 }
 
 /*
@@ -1511,7 +1543,7 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 	var iters []<-chan RObject
 	for collPos := stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
 		collection := t.Stack[collPos].(RCollection)
-		iter := collection.Iter()
+		iter := collection.Iter(t)
 		iters = append(iters, iter)
 	}
 
@@ -2105,8 +2137,8 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		                val := t.Pop()
 		                if val.IsCollection() {
 			                coll := val.(RCollection)
-			                for v := range coll.Iter() {
-								err := RT.AddToAttr(assignee, attr, v, true, t.EvalContext, false)
+			                for v := range coll.Iter(t) {
+								err := RT.AddToAttr(t, assignee, attr, v, true, t.EvalContext, false)
 								if err != nil {
 									if strings.Contains(err.Error()," a value of type ") {
 										rterr.Stop1(t, selector, err)
@@ -2115,7 +2147,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 								}				               
 			                }
 		                } else if val == NIL {
-			                err := i.rt.ClearAttr(assignee, attr)
+			                err := i.rt.ClearAttr(t, assignee, attr)
 			                if err != nil {
 							   panic(err)	
 							}	
@@ -2123,7 +2155,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			               rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
 						}
 	                } else {									
-						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+						err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 						if err != nil {
 							if strings.Contains(err.Error()," a value of type ") {
 								rterr.Stop1(t,selector, err)
@@ -2132,7 +2164,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						}
 				    }
 				case token.ADD_ASSIGN:
-					err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
+					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 					if err != nil {
 						if strings.Contains(err.Error()," a value of type ") {
 							rterr.Stop1(t,selector,err)
@@ -2141,7 +2173,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}
 				case token.SUB_ASSIGN:
 					// TODO TODO	
-					err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false, true)
+					err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
 					if err != nil {
 						panic(err)
 					}
@@ -2406,7 +2438,7 @@ the ExecutingMethod and ExecutingPackage attributes of the new thread.
 */
 func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 	dbt := &dbThread{db:i.rt.DB()}
-	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionthread: dbt}
+	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionThread: dbt}
 	if parent != nil {
 		t.ExecutingMethod = parent.ExecutingMethod
 		t.ExecutingPackage = parent.ExecutingPackage
@@ -2441,7 +2473,12 @@ type Thread struct {
     Objs       []RObject   // A list of objects that will be built up then become owned by a proper collection object 
                            // and detached from the Thread.
 	YieldCardinality int   // How many objects per iteration the current generator is expected to append to Objs
+	
+	err string  // Will be "" unless we are in a stack-unrolling panic
 }
+
+
+
 
 func (t *Thread) Push(obj RObject) {
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
@@ -2605,14 +2642,18 @@ func (t *Thread) Method() *RMethod {
 	return t.ExecutingMethod
 }
 
+
+
 /*
 The DBThread which can execute db queries in a serialized fashion in a multi-threaded environment.
 */
-func (t *Thread) DB() {
+func (t *Thread) DB() DB {
    return t.dbConnectionThread
 }
 
-
+func (t *Thread) Err() string {
+	return t.err
+}
 
 
 
@@ -2626,18 +2667,11 @@ type dbThread struct {
 
 	acquiringDbLock bool  // This thread is in the process of acquiring and locking the dbMutex 
 	                      // (but may still be blocked waiting for the mutex to be unlocked by another thread)
-	haveDbLock bool  // This thread owns and has locked the dbMutex.
-	                 // Note: thread "ownership" of dbMutex is an abstract concept imposed by this dbThread s/w,
-	                 // because Go Mutexes are not inherently owned by any particular goroutine.
-
-
-    // !!!!!!!!!!!!!!!!!!!!!!
-    //
-	// TODO TODO TODO We are going to need an int to represent the number of nested times this thread has
-	// tried to lock the mutex. We only release (unlock) it when back down to 1, otherwise we just
-	// decrement the number. 
-	//
-	// !!!!!!!!!!!!!!!!!!!!!!
+	
+	dbLockOwnershipDepth int  // How many nested claims has this thread currently made for ownership of the dbMutex
+                              // If > 0, this thread owns and has locked the dbMutex.
+                              // Note: thread "ownership" of dbMutex is an abstract concept imposed by this dbThread s/w,
+                              // because Go Mutexes are not inherently owned by any particular goroutine.	
 }
 
 /*
@@ -2651,6 +2685,7 @@ func (dbt * dbThread) BeginTransaction() (err error) {
    if err != nil {
    	   dbt.ReleaseDB()
    }
+   return
 }
 
 /*
@@ -2666,6 +2701,7 @@ func (dbt * dbThread) CommitTransaction() (err error) {
 	if err != nil {
 	   dbt.ReleaseDB()
     }
+   return
 }
 
 /*
@@ -2681,6 +2717,7 @@ func (dbt * dbThread) RollbackTransaction() (err error) {
 	if err != nil {
 		dbt.ReleaseDB()
 	}
+	return
 }
 
 /*
@@ -2692,23 +2729,35 @@ for which we don't want to manually start a long-running transaction.
 This method will block until no other DBThread is using the database.
 */
 func (dbt * dbThread) UseDB() {
-   if ! (dbt.haveDbLock || dbt.acquiringDbLock) {
+   if dbt.acquiringDbLock {
+      return	
+   }	
+   if dbt.dbLockOwnershipDepth == 0 {
    	   dbt.acquiringDbLock = true
    	   dbt.db.UseDB()
-   	   dbt.haveDbLock = true
-   	   dbt.acquiringDbLock = false
+       dbt.acquiringDbLock = false      	
    }
+   dbt.dbLockOwnershipDepth++
 }
 
 /*
-If the thread owns the dbMutex, unlock the mutex and
+
+Remove one level of interest of this thread in the dbMutex.
+If we have lost all interest in it, and
+if the thread owns the dbMutex, unlock the mutex and
 flag that this thread no longer owns it.
+Returns false if this thread still has an interest in and lock on the dbMutex.
 */	
-func (dbt * dbThread) ReleaseDB() {
-	if haveDbLock {
-		dbt.db.ReleaseDB()
-		dbt.haveDbLock = false
-	}
+func (dbt * dbThread) ReleaseDB() bool {
+    if dbt.dbLockOwnershipDepth > 0 {
+	   dbt.dbLockOwnershipDepth--
+	   if dbt.dbLockOwnershipDepth == 0 {
+		  dbt.db.ReleaseDB()	
+	   } else {
+	      return false	
+	   }
+    }	
+    return true
 }
 
 
@@ -2716,92 +2765,126 @@ func (dbt * dbThread) ReleaseDB() {
 func (dbt * dbThread) EnsureTypeTable(typ *RType) (err error) {
    dbt.UseDB()	
    err = dbt.db.EnsureTypeTable(typ)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()  
+   return 
 }
 
 func (dbt * dbThread) QueueStatements(statementGroup string) {
    dbt.UseDB()
    dbt.db.QueueStatements(statementGroup)
    dbt.ReleaseDB()
+   return
 }
 
 func (dbt * dbThread) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistSetAttr(obj, attr, val, attrHadValue)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()
+   return
 }
 
 func (dbt * dbThread) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistAddToAttr(obj, attr, val, insertedIndex)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()
+   return 
 }
 
 func (dbt * dbThread) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()
+   return   
 }
 
 func (dbt * dbThread) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistRemoveAttr(obj, attr)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB() 
+   return  
 }
 
 func (dbt * dbThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistClearAttr(obj, attr)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()
+   return
 }
 
 func (dbt * dbThread) EnsurePersisted(obj RObject) (err error) {
    dbt.UseDB()	
    err = dbt.db.EnsurePersisted(obj)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB() 
+   return  
 }
 
 func (dbt * dbThread) EnsureAttributeAndRelationTables(t *RType) (err error) {
    dbt.UseDB()	
    err = dbt.db.EnsureAttributeAndRelationTables(t)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()
+   return 
 }
 
 func (dbt * dbThread) ObjectNameExists(name string) (found bool, err error) {
    dbt.UseDB()
    found,err = dbt.db.ObjectNameExists(name)
    dbt.ReleaseDB()
+   return
 }
 
 func (dbt * dbThread) NameObject(obj RObject, name string) {
    dbt.UseDB()
    dbt.db.NameObject(obj, name)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB() 
+   return  
 }
 
 func (dbt * dbThread) RecordPackageName(name string, shortName string) {
    dbt.UseDB()
    dbt.db.RecordPackageName(name, shortName)
-   dbt.ReleaseDB()   	
+   dbt.ReleaseDB()
+   return   	
 }
 
 func (dbt * dbThread) FetchByName(name string, radius int) (obj RObject, err error) {
    dbt.UseDB()
    obj, err = dbt.db.FetchByName(name, radius)   
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB() 
+   return  
 }
 
 func (dbt * dbThread) Fetch(id int64, radius int) (obj RObject, err error) {
    dbt.UseDB()
    obj, err = dbt.db.Fetch(id, radius)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()  
+   return 
 }
 
 func (dbt * dbThread) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
    dbt.UseDB()
    val, err = dbt.db.FetchAttribute(objId, obj, attr, radius)
-   dbt.ReleaseDB()   
+   dbt.ReleaseDB()  
+   return 
 }
 
+/*
+Given an object type and an OQL selection criteria clause in a string, set the argument collection to contain 
+the matching objects from the the database.
 
+e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
+*/
+	
+func (dbt * dbThread) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) {
+   dbt.UseDB()
+   err = dbt.db.FetchN(typ, oqlSelectionCriteria, radius, objs)
+   dbt.ReleaseDB()	
+   return
+}
+
+/*
+Close the connection to the database.
+*/
+func (dbt * dbThread) Close() {
+	dbt.db.Close()
+}
 

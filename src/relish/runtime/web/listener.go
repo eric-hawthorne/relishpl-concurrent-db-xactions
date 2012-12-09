@@ -892,8 +892,42 @@ func Iterable(obj RObject) (iterable interface{}, err error) {
         return nil,errors.New("template error: range action expects pipeline value to be a collection or map.") 
     }
     coll := obj.(RCollection)
-    return coll.Iterable()
+
+    var fakeInterpreterThread FakeInterpreterThread
+    return coll.Iterable(fakeInterpreterThread)
 }
+
+/*
+Used to get a reference to the database for the Iterable method.
+Relies on the fact that the whole web request should be handled inside a single
+database transaction, so no need to manage transactions or db access for the iteration.
+*/
+type FakeInterpreterThread int 
+
+func (f FakeInterpreterThread) Package() *RPackage {
+	return nil
+}
+
+/*
+The executing method.
+*/
+func (f FakeInterpreterThread) Method() *RMethod {
+	return nil
+}
+
+/*
+A db connection thread. Used to serialize access to the database in a multi-threaded environment,
+and to manage database transactions.
+*/
+func (f FakeInterpreterThread) DB() DB {
+   return RT.DB()	
+}
+
+func (f FakeInterpreterThread) Err() string {
+	return ""
+}
+
+
 
 /*
 */

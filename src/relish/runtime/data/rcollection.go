@@ -74,9 +74,9 @@ type RCollection interface {
 	IsCardOk() bool  // Is my current cardinality within my cardinality constraints?
 	Owner() RObject  // if non-nil, this collection is the implementation of a multi-valued attribute.
 	// Returns an iterator that yields the objects in the collection. A Map iterator returns the keys.
-	Iter() <-chan RObject // Usage: for obj := range s.Iter()  or ch := s.Iter(); x, ok = <-ch
+	Iter(th InterpreterThread) <-chan RObject // Usage: for obj := range s.Iter()  or ch := s.Iter(); x, ok = <-ch
 
-    Contains(obj RObject) bool // true if the collection contains the element, false otherwise
+    Contains(th InterpreterThread, obj RObject) bool // true if the collection contains the element, false otherwise
                                // uses value equality for primitive element types, reference equality otherwise.
                                // for maps, it is whether the map contains a key equal to the argument object. 
 }
@@ -122,7 +122,7 @@ type RemovableCollection interface {
 
 type OrderedCollection interface {
 	Index(obj RObject, start int) int
-	At(i int) RObject	
+	At(th InterpreterThread, i int) RObject	
 }
 
 /*
@@ -134,7 +134,7 @@ type List interface {
 	RemovableCollection
 	OrderedCollection
 	Vector() *RVector
-	AsSlice() []RObject
+	AsSlice(th InterpreterThread) []RObject
     ReplaceContents(objs []RObject)	
 }
 
@@ -332,11 +332,14 @@ func (s *rset) ClearInMemory() {
 Weird behaviour: Only if the iteration is allowed to complete (i.e. to exhaust the map) will proxies
 in the map be replaced by real objects.
 
+TODO !!!! TODO !!!!   use more standard and optimized deproxify with a flag.
+
 TODO MAPS AND PROXIES ARE NOT HAPPY TOGETHER YET!!!!
 IT WOULD ONLY WORK IF THE ROBJECT IDENTITY IN THE MAP IS BASED ON THE DBID instead of object address.
 TODO
+
 */
-func (c *rset) Iter() <-chan RObject {
+func (c *rset) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		var fromPersistence map[RObject]RObject
@@ -344,7 +347,7 @@ func (c *rset) Iter() <-chan RObject {
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = RT.DB().Fetch(int64(proxy), 0)
+				robj, err = th.DB().Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching set element: %s", err))
 				}
@@ -375,9 +378,9 @@ func (c *rset) Iter() <-chan RObject {
 /*
 Creates a fresh new slice.
 */
-func (c *rset) AsSlice() []RObject {
+func (c *rset) AsSlice(th InterpreterThread) []RObject {
     s := make([]RObject,0,c.Length())     
-	for obj := range c.Iter() {
+	for obj := range c.Iter(th) {
         s = append(s,obj)
 	}
     return s
@@ -385,13 +388,13 @@ func (c *rset) AsSlice() []RObject {
 
 /*
 */
-func (s *rset) Iterable() (interface{},error) {
-	return s.AsSlice(),nil
+func (s *rset) Iterable(th InterpreterThread) (interface{},error) {
+	return s.AsSlice(th),nil
 }
 
 
 
-func (c *rset) Contains(obj RObject) (found bool) {
+func (c *rset) Contains(th InterpreterThread, obj RObject) (found bool) {
 	if c.m == nil {
 		found = false
 		return
@@ -479,12 +482,12 @@ func (s *rsortedset) AddSimple(obj RObject) (newLen int) {
 	return
 }
 
-func (s *rsortedset) At(i int) RObject {
+func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
 		var err error
 		proxy := obj.(Proxy)
-		obj, err = RT.DB().Fetch(int64(proxy), 0)
+		obj, err = th.DB().Fetch(int64(proxy), 0)
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching sorted-set element [%v]: %s", i, err))
 		}
@@ -523,20 +526,22 @@ func (s *rsortedset) Less(i, j int) bool {
 		return i < j
 	}
 
-	var evalContext MethodEvaluationContext
+	var evalContext MethodEvaluationContext = RT.GetEvalContext(s)
+	th := evalContext.InterpThread()
+	
 	//var isLess RObject
 
 	if s.sortWith.attr != nil {
 
 		// Get attr value of both list members
 
-		obj1 := s.At(i)
+		obj1 := s.At(th, i)
 		val1, found := RT.AttrVal(obj1, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
 		}
 
-		obj2 := s.At(j)
+		obj2 := s.At(th, j)
 		val2, found := RT.AttrVal(obj2, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
@@ -544,7 +549,6 @@ func (s *rsortedset) Less(i, j int) bool {
 
 		// Use the "less" multimethod to compare them.
 
-		evalContext = RT.GetEvalContext(s)
 
 		// Assumes that the sortWith has been given the "less" multimethod. TODO!
 		// 
@@ -559,17 +563,15 @@ func (s *rsortedset) Less(i, j int) bool {
 
 		// Evaluate the unary function separately on both list members
 
-		evalContext = RT.GetEvalContext(s)
 
-		obj1 := s.At(i)
+		obj1 := s.At(th, i)
 		val1 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj1})
 
-		obj2 := s.At(j)
+		obj2 := s.At(th, j)
 		val2 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj2})
 
 		// Use the "less" multimethod to compare them.
 
-		evalContext := RT.GetEvalContext(s)
 
 		// Assumes that the sortWith has been given the "less" multimethod. TODO!
 		//
@@ -589,13 +591,11 @@ func (s *rsortedset) Less(i, j int) bool {
 
 	// Get attr value of both list members
 
-	obj1 := s.At(i)
+	obj1 := s.At(th, i)
 
-	obj2 := s.At(j)
+	obj2 := s.At(th, j)
 
 	// Use the multimethod to compare them.
-
-	evalContext = RT.GetEvalContext(s)
 
 	isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{obj1, obj2})
 
@@ -642,7 +642,7 @@ func (s *rsortedset) Index(obj RObject, start int) int {
 }
 
 
-func (c *rsortedset) Contains(obj RObject) (found bool) {
+func (c *rsortedset) Contains(th InterpreterThread, obj RObject) (found bool) {
 	if c.m == nil {
 		found = false
 		return
@@ -675,8 +675,9 @@ func (s *rsortedset) ClearInMemory() {
 }
 
 /*
+TODO Use more standard flag-based deproxify
  */
-func (c *rsortedset) Iter() <-chan RObject {
+func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
@@ -685,7 +686,7 @@ func (c *rsortedset) Iter() <-chan RObject {
 				if robj.IsProxy() {
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = RT.DB().Fetch(int64(proxy), 0)
+					robj, err = th.DB().Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 					}
@@ -699,14 +700,14 @@ func (c *rsortedset) Iter() <-chan RObject {
 	return ch
 }
 
-func (c *rsortedset) deproxify() {
+func (c *rsortedset) deproxify(th InterpreterThread) {
 	if c.v != nil {
 		for i, obj := range *(c.v) {
 			robj := obj.(RObject)
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = RT.DB().Fetch(int64(proxy), 0)
+				robj, err = th.DB().Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 				}
@@ -719,8 +720,8 @@ func (c *rsortedset) deproxify() {
 /*
 Do not modify the returned slice
 */
-func (s *rsortedset) AsSlice() []RObject {
-	s.deproxify()
+func (s *rsortedset) AsSlice(th InterpreterThread) []RObject {
+	s.deproxify(th)
 	if s.v == nil {
 		return []RObject{}
 	}
@@ -730,8 +731,8 @@ func (s *rsortedset) AsSlice() []RObject {
 /*
 Do not modify the returned slice
 */
-func (s *rsortedset) Iterable() (interface{},error) {
-	return s.AsSlice(),nil
+func (s *rsortedset) Iterable(th InterpreterThread) (interface{},error) {
+	return s.AsSlice(th),nil
 }
 
 
@@ -777,7 +778,7 @@ func (o *rlist) Debug() string {
 }
 
 
-func (c *rlist) Iter() <-chan RObject {
+func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
@@ -786,7 +787,7 @@ func (c *rlist) Iter() <-chan RObject {
 				if robj.IsProxy() {
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = RT.DB().Fetch(int64(proxy), 0)
+					robj, err = th.DB().Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching list element: %s", err))
 					}
@@ -803,14 +804,14 @@ func (c *rlist) Iter() <-chan RObject {
 /*
    Converts all proxies in the collection to real objects.
 */
-func (c *rlist) deproxify() {
+func (c *rlist) deproxify(th InterpreterThread) {
 	if c.v != nil {
 		for i, obj := range *(c.v) {
 			robj := obj.(RObject)
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = RT.DB().Fetch(int64(proxy), 0)
+				robj, err = th.DB().Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching list element: %s", err))
 				}
@@ -866,19 +867,19 @@ func (s *rlist) ReplaceContents(objs []RObject) {
 	s.v = &rv
 }
 
-func (s *rlist) AsSlice() []RObject {
-	s.deproxify()
+func (s *rlist) AsSlice(th InterpreterThread) []RObject {
+	s.deproxify(th)
 	if s.v == nil {
 		return []RObject{}
 	}
 	return []RObject(*(s.v))
 }
 
-func (s *rlist) Contains(obj RObject) bool {
+func (s *rlist) Contains(th InterpreterThread, obj RObject) bool {
 	if s.v == nil {
 		return false
 	}
-	for _,element := range s.AsSlice() {
+	for _,element := range s.AsSlice(th) {
        if obj == element {
        	   return true
        }
@@ -886,8 +887,8 @@ func (s *rlist) Contains(obj RObject) bool {
     return false
 }
 
-func (s *rlist) Iterable() (interface{},error) {
-	return s.AsSlice(),nil
+func (s *rlist) Iterable(th InterpreterThread) (interface{},error) {
+	return s.AsSlice(th),nil
 }
 
 // RT.SetEvalContext(obj, context)
@@ -919,12 +920,12 @@ func (s *rlist) AddSimple(obj RObject) (newLen int) {
 	return
 }
 
-func (s *rlist) At(i int) RObject {
+func (s *rlist) At(th InterpreterThread, i int) RObject {
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
 		var err error
 		proxy := obj.(Proxy)
-		obj, err = RT.DB().Fetch(int64(proxy), 0)
+		obj, err = th.DB().Fetch(int64(proxy), 0)
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching list element [%v]: %s", i, err))
 		}
@@ -952,28 +953,28 @@ func (s *rlist) Less(i, j int) bool {
 		return i < j
 	}
 
-	var evalContext MethodEvaluationContext
+	var evalContext MethodEvaluationContext = RT.GetEvalContext(s)
+	th := evalContext.InterpThread()
+	
 	//var isLess RObject
 
 	if s.sortWith.attr != nil {
 
 		// Get attr value of both list members
 
-		obj1 := s.At(i)
+		obj1 := s.At(th, i)
 		val1, found := RT.AttrVal(obj1, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
 		}
 
-		obj2 := s.At(j)
+		obj2 := s.At(th, j)
 		val2, found := RT.AttrVal(obj2, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
 		}
 
 		// Use the "less" multimethod to compare them.
-
-		evalContext = RT.GetEvalContext(s)
 
 		// Assumes that the sortWith has been given the "less" multimethod. TODO!
 		// 
@@ -988,17 +989,14 @@ func (s *rlist) Less(i, j int) bool {
 
 		// Evaluate the unary function separately on both list members
 
-		evalContext = RT.GetEvalContext(s)
-
-		obj1 := s.At(i)
+		obj1 := s.At(th, i)
 		val1 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj1})
 
-		obj2 := s.At(j)
+		obj2 := s.At(th, j)
 		val2 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj2})
 
 		// Use the "less" multimethod to compare them.
 
-		evalContext := RT.GetEvalContext(s)
 
 		// Assumes that the sortWith has been given the "less" multimethod. TODO!
 		//
@@ -1018,13 +1016,11 @@ func (s *rlist) Less(i, j int) bool {
 
 	// Get attr value of both list members
 
-	obj1 := s.At(i)
+	obj1 := s.At(th, i)
 
-	obj2 := s.At(j)
+	obj2 := s.At(th, j)
 
 	// Use the multimethod to compare them.
-
-	evalContext = RT.GetEvalContext(s)
 
 	isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{obj1, obj2})
 
@@ -1153,7 +1149,7 @@ func (o *rstringmap) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
-func (c *rstringmap) Iter() <-chan RObject {
+func (c *rstringmap) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		for key, _ := range c.m {
@@ -1164,7 +1160,7 @@ func (c *rstringmap) Iter() <-chan RObject {
 	return ch
 }
 
-func (s *rstringmap) Iterable() (interface{},error) {
+func (s *rstringmap) Iterable(th InterpreterThread) (interface{},error) {
 	return s.m,nil
 }
 
@@ -1207,7 +1203,7 @@ func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationConte
     return
 }
 
-func (s *rstringmap) Contains(key RObject) (found bool) {
+func (s *rstringmap) Contains(th InterpreterThread, key RObject) (found bool) {
 	k := string(key.(String))
 	_, found = s.m[k]
 	return
@@ -1247,7 +1243,7 @@ func (o *ruint64map) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
-func (c *ruint64map) Iter() <-chan RObject {
+func (c *ruint64map) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		for key, _ := range c.m {
@@ -1258,7 +1254,7 @@ func (c *ruint64map) Iter() <-chan RObject {
 	return ch
 }
 
-func (s *ruint64map) Iterable() (interface{},error) {
+func (s *ruint64map) Iterable(th InterpreterThread) (interface{},error) {
 	return s.m,nil
 }
 
@@ -1321,7 +1317,7 @@ func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationConte
     return
 }
 
-func (s *ruint64map) Contains(key RObject) (found bool) {
+func (s *ruint64map) Contains(th InterpreterThread, key RObject) (found bool) {
 	_,found = s.Get(key)
 	return
 }
@@ -1402,7 +1398,7 @@ func (o *rint64map) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
-func (c *rint64map) Iter() <-chan RObject {
+func (c *rint64map) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		for key, _ := range c.m {
@@ -1413,7 +1409,7 @@ func (c *rint64map) Iter() <-chan RObject {
 	return ch
 }
 
-func (s *rint64map) Iterable() (interface{},error) {
+func (s *rint64map) Iterable(th InterpreterThread) (interface{},error) {
 	return s.m,nil
 }
 
@@ -1476,7 +1472,7 @@ func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContex
     return
 }
 
-func (s *rint64map) Contains(key RObject) (found bool) {
+func (s *rint64map) Contains(th InterpreterThread, key RObject) (found bool) {
 	_,found = s.Get(key)
 	return
 }
@@ -1541,7 +1537,7 @@ func (o *rpointermap) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
-func (c *rpointermap) Iter() <-chan RObject {
+func (c *rpointermap) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {
 		for key, _ := range c.m {
@@ -1552,7 +1548,7 @@ func (c *rpointermap) Iter() <-chan RObject {
 	return ch
 }
 
-func (s *rpointermap) Iterable() (interface{},error) {
+func (s *rpointermap) Iterable(th InterpreterThread) (interface{},error) {
 	return s.m,nil
 }
 
@@ -1590,7 +1586,7 @@ func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationCont
     return
 }
 
-func (s *rpointermap) Contains(key RObject) (found bool) {
+func (s *rpointermap) Contains(th InterpreterThread, key RObject) (found bool) {
 	_,found = s.m[key] 
 	return
 }
