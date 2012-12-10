@@ -384,8 +384,19 @@ func handler(w http.ResponseWriter, r *http.Request) {
       return  
    }     
 
-   resultObjects,err := interpreter.RunServiceMethod(handlerMethod, positionalArgStringValues, keywordArgStringValues)      
-	 if err != nil {
+   // TODO TODO Should return the InterpreterThread out of here, and
+   // Do the commit or rollback later.
+   // Or I should demand a thread from the interpreter separately, first, pass it in to 
+   // RunServiceMethod, then commit or rollback later.
+
+   t := interpreter.NewThread(nil)
+
+   t.DB().BeginTransaction()
+
+   defer t.CommitOrRollback()
+	
+   resultObjects,err := interpreter.RunServiceMethod(t, handlerMethod, positionalArgStringValues, keywordArgStringValues)      
+   if err != nil {
       fmt.Println(err)  
       fmt.Fprintln(w, err)
       return  

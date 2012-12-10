@@ -115,12 +115,8 @@ TODO WE HAVE SOME SERIOUS DRY VIOLATIONS between this method and a few others in
 
 TODO See EvalMethodCall for updates (to nArgs etc) that have not been applied here yet!!!!
 */
-func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValues []string, keywordArgStringValues url.Values) (resultObjects []RObject, err error) {
+func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalArgStringValues []string, keywordArgStringValues url.Values) (resultObjects []RObject, err error) {
 	defer Un(Trace(INTERP_TR, "RunServiceMethod", fmt.Sprintf("%s", mm.Name)))	
-
-
-	t := i.NewThread(nil)
-	
 	
 	method := i.dispatcher.GetSingletonMethod(mm)
 
@@ -165,10 +161,6 @@ func (i *Interpreter) RunServiceMethod(mm *RMultiMethod, positionalArgStringValu
 	t.ExecutingPackage = method.Pkg
 
 
-    t.DB().BeginTransaction()
-
-    defer i.commitOrRollback(t)
-
 	i.apply1(t, method, args)
 	
 	
@@ -188,12 +180,11 @@ then try a rollback.
 If error on the rollback, wait, try again a couple of times, backing off, 
 then do a releaseDB.
 */
-func (i *Interpreter) commitOrRollback(t *Thread) {
+func (t *Thread) CommitOrRollback() {
 	if t.err == "" {
 	   t.DB().CommitTransaction()
     } else {
 	   t.DB().RollbackTransaction()
-	
 	
 	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
     }
