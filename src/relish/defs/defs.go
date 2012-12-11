@@ -11,6 +11,7 @@ package defs
 var StandardLibPackagePath map[string]bool = map[string]bool {
 	"strings" : true,
 	"datetime" : true,
+	"http" : true,
 }
 
 

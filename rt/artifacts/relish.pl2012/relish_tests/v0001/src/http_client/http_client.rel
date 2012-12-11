@@ -1,0 +1,57 @@
+origin   relish.pl2012
+artifact relish_tests
+package  http_client
+
+""" 
+ http_client.rel
+
+ Test http client methods.
+ Currently only tests httpGet. TODO Extend to test httpPost
+ and implement an httpPut.
+"""
+
+import
+   http
+
+
+main
+"""
+ Main program.
+"""
+   testHttp
+
+
+testHttp
+"""
+ Tests requesting web pages with HTTP GET.
+ Should also extend it to testing posting to a form action page using HTTP POST
+ but don't have a good form action page to post to yet.
+"""
+
+   content err = httpGet "http://google.com/robots.txt"
+   print "===== http://google.com/robots.txt ======================="
+   print "Content:"
+   print content
+   print "Err:"
+   print err
+
+   content err = httpGet "https://google.com/robots.txt"
+   print "===== https://google.com/robots.txt ======================"
+   print "Content:"
+   print content
+   print "Err:"
+   print err   
+
+   content err = httpGet "http://echidna.org/"
+   print "===== http://echidna.org/ ================================"
+   print "Content:"
+   print content
+   print "Err:"
+   print err
+
+   content err = httpGet "http://relish.pl"
+   print "===== http://relish.pl ==================================="
+   print "Content:"
+   print content
+   print "Err:"
+   print err

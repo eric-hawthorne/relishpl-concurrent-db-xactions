@@ -19,6 +19,7 @@ import
    concurrency
    email
    closures 
+   http_client
 
 
 main
@@ -43,4 +44,5 @@ testAll
    multimethods.testMultimethods
    collections.testCollections
    closures.testClosures
+   http_client.testHttp
    concurrency.testConcurrency

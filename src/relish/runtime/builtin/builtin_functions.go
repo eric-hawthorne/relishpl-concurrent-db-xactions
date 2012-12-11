@@ -3204,22 +3204,23 @@ func builtinSendEmail(th InterpreterThread, objects []RObject) []RObject {
 //
 func builtinHttpGet(th InterpreterThread, objects []RObject) []RObject {
 	
-	url := string(objects[0].(String))
+	urlStr := string(objects[0].(String))
 	
-    content := ""
+    contentStr := ""
     errStr := ""
 
-	res, err := http.Get(url)
+	res, err := http.Get(urlStr)
 	if err != nil {
 		errStr = err.Error()
 	} else {
-		content, err = ioutil.ReadAll(res.Body)
+		content, err := ioutil.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			errStr = err.Error()
 		}
+		contentStr = string(content)
     }	
-	return []RObject{String(content),String(errStr)}
+	return []RObject{String(contentStr),String(errStr)}
 }
 
 
@@ -3230,48 +3231,49 @@ func builtinHttpGet(th InterpreterThread, objects []RObject) []RObject {
 // > 
 //    responseBody String 
 //    err String
+// """
+//  The keysVals map should be a map from String to (value or collection of values)
+//  The values are converted to their default String representation to be used as
+//  http post argument values.
+//   
+// """
 //
 func builtinHttpPost(th InterpreterThread, objects []RObject) []RObject {
 	
-	url := string(objects[0].(String))
+	urlStr := string(objects[0].(String))
 	
 	theMap := objects[1].(Map)
 	
-	for key := range theMap.Iter(nil) {
-		val, _ := theMap.Get(key)	
-	}
-	
-    content := ""
+    contentStr := ""
     errStr := ""
 
 	values := url.Values{}
     for key := range theMap.Iter(th) {
 	   keyStr := string(key.(String))
 	   val, _ := theMap.Get(key)	
-	   switch val.(type) {
-    	  case StringType:
-	         values.Set(keyStr, string(val.(String)))
-	      default:
-		    // Must be a list.
+       if val.IsCollection() {
 		    coll := val.(RCollection)
 		    for obj := range coll.Iter(th) {
-			   valStr := string(obj.(String))
+			   valStr := obj.String()
 		       values.Add(keyStr, valStr)			
 		    }
+	    } else {
+	       values.Set(keyStr, val.String())
 	   }
     }
 
-	res, err := http.PostForm(url, values)
+	res, err := http.PostForm(urlStr, values)
 	if err != nil {
 		errStr = err.Error()
 	} else {
-		content, err = ioutil.ReadAll(res.Body)
+		content, err := ioutil.ReadAll(res.Body)
 		res.Body.Close()
 		if err != nil {
 			errStr = err.Error()
 		}
+		contentStr = string(content)
     }	
-	return []RObject{String(content),String(errStr)}
+	return []RObject{String(contentStr),String(errStr)}
 }
 
 
