@@ -523,7 +523,7 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
 	}
 	
 	if !val.Type().LessEq(theMap.ValType()) {
-		err = fmt.Errorf("Cannot put a value of type '%v' in a map with key-type constraint '%v'.", val.Type(),theMap.ValType())
+		err = fmt.Errorf("Cannot put a value of type '%v' in a map with value-type constraint '%v'.", val.Type(),theMap.ValType())
 		return
 	}	
 

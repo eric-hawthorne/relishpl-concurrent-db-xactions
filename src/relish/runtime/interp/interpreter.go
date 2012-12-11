@@ -950,6 +950,22 @@ func (i *Interpreter) CreateMap(t *Thread, keyType *ast.TypeSpec, valType *ast.T
    if ! typFound {
       rterr.Stopf1(t,valType,"Map Value Type '%s' not found.",valType.Name.Name)	
    }
+   collType := valType.CollectionSpec
+   if collType != nil {
+   	  var err error
+   	  switch collType.Kind {
+   	  case token.LIST:
+   	  	 valTyp, err = i.rt.GetListType(valTyp)
+   	  	 if err != nil {
+   	  	 	rterr.Stopf1(t,valType,"Error finding or creating type List_of_%s",valType.Name.Name)
+   	  	 }
+   	  case token.SET:
+   	  	 valTyp, err = i.rt.GetSetType(valTyp)
+   	  	 if err != nil {
+   	  	 	rterr.Stopf1(t,valType,"Error finding or creating type Set_of_%s",valType.Name.Name)
+   	  	 }   	  	
+   	  }
+   }
 
    // TODO sorting-maps
    return i.rt.Newmap(keyTyp, valTyp, 0, -1, nil, nil)

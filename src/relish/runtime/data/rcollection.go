@@ -288,6 +288,26 @@ type rset struct {
 	m map[RObject]bool // use this as set 
 }
 
+func (o *rset) String() string {
+   s := ""
+   if o.Length() > 4 {
+	   sep := "\n   {"
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "\n      "
+	   }
+	   s += "\n   }"
+   	} else { // Horizontal layout
+	   sep := "{"
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "   "
+	   }
+	   s += "}"
+   }
+   return s
+}
+
 func (o *rset) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
@@ -340,6 +360,12 @@ TODO
 
 */
 func (c *rset) Iter(th InterpreterThread) <-chan RObject {
+	var db DB
+	if th == nil {
+		db = RT.DB()
+	} else {
+		db = th.DB()
+	}		
 	ch := make(chan RObject)
 	go func() {
 		var fromPersistence map[RObject]RObject
@@ -347,7 +373,7 @@ func (c *rset) Iter(th InterpreterThread) <-chan RObject {
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = th.DB().Fetch(int64(proxy), 0)
+				robj, err = db.Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching set element: %s", err))
 				}
@@ -442,6 +468,26 @@ type rsortedset struct {
 	rcollection
 	m map[RObject]bool // use this as set 
 	v *RVector
+}
+
+func (o *rsortedset) String() string {
+   s := ""
+   if o.Length() > 4 {
+	   sep := "\n   {"
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "\n      "
+	   }
+	   s += "\n   }"
+   	} else { // Horizontal layout
+	   sep := "{"
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "   "
+	   }
+	   s += "}"
+   }
+   return s
 }
 
 func (o *rsortedset) Debug() string {
@@ -679,6 +725,12 @@ func (s *rsortedset) ClearInMemory() {
 TODO Use more standard flag-based deproxify
  */
 func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
+	var db DB
+	if th == nil {
+		db = RT.DB()
+	} else {
+		db = th.DB()
+	}	
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
@@ -687,7 +739,7 @@ func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
 				if robj.IsProxy() {
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = th.DB().Fetch(int64(proxy), 0)
+					robj, err = db.Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 					}
@@ -702,13 +754,19 @@ func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
 }
 
 func (c *rsortedset) deproxify(th InterpreterThread) {
+	var db DB
+	if th == nil {
+		db = RT.DB()
+	} else {
+		db = th.DB()
+	}	
 	if c.v != nil {
 		for i, obj := range *(c.v) {
 			robj := obj.(RObject)
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = th.DB().Fetch(int64(proxy), 0)
+				robj, err = db.Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 				}
@@ -775,12 +833,41 @@ type rlist struct {
 	v *RVector
 }
 
+func (o *rlist) String() string {
+   s := ""
+   if o.Length() > 4 {
+	   sep := "\n   ["
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "\n      "
+	   }
+	   s += "\n   ]"
+   	} else { // Horizontal layout
+	   sep := "["
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "   "
+	   }
+	   s += "]"
+   }
+   return s
+}
+
 func (o *rlist) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
-
+/*
+TODO: Reconsider the kludge of accepting a nil interpreterThread.
+Currently used in String method to list the elements.
+*/
 func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
+	var db DB
+	if th == nil {
+		db = RT.DB()
+	} else {
+		db = th.DB()
+	}	
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
@@ -789,7 +876,7 @@ func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 				if robj.IsProxy() {
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = th.DB().Fetch(int64(proxy), 0)
+					robj, err = db.Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching list element: %s", err))
 					}
@@ -805,15 +892,23 @@ func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 
 /*
    Converts all proxies in the collection to real objects.
+   TODO: Reconsider the kludge of accepting a nil interpreterThread.
+   Currently used in String method to list the elements.
 */
 func (c *rlist) deproxify(th InterpreterThread) {
+	var db DB
+	if th == nil {
+		db = RT.DB()
+	} else {
+		db = th.DB()
+	}
 	if c.v != nil {
 		for i, obj := range *(c.v) {
 			robj := obj.(RObject)
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = th.DB().Fetch(int64(proxy), 0)
+				robj, err = db.Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching list element: %s", err))
 				}
