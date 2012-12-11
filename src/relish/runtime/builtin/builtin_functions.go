@@ -22,6 +22,9 @@ import (
 	"os"
 	"bufio"
 	"net/smtp"
+	"net/http"
+	"net/url"	
+	"io/ioutil"
 )
 
 // Reader for reading from standard input
@@ -137,6 +140,35 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	email4Method.PrimitiveCode = builtinSendEmail
+
+
+
+
+    ////////////////////////////////////////////////////////////
+    // http client functions
+
+    // httpGet url String > responseBody String err String
+    //
+    //
+	httpGetMethod, err := RT.CreateMethod("relish/pkg/http",nil,"httpGet", []string{"url"}, []string{"String"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	httpGetMethod.PrimitiveCode = builtinHttpGet
+
+    // httpPost 
+    //    url String 
+    //    keysVals {} String > [] String
+    // > 
+    //    responseBody String 
+    //    err String
+    //
+	httpPostMethod, err := RT.CreateMethod("relish/pkg/http",nil,"httpPost", []string{"url","keysVals"}, []string{"String","Map"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	httpPostMethod.PrimitiveCode = builtinHttpPost
+
 
 
 
@@ -3163,6 +3195,87 @@ func builtinSendEmail(th InterpreterThread, objects []RObject) []RObject {
 
    return []RObject{String(errStr)}
 }
+
+
+
+
+// httpGet url String > responseBody String err String
+//
+//
+func builtinHttpGet(th InterpreterThread, objects []RObject) []RObject {
+	
+	url := string(objects[0].(String))
+	
+    content := ""
+    errStr := ""
+
+	res, err := http.Get(url)
+	if err != nil {
+		errStr = err.Error()
+	} else {
+		content, err = ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			errStr = err.Error()
+		}
+    }	
+	return []RObject{String(content),String(errStr)}
+}
+
+
+
+// httpPost 
+//    url String 
+//    keysVals {} String > Any
+// > 
+//    responseBody String 
+//    err String
+//
+func builtinHttpPost(th InterpreterThread, objects []RObject) []RObject {
+	
+	url := string(objects[0].(String))
+	
+	theMap := objects[1].(Map)
+	
+	for key := range theMap.Iter(nil) {
+		val, _ := theMap.Get(key)	
+	}
+	
+    content := ""
+    errStr := ""
+
+	values := url.Values{}
+    for key := range theMap.Iter(th) {
+	   keyStr := string(key.(String))
+	   val, _ := theMap.Get(key)	
+	   switch val.(type) {
+    	  case StringType:
+	         values.Set(keyStr, string(val.(String)))
+	      default:
+		    // Must be a list.
+		    coll := val.(RCollection)
+		    for obj := range coll.Iter(th) {
+			   valStr := string(obj.(String))
+		       values.Add(keyStr, valStr)			
+		    }
+	   }
+    }
+
+	res, err := http.PostForm(url, values)
+	if err != nil {
+		errStr = err.Error()
+	} else {
+		content, err = ioutil.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			errStr = err.Error()
+		}
+    }	
+	return []RObject{String(content),String(errStr)}
+}
+
+
+
 
 
 
