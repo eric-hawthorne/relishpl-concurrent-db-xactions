@@ -14,6 +14,8 @@ import (
 	. "relish/runtime/data"
 	"strconv"
 	"strings"
+	"bytes"
+	"io"
 	"unicode/utf8"
 	"relish/rterr"
     "time"
@@ -170,7 +172,122 @@ func InitBuiltinFunctions() {
 	}
 	httpPostMethod.PrimitiveCode = builtinHttpPost
 
+	// httpPost 
+	//    url String 
+	//    mimeType String
+	//    bodyContentToPost String
+	// > 
+	//    responseBody String 
+	//    err String
+	// """
+	//  Posts the data with the specified mime type as the Content-type: header. 
+	// """	
+	httpPost3Method, err := RT.CreateMethod("relish/pkg/http",nil,"httpPost", []string{"url","mimeType","bodyContent"}, []string{"String","String","String"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	httpPost3Method.PrimitiveCode = builtinHttpPost
 
+
+	// csvRead
+	//    content String 
+	// > 
+	//    records [] [] String
+	//    err String
+	// """
+	//  
+	// """
+	//
+	// csvRead
+	//    content String 
+	//    trimSpace Bool
+	// > 
+	//    records [] [] String
+	//    err String
+	// """
+	//  
+	// """
+	//
+	// csvRead
+	//    content String 
+	//    trimSpace Bool
+	//    fieldsPerRecord Int
+	// > 
+	//    records [] [] String
+	//    err String
+	// """
+	//  If trimSpace is supplied and true, leading and trailing space is trimmed from each field value.
+	//  If fieldsPerRecord is supplied and negative, no check is made and each row (each record) can
+	//  have a different number of fields.
+	//  If fieldsPerRecord is 0 (the default) each record must have same number of fields
+	//  as the first record (first row)
+	//  If fieldsPerRecord is supplied and is a positive integer, it specifies the required number 
+	//  of fields per record
+	// """
+	//
+	// Note: The declared list type spec is not correct since not expressible yet.
+	//
+	csvReadMethod, err := RT.CreateMethod("relish/pkg/csv",nil,"csvRead", []string{"content"}, []string{"String"}, []string{"List","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	csvReadMethod.PrimitiveCode = builtinCsvRead
+
+	csvRead2Method, err := RT.CreateMethod("relish/pkg/csv",nil,"csvRead", []string{"content","trimSpace"}, []string{"String","Bool"}, []string{"List","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	csvRead2Method.PrimitiveCode = builtinCsvRead
+
+	csvRead3Method, err := RT.CreateMethod("relish/pkg/csv",nil,"csvRead", []string{"content","trimSpace","fieldsPerRecord"}, []string{"String","Bool","Int"}, []string{"List","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	csvRead3Method.PrimitiveCode = builtinCsvRead	
+	
+	// csvWrite
+	//    records [] [] String 
+	// > 
+	//    content String 
+	//    err String
+	// """
+	//  Each record (i.e. data row) is a list of Strings, one String per field.
+	//  Writes the records out in CSV format.
+	//  If there is an error, the returned content string will be incomplete and
+	//  the second return value will contain an error message.
+	//  If no error, the second return value will be the empty String ""  
+	// """
+	//
+	// csvWrite
+	//    records [] [] String 
+	//    useCrLf Bool
+	// > 
+	//    content String 
+	//    err String
+	// """
+	//  Each record (i.e. data row) is a list of Strings, one String per field.
+	//  Writes the records out in CSV format.
+	//  If there is an error, the returned content string will be incomplete and
+	//  the second return value will contain an error message.
+	//  If no error, the second return value will be the empty String ""  
+	//  If userCrLf is supplied and true, each line terminates with \r\n instead of
+	//  the default \n.  \r\n is the Windows-compatible text file line ending,
+	//  whereas the default \n is the linux and macosx compatible text file format.
+	// """
+	//
+	// Note: The declared list type spec is not correct since not expressible yet.
+	//
+	csvWriteMethod, err := RT.CreateMethod("relish/pkg/csv",nil,"csvWrite", []string{"records"}, []string{"List"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	csvWriteMethod.PrimitiveCode = builtinCsvWrite
+
+	csvWrite2Method, err := RT.CreateMethod("relish/pkg/csv",nil,"csvWrite", []string{"records","useCrLf"}, []string{"List","Bool"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	csvWrite2Method.PrimitiveCode = builtinCsvWrite
 
 
 
@@ -3236,44 +3353,78 @@ func builtinHttpGet(th InterpreterThread, objects []RObject) []RObject {
 //  The keysVals map should be a map from String to (value or collection of values)
 //  The values are converted to their default String representation to be used as
 //  http post argument values.
-//   
+// """
+//
+//
+// httpPost 
+//    url String 
+//    mimeType String
+//    bodyContentToPost String
+// > 
+//    responseBody String 
+//    err String
+// """
+//  Posts the data with the specified mime type as the Content-type: header. 
 // """
 //
 func builtinHttpPost(th InterpreterThread, objects []RObject) []RObject {
-	
-	urlStr := string(objects[0].(String))
-	
-	theMap := objects[1].(Map)
-	
+
     contentStr := ""
     errStr := ""
 
-	values := url.Values{}
-    for key := range theMap.Iter(th) {
-	   keyStr := string(key.(String))
-	   val, _ := theMap.Get(key)	
-       if val.IsCollection() {
-		    coll := val.(RCollection)
-		    for obj := range coll.Iter(th) {
-			   valStr := obj.String()
-		       values.Add(keyStr, valStr)			
-		    }
-	    } else {
-	       values.Set(keyStr, val.String())
-	   }
-    }
+	urlStr := string(objects[0].(String))
 
-	res, err := http.PostForm(urlStr, values)
-	if err != nil {
-		errStr = err.Error()
-	} else {
-		content, err := ioutil.ReadAll(res.Body)
-		res.Body.Close()
+	if len(objects) == 2 {  // 2nd arg is a map of form-input keys-values
+
+		theMap := objects[1].(Map)
+		
+		values := url.Values{}
+	    for key := range theMap.Iter(th) {
+		   keyStr := string(key.(String))
+		   val, _ := theMap.Get(key)	
+	       if val.IsCollection() {
+			    coll := val.(RCollection)
+			    for obj := range coll.Iter(th) {
+				   valStr := obj.String()
+			       values.Add(keyStr, valStr)			
+			    }
+		    } else {
+		       values.Set(keyStr, val.String())
+		   }
+	    }
+
+		res, err := http.PostForm(urlStr, values)
 		if err != nil {
 			errStr = err.Error()
-		}
-		contentStr = string(content)
-    }	
+		} else {
+			content, err := ioutil.ReadAll(res.Body)
+			res.Body.Close()
+			if err != nil {
+				errStr = err.Error()
+			}
+			contentStr = string(content)
+	    }	
+    } else { // 3 arguments supplied - posting raw content with mime-type identified
+
+        // For now we only handle a String as argument.
+        // Later should handle a [] Byte too.
+
+        bodyMimeType := string(objects[1].(String))
+        bodyContentToPost := string(objects[2].(String))
+
+        stringReader := strings.NewReader(bodyContentToPost) 
+		res, err := http.Post(urlStr, bodyMimeType, stringReader)
+		if err != nil {
+			errStr = err.Error()
+		} else {
+			content, err := ioutil.ReadAll(res.Body)
+			res.Body.Close()
+			if err != nil {
+				errStr = err.Error()
+			}
+			contentStr = string(content)
+	    }	
+    }
 	return []RObject{String(contentStr),String(errStr)}
 }
 
@@ -3288,35 +3439,75 @@ func builtinHttpPost(th InterpreterThread, objects []RObject) []RObject {
 //  
 // """
 //
+// csvRead
+//    content String 
+//    trimSpace Bool
+// > 
+//    records [] [] String
+//    err String
+// """
+//  
+// """
+//
+// csvRead
+//    content String 
+//    trimSpace Bool
+//    fieldsPerRecord Int
+// > 
+//    records [] [] String
+//    err String
+// """
+//  If trimSpace is supplied and true, leading and trailing space is trimmed from each field value.
+//  If fieldsPerRecord is supplied and negative, no check is made and each row (each record) can
+//  have a different number of fields.
+//  If fieldsPerRecord is 0 (the default) each record must have same number of fields
+//  as the first record (first row)
+//  If fieldsPerRecord is supplied and is a positive integer, it specifies the required number 
+//  of fields per record
+// """
+//
 func builtinCsvRead(th InterpreterThread, objects []RObject) []RObject {
    content := string(objects[0].(String))
+   trim := false
+   if len(objects) > 1 {
+      trim = bool(objects[1].(Bool))
+   }
+
    stringReader := strings.NewReader(content) 
    csvReader := csv.NewReader(stringReader)
    csvReader.TrailingComma = true
+
+   if len(objects) > 2 {  // -1 = no check, 0 = same as first row, 1+ = number of columns
+   	   csvReader.FieldsPerRecord = int(int64(objects[2].(Int)))
+   }
+
+
    errStr := ""
    recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil)
    if err != nil {
       errStr = err.Error()
    } else {
-	   records, err := csvReader.ReadAll()
-	   if err != nil {
-	      errStr = err.Error()
-	   } 
-	   recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil)
-	   if err != nil {
-	      errStr = err.Error()	
-	   } else {
-		   for _,record := range records {
-		      recordList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
-		      if err != nil {
-			     errStr = err.Error()
-			     break
-		      }
-		      for _,field := range record {
-			     recordList.AddSimple(String(field))
-		      }
-		      recordsList.AddSimple(recordList)
-		   }
+   	   for {
+          record, err := csvReader.Read()
+          if err == io.EOF {
+          	 break
+          } else if err != nil {
+          	 errStr = err.Error()
+          	 break
+          }    
+
+		  recordList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+		  if err != nil {
+			 errStr = err.Error()
+			 break
+		  }
+	      for _,field := range record {
+	      	 if trim {
+	      	 	field = strings.TrimSpace(field)
+	      	 }
+		     recordList.AddSimple(String(field))
+	      }
+	      recordsList.AddSimple(recordList)		  
 	   }
    }
    return []RObject{recordsList, String(errStr)}
@@ -3329,11 +3520,57 @@ func builtinCsvRead(th InterpreterThread, objects []RObject) []RObject {
 //    content String 
 //    err String
 // """
-//  
+//  Each record (i.e. data row) is a list of Strings, one String per field.
+//  Writes the records out in CSV format.
+//  If there is an error, the returned content string will be incomplete and
+//  the second return value will contain an error message.
+//  If no error, the second return value will be the empty String ""  
+// """
+//
+// csvWrite
+//    records [] [] String 
+//    useCrLf Bool
+// > 
+//    content String 
+//    err String
+// """
+//  Each record (i.e. data row) is a list of Strings, one String per field.
+//  Writes the records out in CSV format.
+//  If there is an error, the returned content string will be incomplete and
+//  the second return value will contain an error message.
+//  If no error, the second return value will be the empty String ""  
+//  If useCrLf is supplied and true, each line terminates with \r\n instead of
+//  the default \n.  \r\n is the Windows-compatible text file line ending,
+//  whereas the default \n is the linux and macosx compatible text file format.
 // """
 //
 func builtinCsvWrite(th InterpreterThread, objects []RObject) []RObject {
-	return nil
+
+	var buf bytes.Buffer
+	csvWriter := csv.NewWriter(&buf)
+	content := ""
+	errStr := ""
+	recordsList := objects[0].(RCollection) 
+	if len(objects) == 2 {
+		csvWriter.UseCRLF = bool(objects[1].(Bool))
+	}
+	for recList := range recordsList.Iter(th) {
+		recordList := recList.(RCollection)
+		var record []string
+		for field := range recordList.Iter(th) {
+           record = append(record, string(field.(String)))
+		}
+        err := csvWriter.Write(record)
+        if err != nil {
+        	errStr = err.Error()
+        	break
+        }
+
+	}
+	csvWriter.Flush()
+	content = buf.String()
+
+	return []RObject{String(content),String(errStr)}
 }
 	
 	

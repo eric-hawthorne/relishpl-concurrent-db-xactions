@@ -20,6 +20,7 @@ import
    email
    closures 
    http_client
+   transcoders
 
 
 main
@@ -45,4 +46,5 @@ testAll
    collections.testCollections
    closures.testClosures
    http_client.testHttp
+   transcoders.testCsv
    concurrency.testConcurrency

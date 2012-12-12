@@ -129,6 +129,24 @@ You can supply an https url to the methods as well as http.
 """
 
 
+httpPost 
+   url String 
+   mimeType String
+   bodyContentToPost String
+> 
+   responseBody String 
+   err String
+"""
+ Posts the data with the specified mime type as the Content-type: header. 
+ Eventually there should be a variant that accepts a [] Byte body argument
+ and a variant that accepts a Reader argument.
+"""  
+
+
+
+
+
+
 
 
 

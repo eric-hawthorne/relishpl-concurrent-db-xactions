@@ -68,3 +68,16 @@ testHttp
    print content
    print "Err:"
    print err   
+
+   csvFileContents = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+   content err = httpPost "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi" "text/csv" csvFileContents
+   print "===== POST text/csv to http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi ====="
+   print "Content:"
+   print content
+   print "Err:"
+   print err  

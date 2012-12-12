@@ -1,0 +1,174 @@
+origin   relish.pl2012
+artifact relish_tests
+package  transcoders
+
+""" 
+ csv_read_write.rel
+
+ Test reading and writing text/CSV data.
+"""
+
+import
+   csv
+   strings
+
+
+main
+"""
+ Main program.
+"""
+   testCsv
+
+
+testCsv
+"""
+ Tests reading CSV-encoded data from a big, multi-line String, and writing records
+ out in CSV format to a big, multi-line String.
+"""
+   csvFileContents = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+
+   records err = csvRead csvFileContents
+   if err
+      print err
+   else
+      printRecords records   
+
+   print ""
+   print "==================== Now trimming spaces ================="
+   print ""
+
+   // Now test trimming leading and trailing spaces from fields
+   recordsTrimmed err = csvRead csvFileContents true
+   if err
+      print err
+   else
+      printRecords recordsTrimmed           
+
+   print ""
+   print "==================== Now checking extra field err =================="
+   print ""
+
+   csvFileContents2 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.,   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+
+
+   recordsBad err = csvRead csvFileContents2
+   if err
+      print err
+
+   print ""
+   print "==================== Now allowing extra field ================="
+   print ""
+
+   // Now test accepting the extra record in line 2
+   recordsExtra err = csvRead csvFileContents2 false (neg 1)
+   if err
+      print err   
+   else
+      printRecords recordsExtra  
+
+   print ""
+   print "======= Now allowing extra field and trimming ================="
+   print ""
+
+   // Now test accepting the extra record in line 2
+   recordsExtraTrimmed err = csvRead csvFileContents2 true (neg 1)
+   if err
+      print err   
+   else
+      printRecords recordsExtraTrimmed         
+
+   print ""
+   print "==================== Now checking bad quote ================="
+   print ""
+
+   csvFileContents3 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+"Alice,Lin,323-665-4343,No problem here.,   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+   recordsBad err = csvRead csvFileContents3
+   if err
+      print err
+
+   print ""
+   print "==================== Done csvRead tests ================="
+   print ""
+   print ""
+   print "==================== Testing csvWrite ==================="
+   print ""   
+
+   content err = csvWrite records
+   if err
+      print err
+   else
+      print content
+
+   print ""
+   print "==================== Now with spaces trimmed ================="
+   print ""
+
+   content err = csvWrite recordsTrimmed
+   if err
+      print err
+   else
+      print content   
+
+   print ""
+   print "==================== Extra Field in row 2 ================="
+   print ""
+
+   content err = csvWrite recordsExtra
+   if err
+      print err
+   else
+      print content   
+
+   print ""
+   print "=========== Extra and Trimmed ================="
+   print ""
+
+   content err = csvWrite recordsExtraTrimmed
+   if err
+      print err
+   else
+      print content   
+      print len content      
+
+   print ""
+   print "=========== Windows line-ends ================="
+   print ""
+
+   content err = csvWrite recordsExtraTrimmed true
+   if err
+      print err
+   else
+      print content         
+      print len content
+
+   print ""
+   print "==================== Done csvWrite tests ================="
+   print ""     
+
+
+printRecords records Any
+"""
+ Prints out each record, with each field enclosed in | |
+"""
+   for record in records
+      row = ""
+      sep = "|"
+      for field in record
+         row = cat row sep field
+      row = cat row sep
+      print row      
