@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/url"	
 	"io/ioutil"
+	"encoding/csv"
 )
 
 // Reader for reading from standard input
@@ -3275,6 +3276,71 @@ func builtinHttpPost(th InterpreterThread, objects []RObject) []RObject {
     }	
 	return []RObject{String(contentStr),String(errStr)}
 }
+
+
+
+// csvRead
+//    content String 
+// > 
+//    records [] [] String
+//    err String
+// """
+//  
+// """
+//
+func builtinCsvRead(th InterpreterThread, objects []RObject) []RObject {
+   content := string(objects[0].(String))
+   stringReader := strings.NewReader(content) 
+   csvReader := csv.NewReader(stringReader)
+   csvReader.TrailingComma = true
+   errStr := ""
+   recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil)
+   if err != nil {
+      errStr = err.Error()
+   } else {
+	   records, err := csvReader.ReadAll()
+	   if err != nil {
+	      errStr = err.Error()
+	   } 
+	   recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil)
+	   if err != nil {
+	      errStr = err.Error()	
+	   } else {
+		   for _,record := range records {
+		      recordList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+		      if err != nil {
+			     errStr = err.Error()
+			     break
+		      }
+		      for _,field := range record {
+			     recordList.AddSimple(String(field))
+		      }
+		      recordsList.AddSimple(recordList)
+		   }
+	   }
+   }
+   return []RObject{recordsList, String(errStr)}
+}
+	
+	
+// csvWrite
+//    records [] [] String 
+// > 
+//    content String 
+//    err String
+// """
+//  
+// """
+//
+func builtinCsvWrite(th InterpreterThread, objects []RObject) []RObject {
+	return nil
+}
+	
+	
+	
+	
+	
+	
 
 
 
