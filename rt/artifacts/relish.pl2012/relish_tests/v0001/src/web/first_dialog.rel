@@ -50,6 +50,20 @@ foo > String vehicles.Car
       car2
 
 
+map > String Map
+"""
+ Web handler method with a map as template argument
+"""
+   args = {
+             "firstName" => "Joe"
+             "lastName"  => "Cool"
+             "age"       => 23
+          }
+
+   => "map.html"
+      args
+
+
 echo text String > String String
 """
  First web handler method with arguments.

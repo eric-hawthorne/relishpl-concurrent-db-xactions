@@ -161,7 +161,7 @@ James,"Earl Jones,Jr.",   4349893434,""
    print ""     
 
 
-printRecords records Any
+printRecords records List
 """
  Prints out each record, with each field enclosed in | |
 """

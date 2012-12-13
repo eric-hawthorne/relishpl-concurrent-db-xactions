@@ -871,13 +871,19 @@ func ListenAndServe(portNumber int) {
    TODO This should also handle unary function calls on the object.
 */
 func AttrVal(attrName string, obj RObject) (val RObject, err error) {
-    /*
     if obj.IsCollection() && (obj.(RCollection)).IsMap() {
         theMap := obj.(Map)
-        ...
-
-    } else {
-    */
+	    if theMap.KeyType() != StringType  {
+           return nil,errors.New("template error: A map must have String key-type to serve as a template argument.") 		
+		}   
+		key := String(attrName) 
+		var found bool
+		val, found = theMap.Get(key) 
+        if ! found {
+           return nil,fmt.Errorf("template error: Map has no value for the key \"%s\".",attrName) 
+        }
+        return
+    } 
 	return RT.AttrValByName(obj, attrName)
 }
 
