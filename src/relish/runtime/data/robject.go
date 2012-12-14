@@ -145,6 +145,11 @@ type RObject interface {
 	IsValid() bool
 	SetValid()
 	ClearValid()
+	
+	IsMarked() bool 
+	SetMarked()    
+	ClearMarked()  
+	ToggleMarked()  
 
 	/*
 	   The object is stored in the local sqlite database.
@@ -200,8 +205,8 @@ const FLAG_LOAD_NEEDED = 0x2 // object state must be reloaded from db because ha
 const FLAG_VALID = 0x4 // Object has all valid attribute values and ok attribute and relationship cardinality
 const FLAG_UNUSED_1 = 0x8
 const FLAG_UNUSED_2 = 0x10
-const FLAG_UNUSED_3 = 0x20
-const FLAG_STORED_LOCALLY = 0x40
+const FLAG_MARKED = 0x20 // Toggle reachable directly or indirectly from a thread stack or a constant
+const FLAG_STORED_LOCALLY = 0x40 // Object is pesisted in local database
 const FLAG_ID_REVERSED = 0x80 // The uuid is stored reversed in the db object (db id=bytes 8-15 of uuid).
 
 /*
@@ -237,6 +242,11 @@ func (o *robject) ClearLoadNeeded()  { o.flags &^= FLAG_LOAD_NEEDED }
 func (o robject) IsValid() bool { return o.flags&FLAG_VALID != 0 }
 func (o *robject) SetValid()    { o.flags |= FLAG_VALID }
 func (o *robject) ClearValid()  { o.flags &^= FLAG_VALID }
+
+func (o robject) IsMarked() bool { return o.flags&FLAG_MARKED != 0 }
+func (o *robject) SetMarked()    { o.flags |= FLAG_MARKED }
+func (o *robject) ClearMarked()  { o.flags &^= FLAG_MARKED }
+func (o *robject) ToggleMarked()  { o.flags ^= FLAG_MARKED }
 
 func (o robject) IsIdReversed() bool { return o.flags&FLAG_ID_REVERSED != 0 }
 func (o *robject) SetIdReversed()    { o.flags |= FLAG_ID_REVERSED }
