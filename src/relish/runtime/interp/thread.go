@@ -14,13 +14,8 @@ import (
 	//"os"
 	"fmt"
 	"relish/compiler/ast"
-	"relish/compiler/token"
 	. "relish/dbg"
 	. "relish/runtime/data"
-	"relish/rterr"
-	"strconv"
-	"net/url"
-	"strings"
 	"errors"
 )
 
@@ -211,6 +206,29 @@ func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
    t.Base = numReturnVals
    t.Pos = n - 1
 
+}
+
+/*
+Mark all structured objects on the stack as reachable and safe from garbage collection.
+*/
+func (t *Thread) Mark() {
+
+	for i := t.Pos; i >= 0; i-- {
+		t.Stack[i].Mark()
+	}
+
+	// When finished, signal somehow.
+	// The philosophy should be each stack has to signal when it is finished marking,
+	// then it has to wait on an RLock() of an RWMutex for the RT.GC() to finish and unlock the RWMutex.
+
+	// So interpreter.GC() should 
+	// a) Know how many threads are active
+	// b) lightweight flag each thread (set a bool in the thread) to begin marking
+	//     - It's ok if the flag is missed for a while
+	// - Flags actually have to wait for all of them to rendezvous before
+	//   commencing to mark, so that it is safe to traverse a collection and mark its members
+	// c) wait for all threads to finish marking
+	// d) proceed with the sweep 
 }
 
 /*

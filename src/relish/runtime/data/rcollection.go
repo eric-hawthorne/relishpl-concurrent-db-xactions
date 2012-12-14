@@ -243,6 +243,7 @@ func (o *rcollection) Debug() string {
 
 
 
+
 func (c rcollection) IsUnit() bool {
 	return false
 }
@@ -428,6 +429,25 @@ func (c *rset) Contains(th InterpreterThread, obj RObject) (found bool) {
 	}
 	_,found = c.m[obj]
 	return
+}
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+Also recursively Mark all (in-memory) elements of the collection.
+*/
+func (o *rset) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.elementType.IsPrimitive {
+   	   return true
+   }
+   for obj := range o.m {
+   	  obj.Mark()
+   }
+
+   return true
 }
 
 
@@ -753,6 +773,28 @@ func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+Also recursively Mark all (in-memory) elements of the collection.
+*/
+func (o *rsortedset) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.elementType.IsPrimitive {
+   	   return true
+   }
+
+   for obj := range o.m {
+   	  obj.Mark()
+   }
+   return true
+}
+
+
+
 func (c *rsortedset) deproxify(th InterpreterThread) {
 	var db DB
 	if th == nil {
@@ -888,6 +930,26 @@ func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 		close(ch)
 	}()
 	return ch
+}
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+Also recursively Mark all (in-memory) elements of the collection.
+*/
+func (o *rlist) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.elementType.IsPrimitive {
+   	   return true
+   }   
+   if o.v != nil {
+	   for _,obj := range *(o.v) {
+	   	  obj.Mark()
+	   }
+   }
+   return true
 }
 
 /*
@@ -1261,6 +1323,19 @@ func (c *rstringmap) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
+func (o *rstringmap) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.valType.IsPrimitive {
+   	   return true
+   }
+   for _,obj := range o.m {
+   	  obj.Mark()
+   }
+   return true
+}
+
 func (s *rstringmap) Iterable() (interface{},error) {
 	return s.m,nil
 }
@@ -1353,6 +1428,20 @@ func (c *ruint64map) Iter(th InterpreterThread) <-chan RObject {
 		close(ch)
 	}()
 	return ch
+}
+
+
+func (o *ruint64map) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.valType.IsPrimitive {
+   	   return true
+   }
+   for _,obj := range o.m {
+   	  obj.Mark()
+   }
+   return true
 }
 
 func (s *ruint64map) Iterable() (interface{},error) {
@@ -1510,6 +1599,19 @@ func (c *rint64map) Iter(th InterpreterThread) <-chan RObject {
 	return ch
 }
 
+func (o *rint64map) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.valType.IsPrimitive {
+   	   return true
+   }
+   for _,obj := range o.m {
+   	  obj.Mark()
+   }
+   return true
+}
+
 func (s *rint64map) Iterable() (interface{},error) {
 	return s.m,nil
 }
@@ -1648,6 +1750,31 @@ func (c *rpointermap) Iter(th InterpreterThread) <-chan RObject {
 	}()
 	return ch
 }
+
+func (o *rpointermap) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   if o.elementType.IsPrimitive && o.valType.IsPrimitive {
+      return true
+   } 
+   if o.elementType.IsPrimitive {
+	   for _,obj := range o.m {
+	   	  obj.Mark()
+	   }
+   } else if o.valType.IsPrimitive {
+	   for obj := range o.m {
+	   	  obj.Mark()
+	   }
+   } else {
+	   for key,obj := range o.m {
+	   	  key.Mark()
+	   	  obj.Mark()
+	   }
+   }
+   return true
+}
+
 
 func (s *rpointermap) Iterable() (interface{},error) {
 	return s.m,nil

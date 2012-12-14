@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"net/url"
 	"strings"
-	"errors"
 )
 
 
@@ -668,7 +667,7 @@ func (i *Interpreter) EvalClosure(t *Thread, clos *ast.Closure) {
 		}
 		bindings = append(bindings, obj)
 	}
-	obj := &RClosure{method, bindings}
+	obj := &RClosure{Method:method, Bindings:bindings}
 	t.Push(obj)
 }
 

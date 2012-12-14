@@ -230,6 +230,13 @@ func (p *RMultiMethod) IsValid() bool { return true }
 func (p *RMultiMethod) SetValid()     {}
 func (p *RMultiMethod) ClearValid()   {}
 
+func (p *RMultiMethod) IsMarked() bool { return false }
+func (p *RMultiMethod) SetMarked()    {}
+func (p *RMultiMethod) ClearMarked()  {}
+func (p *RMultiMethod) ToggleMarked()  {}
+
+func (p *RMultiMethod) Mark() bool { return false }
+
 func (p *RMultiMethod) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p *RMultiMethod) SetStoredLocally()     {}
 func (p *RMultiMethod) ClearStoredLocally()   {}
@@ -384,6 +391,13 @@ func (p *RMethod) ClearLoadNeeded() {}
 func (p *RMethod) IsValid() bool { return true }
 func (p *RMethod) SetValid()     {}
 func (p *RMethod) ClearValid()   {}
+
+func (p *RMethod) IsMarked() bool { return false }
+func (p *RMethod) SetMarked()    {}
+func (p *RMethod) ClearMarked()  {}
+func (p *RMethod) ToggleMarked()  {}
+
+func (p *RMethod) Mark() bool { return false }
 
 func (p *RMethod) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p *RMethod) SetStoredLocally()     {}
@@ -661,6 +675,7 @@ Represents a closure with bound free variables.
 type RClosure struct {
 	Method *RMethod
 	Bindings []RObject
+	flags byte	
 }
 
 func (p *RClosure) IsZero() bool {
@@ -752,9 +767,8 @@ func (p *RClosure) RemoveUUID() {
 	return
 }
 
-func (p *RClosure) Flags() int8 {
-	panic("A Closure has no Flags.")
-	return 0
+func (o *RClosure) Flags() int8 {
+	return int8(o.flags)
 }
 
 func (p *RClosure) IsDirty() bool {
@@ -783,6 +797,30 @@ func (p *RClosure) ClearLoadNeeded() {}
 func (p *RClosure) IsValid() bool { return true }
 func (p *RClosure) SetValid()     {}
 func (p *RClosure) ClearValid()   {}
+
+func (o *RClosure) IsMarked() bool { return o.flags&FLAG_MARKED != 0 }
+func (o *RClosure) SetMarked()    { o.flags |= FLAG_MARKED }
+func (o *RClosure) ClearMarked()  { o.flags &^= FLAG_MARKED }
+func (o *RClosure) ToggleMarked()  { o.flags ^= FLAG_MARKED }
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+*/
+func (o *RClosure) Mark() bool { 
+   if o.IsMarked() == markSense {
+   	   return false
+   } 
+   o.ToggleMarked()
+
+   // Now mark the bound objects 
+   for _,obj := range o.Bindings {
+   	  obj.Mark()
+   }
+
+   return true
+}
+
 
 func (p *RClosure) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p *RClosure) SetStoredLocally()     {}

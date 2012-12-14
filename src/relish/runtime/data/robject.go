@@ -152,6 +152,13 @@ type RObject interface {
 	ToggleMarked()  
 
 	/*
+	If the object is not already marked as reachable, flag it as reachable.
+	Return whether we had to flag it as reachable. false if was already marked reachable.
+	Is a no-op that returns false for value-types that don't need marking.
+	*/
+	Mark() bool 
+
+	/*
 	   The object is stored in the local sqlite database.
 	*/
 	IsStoredLocally() bool
@@ -247,6 +254,18 @@ func (o robject) IsMarked() bool { return o.flags&FLAG_MARKED != 0 }
 func (o *robject) SetMarked()    { o.flags |= FLAG_MARKED }
 func (o *robject) ClearMarked()  { o.flags &^= FLAG_MARKED }
 func (o *robject) ToggleMarked()  { o.flags ^= FLAG_MARKED }
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+*/
+func (o *robject) Mark() bool { 
+   if o.IsMarked() == markSense {
+   	   return false
+   } 
+   o.ToggleMarked()
+   return true
+}
 
 func (o robject) IsIdReversed() bool { return o.flags&FLAG_ID_REVERSED != 0 }
 func (o *robject) SetIdReversed()    { o.flags |= FLAG_ID_REVERSED }

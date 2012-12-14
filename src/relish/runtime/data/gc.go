@@ -18,7 +18,7 @@ import (
 
 var GCMutex sync.RWMutex
 
-var markSenseReversed bool
+var markSense bool = true  // What value of object Marked flag means "is reachable" - if true, 1, if false, 0
 
 /*
 Run the garbage collector.
@@ -30,24 +30,24 @@ func (rt *RuntimeEnv) GC() {
 	defer GCMutex.Unlock()
 	
 	rt.sweep()
-	markSenseReversed = ! markSenseReversed		
+	markSense = ! markSense	
 }
 
 
 func (rt *RuntimeEnv) sweep() {
 	for key, obj := range rt.objects {
-	   if obj.IsMarked() == markSenseReversed {  // Not reachable
+	   if obj.IsMarked() != markSense {  // Not reachable
 	       delete(rt.objects,key)
 	   }	
 	}  
 	for obj := range rt.objectIds {
-	   if obj.IsMarked() == markSenseReversed {  // Not reachable
+	   if obj.IsMarked() != markSense {  // Not reachable
 		   delete(rt.objectIds,obj)
 	   }	
 	}
 	for _,attrMap := range rt.attributes {
 		for obj := range attrMap {
-		   if obj.IsMarked() == markSenseReversed {  // Not reachable
+		   if obj.IsMarked() != markSense {  // Not reachable
 			   delete(attrMap,obj)
 		   }			
 		}

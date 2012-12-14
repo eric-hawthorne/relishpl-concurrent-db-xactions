@@ -432,6 +432,21 @@ func (p Channel) IsValid() bool { return true }
 func (p Channel) SetValid()     {}
 func (p Channel) ClearValid()   {}
 
+func (p Channel) IsMarked() bool { return false }
+func (p Channel) SetMarked()    {}
+func (p Channel) ClearMarked()  {}
+func (p Channel) ToggleMarked()  {}
+
+/*
+TODO TODO TODO !!! What do we do about objects that are sitting in buffered-channel queues but are nowhere else referred to?
+
+Those should not be removed from the objects map nor the attributes maps !!!!!!
+Is this going to require a separate flag? Quite possibly, unless we, upon taking an object out of a channel,
+immediately mark it as reachable!
+*/
+func (p Channel) Mark() bool { return false }
+
+
 func (p Channel) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Channel) SetStoredLocally()     {}
 func (p Channel) ClearStoredLocally()   {}
@@ -607,6 +622,13 @@ func (p TimeChannel) IsValid() bool { return true }
 func (p TimeChannel) SetValid()     {}
 func (p TimeChannel) ClearValid()   {}
 
+func (p TimeChannel) IsMarked() bool { return false }
+func (p TimeChannel) SetMarked()    {}
+func (p TimeChannel) ClearMarked()  {}
+func (p TimeChannel) ToggleMarked()  {}
+
+func (p TimeChannel) Mark() bool { return false }
+
 func (p TimeChannel) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p TimeChannel) SetStoredLocally()     {}
 func (p TimeChannel) ClearStoredLocally()   {}
@@ -752,6 +774,13 @@ func (p Mutex) ClearLoadNeeded() {}
 func (p Mutex) IsValid() bool { return true }
 func (p Mutex) SetValid()     {}
 func (p Mutex) ClearValid()   {}
+
+func (p Mutex) IsMarked() bool { return false }
+func (p Mutex) SetMarked()    {}
+func (p Mutex) ClearMarked()  {}
+func (p Mutex) ToggleMarked()  {}
+
+func (p Mutex) Mark() bool { return false }
 
 func (p Mutex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Mutex) SetStoredLocally()     {}
@@ -902,6 +931,13 @@ func (p RWMutex) ClearLoadNeeded() {}
 func (p RWMutex) IsValid() bool { return true }
 func (p RWMutex) SetValid()     {}
 func (p RWMutex) ClearValid()   {}
+
+func (p RWMutex) IsMarked() bool { return false }
+func (p RWMutex) SetMarked()    {}
+func (p RWMutex) ClearMarked()  {}
+func (p RWMutex) ToggleMarked()  {}
+
+func (p RWMutex) Mark() bool { return false }
 
 func (p RWMutex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p RWMutex) SetStoredLocally()     {}
@@ -1059,6 +1095,13 @@ func (p RTime) IsValid() bool { return true }
 func (p RTime) SetValid()     {}
 func (p RTime) ClearValid()   {}
 
+func (p RTime) IsMarked() bool { return false }
+func (p RTime) SetMarked()    {}
+func (p RTime) ClearMarked()  {}
+func (p RTime) ToggleMarked()  {}
+
+func (p RTime) Mark() bool { return false }
+
 func (p RTime) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p RTime) SetStoredLocally()     {}
 func (p RTime) ClearStoredLocally()   {}
@@ -1199,6 +1242,13 @@ func (p Int) IsValid() bool { return true }
 func (p Int) SetValid()     {}
 func (p Int) ClearValid()   {}
 
+func (p Int) IsMarked() bool { return false }
+func (p Int) SetMarked()    {}
+func (p Int) ClearMarked()  {}
+func (p Int) ToggleMarked()  {}
+
+func (p Int) Mark() bool { return false }
+
 func (p Int) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Int) SetStoredLocally()     {}
 func (p Int) ClearStoredLocally()   {}
@@ -1330,6 +1380,13 @@ func (p Int32) IsValid() bool { return true }
 func (p Int32) SetValid()     {}
 func (p Int32) ClearValid()   {}
 
+func (p Int32) IsMarked() bool { return false }
+func (p Int32) SetMarked()    {}
+func (p Int32) ClearMarked()  {}
+func (p Int32) ToggleMarked()  {}
+
+func (p Int32) Mark() bool { return false }
+
 func (p Int32) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Int32) SetStoredLocally()     {}
 func (p Int32) ClearStoredLocally()   {}
@@ -1460,6 +1517,13 @@ func (p Uint) ClearLoadNeeded() {}
 func (p Uint) IsValid() bool { return true }
 func (p Uint) SetValid()     {}
 func (p Uint) ClearValid()   {}
+
+func (p Uint) IsMarked() bool { return false }
+func (p Uint) SetMarked()    {}
+func (p Uint) ClearMarked()  {}
+func (p Uint) ToggleMarked()  {}
+
+func (p Uint) Mark() bool { return false }
 
 func (p Uint) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Uint) SetStoredLocally()     {}
@@ -1596,6 +1660,13 @@ func (p Uint32) IsStoredLocally() bool { return true } // May as well think of i
 func (p Uint32) SetStoredLocally()     {}
 func (p Uint32) ClearStoredLocally()   {}
 
+func (p Uint32) IsMarked() bool { return false }
+func (p Uint32) SetMarked()    {}
+func (p Uint32) ClearMarked()  {}
+func (p Uint32) ToggleMarked()  {}
+
+func (p Uint32) Mark() bool { return false }
+
 func (p Uint32) IsProxy() bool { return false }
 
 func (p Uint32) IsTransient() bool { return false }
@@ -1722,6 +1793,13 @@ func (p Float) ClearLoadNeeded() {}
 func (p Float) IsValid() bool { return true }
 func (p Float) SetValid()     {}
 func (p Float) ClearValid()   {}
+
+func (p Float) IsMarked() bool { return false }
+func (p Float) SetMarked()    {}
+func (p Float) ClearMarked()  {}
+func (p Float) ToggleMarked()  {}
+
+func (p Float) Mark() bool { return false }
 
 func (p Float) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Float) SetStoredLocally()     {}
@@ -1853,6 +1931,13 @@ func (p Bool) ClearLoadNeeded() {}
 func (p Bool) IsValid() bool { return true }
 func (p Bool) SetValid()     {}
 func (p Bool) ClearValid()   {}
+
+func (p Bool) IsMarked() bool { return false }
+func (p Bool) SetMarked()    {}
+func (p Bool) ClearMarked()  {}
+func (p Bool) ToggleMarked()  {}
+
+func (p Bool) Mark() bool { return false }
 
 func (p Bool) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Bool) SetStoredLocally()     {}
@@ -1988,6 +2073,13 @@ func (p Nil) ClearLoadNeeded() {}
 func (p Nil) IsValid() bool { return true }
 func (p Nil) SetValid()     {}
 func (p Nil) ClearValid()   {}
+
+func (p Nil) IsMarked() bool { return false }
+func (p Nil) SetMarked()    {}
+func (p Nil) ClearMarked()  {}
+func (p Nil) ToggleMarked()  {}
+
+func (p Nil) Mark() bool { return false }
 
 func (p Nil) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Nil) SetStoredLocally()     {}
@@ -2131,6 +2223,13 @@ func (p Complex) IsValid() bool { return true }
 func (p Complex) SetValid()     {}
 func (p Complex) ClearValid()   {}
 
+func (p Complex) IsMarked() bool { return false }
+func (p Complex) SetMarked()    {}
+func (p Complex) ClearMarked()  {}
+func (p Complex) ToggleMarked()  {}
+
+func (p Complex) Mark() bool { return false }
+
 func (p Complex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Complex) SetStoredLocally()     {}
 func (p Complex) ClearStoredLocally()   {}
@@ -2263,6 +2362,13 @@ func (p Complex32) ClearLoadNeeded() {}
 func (p Complex32) IsValid() bool { return true }
 func (p Complex32) SetValid()     {}
 func (p Complex32) ClearValid()   {}
+
+func (p Complex32) IsMarked() bool { return false }
+func (p Complex32) SetMarked()    {}
+func (p Complex32) ClearMarked()  {}
+func (p Complex32) ToggleMarked()  {}
+
+func (p Complex32) Mark() bool { return false }
 
 func (p Complex32) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Complex32) SetStoredLocally()     {}
@@ -2421,6 +2527,13 @@ func (p String) IsValid() bool { return true }
 func (p String) SetValid()     {}
 func (p String) ClearValid()   {}
 
+func (p String) IsMarked() bool { return false }
+func (p String) SetMarked()    {}
+func (p String) ClearMarked()  {}
+func (p String) ToggleMarked()  {}
+
+func (p String) Mark() bool { return false }
+
 func (p String) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p String) SetStoredLocally()     {}
 func (p String) ClearStoredLocally()   {}
@@ -2567,6 +2680,13 @@ func (p Proxy) ClearLoadNeeded() {}
 func (p Proxy) IsValid() bool { return true }
 func (p Proxy) SetValid()     {}
 func (p Proxy) ClearValid()   {}
+
+func (p Proxy) IsMarked() bool { return false }
+func (p Proxy) SetMarked()    {}
+func (p Proxy) ClearMarked()  {}
+func (p Proxy) ToggleMarked()  {}
+
+func (p Proxy) Mark() bool { return false }
 
 func (p Proxy) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
 func (p Proxy) SetStoredLocally()     {}
