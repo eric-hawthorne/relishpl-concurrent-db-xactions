@@ -395,19 +395,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    defer t.CommitOrRollback()
 	
-   resultObjects,err := interpreter.RunServiceMethod(t, handlerMethod, positionalArgStringValues, keywordArgStringValues)      
+   resultObjects,err := interpreter.RunServiceMethod(t, handlerMethod, positionalArgStringValues, keywordArgStringValues)   
+
+   interpreter.DeregisterThread(t)
+     
    if err != nil {
       fmt.Println(err)  
       fmt.Fprintln(w, err)
       return  
    }   
 
+   
    err = processResponse(w,r,handlerMethod.Name, resultObjects)
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
       return	
    }	
+
 }
 
 /* Returns the arguments from the combination of the URL query string (part after the ?) and the form values in the request body, 

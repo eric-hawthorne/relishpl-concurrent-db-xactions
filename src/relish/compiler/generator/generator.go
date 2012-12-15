@@ -60,6 +60,7 @@ func (g *Generator) GenerateCode() {
    g.generateRelations(types, attributeOrderings) 
    g.configureAttributeSortings(attributeOrderings)
    g.ensureAttributeAndRelationTables(types)
+   g.Interp.DeregisterThread(g.th)
 }
 
 

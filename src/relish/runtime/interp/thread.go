@@ -43,7 +43,20 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 		t.ExecutingPackage = parent.ExecutingPackage
 	}
 	t.EvalContext = &methodEvaluationContext{i, t}
+
+	i.registerThread(t)
 	return t
+}
+
+func (i *Interpreter) registerThread(t *Thread) {
+	i.threads[t] = true
+}
+
+/*
+Remember to call this when thread execution is done!
+*/
+func (i *Interpreter) DeregisterThread(t *Thread) {
+	delete(i.threads,t)
 }
 
 /*

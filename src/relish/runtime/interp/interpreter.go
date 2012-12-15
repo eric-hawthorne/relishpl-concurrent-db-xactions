@@ -28,10 +28,11 @@ import (
 type Interpreter struct {
 	rt         *RuntimeEnv
 	dispatcher *dispatcher
+	threads    map[*Thread]bool  // goroutines running in this interpreter 
 }
 
 func NewInterpreter(rt *RuntimeEnv) *Interpreter {
-	return &Interpreter{rt: rt, dispatcher: newDispatcher(rt)}
+	return &Interpreter{rt: rt, dispatcher: newDispatcher(rt), threads:make(map[*Thread]bool)}
 }
 
 func (i *Interpreter) Dispatcher() Dispatcher {
@@ -91,6 +92,8 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	i.apply1(t, method, args)
 
 	t.PopN(t.Pos + 1) // Pop everything off the stack for good measure.	
+
+	i.DeregisterThread(t)
 }
 
 
