@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"sort"
 	"relish/rterr"
+	. "relish/dbg"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -443,6 +444,7 @@ func (o *rset) Mark() bool {
    if o.elementType.IsPrimitive {
    	   return true
    }
+   Logln(GC2_,"rset.Mark(): Marking",len(o.m),"elements:")
    for obj := range o.m {
    	  obj.Mark()
    }
@@ -463,6 +465,10 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
 		maxCardinality = MAX_CARDINALITY
 	}
 	coll = &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil}, nil}
+    if ! markSense {
+	    coll.SetMarked()
+    }	
+	Logln(GC2_,"Newrset: IsMarked",coll.IsMarked())	
 	return
 }
 
@@ -786,7 +792,7 @@ func (o *rsortedset) Mark() bool {
    if o.elementType.IsPrimitive {
    	   return true
    }
-
+   Logln(GC2_,"rsortedset.Mark(): Marking",len(o.m),"elements:")
    for obj := range o.m {
    	  obj.Mark()
    }
@@ -850,6 +856,10 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 		maxCardinality = MAX_CARDINALITY
 	}
 	coll = &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil, nil}
+	if ! markSense {
+	    coll.SetMarked()
+	}
+	Logln(GC2_,"Newrsortedset: IsMarked",coll.IsMarked())			
 	return
 }
 
@@ -945,6 +955,7 @@ func (o *rlist) Mark() bool {
    	   return true
    }   
    if o.v != nil {
+       Logln(GC2_,"rlist.Mark(): Marking",len(*(o.v)),"elements:")	
 	   for _,obj := range *(o.v) {
 	   	  obj.Mark()
 	   }
@@ -1257,6 +1268,10 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 		maxCardinality = MAX_CARDINALITY
 	}
 	coll = &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil}
+	if ! markSense {
+	    coll.SetMarked()
+	}	
+	Logln(GC2_,"Newrlist: IsMarked",coll.IsMarked())		
 	return
 }
 
@@ -1297,7 +1312,10 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	default:
 		coll = &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[RObject]RObject)}							
 	}
-
+	if ! markSense {
+	    coll.SetMarked()
+	}
+	Logln(GC2_,"Newmap: IsMarked",coll.IsMarked())	
 	return
 }
 
@@ -1330,6 +1348,7 @@ func (o *rstringmap) Mark() bool {
    if o.valType.IsPrimitive {
    	   return true
    }
+   Logln(GC2_,"rstringmap.Mark(): Marking",len(o.m),"elements:")
    for _,obj := range o.m {
    	  obj.Mark()
    }
@@ -1438,6 +1457,7 @@ func (o *ruint64map) Mark() bool {
    if o.valType.IsPrimitive {
    	   return true
    }
+   Logln(GC2_,"ruint64map.Mark(): Marking",len(o.m),"elements:")
    for _,obj := range o.m {
    	  obj.Mark()
    }
@@ -1606,6 +1626,7 @@ func (o *rint64map) Mark() bool {
    if o.valType.IsPrimitive {
    	   return true
    }
+   Logln(GC2_,"rint64map.Mark(): Marking",len(o.m),"elements:")
    for _,obj := range o.m {
    	  obj.Mark()
    }
@@ -1759,14 +1780,17 @@ func (o *rpointermap) Mark() bool {
       return true
    } 
    if o.elementType.IsPrimitive {
+       Logln(GC2_,"rpointermap.Mark(): Marking",len(o.m),"map values:")	
 	   for _,obj := range o.m {
 	   	  obj.Mark()
 	   }
    } else if o.valType.IsPrimitive {
+       Logln(GC2_,"rpointermap.Mark(): Marking",len(o.m),"map keys:")	
 	   for obj := range o.m {
 	   	  obj.Mark()
 	   }
    } else {
+       Logln(GC2_,"rpointermap.Mark(): Marking",len(o.m),"map keys and same number of map values.")	
 	   for key,obj := range o.m {
 	   	  key.Mark()
 	   	  obj.Mark()

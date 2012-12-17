@@ -89,6 +89,8 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	t.ExecutingMethod = method
 	t.ExecutingPackage = pkg
 
+    go i.GCLoop()
+
 	i.apply1(t, method, args)
 
 	t.PopN(t.Pos + 1) // Pop everything off the stack for good measure.	
@@ -162,9 +164,11 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 	t.ExecutingMethod = method
 	t.ExecutingPackage = method.Pkg
 
+    gcMutex.RLock()    
 
 	i.apply1(t, method, args)
 	
+	gcMutex.RUnlock()
 	
 	t.PopN(t.Pos - t.Base + 1) 	// Leave only the return values on the stack
 	
@@ -905,7 +909,11 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
     nArgs := t.Pos - t.Base - 3
 	t.Reserve(method.NumLocalVars)   // This only works with next TopN call because builtin methods have 0 local vars.
  
-
+    if t.doGC {
+	    gcMutex.RLock()  // Wait til GC is finished
+	    t.doGC = false
+	    gcMutex.RUnlock()
+    }
 	i.apply1(t, method, t.TopN(nArgs)) // Puts results on stack BELOW the current stack frame.	
 
 	t.PopBase()

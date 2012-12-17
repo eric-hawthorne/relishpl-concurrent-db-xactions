@@ -42,6 +42,8 @@ const (
 	ALWAYS_     = 1 << iota		
 	WEB_        = 1 << iota	
 	WEB2_       = 1 << iota	
+	GC_         = 1 << iota		
+	GC2_        = 1 << iota		
 	ANY_        = 0xFFFFFFFFFFFFFFFF	
 )
 
@@ -71,6 +73,8 @@ const (
 	WEB__       = WEB_
 	WEB2__       = WEB2_ | WEB__	
 	ALL_        = ANY_
+	GC__        = GC_
+	GC2__       = GC2_ | GC__	
 )
 	
 	
@@ -83,7 +87,7 @@ const (
 //const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | WEB__ | ALWAYS_
 //const SOME_DEBUG_FLAGS =   PERSIST__ | PERSIST__TR | INTERP__TR | INTERP__ | WEB__ | ALWAYS_
 
-const SOME_DEBUG_FLAGS =  PARSE__ | AST__ | ALWAYS_
+const SOME_DEBUG_FLAGS =  GC2__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  GENERATE2__ | ALWAYS_
 
@@ -200,6 +204,14 @@ func TraceM(context interface{}, flags uint64, msg string, args ...interface{}) 
 	   return msg
     }
     return ""
+}
+
+/*
+Lose track of a thread which is finished. (So it can be garbage collected.)
+*/
+func RemoveContext(context interface{}) {
+	delete(indents, context)
+	delete(threadNums,context)
 }
 
 // Usage pattern: defer Un(Trace("..."))
