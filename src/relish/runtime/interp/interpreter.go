@@ -163,12 +163,8 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 	
 	t.ExecutingMethod = method
 	t.ExecutingPackage = method.Pkg
-
-    gcMutex.RLock()    
-
+ 
 	i.apply1(t, method, args)
-	
-	gcMutex.RUnlock()
 	
 	t.PopN(t.Pos - t.Base + 1) 	// Leave only the return values on the stack
 	
@@ -1421,21 +1417,24 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	if m.PrimitiveCode == nil {
 		if m.ReturnArgsNamed {
 			n := m.NumReturnArgs
+			GCMutex.RLock()
             for j,typ := range m.ReturnSignature.Types {
             	t.Stack[t.Base+j-n] = typ.Zero()
             }
+            GCMutex.RUnlock()
 		}
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
 
-        gcMutex.RLock()
 		objs := m.PrimitiveCode(t, args)
-		gcMutex.RUnlock()
+		
 		n := len(objs)
+		GCMutex.RLock()		
 		for j, obj := range objs {
 			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
 		}
+        GCMutex.RUnlock()		
 	}
 }
 
@@ -2118,9 +2117,9 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			case *ast.Ident: // A local variable or parameter or result parameter
 				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
                 
-                gcMutex.RLock()                
+                GCMutex.RLock()                
 				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.PopNoLock()
-                gcMutex.RUnlock()
+                GCMutex.RUnlock()
 
 				// TODO TODO TODO
 				// Will have to have reserved space for the local variables here when calling the method!!!     
@@ -2133,7 +2132,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				selector := lhsExpr.(*ast.SelectorExpr)
 				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		 
 
-                gcMutex.RLock()
+                GCMutex.RLock()
 
 				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to.
 
@@ -2154,7 +2153,6 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 	                if attr.Part.CollectionType != "" {
 
 		                val := t.PopNoLock()
-		                gcMutex.RLock()
 		                if val.IsCollection() {
 			                coll := val.(RCollection)
 			                for v := range coll.Iter(t) {
@@ -2174,7 +2172,6 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					    } else {
 			               rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
 						}
-						gcMutex.RUnlock()
 	                } else {		
 
 						err := RT.SetAttr(t, assignee, attr, t.PopNoLock(), true, t.EvalContext, false)
@@ -2202,13 +2199,13 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				default:
 					panic("Unrecognized assignment operator")
 				}
-				gcMutex.RUnlock()
+				GCMutex.RUnlock()
 
 			case *ast.IndexExpr:
 				indexExpr := lhsExpr.(*ast.IndexExpr)
 				i.EvalExpr(t, indexExpr.X) // Evaluate the left part of the index expression.		
 				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.			
-                gcMutex.RLock() 						 
+                GCMutex.RLock() 						 
 				idx := t.PopNoLock()       // the index or map key			     
 				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to. OrderedCollection or Map
 
@@ -2328,7 +2325,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					} 				
 					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
 				}
-				gcMutex.RUnlock()
+				GCMutex.RUnlock()
 
 
 
@@ -2441,11 +2438,11 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 			i.EvalExpr(t, resultExpr)
 		}
 
-        gcMutex.RLock()
+        GCMutex.RLock()
 		for j := n-1; j >=0; j-- {	
 			t.Stack[t.Base+j-n] = t.PopNoLock()   
 		}
-		gcMutex.RUnlock()
+		GCMutex.RUnlock()
     }
     return
 }

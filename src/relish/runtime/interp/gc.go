@@ -13,16 +13,14 @@ package interp
 
 import (
    . "relish/dbg"
-   "sync"
    "time"
    "runtime"
+   "relish/runtime/data"
 )
 
 const GC_INTERVAL_MINUTES = 10 
 
 var m runtime.MemStats
-
-var gcMutex sync.RWMutex
 
 /*
 Run the garbage collector loop.
@@ -38,7 +36,8 @@ func (i *Interpreter) GCLoop() {
 	    time.Sleep(GC_INTERVAL_MINUTES * time.Second * 2)
 		    
 	    runtime.ReadMemStats(&m)
-	    if m.Alloc > prevA * 2 {
+//	    if m.Alloc > prevA * 2 {
+	    if m.Alloc >= prevA  {		
 		   Logln(GC_,"Prev Alloc",prevA,", Alloc",m.Alloc)
 		
 	       i.GC()
@@ -57,8 +56,8 @@ func (i *Interpreter) GCLoop() {
 Run the garbage collector.
 */
 func (i *Interpreter) GC() {
-    gcMutex.Lock()
-    defer gcMutex.Unlock()    
+    data.GCMutex.Lock()
+    defer data.GCMutex.Unlock()    
     defer Un(Trace(GC_,"GC"))    
     i.mark()
     i.sweep()

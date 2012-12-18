@@ -51,8 +51,8 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 
 
 func (i *Interpreter) registerThread(t *Thread) {
-    gcMutex.RLock()	
-    defer gcMutex.RUnlock()	
+    GCMutex.RLock()	
+    defer GCMutex.RUnlock()	
 
 	defer UnM(t, TraceM(t, GC2_, "RegisterThread"))
 	
@@ -63,8 +63,8 @@ func (i *Interpreter) registerThread(t *Thread) {
 Remember to call this when thread execution is done!
 */
 func (i *Interpreter) DeregisterThread(t *Thread) {
-    gcMutex.RLock()
-    defer gcMutex.RUnlock()	
+    GCMutex.RLock()
+    defer GCMutex.RUnlock()	
 
     LoglnM(t, GC2_, "DeregisterThread(")
 
@@ -108,7 +108,7 @@ type Thread struct {
 
 
 func (t *Thread) Push(obj RObject) {
-    gcMutex.RLock()		
+    GCMutex.RLock()		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
 	if len(t.Stack) <= t.Pos {
@@ -120,11 +120,11 @@ func (t *Thread) Push(obj RObject) {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	gcMutex.RUnlock()	
+	GCMutex.RUnlock()	
 }
 
 func (t *Thread) Reserve(n int) {
-    gcMutex.RLock()		
+    GCMutex.RLock()		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
 	for len(t.Stack) <= t.Pos+n {
 		oldStack := t.Stack
@@ -132,7 +132,7 @@ func (t *Thread) Reserve(n int) {
 		copy(t.Stack, oldStack)
 	}
 	t.Pos += n
-	gcMutex.RUnlock()	
+	GCMutex.RUnlock()	
 }
 
 
@@ -176,7 +176,7 @@ results (return values) of the method call.
 Returns the position of the base pointer which holds the stack-pointer to the previous stack-frame base position.
 */
 func (t *Thread) PushBase(numReturnArgs int) int {
-    gcMutex.RLock()		
+    GCMutex.RLock()		
 	defer UnM(t, TraceM(t, INTERP_TR3, "PushBase"))
 
 	if numReturnArgs > 0 {
@@ -184,7 +184,7 @@ func (t *Thread) PushBase(numReturnArgs int) int {
 	}
 	t.PushNoLock(Int32(t.Base))
 	t.ReserveNoLock(2) // Reserve space for the currently-executing-method reference and code offset in current method
-	gcMutex.RUnlock()		
+	GCMutex.RUnlock()		
 	return t.Pos - 2
 	
 }
@@ -229,7 +229,7 @@ func (t *Thread) GetVar(offset int) (obj RObject, err error) {
 }
 
 func (t *Thread) Pop() RObject {
-	gcMutex.RLock()
+	GCMutex.RLock()
 	obj := t.Stack[t.Pos]
 	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
 	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
@@ -237,7 +237,7 @@ func (t *Thread) Pop() RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	gcMutex.RUnlock()	
+	GCMutex.RUnlock()	
 	return obj
 }
 
@@ -256,7 +256,7 @@ func (t *Thread) PopNoLock() RObject {
 Efficiently pop n items off the stack.
 */
 func (t *Thread) PopN(n int) RObject {
-	gcMutex.RLock()	
+	GCMutex.RLock()	
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
@@ -267,7 +267,7 @@ func (t *Thread) PopN(n int) RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	gcMutex.RUnlock()	
+	GCMutex.RUnlock()	
 	return obj
 }
 
@@ -280,7 +280,7 @@ func (t *Thread) TopN(n int) []RObject {
 }
 
 func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
-   gcMutex.RLock()		
+   GCMutex.RLock()		
    n := parent.Pos - parent.Base + numReturnVals + 1	
    src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
    if copy(t.Stack, src) != n {
@@ -288,7 +288,7 @@ func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
    }
    t.Base = numReturnVals
    t.Pos = n - 1
-   gcMutex.RUnlock()	   
+   GCMutex.RUnlock()	   
 }
 
 /*

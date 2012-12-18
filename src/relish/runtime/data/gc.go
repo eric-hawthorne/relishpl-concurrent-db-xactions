@@ -13,9 +13,11 @@ package data
 
 import (
    . "relish/dbg"
+   "sync"
 )
 
 
+var GCMutex sync.RWMutex
 
 var markSense bool = true  // What value of object Marked flag means "is reachable" - if true, 1, if false, 0
 

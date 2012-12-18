@@ -545,6 +545,57 @@ func (u runit) IsCollection() bool {
 	return false
 }
 
+func (o *runit) Mark() bool {
+	if (&(o.robject)).Mark() {
+		o.markAttributes()
+		return true
+	}
+	return false
+}
+
+func (o *runit) markAttributes()  {
+
+	for _, attr := range o.rtype.Attributes {
+
+		if !attr.Part.Type.IsPrimitive {
+
+			val, found := RT.AttrValue(o, attr, false, true)
+			if !found {
+				break
+			}
+			val.Mark()	
+		} 
+	}
+
+	for _, typ := range o.rtype.Up {
+		for _, attr := range typ.Attributes {
+			if !attr.Part.Type.IsPrimitive {
+
+				val, found := RT.AttrValue(o, attr, false, true)
+				if !found {
+					break
+				}
+			    val.Mark()				
+			} 
+		}
+	}
+	return
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 Create a new unitary object.
 */

@@ -276,7 +276,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 				table := db.TableNameIfy(attr.ShortName())
 
-				val, found := RT.AttrVal(obj, attr)
+				val, found := RT.AttrValue(obj, attr, false, true)
 				if !found {
 					break
 				}
