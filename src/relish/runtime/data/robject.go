@@ -262,11 +262,11 @@ Return whether we had to flag it as reachable. false if was already marked reach
 */
 func (o *robject) Mark() bool { 
    if o.IsMarked() == markSense {
-       Logln(GC2_,"Mark(): Already marked with",markSense)	
+       Logln(GC3_,"Mark(): Already marked with",markSense)	
    	   return false
    } 
    o.ToggleMarked()
-   Logln(GC2_,"Mark(): Marked with",o.IsMarked())
+   Logln(GC3_,"Mark(): Marked with",o.IsMarked())
    return true
 }
 
@@ -670,6 +670,6 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	if ! markSense {
 		unit.SetMarked()
 	}
-	Logln(GC2_,"NewObject: IsMarked",unit.IsMarked())	
+	Logln(GC3_,"NewObject: IsMarked",unit.IsMarked())	
 	return unit, nil
 }

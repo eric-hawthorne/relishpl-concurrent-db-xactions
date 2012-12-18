@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"net/url"
 	"strings"
+	"sync/atomic"
 )
 
 
@@ -1417,11 +1418,11 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	if m.PrimitiveCode == nil {
 		if m.ReturnArgsNamed {
 			n := m.NumReturnArgs
-			GCMutex.RLock()
+			GCMutexRLock("")
             for j,typ := range m.ReturnSignature.Types {
             	t.Stack[t.Base+j-n] = typ.Zero()
             }
-            GCMutex.RUnlock()
+            GCMutexRUnlock("")
 		}
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
@@ -1430,11 +1431,11 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		objs := m.PrimitiveCode(t, args)
 		
 		n := len(objs)
-		GCMutex.RLock()		
+		GCMutexRLock("")		
 		for j, obj := range objs {
 			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
 		}
-        GCMutex.RUnlock()		
+        GCMutexRUnlock("")		
 	}
 }
 
@@ -2117,9 +2118,9 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			case *ast.Ident: // A local variable or parameter or result parameter
 				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
                 
-                GCMutex.RLock()                
+                GCMutexRLock("")                
 				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.PopNoLock()
-                GCMutex.RUnlock()
+                GCMutexRUnlock("")
 
 				// TODO TODO TODO
 				// Will have to have reserved space for the local variables here when calling the method!!!     
@@ -2132,9 +2133,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				selector := lhsExpr.(*ast.SelectorExpr)
 				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		 
 
-                GCMutex.RLock()
+                atomic.AddInt32(&DeferGC,1) 
+                defer atomic.AddInt32(&DeferGC,-1)            
 
-				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to.
+				assignee := t.Pop()       // the robject whose attribute is being assigned to.
 
 				// To speed this up at runtime, could, during parse time, have set an attr field (tbd) of the Sel ident.
 				//
@@ -2152,7 +2154,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				case token.ASSIGN:
 	                if attr.Part.CollectionType != "" {
 
-		                val := t.PopNoLock()
+		                val := t.Pop()
 		                if val.IsCollection() {
 			                coll := val.(RCollection)
 			                for v := range coll.Iter(t) {
@@ -2174,7 +2176,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						}
 	                } else {		
 
-						err := RT.SetAttr(t, assignee, attr, t.PopNoLock(), true, t.EvalContext, false)
+						err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 						if err != nil {
 							if strings.Contains(err.Error()," a value of type ") {
 								rterr.Stop1(t,selector, err)
@@ -2183,7 +2185,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						}
 				    }
 				case token.ADD_ASSIGN:
-					err := RT.AddToAttr(t, assignee, attr, t.PopNoLock(), true, t.EvalContext, false)
+					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 					if err != nil {
 						if strings.Contains(err.Error()," a value of type ") {
 							rterr.Stop1(t,selector,err)
@@ -2192,22 +2194,24 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}
 				case token.SUB_ASSIGN:
 					// TODO TODO	
-					err := RT.RemoveFromAttr(t, assignee, attr, t.PopNoLock(), false, true)
+					err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
 					if err != nil {
 						panic(err)
 					}
 				default:
 					panic("Unrecognized assignment operator")
 				}
-				GCMutex.RUnlock()
 
 			case *ast.IndexExpr:
 				indexExpr := lhsExpr.(*ast.IndexExpr)
 				i.EvalExpr(t, indexExpr.X) // Evaluate the left part of the index expression.		
-				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.			
-                GCMutex.RLock() 						 
-				idx := t.PopNoLock()       // the index or map key			     
-				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to. OrderedCollection or Map
+				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.		
+
+                atomic.AddInt32(&DeferGC,1) 
+                defer atomic.AddInt32(&DeferGC,-1)   
+				 
+				idx := t.Pop()       // the index or map key			     
+				assignee := t.Pop()       // the robject whose attribute is being assigned to. OrderedCollection or Map
 
 				collection,isCollection := assignee.(RCollection)
 				if ! isCollection {
@@ -2241,7 +2245,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						panic("Unrecognized assignment operator")
 					}	
 
-					coll.Set(ix,t.PopNoLock())	
+					coll.Set(ix,t.Pop())	
 
 /* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
 					switch stmt.Tok {
@@ -2287,7 +2291,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}			
 
                     theMap := collection.(Map)
-	                theMap.Put(idx, t.PopNoLock(), t.EvalContext) 
+	                theMap.Put(idx, t.Pop(), t.EvalContext) 
 
 	
 /* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
@@ -2324,12 +2328,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					   rterr.Stop1(t, indexExpr,"Cannot set element at [index] of a sorting list.")	
 					} 				
 					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
-				}
-				GCMutex.RUnlock()
-
-
-
-			
+				}			
 
 			default:
 				rterr.Stop1(t, lhsExpr, "Left-hand side expr must be variable, attribute, or indexed position in map/collection.")
@@ -2438,11 +2437,11 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 			i.EvalExpr(t, resultExpr)
 		}
 
-        GCMutex.RLock()
+        GCMutexRLock("")
 		for j := n-1; j >=0; j-- {	
 			t.Stack[t.Base+j-n] = t.PopNoLock()   
 		}
-		GCMutex.RUnlock()
+		GCMutexRUnlock("")
     }
     return
 }

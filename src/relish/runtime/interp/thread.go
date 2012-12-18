@@ -51,10 +51,10 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 
 
 func (i *Interpreter) registerThread(t *Thread) {
-    GCMutex.RLock()	
-    defer GCMutex.RUnlock()	
+    GCMutexRLock("")	
+    defer GCMutexRUnlock("")	
 
-	defer UnM(t, TraceM(t, GC2_, "RegisterThread"))
+	defer UnM(t, TraceM(t, GC3_, "RegisterThread"))
 	
 	i.threads[t] = true
 }
@@ -63,15 +63,15 @@ func (i *Interpreter) registerThread(t *Thread) {
 Remember to call this when thread execution is done!
 */
 func (i *Interpreter) DeregisterThread(t *Thread) {
-    GCMutex.RLock()
-    defer GCMutex.RUnlock()	
+    GCMutexRLock("")
+    defer GCMutexRUnlock("")	
 
-    LoglnM(t, GC2_, "DeregisterThread(")
+    LoglnM(t, GC3_, "DeregisterThread(")
 
 	delete(i.threads,t)
     RemoveContext(t) 	
 
-    Logln(GC2_, ")DeregisterThread")
+    Logln(GC3_, ")DeregisterThread")
 }
 
 /*
@@ -108,7 +108,7 @@ type Thread struct {
 
 
 func (t *Thread) Push(obj RObject) {
-    GCMutex.RLock()		
+    GCMutexRLock("")		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
 	if len(t.Stack) <= t.Pos {
@@ -120,11 +120,11 @@ func (t *Thread) Push(obj RObject) {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutex.RUnlock()	
+	GCMutexRUnlock("")	
 }
 
 func (t *Thread) Reserve(n int) {
-    GCMutex.RLock()		
+    GCMutexRLock("")		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
 	for len(t.Stack) <= t.Pos+n {
 		oldStack := t.Stack
@@ -132,7 +132,7 @@ func (t *Thread) Reserve(n int) {
 		copy(t.Stack, oldStack)
 	}
 	t.Pos += n
-	GCMutex.RUnlock()	
+	GCMutexRUnlock("")	
 }
 
 
@@ -176,7 +176,7 @@ results (return values) of the method call.
 Returns the position of the base pointer which holds the stack-pointer to the previous stack-frame base position.
 */
 func (t *Thread) PushBase(numReturnArgs int) int {
-    GCMutex.RLock()		
+    GCMutexRLock("")		
 	defer UnM(t, TraceM(t, INTERP_TR3, "PushBase"))
 
 	if numReturnArgs > 0 {
@@ -184,7 +184,7 @@ func (t *Thread) PushBase(numReturnArgs int) int {
 	}
 	t.PushNoLock(Int32(t.Base))
 	t.ReserveNoLock(2) // Reserve space for the currently-executing-method reference and code offset in current method
-	GCMutex.RUnlock()		
+	GCMutexRUnlock("")		
 	return t.Pos - 2
 	
 }
@@ -229,7 +229,7 @@ func (t *Thread) GetVar(offset int) (obj RObject, err error) {
 }
 
 func (t *Thread) Pop() RObject {
-	GCMutex.RLock()
+	GCMutexRLock("")
 	obj := t.Stack[t.Pos]
 	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
 	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
@@ -237,7 +237,7 @@ func (t *Thread) Pop() RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutex.RUnlock()	
+	GCMutexRUnlock("")	
 	return obj
 }
 
@@ -256,7 +256,7 @@ func (t *Thread) PopNoLock() RObject {
 Efficiently pop n items off the stack.
 */
 func (t *Thread) PopN(n int) RObject {
-	GCMutex.RLock()	
+	GCMutexRLock("")	
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
@@ -267,7 +267,7 @@ func (t *Thread) PopN(n int) RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutex.RUnlock()	
+	GCMutexRUnlock("")	
 	return obj
 }
 
@@ -280,7 +280,7 @@ func (t *Thread) TopN(n int) []RObject {
 }
 
 func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
-   GCMutex.RLock()		
+   GCMutexRLock("")		
    n := parent.Pos - parent.Base + numReturnVals + 1	
    src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
    if copy(t.Stack, src) != n {
@@ -288,14 +288,14 @@ func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
    }
    t.Base = numReturnVals
    t.Pos = n - 1
-   GCMutex.RUnlock()	   
+   GCMutexRUnlock("")	   
 }
 
 /*
 Mark all structured objects on the stack as reachable and safe from garbage collection.
 */
 func (t *Thread) Mark() {
-	defer UnM(t, TraceM(t, GC_, "Mark"))
+	defer UnM(t, TraceM(t, GC2_, "Mark"))
 	
 
     
@@ -309,7 +309,7 @@ func (t *Thread) Mark() {
 	   obj.Mark()
     }	
 
-    LoglnM(t,GC_,"  Marked",t.Pos + 1 + len(t.Objs),"objects on stack and their associates.")
+    LoglnM(t,GC2_,"  Marked",t.Pos + 1 + len(t.Objs),"objects on stack and their associates.")
    
 	// When finished, signal somehow.
 	// The philosophy should be each stack has to signal when it is finished marking,

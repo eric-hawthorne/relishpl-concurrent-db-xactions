@@ -44,6 +44,7 @@ const (
 	WEB2_       = 1 << iota	
 	GC_         = 1 << iota		
 	GC2_        = 1 << iota		
+	GC3_        = 1 << iota		
 	ANY_        = 0xFFFFFFFFFFFFFFFF	
 )
 
@@ -66,15 +67,16 @@ const (
 	INTERP__TR  = INTERP_TR	
 	INTERP__TR2 = INTERP_TR2 | INTERP__TR
 	INTERP__TR3 = INTERP_TR3 | INTERP__TR2	
-	PERSIST__ = PERSIST_
-	PERSIST2__ = PERSIST2_ | PERSIST__
+	PERSIST__   = PERSIST_
+	PERSIST2__  = PERSIST2_ | PERSIST__
 	PERSIST__TR = PERSIST_TR
 	PERSIST__TR2 = PERSIST_TR2 | PERSIST__TR	
 	WEB__       = WEB_
-	WEB2__       = WEB2_ | WEB__	
-	ALL_        = ANY_
-	GC__        = GC_
-	GC2__       = GC2_ | GC__	
+	WEB2__      = WEB2_ | WEB__	
+	ALL__       = ANY_
+	GC__        = GC_	
+	GC2__       = GC2_ | GC__
+	GC3__       = GC3_ | GC2__	
 )
 	
 	
@@ -87,7 +89,7 @@ const (
 //const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | WEB__ | ALWAYS_
 //const SOME_DEBUG_FLAGS =   PERSIST__ | PERSIST__TR | INTERP__TR | INTERP__ | WEB__ | ALWAYS_
 
-const SOME_DEBUG_FLAGS =  GC2__ | ALWAYS_
+const SOME_DEBUG_FLAGS =  GC__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  GENERATE2__ | ALWAYS_
 

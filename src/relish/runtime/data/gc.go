@@ -19,17 +19,39 @@ import (
 
 var GCMutex sync.RWMutex
 
+var DeferGC int32  // if > 0 means do not GC
+
 var markSense bool = true  // What value of object Marked flag means "is reachable" - if true, 1, if false, 0
+
+func GCMutexRLock(msg string) {
+   //Logln(GC_,">>> GCMutex.RLock()")		
+   GCMutex.RLock()
+}
+
+func GCMutexRUnlock(msg string) {
+   //Logln(GC_,"<<< GCMutex.RUnlock()")	
+   GCMutex.RUnlock()
+}
+
+func GCMutexLock(msg string) {
+   //Logln(GC_,">>>>>> GCMutex.Lock()")		
+   GCMutex.Lock()
+}
+
+func GCMutexUnlock(msg string) {
+   //Logln(GC_,"<<<<<< GCMutex.Unlock()")	
+   GCMutex.Unlock()
+}
 
 /*
 Mark the constants as reachable.
 */
 func (rt *RuntimeEnv) MarkConstants() {
-    defer Un(Trace(GC_,"MarkConstants"))
+    defer Un(Trace(GC2_,"MarkConstants"))
 	for _,obj := range rt.constants {
 		obj.Mark()
 	}
-    Logln(GC__,"Marked",len(rt.constants),"constants and their associates.")		
+    Logln(GC2_,"Marked",len(rt.constants),"constants and their associates.")		
 }
 
 
@@ -67,5 +89,5 @@ func (rt *RuntimeEnv) Sweep() {
 	}
 	markSense = ! markSense	
 	
-    Logln(GC__,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")		
+    Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")		
 }
