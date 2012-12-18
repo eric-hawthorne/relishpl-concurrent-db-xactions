@@ -57,21 +57,14 @@ func (i *Interpreter) GCLoop() {
 Run the garbage collector.
 */
 func (i *Interpreter) GC() {
-    defer Un(Trace(GC_,"GC"))
     gcMutex.Lock()
+    defer gcMutex.Unlock()    
+    defer Un(Trace(GC_,"GC"))    
     i.mark()
     i.sweep()
-    gcMutex.Unlock()
+
 }
 
-
-var threadCreationMutex sync.RWMutex
-
-var gcMarkStartWaitGroup sync.WaitGroup
-
-var gcMarkFinishedWaitGroup sync.WaitGroup
-
-var gcSweepFinishedWaitGroup sync.WaitGroup
 
 /*
 Mark all reachable objects as being reachable.
@@ -79,30 +72,14 @@ Mark all reachable objects as being reachable.
 func (i *Interpreter) mark() {
     defer Un(Trace(GC_,"mark"))
 
-    // Lock so we don't create more threads.
-    threadCreationMutex.Lock()
-
     nThreads := len(i.threads)
     Logln(GC_,nThreads,"interpreter threads active.")
 
-    gcMarkStartWaitGroup.Add(nThreads)
-    gcMarkFinishedWaitGroup.Add(nThreads)   
-
-    gcSweepFinishedWaitGroup.Add(1)
-
 	for t := range i.threads {
-	   t.doGC = true
-	   runtime.Gosched()
+	   t.Mark()
 	}
 	
-    threadCreationMutex.Unlock()
-
-	runtime.Gosched()
-    gcMarkStartWaitGroup.Wait()
-	runtime.Gosched()
     i.rt.MarkConstants()
-    runtime.Gosched()
-    gcMarkFinishedWaitGroup.Wait()
 }
 
 
@@ -110,8 +87,6 @@ func (i *Interpreter) sweep() {
     defer Un(Trace(GC_,"sweep"))
 
     i.rt.Sweep()
-
-    gcSweepFinishedWaitGroup.Done()
 }
 
 

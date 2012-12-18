@@ -17,7 +17,6 @@ import (
 	. "relish/dbg"
 	. "relish/runtime/data"
 	"errors"
-	"runtime"
 )
 
 
@@ -40,29 +39,20 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 	dbt := &dbThread{db:i.rt.DB()}
 	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionThread: dbt}
 	if parent != nil {
-		if parent.doGC {
-			t.doGC = true
-			parent.Mark()
-		}
 		t.ExecutingMethod = parent.ExecutingMethod
 		t.ExecutingPackage = parent.ExecutingPackage
 	} 
 	t.EvalContext = &methodEvaluationContext{i, t}
 
 	i.registerThread(t)
-	if parent != nil {
-	   if parent.doGC {
-		   parent.Mark()
-	   }
-	} 
 	
 	return t
 }
 
 
 func (i *Interpreter) registerThread(t *Thread) {
-    threadCreationMutex.RLock()	
-    defer threadCreationMutex.RUnlock()	
+    gcMutex.RLock()	
+    defer gcMutex.RUnlock()	
 
 	defer UnM(t, TraceM(t, GC2_, "RegisterThread"))
 	
@@ -73,17 +63,11 @@ func (i *Interpreter) registerThread(t *Thread) {
 Remember to call this when thread execution is done!
 */
 func (i *Interpreter) DeregisterThread(t *Thread) {
-	if t.doGC {  // Need to make this an atomic operation??
-		t.Mark()
-	}
-    threadCreationMutex.RLock()
-    defer threadCreationMutex.RUnlock()	
+    gcMutex.RLock()
+    defer gcMutex.RUnlock()	
 
     LoglnM(t, GC2_, "DeregisterThread(")
 
-    if t.doGC {  // Need to make this an atomic operation??
-	   t.Mark()
-    }
 	delete(i.threads,t)
     RemoveContext(t) 	
 
@@ -118,15 +102,13 @@ type Thread struct {
 	YieldCardinality int   // How many objects per iteration the current generator is expected to append to Objs
 	
 	err string  // Will be "" unless we are in a stack-unrolling panic
-	
-	doGC bool  // set by the GC thread to get thread to pause and run a GC Mark
-	           // Where should we test this? PushBase & PopBase ?
 }
 
 
 
 
 func (t *Thread) Push(obj RObject) {
+    gcMutex.RLock()		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
 	if len(t.Stack) <= t.Pos {
@@ -138,9 +120,39 @@ func (t *Thread) Push(obj RObject) {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
+	gcMutex.RUnlock()	
 }
 
 func (t *Thread) Reserve(n int) {
+    gcMutex.RLock()		
+	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
+	for len(t.Stack) <= t.Pos+n {
+		oldStack := t.Stack
+		t.Stack = make([]RObject, len(t.Stack)*2)
+		copy(t.Stack, oldStack)
+	}
+	t.Pos += n
+	gcMutex.RUnlock()	
+}
+
+
+
+
+func (t *Thread) PushNoLock(obj RObject) {	
+	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
+	t.Pos++
+	if len(t.Stack) <= t.Pos {
+		oldStack := t.Stack
+		t.Stack = make([]RObject, len(t.Stack)*2)
+		copy(t.Stack, oldStack)
+	}
+	t.Stack[t.Pos] = obj
+	if Logging(STACK_) && Logging(INTERP_TR3) {
+		t.Dump()
+	}	
+}
+
+func (t *Thread) ReserveNoLock(n int) {	
 	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
 	for len(t.Stack) <= t.Pos+n {
 		oldStack := t.Stack
@@ -149,6 +161,10 @@ func (t *Thread) Reserve(n int) {
 	}
 	t.Pos += n
 }
+
+
+
+
 
 /*
 Call this at the beginning of a method call, to push the previous (outer) method's stack frame base onto the stack.
@@ -160,16 +176,17 @@ results (return values) of the method call.
 Returns the position of the base pointer which holds the stack-pointer to the previous stack-frame base position.
 */
 func (t *Thread) PushBase(numReturnArgs int) int {
+    gcMutex.RLock()		
 	defer UnM(t, TraceM(t, INTERP_TR3, "PushBase"))
-	if t.doGC {
-		t.Mark()
-	}
+
 	if numReturnArgs > 0 {
-		t.Reserve(numReturnArgs)
+		t.ReserveNoLock(numReturnArgs)
 	}
-	t.Push(Int32(t.Base))
-	t.Reserve(2) // Reserve space for the currently-executing-method reference and code offset in current method
+	t.PushNoLock(Int32(t.Base))
+	t.ReserveNoLock(2) // Reserve space for the currently-executing-method reference and code offset in current method
+	gcMutex.RUnlock()		
 	return t.Pos - 2
+	
 }
 
 func (t *Thread) SetBase(newBase int) {
@@ -190,9 +207,6 @@ sets the thread's Base pointer to the beginning of the previous (outer) routine'
 */
 func (t *Thread) PopBase() {
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopBase"))
-    if t.doGC {
-	   t.Mark()
-    }	
 	obj := t.PopN(t.Pos - t.Base + 1) // 9 - 7 + 1 = 3
 	t.Base = int(obj.(Int32))
 	t.ExecutingMethod = t.Stack[t.Base+1].(*RMethod)
@@ -215,6 +229,19 @@ func (t *Thread) GetVar(offset int) (obj RObject, err error) {
 }
 
 func (t *Thread) Pop() RObject {
+	gcMutex.RLock()
+	obj := t.Stack[t.Pos]
+	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
+	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
+	t.Pos--
+	if Logging(STACK_) && Logging(INTERP_TR3) {
+		t.Dump()
+	}
+	gcMutex.RUnlock()	
+	return obj
+}
+
+func (t *Thread) PopNoLock() RObject {
 	obj := t.Stack[t.Pos]
 	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
 	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
@@ -229,6 +256,7 @@ func (t *Thread) Pop() RObject {
 Efficiently pop n items off the stack.
 */
 func (t *Thread) PopN(n int) RObject {
+	gcMutex.RLock()	
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
@@ -239,6 +267,7 @@ func (t *Thread) PopN(n int) RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
+	gcMutex.RUnlock()	
 	return obj
 }
 
@@ -251,6 +280,7 @@ func (t *Thread) TopN(n int) []RObject {
 }
 
 func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
+   gcMutex.RLock()		
    n := parent.Pos - parent.Base + numReturnVals + 1	
    src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
    if copy(t.Stack, src) != n {
@@ -258,7 +288,7 @@ func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
    }
    t.Base = numReturnVals
    t.Pos = n - 1
-
+   gcMutex.RUnlock()	   
 }
 
 /*
@@ -267,11 +297,7 @@ Mark all structured objects on the stack as reachable and safe from garbage coll
 func (t *Thread) Mark() {
 	defer UnM(t, TraceM(t, GC_, "Mark"))
 	
-    runtime.Gosched()	
-    gcMarkStartWaitGroup.Done()  // I'm not the problem.
-    runtime.Gosched()
-    gcMarkStartWaitGroup.Wait()  // Wait for everyone to be ready to start marking
-    runtime.Gosched()
+
     
 	for i := t.Pos; i >= 0; i-- {
 		if t.Stack[i] != nil {
@@ -297,12 +323,6 @@ func (t *Thread) Mark() {
 	//   commencing to mark, so that it is safe to traverse a collection and mark its members
 	// c) wait for all threads to finish marking
 	// d) proceed with the sweep 
-	
-	t.doGC = false
-    runtime.Gosched()	
-	gcMarkFinishedWaitGroup.Done()
-    runtime.Gosched()	
-	gcSweepFinishedWaitGroup.Wait()
 }
 
 /*

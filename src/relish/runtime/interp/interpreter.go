@@ -658,8 +658,7 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 
 
 /*
-Push the value of the variable onto the top of the stack. This means the object is referred to at least twice on the 
-stack. Once at the current stack top, and once at the variable's position in the stack frame.
+Create a closure and bind its free variables. Leave the closure at the top of the stack.
 */
 func (i *Interpreter) EvalClosure(t *Thread, clos *ast.Closure) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalClosure", clos.MethodName))
@@ -909,11 +908,6 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
     nArgs := t.Pos - t.Base - 3
 	t.Reserve(method.NumLocalVars)   // This only works with next TopN call because builtin methods have 0 local vars.
  
-    if t.doGC {
-	    gcMutex.RLock()  // Wait til GC is finished
-	    t.doGC = false
-	    gcMutex.RUnlock()
-    }
 	i.apply1(t, method, t.TopN(nArgs)) // Puts results on stack BELOW the current stack frame.	
 
 	t.PopBase()
@@ -1434,9 +1428,10 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
-		// TODO: Will have to supply the Thread to the PrimitiveCode function, or the thread's DbThread
-		// Which must firstly be an interface in persist_interface file.
+
+        gcMutex.RLock()
 		objs := m.PrimitiveCode(t, args)
+		gcMutex.RUnlock()
 		n := len(objs)
 		for j, obj := range objs {
 			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
@@ -2122,8 +2117,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			switch lhsExpr.(type) {
 			case *ast.Ident: // A local variable or parameter or result parameter
 				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
-
-				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
+                
+                gcMutex.RLock()                
+				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.PopNoLock()
+                gcMutex.RUnlock()
 
 				// TODO TODO TODO
 				// Will have to have reserved space for the local variables here when calling the method!!!     
@@ -2134,8 +2131,11 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			// cell reference onto the stack, then pop it and assign to it.
 			case *ast.SelectorExpr:
 				selector := lhsExpr.(*ast.SelectorExpr)
-				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		      
-				assignee := t.Pop()       // the robject whose attribute is being assigned to.
+				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		 
+
+                gcMutex.RLock()
+
+				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to.
 
 				// To speed this up at runtime, could, during parse time, have set an attr field (tbd) of the Sel ident.
 				//
@@ -2148,10 +2148,13 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					rterr.Stop1(t,selector,fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
 				}
 
+
 				switch stmt.Tok {
 				case token.ASSIGN:
 	                if attr.Part.CollectionType != "" {
-		                val := t.Pop()
+
+		                val := t.PopNoLock()
+		                gcMutex.RLock()
 		                if val.IsCollection() {
 			                coll := val.(RCollection)
 			                for v := range coll.Iter(t) {
@@ -2171,8 +2174,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					    } else {
 			               rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
 						}
-	                } else {									
-						err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
+						gcMutex.RUnlock()
+	                } else {		
+
+						err := RT.SetAttr(t, assignee, attr, t.PopNoLock(), true, t.EvalContext, false)
 						if err != nil {
 							if strings.Contains(err.Error()," a value of type ") {
 								rterr.Stop1(t,selector, err)
@@ -2181,7 +2186,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						}
 				    }
 				case token.ADD_ASSIGN:
-					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
+					err := RT.AddToAttr(t, assignee, attr, t.PopNoLock(), true, t.EvalContext, false)
 					if err != nil {
 						if strings.Contains(err.Error()," a value of type ") {
 							rterr.Stop1(t,selector,err)
@@ -2190,20 +2195,22 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}
 				case token.SUB_ASSIGN:
 					// TODO TODO	
-					err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
+					err := RT.RemoveFromAttr(t, assignee, attr, t.PopNoLock(), false, true)
 					if err != nil {
 						panic(err)
 					}
 				default:
 					panic("Unrecognized assignment operator")
 				}
+				gcMutex.RUnlock()
 
 			case *ast.IndexExpr:
 				indexExpr := lhsExpr.(*ast.IndexExpr)
 				i.EvalExpr(t, indexExpr.X) // Evaluate the left part of the index expression.		
-				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.					 
-				idx := t.Pop()       // the index or map key			     
-				assignee := t.Pop()       // the robject whose attribute is being assigned to. OrderedCollection or Map
+				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.			
+                gcMutex.RLock() 						 
+				idx := t.PopNoLock()       // the index or map key			     
+				assignee := t.PopNoLock()       // the robject whose attribute is being assigned to. OrderedCollection or Map
 
 				collection,isCollection := assignee.(RCollection)
 				if ! isCollection {
@@ -2237,7 +2244,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						panic("Unrecognized assignment operator")
 					}	
 
-					coll.Set(ix,t.Pop())	
+					coll.Set(ix,t.PopNoLock())	
 
 /* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
 					switch stmt.Tok {
@@ -2283,7 +2290,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					}			
 
                     theMap := collection.(Map)
-	                theMap.Put(idx, t.Pop(), t.EvalContext) 
+	                theMap.Put(idx, t.PopNoLock(), t.EvalContext) 
 
 	
 /* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
@@ -2321,6 +2328,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					} 				
 					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
 				}
+				gcMutex.RUnlock()
 
 
 
@@ -2433,9 +2441,11 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 			i.EvalExpr(t, resultExpr)
 		}
 
+        gcMutex.RLock()
 		for j := n-1; j >=0; j-- {	
-			t.Stack[t.Base+j-n] = t.Pop()   
+			t.Stack[t.Base+j-n] = t.PopNoLock()   
 		}
+		gcMutex.RUnlock()
     }
     return
 }
