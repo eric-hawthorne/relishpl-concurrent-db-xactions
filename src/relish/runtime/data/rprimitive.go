@@ -277,7 +277,11 @@ type Channel struct {
 }
 
 func (c *Channel) From() RObject {
-   return <- c.Ch
+   val := <- c.Ch
+   if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
+	   RT.DecrementInTransitCount(val)
+   }	
+   return val
 }
 
 func (c *Channel) To(val RObject) {

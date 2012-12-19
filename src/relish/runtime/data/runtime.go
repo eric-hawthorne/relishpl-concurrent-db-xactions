@@ -81,6 +81,14 @@ type RuntimeEnv struct {
 	// from fully qualified constant name to value.
 	constants map[string]RObject
 
+    // The following is to make sure that objects in-transit in a channel
+    // can be marked by the relish garbage collector.
+    // The map contains objects which have been sent into a channel and not yet received.
+    // The value is the number of times the object is currently in a channel.
+    inTransit map[RObject]uint32
+
+
+
 	// a map of contexts for the evaluation of methods.
 
 	evalContexts map[RObject]MethodEvaluationContext
@@ -179,6 +187,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		idGen:         NewIdGenerator(),
 		attributes:    make(map[*AttributeSpec]map[RObject]RObject),
 		constants:     make(map[string]RObject),
+		inTransit:     make(map[RObject]uint32),
 		evalContexts:  make(map[RObject]MethodEvaluationContext),
 	}
 	rt.PkgNameToShortName["relish.pl2012/core/inbuilt"] = "inbuilt"

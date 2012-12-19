@@ -84,6 +84,8 @@ func (i *Interpreter) mark() {
 	}
 	
     i.rt.MarkConstants()
+
+    i.rt.MarkInTransit()
 }
 
 

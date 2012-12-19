@@ -23,6 +23,8 @@ var DeferGC int32  // if > 0 means do not GC
 
 var markSense bool = true  // What value of object Marked flag means "is reachable" - if true, 1, if false, 0
 
+
+
 func GCMutexRLock(msg string) {
    //Logln(GC_,">>> GCMutex.RLock()")		
    GCMutex.RLock()
@@ -52,6 +54,44 @@ func (rt *RuntimeEnv) MarkConstants() {
 		obj.Mark()
 	}
     Logln(GC2_,"Marked",len(rt.constants),"constants and their associates.")		
+}
+
+
+var inTransitMutex sync.Mutex
+
+func (rt *RuntimeEnv) IncrementInTransitCount(obj RObject) {
+   inTransitMutex.Lock()
+   GCMutexRLock("")
+  
+   rt.inTransit[obj]++
+   
+   inTransitMutex.Unlock() 
+   GCMutexRUnlock("")
+}
+
+func (rt *RuntimeEnv) DecrementInTransitCount(obj RObject) {
+   inTransitMutex.Lock()
+   GCMutexRLock("")
+
+   if rt.inTransit[obj] == 1 {
+       delete(rt.inTransit,obj)	
+   } else {
+       rt.inTransit[obj]--	
+   }
+
+   inTransitMutex.Unlock() 
+   GCMutexRUnlock("")
+}
+
+/*
+Mark the objects in transit as reachable.
+*/
+func (rt *RuntimeEnv) MarkInTransit() {
+    defer Un(Trace(GC2_,"MarkInTransit"))
+	for obj := range rt.inTransit {
+		obj.Mark()
+	}
+    Logln(GC2_,"Marked",len(rt.inTransit),"objects in channels, and their associates.")		
 }
 
 

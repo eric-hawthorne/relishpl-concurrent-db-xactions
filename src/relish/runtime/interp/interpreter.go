@@ -2091,6 +2091,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
        val := t.Pop()
        // TODO do a runtime type-compatibility check of val's type with c.ElementType
+
+       if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
+          i.rt.IncrementInTransitCount(val)
+       }
 	   c.Ch <- val	    
 
 
