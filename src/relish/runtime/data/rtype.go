@@ -697,7 +697,7 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 
     if orderFuncOrAttrName != "" {
 	
-	    key := typeName1 + KEY_PART_SEPARATOR + orderFuncOrAttrName
+	    key := typeName1 + KEY_PART_SEPARATOR + typeName2 + KEY_PART_SEPARATOR + orderFuncOrAttrName
 	
 	    orderings[key] = attr
     }	
