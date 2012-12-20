@@ -61,17 +61,14 @@ var inTransitMutex sync.Mutex
 
 func (rt *RuntimeEnv) IncrementInTransitCount(obj RObject) {
    inTransitMutex.Lock()
-   GCMutexRLock("")
   
    rt.inTransit[obj]++
    
    inTransitMutex.Unlock() 
-   GCMutexRUnlock("")
 }
 
 func (rt *RuntimeEnv) DecrementInTransitCount(obj RObject) {
    inTransitMutex.Lock()
-   GCMutexRLock("")
 
    if rt.inTransit[obj] == 1 {
        delete(rt.inTransit,obj)	
@@ -80,7 +77,6 @@ func (rt *RuntimeEnv) DecrementInTransitCount(obj RObject) {
    }
 
    inTransitMutex.Unlock() 
-   GCMutexRUnlock("")
 }
 
 /*

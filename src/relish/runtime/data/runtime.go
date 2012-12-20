@@ -18,7 +18,6 @@ import (
 	. "relish/dbg"
 	"sync"
 	"strings"
-	"sync/atomic"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -316,8 +315,7 @@ func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, , c
 Untypechecked assignment. Used in restoration (summoning) of an object from persistent storage.
 */
 func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject) {
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")		
+	
 	defer Un(Trace(PERSIST_TR2, "RestoreAttr", obj, attr, val))
 	attrVals, found := rt.attributes[attr]
 	if !found {
@@ -338,8 +336,6 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
 		return
 	}
-	GCMutexRLock("")
-
 	attrVals, found := rt.attributes[attr]
 	if found {
 		_, found = attrVals[obj]
@@ -351,10 +347,6 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	if obj.IsStoredLocally() {
 		th.DB().PersistSetAttr(obj, attr, val, found)
 	}
-	
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
-	GCMutexRUnlock("")	
 
 	if ! isInverse && attr.Inverse != nil {
 		err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
@@ -374,9 +366,6 @@ context is a context for evaluating a sorting comparison operator on the collect
 
 */
 func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
-
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
 	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
@@ -436,9 +425,6 @@ func (rt *RuntimeEnv) SetOrAddToAttr(th InterpreterThread, obj RObject, attr *At
  If the attribute has an inverse, also removes the inverse attribute values.
 */
 func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *AttributeSpec) (err error) {
-	
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
     objColl, foundCollection := rt.AttrVal(obj, attr)
 
@@ -471,9 +457,6 @@ TODO Optimize this  to add all at once with a slice copy or similar, then persis
 separate DB calls.
 */
 func (rt *RuntimeEnv) ExtendCollectionTypeChecked(coll RCollection, vals []RObject, context MethodEvaluationContext) (err error) {
-    
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
     for _,val := range vals {
        err = rt.AddToCollectionTypeChecked(coll, val, context)	
@@ -529,9 +512,6 @@ TODO Optimize this  to add all at once with a slice copy or similar, then persis
 separate DB calls.
 */
 func (rt *RuntimeEnv) ExtendMapTypeChecked(theMap Map, keysVals []RObject, context MethodEvaluationContext) (err error) {
-    
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
     n := len(keysVals)
     for i := 0; i < n; i+=2 {
@@ -590,8 +570,6 @@ Need to decide how to persist collections and check if persisted and handle pers
 Helper method. Ensures that a collection exists in memory to manage the values of a multi-valued attribute of an object.
 */
 func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *AttributeSpec) (collection RCollection, err error) {
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
 
     //defer Un(Trace(ALWAYS_,"EnsureMultiValuedAttributeCollection", attr.Part.Name))
 	attrVals, found := rt.attributes[attr]
@@ -705,9 +683,6 @@ Removes val from the multi-valued attribute if val is in the collection. Does no
 If removePersistent is true, also removes the value from the persistent version of the attribute association.
 */
 func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) { 	
-    
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)    
 	
 	objColl, foundCollection := rt.AttrVal(obj, attr)
 
@@ -746,16 +721,13 @@ Ok to call this even if attribute had no value.
 If removePersistent, removes the attribute association from the database if it was persisted.
 */
 func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, isInverse bool, removePersistent bool) (err error) {
-	GCMutexRLock("")
 
 	attrVals, found := rt.attributes[attr]
 	if found {
 		val, found := attrVals[obj]
 		if found {
 		   delete(attrVals,obj)
-           atomic.AddInt32(&DeferGC,1) 
-           defer atomic.AddInt32(&DeferGC,-1)		   
-		   GCMutexRUnlock("")	
+	
            if removePersistent && obj.IsStoredLocally() {
    	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
            }
@@ -764,11 +736,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
            if ! isInverse && attr.Inverse != nil {
 	           err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
            }
-        } else {
-        	GCMutexRUnlock("")
         }	
-	} else {
-		GCMutexRUnlock("")
 	}
     return
 }

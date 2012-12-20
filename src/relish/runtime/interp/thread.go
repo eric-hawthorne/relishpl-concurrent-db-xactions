@@ -37,7 +37,7 @@ the ExecutingMethod and ExecutingPackage attributes of the new thread.
 */
 func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 	dbt := &dbThread{db:i.rt.DB()}
-	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionThread: dbt}
+	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionThread: dbt, GCLockCounter: -1}
 	if parent != nil {
 		t.ExecutingMethod = parent.ExecutingMethod
 		t.ExecutingPackage = parent.ExecutingPackage
@@ -52,7 +52,7 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 
 func (i *Interpreter) registerThread(t *Thread) {
     GCMutexRLock("")	
-    defer GCMutexRUnlock("")	
+    t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 
 	defer UnM(t, TraceM(t, GC3_, "RegisterThread"))
 	
@@ -63,13 +63,13 @@ func (i *Interpreter) registerThread(t *Thread) {
 Remember to call this when thread execution is done!
 */
 func (i *Interpreter) DeregisterThread(t *Thread) {
-    GCMutexRLock("")
-    defer GCMutexRUnlock("")	
-
     LoglnM(t, GC3_, "DeregisterThread(")
 
 	delete(i.threads,t)
     RemoveContext(t) 	
+
+    t.GCLockCounter = -1
+    GCMutexRUnlock("")	
 
     Logln(GC3_, ")DeregisterThread")
 }
@@ -102,13 +102,17 @@ type Thread struct {
 	YieldCardinality int   // How many objects per iteration the current generator is expected to append to Objs
 	
 	err string  // Will be "" unless we are in a stack-unrolling panic
+
+	GCLockCounter int  // If 0, thread should RUnlock(),RLock() the GCMutex to allow GC to run.
+	                   // If -1, means this thread does not have an RLock on the GCMutex.
+	                   // If positive, means this thread will keep holding an RLock on GCMutex and decrementing counter
 }
 
+const MAX_GC_LOCKED_STACK_OPS = 100  // Do this many pops and pushes before relinquishing RLock on GCMutex.
+                                     // So GC has opportunity to run and block this thread, after this many pops/pushes.
 
 
-
-func (t *Thread) Push(obj RObject) {
-    GCMutexRLock("")		
+func (t *Thread) Push(obj RObject) {		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
 	if len(t.Stack) <= t.Pos {
@@ -120,39 +124,20 @@ func (t *Thread) Push(obj RObject) {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutexRUnlock("")	
-}
 
-func (t *Thread) Reserve(n int) {
-    GCMutexRLock("")		
-	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
-	for len(t.Stack) <= t.Pos+n {
-		oldStack := t.Stack
-		t.Stack = make([]RObject, len(t.Stack)*2)
-		copy(t.Stack, oldStack)
+    // Manage locking of the garbage collector RWMutex
+	if t.GCLockCounter == 0 {
+		t.GCLockCounter = -1
+        GCMutexRUnlock("")
+        // Garbage Collector goroutine can block me and run in here
+        GCMutexRLock("")
+        t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
+	} else {
+		t.GCLockCounter--
 	}
-	t.Pos += n
-	GCMutexRUnlock("")	
 }
 
-
-
-
-func (t *Thread) PushNoLock(obj RObject) {	
-	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
-	t.Pos++
-	if len(t.Stack) <= t.Pos {
-		oldStack := t.Stack
-		t.Stack = make([]RObject, len(t.Stack)*2)
-		copy(t.Stack, oldStack)
-	}
-	t.Stack[t.Pos] = obj
-	if Logging(STACK_) && Logging(INTERP_TR3) {
-		t.Dump()
-	}	
-}
-
-func (t *Thread) ReserveNoLock(n int) {	
+func (t *Thread) Reserve(n int) {		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Reserve", n))
 	for len(t.Stack) <= t.Pos+n {
 		oldStack := t.Stack
@@ -161,9 +146,6 @@ func (t *Thread) ReserveNoLock(n int) {
 	}
 	t.Pos += n
 }
-
-
-
 
 
 /*
@@ -175,16 +157,14 @@ results (return values) of the method call.
 
 Returns the position of the base pointer which holds the stack-pointer to the previous stack-frame base position.
 */
-func (t *Thread) PushBase(numReturnArgs int) int {
-    GCMutexRLock("")		
+func (t *Thread) PushBase(numReturnArgs int) int {		
 	defer UnM(t, TraceM(t, INTERP_TR3, "PushBase"))
 
 	if numReturnArgs > 0 {
-		t.ReserveNoLock(numReturnArgs)
+		t.Reserve(numReturnArgs)
 	}
-	t.PushNoLock(Int32(t.Base))
-	t.ReserveNoLock(2) // Reserve space for the currently-executing-method reference and code offset in current method
-	GCMutexRUnlock("")		
+	t.Push(Int32(t.Base))
+	t.Reserve(2) // Reserve space for the currently-executing-method reference and code offset in current method	
 	return t.Pos - 2
 	
 }
@@ -229,7 +209,18 @@ func (t *Thread) GetVar(offset int) (obj RObject, err error) {
 }
 
 func (t *Thread) Pop() RObject {
-	GCMutexRLock("")
+
+    // Manage locking of the garbage collector RWMutex
+	if t.GCLockCounter == 0 {
+		t.GCLockCounter = -1
+        GCMutexRUnlock("")
+        // Garbage Collector goroutine can block me and run in here
+        GCMutexRLock("")
+        t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
+	} else {
+		t.GCLockCounter--
+	}	
+
 	obj := t.Stack[t.Pos]
 	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
 	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
@@ -237,26 +228,27 @@ func (t *Thread) Pop() RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutexRUnlock("")	
 	return obj
 }
 
-func (t *Thread) PopNoLock() RObject {
-	obj := t.Stack[t.Pos]
-	defer UnM(t, TraceM(t, INTERP_TR3, "Pop", "==>", obj))
-	t.Stack[t.Pos] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
-	t.Pos--
-	if Logging(STACK_) && Logging(INTERP_TR3) {
-		t.Dump()
-	}
-	return obj
-}
+
 
 /*
 Efficiently pop n items off the stack.
 */
 func (t *Thread) PopN(n int) RObject {
-	GCMutexRLock("")	
+
+    // Manage locking of the garbage collector RWMutex
+	if t.GCLockCounter == 0 {
+		t.GCLockCounter = -1
+        GCMutexRUnlock("")
+        // Garbage Collector goroutine can block me and run in here
+        GCMutexRLock("")
+        t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
+	} else {
+		t.GCLockCounter--
+	}
+	
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
@@ -267,7 +259,6 @@ func (t *Thread) PopN(n int) RObject {
 	if Logging(STACK_) && Logging(INTERP_TR3) {
 		t.Dump()
 	}
-	GCMutexRUnlock("")	
 	return obj
 }
 
@@ -280,16 +271,44 @@ func (t *Thread) TopN(n int) []RObject {
 }
 
 func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
-   GCMutexRLock("")		
    n := parent.Pos - parent.Base + numReturnVals + 1	
    src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
    if copy(t.Stack, src) != n {
    	   panic("stack copy range exception during go-routine spawn.")
    }
    t.Base = numReturnVals
-   t.Pos = n - 1
-   GCMutexRUnlock("")	   
+   t.Pos = n - 1	   
 }
+
+/*
+Manage locking of the garbage collector RWMutex. RUnlock the mutex.
+Call this just before this goroutine (relish thread) is going to be potentially blocked.
+Allow garbage collection to proceed while this goroutine (relish thread) is blocked.
+You must call DisallowGC() as soon as the potentially-blocking operation is complete.
+*/
+func (t *Thread) AllowGC() {
+    if t.GCLockCounter == -1 {
+    	panic("thread is attempting to doubly runlock the GCMutex.")
+    }
+	t.GCLockCounter = -1
+    GCMutexRUnlock("")
+    // Garbage Collector goroutine can block me and run in here
+}
+
+/*
+Manage locking of the garbage collector RWMutex. RLock the mutex.
+Call this just after this goroutine (relish thread) completes an operation that is going to 
+be potentially blocked.
+*/
+func (t *Thread) DisallowGC() {
+
+    if t.GCLockCounter != -1 {
+    	panic("thread is attempting to doubly rlock the GCMutex.")
+    }
+    GCMutexRLock("")
+    t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
+}
+
 
 /*
 Mark all structured objects on the stack as reachable and safe from garbage collection.

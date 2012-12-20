@@ -16,7 +16,6 @@ import (
    "time"
    "runtime"
    "relish/runtime/data"
-   "sync/atomic"
 )
 
 const GC_INTERVAL_MINUTES = 10 
@@ -61,12 +60,10 @@ Run the garbage collector.
 */
 func (i *Interpreter) GC() {
     data.GCMutexLock("")
-    defer data.GCMutexUnlock("")    
-    if atomic.LoadInt32(&data.DeferGC) == 0 {       
-       defer Un(Trace(GC2_,"GC"))    
-       i.mark()
-       i.sweep()
-   }
+    defer data.GCMutexUnlock("")        
+    defer Un(Trace(GC2_,"GC"))    
+    i.mark()
+    i.sweep()
 }
 
 

@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"net/url"
 	"strings"
-	"sync/atomic"
 )
 
 
@@ -1418,11 +1417,9 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 	if m.PrimitiveCode == nil {
 		if m.ReturnArgsNamed {
 			n := m.NumReturnArgs
-			GCMutexRLock("")
             for j,typ := range m.ReturnSignature.Types {
             	t.Stack[t.Base+j-n] = typ.Zero()
             }
-            GCMutexRUnlock("")
 		}
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
@@ -1430,12 +1427,10 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 
 		objs := m.PrimitiveCode(t, args)
 		
-		n := len(objs)
-		GCMutexRLock("")		
+		n := len(objs)		
 		for j, obj := range objs {
 			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
-		}
-        GCMutexRUnlock("")		
+		}	
 	}
 }
 
@@ -2121,10 +2116,8 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			switch lhsExpr.(type) {
 			case *ast.Ident: // A local variable or parameter or result parameter
 				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
-                
-                GCMutexRLock("")                
-				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.PopNoLock()
-                GCMutexRUnlock("")
+                             
+				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
 
 				// TODO TODO TODO
 				// Will have to have reserved space for the local variables here when calling the method!!!     
@@ -2135,10 +2128,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			// cell reference onto the stack, then pop it and assign to it.
 			case *ast.SelectorExpr:
 				selector := lhsExpr.(*ast.SelectorExpr)
-				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		 
-
-                atomic.AddInt32(&DeferGC,1) 
-                defer atomic.AddInt32(&DeferGC,-1)            
+				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		          
 
 				assignee := t.Pop()       // the robject whose attribute is being assigned to.
 
@@ -2209,10 +2199,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			case *ast.IndexExpr:
 				indexExpr := lhsExpr.(*ast.IndexExpr)
 				i.EvalExpr(t, indexExpr.X) // Evaluate the left part of the index expression.		
-				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.		
-
-                atomic.AddInt32(&DeferGC,1) 
-                defer atomic.AddInt32(&DeferGC,-1)   
+				i.EvalExpr(t, indexExpr.Index) // Evaluate the index of the index expression.		  
 				 
 				idx := t.Pop()       // the index or map key			     
 				assignee := t.Pop()       // the robject whose attribute is being assigned to. OrderedCollection or Map
@@ -2441,11 +2428,9 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 			i.EvalExpr(t, resultExpr)
 		}
 
-        GCMutexRLock("")
 		for j := n-1; j >=0; j-- {	
-			t.Stack[t.Base+j-n] = t.PopNoLock()   
+			t.Stack[t.Base+j-n] = t.Pop()   
 		}
-		GCMutexRUnlock("")
     }
     return
 }

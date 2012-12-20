@@ -15,7 +15,6 @@ import (
 	"sort"
 	"relish/rterr"
 	. "relish/dbg"
-	"sync/atomic"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -321,9 +320,6 @@ func (s *rset) BoolMap() map[RObject]bool {
 
 func (s *rset) Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int) {
 
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
-
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
 	}
@@ -335,10 +331,6 @@ func (s *rset) Add(obj RObject, context MethodEvaluationContext) (added bool, ne
 
 func (s *rset) AddSimple(obj RObject) (newLen int) {
 
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
-
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
 	}
@@ -348,9 +340,6 @@ func (s *rset) AddSimple(obj RObject) (newLen int) {
 }
 
 func (s *rset) Remove(obj RObject) (removed bool, removedIndex int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
 
 	removed = s.m[obj]
 	delete(s.m, obj) // delete(s.m,obj)
@@ -359,9 +348,6 @@ func (s *rset) Remove(obj RObject) (removed bool, removedIndex int) {
 }
 
 func (s *rset) ClearInMemory() {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
 
 	s.m = nil
 }
@@ -381,9 +367,6 @@ TODO
 */
 func (c *rset) Iter(th InterpreterThread) <-chan RObject {
 	
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
-
 	var db DB
 	if th == nil {
 		db = RT.DB()
@@ -548,9 +531,6 @@ func (s *rsortedset) BoolMap() map[RObject]bool {
 
 func (s *rsortedset) Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int) {
 	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
-
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
 		s.v = new(RVector)
@@ -570,9 +550,6 @@ func (s *rsortedset) Add(obj RObject, context MethodEvaluationContext) (added bo
 }
 
 func (s *rsortedset) AddSimple(obj RObject) (newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")
 
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
@@ -586,11 +563,6 @@ func (s *rsortedset) AddSimple(obj RObject) (newLen int) {
 }
 
 func (s *rsortedset) At(th InterpreterThread, i int) RObject {
-
-
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
-
 
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
@@ -764,9 +736,6 @@ func (c *rsortedset) Contains(th InterpreterThread, obj RObject) (found bool) {
 
 func (s *rsortedset) Remove(obj RObject) (removed bool, removedIndex int) {
 
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
-
 	if s.v == nil {
 		removedIndex = -1
 	} else {
@@ -780,10 +749,7 @@ func (s *rsortedset) Remove(obj RObject) (removed bool, removedIndex int) {
 	return
 }
 
-func (s *rsortedset) ClearInMemory() {
-
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rsortedset) ClearInMemory() {	
 
 	s.m = nil
 	if s.v != nil {
@@ -795,9 +761,6 @@ func (s *rsortedset) ClearInMemory() {
 TODO Use more standard flag-based deproxify
  */
 func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
-
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
 	var db DB
 	if th == nil {
@@ -850,9 +813,6 @@ func (o *rsortedset) Mark() bool {
 
 
 func (c *rsortedset) deproxify(th InterpreterThread) {
-
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
 	var db DB
 	if th == nil {
@@ -967,10 +927,6 @@ Currently used in String method to list the elements.
 */
 func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
-
-
 	var db DB
 	if th == nil {
 		db = RT.DB()
@@ -1027,9 +983,6 @@ func (o *rlist) Mark() bool {
 */
 func (c *rlist) deproxify(th InterpreterThread) {
 
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
-
 	var db DB
 	if th == nil {
 		db = RT.DB()
@@ -1076,9 +1029,6 @@ func (s *rlist)	Insert(i int, val RObject) (newLen int) {
 		newLen = s.AddSimple(val)
 	} else {
 
-  	   GCMutexRLock("")
-	   defer GCMutexRUnlock("")		
-
        s.v.Insert(i, val)
        newLen = len(*(s.v))
 	}
@@ -1092,18 +1042,13 @@ Note: It is illegal to call this on a IsSorting() == true list. Not enforced. Wa
 func (s *rlist) Set(i int, val RObject) {	
    if s.v == nil {
       rterr.Stopf("Error in list-element set: index %d is out of range.",i)
-   }
-
-   GCMutexRLock("")
-   defer GCMutexRUnlock("")	   
+   }   
    
    s.v.Set(i, val)
 }
 
 
 func (s *rlist) ReplaceContents(objs []RObject) {
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	var rv RVector = RVector(objs)
 	s.v = &rv
@@ -1141,10 +1086,7 @@ func (s *rlist) Iterable() (interface{},error) {
 // defer RT.UnsetEvalContext(obj)
 // context := RT.GetEvalContext(obj)	
 
-func (s *rlist) Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int) {
-
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")		
+func (s *rlist) Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int) {	
 
 	if s.v == nil {
 		s.v = new(RVector)
@@ -1163,9 +1105,6 @@ func (s *rlist) Add(obj RObject, context MethodEvaluationContext) (added bool, n
 
 func (s *rlist) AddSimple(obj RObject) (newLen int) {
 
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
-
 	if s.v == nil {
 		s.v = new(RVector)
 	}
@@ -1175,9 +1114,6 @@ func (s *rlist) AddSimple(obj RObject) (newLen int) {
 }
 
 func (s *rlist) At(th InterpreterThread, i int) RObject {
-
-    atomic.AddInt32(&DeferGC,1) 
-    defer atomic.AddInt32(&DeferGC,-1)
 
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
@@ -1322,9 +1258,6 @@ func (s *rlist) Index(obj RObject, start int) int {
 
 func (s *rlist) Remove(obj RObject) (removed bool, removedIndex int) {
 	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")		
-
 	if s.v == nil {
 		removedIndex = -1
 	} else {
@@ -1338,9 +1271,6 @@ func (s *rlist) Remove(obj RObject) (removed bool, removedIndex int) {
 }
 
 func (s *rlist) ClearInMemory() {
-
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	if s.v != nil {
 		s.v = s.v.Resize(0, s.v.Cap())
@@ -1482,9 +1412,6 @@ func (s *rstringmap) Get(key RObject) (val RObject, found bool) {
 
 func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
 	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
-
 	k := string(key.(String))	
 	_,found := s.m[k] 
 	added = ! found
@@ -1504,10 +1431,7 @@ func (s *rstringmap) Contains(th InterpreterThread, key RObject) (found bool) {
 	already known to be simply insertable (at the end of if applicable) the collection.
 	Used by the persistence service. Do not use for general use of the collection.
 */
-func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {	
 
 	k := string(key.(String))	
     s.m[k] = val
@@ -1516,9 +1440,6 @@ func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {
 }
 
 func (s *rstringmap) Remove(key RObject) (removed bool, removedIndex int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	k := string(key.(String))		
 	_,removed = s.m[k] 
@@ -1527,10 +1448,7 @@ func (s *rstringmap) Remove(key RObject) (removed bool, removedIndex int) {
 	return
 }
 
-func (s *rstringmap) ClearInMemory() {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rstringmap) ClearInMemory() {	
 
 	s.m = nil
 }
@@ -1613,10 +1531,7 @@ func (s *ruint64map) Get(key RObject) (val RObject, found bool) {
 	return
 }
 
-func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *ruint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {	
 
     var k uint64
 	switch key.(type) {
@@ -1650,10 +1565,6 @@ func (s *ruint64map) Contains(th InterpreterThread, key RObject) (found bool) {
 */
 func (s *ruint64map) PutSimple(key RObject, val RObject) (newLen int) {
 
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
-
     var k uint64
 	switch key.(type) {
 	   case Uint:	
@@ -1673,11 +1584,7 @@ func (s *ruint64map) PutSimple(key RObject, val RObject) (newLen int) {
 }
 
 
-func (s *ruint64map) Remove(key RObject) (removed bool, removedIndex int) {
-
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *ruint64map) Remove(key RObject) (removed bool, removedIndex int) {	
 
     var k uint64
 	switch key.(type) {
@@ -1700,9 +1607,6 @@ func (s *ruint64map) Remove(key RObject) (removed bool, removedIndex int) {
 }
 
 func (s *ruint64map) ClearInMemory() {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	s.m = nil
 }
@@ -1801,9 +1705,6 @@ func (s *rint64map) Get(key RObject) (val RObject, found bool) {
 }
 
 func (s *rint64map) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
     var k int64
 	switch key.(type) {
@@ -1836,9 +1737,6 @@ func (s *rint64map) Contains(th InterpreterThread, key RObject) (found bool) {
 	Used by the persistence service. Do not use for general use of the collection.
 */
 func (s *rint64map) PutSimple(key RObject, val RObject) (newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
     var k int64
 	switch key.(type) {
@@ -1858,10 +1756,7 @@ func (s *rint64map) PutSimple(key RObject, val RObject) (newLen int) {
     return
 }
 
-func (s *rint64map) Remove(key RObject) (removed bool, removedIndex int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rint64map) Remove(key RObject) (removed bool, removedIndex int) {	
 
     var k int64
 	switch key.(type) {
@@ -1883,10 +1778,7 @@ func (s *rint64map) Remove(key RObject) (removed bool, removedIndex int) {
 	return
 }
 
-func (s *rint64map) ClearInMemory() {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rint64map) ClearInMemory() {	
 
 	s.m = nil
 }
@@ -1971,10 +1863,7 @@ func (s *rpointermap) Get(key RObject) (val RObject, found bool) {
 }
 
 
-func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rpointermap) Put(key RObject, val RObject, context MethodEvaluationContext) (added bool, newLen int) {	
 
 	_,found := s.m[key] 
 	added = ! found
@@ -1993,10 +1882,7 @@ func (s *rpointermap) Contains(th InterpreterThread, key RObject) (found bool) {
 	already known to be simply insertable (at the end of if applicable) the collection.
 	Used by the persistence service. Do not use for general use of the collection.
 */
-func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
+func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {	
 
     s.m[key] = val
     newLen = len(s.m)
@@ -2004,9 +1890,6 @@ func (s *rpointermap) PutSimple(key RObject, val RObject) (newLen int) {
 }
 
 func (s *rpointermap) Remove(key RObject) (removed bool, removedIndex int) {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	_,removed = s.m[key] 
 	delete(s.m, key) 
@@ -2015,9 +1898,6 @@ func (s *rpointermap) Remove(key RObject) (removed bool, removedIndex int) {
 }
 
 func (s *rpointermap) ClearInMemory() {
-	
-	GCMutexRLock("")
-	defer GCMutexRUnlock("")	
 
 	s.m = nil
 }
