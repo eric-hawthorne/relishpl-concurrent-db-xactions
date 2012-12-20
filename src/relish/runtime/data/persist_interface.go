@@ -111,5 +111,9 @@ type InterpreterThread interface {
 	Will be "" unless we are in a stack-unrolling panic, in which case, should be the error message.
 	*/
 	Err() string
+	
+	AllowGC()
+	
+	DisallowGC()
 }
 

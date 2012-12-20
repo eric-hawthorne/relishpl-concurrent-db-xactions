@@ -37,10 +37,10 @@ func (i *Interpreter) GCLoop() {
 
     for {
 	    time.Sleep(GC_INTERVAL_MINUTES * time.Minute)
-	    // time.Sleep(GC_INTERVAL_MINUTES * time.Second)    
+	    // time.Sleep(4 * time.Second)    
 		    
 	    runtime.ReadMemStats(&m)
-	    if m.Alloc > prevA * 2 {	
+	    if m.Alloc > prevA * 2  {	
 		   Logln(GC_,"GC because Prev Alloc",prevA,", Alloc",m.Alloc)
 		
 	       i.GC()

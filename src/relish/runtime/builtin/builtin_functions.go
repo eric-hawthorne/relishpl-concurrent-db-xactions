@@ -2296,7 +2296,9 @@ func builtinTimeNow(th InterpreterThread, objects []RObject) []RObject {
 //
 func builtinSleep(th InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))
+	th.AllowGC()
     time.Sleep(d)
+    th.DisallowGC()
 	return []RObject{}
 }	
 
@@ -2777,7 +2779,12 @@ TODO DUMMY Implementation
 */
 func builtinFrom(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(RInChannel)
+	th.AllowGC()	
     val := c.From()
+    th.DisallowGC()
+	if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
+		   RT.DecrementInTransitCount(val)
+	}
 	return []RObject{val}
 }
 

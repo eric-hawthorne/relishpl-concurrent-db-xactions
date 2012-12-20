@@ -276,12 +276,8 @@ type Channel struct {
 	ElementType *RType
 }
 
-func (c *Channel) From() RObject {
-   val := <- c.Ch
-   if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
-	   RT.DecrementInTransitCount(val)
-   }	
-   return val
+func (c *Channel) From() RObject {	
+   return <- c.Ch
 }
 
 func (c *Channel) To(val RObject) {

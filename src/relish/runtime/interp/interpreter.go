@@ -2090,7 +2090,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
        if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
           i.rt.IncrementInTransitCount(val)
        }
-	   c.Ch <- val	    
+       
+       t.AllowGC()
+	   c.Ch <- val
+	   t.DisallowGC()	    
 
 
     } else { // assignment

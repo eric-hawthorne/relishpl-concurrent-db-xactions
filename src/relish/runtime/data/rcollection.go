@@ -1942,3 +1942,13 @@ func (f FakeInterpreterThread) DB() DB {
 func (f FakeInterpreterThread) Err() string {
 	return ""
 }
+
+/*
+*/
+func (f FakeInterpreterThread) AllowGC()  {
+}
+
+/*
+*/
+func (f FakeInterpreterThread) DisallowGC()  {
+}
