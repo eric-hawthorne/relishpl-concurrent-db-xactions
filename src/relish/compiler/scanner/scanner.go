@@ -730,7 +730,10 @@ func (S *Scanner) PackageNamePart() (bool, string) {
 			lastCharWasOkForEnd = true
 		} else if S.ch == '_' { // only allowed in the middle
 			lastCharWasOkForEnd = false
-		} else if lastCharWasOkForEnd {
+	    } else if lastCharWasOkForEnd {
+            if IsAsciiCapitalLetter(S.ch) {  // this is just the first part of a varname/methodname
+               break
+            }	    	
 		    namePart := string(S.src[st.Offset:S.offset])
 		    if namePart == "pkg" {   // not allowed as a package name part
 			   break
