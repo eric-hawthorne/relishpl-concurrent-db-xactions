@@ -4,7 +4,7 @@
 // license that can be found in the GO_LICENSE file.
 
 // Modifications and additions which convert code to be part of a relish-language compiler 
-// are Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// are Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of such source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // Package scanner implements a scanner for relish source text. Takes a []byte as
@@ -730,10 +730,7 @@ func (S *Scanner) PackageNamePart() (bool, string) {
 			lastCharWasOkForEnd = true
 		} else if S.ch == '_' { // only allowed in the middle
 			lastCharWasOkForEnd = false
-	    } else if lastCharWasOkForEnd {
-            if IsAsciiCapitalLetter(S.ch) {  // this is just the first part of a varname/methodname
-               break
-            }	    	
+		} else if lastCharWasOkForEnd {
 		    namePart := string(S.src[st.Offset:S.offset])
 		    if namePart == "pkg" {   // not allowed as a package name part
 			   break

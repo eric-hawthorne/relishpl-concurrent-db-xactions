@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
@@ -327,6 +327,107 @@ func (t *RType) GetAttribute(attrName string) (attr *AttributeSpec, found bool) 
 }
 
 
+/*
+Return the specialization depth of the type from the top of the inheritance lattice.
+The depth is an average of the depth up potentially multiple specialization paths up the lattice.
+*/
+func (t *RType) SpecializationDepth() float64 {
+
+	var sumSquaredTypeSpecificity uint32 = 0
+	var nDimensions uint32 = 0
+	
+	for _, pathNode := range t.SpecializationPathNodes {
+		nDimensions++
+		sumSquaredTypeSpecificity += pathNode.Level * pathNode.Level
+	}
+    
+    // nDimensions should never be 0 - all types have a specialization path node.
+
+	return float64(sumSquaredTypeSpecificity) / float64(nDimensions)
+}
+
+
+
+
+/*
+SPECIAL-PURPOSE METHOD
+Used in guessing a type to instantiate for JSON unmarshalling.
+Return the subtype of t which has the most (direct and inherited) attributes whose names are keys of the map argument.
+If there is a tie, return the most general of the tied types (which, note, could be t itself.)
+Also returns the number of attribute names that were matched by the winning subtype.
+*/
+func (t *RType) BestMatchingSubtype(m map[string]interface{}) (subType *RType, maxMatchingAttrs int) {
+   n0, unmatched := t.countAllAttributes(m)
+   maxMatchingAttrs = n0
+   subType = t
+   for _,st := range t.Children {
+      st1, n := st.bestMatchingSubtype(unmatched, n0)
+      if n > maxMatchingAttrs	{
+	     subType = st1
+	     maxMatchingAttrs = n
+      } else if n == maxMatchingAttrs {
+	      // subType = the most general of the types subtype and st1	
+	      if st1.SpecializationDepth() < subType.SpecializationDepth() {
+		     subType = st1
+	      }
+      }
+   }
+   return
+}
+
+func (t *RType) bestMatchingSubtype(unmatched []string, nMatchedSoFar int) (subType *RType, maxMatchingAttrs int) {
+   nDirect, used1 := t.countDirectAttributes(unmatched)
+   maxMatchingAttrs = nMatchedSoFar + nDirect
+   subType = t
+   for _,st := range t.Children {
+      st1, n := st.bestMatchingSubtype(used1, nDirect)
+      if n > maxMatchingAttrs	{
+	      subType = st1
+	      maxMatchingAttrs = n
+      } else if n == maxMatchingAttrs {
+	      // subType = the most general of the types subtype and st1
+	      if st1.SpecializationDepth() < subType.SpecializationDepth() {
+		     subType = st1
+	      }		
+     }
+   }
+   return
+}
+
+
+
+/*
+Returns how many of the attrNames are the names of direct attributes of the type.
+Also returns a list of the unmatched attrNames.
+*/
+func (t *RType) countDirectAttributes(attrNames []string) (n int, unmatched []string) {
+   for _,attrName := range attrNames {
+      _,found := t.AttributesByName[attrName]
+      if found {
+ 	     n++
+      }	else {
+	     unmatched = append(unmatched, attrName)	
+      }
+   }	
+   return
+}
+
+/*
+Returns how many of the map keys are the names of attributes of the type or its supertypes.
+Also returns a list of the unmatched attrNames.
+*/
+func (t *RType) countAllAttributes(m map[string]interface{}) (n int, unmatched []string) {
+   for key := range m {
+      _,found := t.GetAttribute(key)
+      if found {
+ 	     n++
+      }	else {
+	     unmatched = append(unmatched, key)
+      }
+   }	
+   return
+}
+
 
 /*
 A specification of a type of object having an attribute whose value is a given allowable number of a given type
@@ -371,6 +472,13 @@ type RelEnd struct {
 
 	Protection    string // "public" "protected" "package" "private"
 	DependentPart bool   // delete of parent results in delete of attribute value
+}
+
+/*
+TODO: Implement
+*/
+func (e *RelEnd) IsPublicReadable() bool {
+	return true
 }
 
 /*
@@ -890,7 +998,7 @@ func (subTT *RTypeTuple) SpecializationDistanceFrom(superTT *RTypeTuple) (float6
 		superType := superTT.Types[i]
 		var foundOnePathForTypeSpecialization bool = false
 		
-		if subType == NothingType { // type of <>nil<>
+		if subType == NothingType { // type of *nil*
 			nDimensions++
 			var levelDiff uint32 = 101
 			foundOnePathForTypeSpecialization = true	

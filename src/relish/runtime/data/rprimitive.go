@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
@@ -12,6 +12,7 @@ import (
          . "time"
          "fmt"
          "sync"
+         "strings"
 )
 
 //"fmt"
@@ -255,7 +256,75 @@ func (t *RType) Zero() RObject {
     return z
 }
 
+/*
+If the type is a primitive type, return the zero-value of the type.
+If it is a structured-object type, return an instance with no attribute values or relations.
+If it is a collection type, return an empty instance of the correct type of collection
+(with the specified elment type and/or key and value types)
 
+*/
+func (t *RType) Prototype() RObject {
+	p := t.Zero()
+	if p == NIL {
+        var err error
+
+	    if t.Less(ListType) {
+	
+	       elementTypeName := t.Name[8:]
+
+		   typ, typFound := RT.Types[elementTypeName]
+		   if ! typFound {
+		      panic(fmt.Sprintf("List Element Type '%s' not found.",elementTypeName))	
+		   }	
+	
+           p, err = RT.Newrlist(typ, 0, -1, nil, nil)		
+		   if err != nil {
+			   panic(err)
+		   }
+
+	    } else if t.Less(MapType) {
+		
+		   sepPos := strings.Index(t.Name,")=>(")
+	       keyTypeName := t.Name[8:sepPos]
+	       valTypeName := t.Name[sepPos+4:strings.LastIndex(t.Name,")")]	
+		
+		   keyTyp, typFound := RT.Types[keyTypeName]
+		   if ! typFound {
+		      panic(fmt.Sprintf("Map key type '%s' not found.",keyTypeName)	)
+		   }
+		
+		   valTyp, typFound := RT.Types[valTypeName]
+		   if ! typFound {
+		      panic(fmt.Sprintf("Map value type '%s' not found.",valTypeName))
+		   }	
+		
+           p, err = RT.Newmap(keyTyp, valTyp, 0, -1, nil, nil)		
+		   if err != nil {
+			   panic(err)
+		   }					
+	
+	    } else if t.Less(SetType) {
+	       elementTypeName := t.Name[7:]
+
+		   typ, typFound := RT.Types[elementTypeName]
+		   if ! typFound {
+		      panic(fmt.Sprintf("Set Element Type '%s' not found.",elementTypeName))
+		   }	
+
+           p, err = RT.Newrset(typ, 0, -1, nil)		
+		   if err != nil {
+			   panic(err)
+		   }		
+	
+        } else { // Must be a struct type
+           p, err = RT.NewObject(t.Name) 	
+	       if err != nil {
+		      panic(err)
+	       }
+    	}		
+	}
+	return p
+}
 
 
 
@@ -461,7 +530,15 @@ func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 }
 
 
+func (p Channel) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Channel in JSON.")
+   return
+}
 
+func (p Channel) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Channel.")
+   return
+}
 
 
 type TimeChannel struct {
@@ -642,9 +719,15 @@ func (p TimeChannel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p TimeChannel) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Channel in JSON.")
+   return
+}
 
-
-
+func (p TimeChannel) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Channel.")
+   return
+}
 
 
 type Mutex sync.Mutex
@@ -793,6 +876,16 @@ func (p Mutex) IsTransient() bool { return true }
 
 func (p Mutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p Mutex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Mutex in JSON.")
+   return
+}
+
+func (p Mutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Mutex.")
+   return
 }
 
 func (p *Mutex) Lock() {
@@ -950,6 +1043,16 @@ func (p RWMutex) IsTransient() bool { return true }
 
 func (p RWMutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p RWMutex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent an RWMutex in JSON.")
+   return
+}
+
+func (p RWMutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Mutex.")
+   return
 }
 
 func (p *RWMutex) Lock() {
@@ -1114,9 +1217,15 @@ func (p RTime) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p RTime) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = Time(p)
+   return
+}
 
-
-
+func (p RTime) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Time.")
+   return
+}
 
 
 
@@ -1261,6 +1370,17 @@ func (p Int) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Int) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = int64(p)
+   return
+}
+
+func (p Int) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Int(int64(tree.(float64)))
+   return
+}
+
+
 type Int32 int32
 
 func (p Int32) IsZero() bool {
@@ -1398,6 +1518,17 @@ func (p Int32) IsTransient() bool { return false }
 func (p Int32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
+
+func (p Int32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = int32(p)
+   return
+}
+
+func (p Int32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Int32(int32(tree.(float64)))
+   return
+}
+
 
 type Uint uint64
 
@@ -1537,6 +1668,17 @@ func (p Uint) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Uint) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = uint64(p)
+   return
+}
+
+func (p Uint) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Uint(uint64(tree.(float64)))
+   return
+}
+
+
 type Uint32 uint32
 
 func (p Uint32) IsZero() bool {
@@ -1674,6 +1816,17 @@ func (p Uint32) IsTransient() bool { return false }
 func (p Uint32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
+
+func (p Uint32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = uint32(p)
+   return
+}
+
+func (p Uint32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Uint32(uint32(tree.(float64)))
+   return
+}
+
 
 type Float float64
 
@@ -1813,6 +1966,17 @@ func (p Float) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Float) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = float64(p)
+   return
+}
+
+func (p Float) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Float(tree.(float64))
+   return
+}
+
+
 type Bool bool
 
 func (p Bool) IsZero() bool {
@@ -1951,7 +2115,15 @@ func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Bool) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = bool(p)
+   return
+}
 
+func (p Bool) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Bool(tree.(bool))
+   return
+}
 
 
 
@@ -2091,6 +2263,16 @@ func (p Nil) IsTransient() bool { return false }
 
 func (p Nil) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p Nil) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = nil
+   return
+}
+
+func (p Nil) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = NIL
+   return
 }
 
 const NIL Nil = 0
@@ -2242,6 +2424,15 @@ func (p Complex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Complex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Complex number in JSON.")
+   return
+}
+
+func (p Complex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Complex number.")
+   return
+}
 
 
 type Complex32 complex64
@@ -2382,8 +2573,15 @@ func (p Complex32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p Complex32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Complex32 number in JSON.")
+   return
+}
 
-
+func (p Complex32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Complex32 number.")
+   return
+}
 
 
 
@@ -2546,6 +2744,16 @@ func (p String) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (p String) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   tree = string(p)
+   return
+}
+
+func (p String) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = String(tree.(string))
+   return
+}
+
 /*
 The Proxy type of RObject is a special relish-system-internal type.
 Proxy RObjects are used as the members in an RObject collection which has been fetched from the database,
@@ -2698,6 +2906,16 @@ func (p Proxy) IsTransient() bool { return false }
 
 func (p Proxy) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p Proxy) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Proxy in JSON.")
+   return
+}
+
+func (p Proxy) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Proxy.")
+   return
 }
 
 /*

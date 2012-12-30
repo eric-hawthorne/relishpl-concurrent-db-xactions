@@ -4,7 +4,7 @@
 // license that can be found in the GO_LICENSE file.
 
 // Modifications and additions which convert code to be part of a relish-language compiler 
-// are Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// are Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of such source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 package scanner
@@ -15,7 +15,7 @@ import (
 	"os"
 	"relish/compiler/token"
 	"sort"
-	"relish/dbg"
+	"strings"
 )
 
 // An implementation of an ErrorHandler may be provided to the Scanner.
@@ -57,9 +57,6 @@ type Error struct {
 }
 
 func (e *Error) Error() string {
-    return dbg.FmtErr(e.Pos, e.Msg)
-
-/*
 	if e.Pos.Filename != "" || e.Pos.IsValid() {
 		// don't print "<unknown position>"
 		// TODO(gri) reconsider the semantics of Position.IsValid
@@ -72,7 +69,6 @@ func (e *Error) Error() string {
 		return "\n" + packageFilePos + ":\n\n" + e.Msg + "\n\nError in software artifact\n" + artifactDir + "\n"
 	}
 	return e.Msg
-*/
 }
 
 // An ErrorList is a (possibly sorted) list of Errors.

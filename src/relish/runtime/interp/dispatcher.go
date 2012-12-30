@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the operation of the intermediate-code interpreter

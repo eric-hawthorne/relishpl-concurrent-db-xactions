@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
@@ -15,6 +15,7 @@ import (
 	"sort"
 	"relish/rterr"
 	. "relish/dbg"
+	"errors"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -280,6 +281,48 @@ func (c rcollection) IsIndexSettable() bool {
    return false  // default, override in sub-types
 }
 
+func (c *rcollection) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+	var val interface{}
+	coll := c.This().(RCollection)
+	if coll.IsMap() {
+		if c.ElementType() != StringType {
+           err = errors.New("Cannot represent Map with non-String key in JSON.")
+           return	
+        }
+        strMap := coll.(*rstringmap) 
+        resultMap := make(map[string]interface{})
+        for key, value := range strMap.m {
+	        val, err = value.ToMapListTree(includePrivate)
+	        if err != nil {
+		       return
+	        }
+	        resultMap[key] = val
+        }	 			
+		tree = resultMap
+	} else {
+		resultSlice := make([]interface{},0)
+		for value := range coll.Iter(nil) {
+	        val, err = value.ToMapListTree(includePrivate)
+	        if err != nil {
+		       return
+	        }	
+	        resultSlice = append(resultSlice, val)		
+		}
+		tree = resultSlice
+	}
+    return
+}
+
+
+
+
+
+
+
+
+
+
+
 /*
 A set of relish objects constrained to be of some type.
 Implements RCollection
@@ -350,6 +393,29 @@ func (s *rset) Remove(obj RObject) (removed bool, removedIndex int) {
 func (s *rset) ClearInMemory() {
 
 	s.m = nil
+}
+
+
+/*
+*/
+func (c *rset) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	var relishVal RObject
+	switch tree.(type) {
+	case []interface{}:
+		slice := tree.([]interface{})
+		for _,val := range slice {
+			prototypeObj := c.ElementType().Prototype()
+			relishVal, err = prototypeObj.FromMapListTree(val)
+			if err != nil {
+				return
+			}
+			c.AddSimple(relishVal)
+		}
+	default:
+	   err = errors.New("When unmarshalling into a Set, a JSON list is expected.")		
+	}
+	obj = c
+	return 
 }
 
 
@@ -469,7 +535,9 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	coll = &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil}, nil}
+	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil}, nil}
+	s.rcollection.robject.this = s
+	coll = s		
     if ! markSense {
 	    coll.SetMarked()
     }	
@@ -757,6 +825,31 @@ func (s *rsortedset) ClearInMemory() {
 	}
 }
 
+
+/*
+Note: Currently, this does not sort the elements.
+This could lead to illegal state. Need a MethodEvaluationContext to sort.
+*/
+func (c *rsortedset) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	var relishVal RObject
+	switch tree.(type) {
+	case []interface{}:
+		slice := tree.([]interface{})
+		for _,val := range slice {
+			prototypeObj := c.ElementType().Prototype()
+			relishVal, err = prototypeObj.FromMapListTree(val)
+			if err != nil {
+				return
+			}
+			c.AddSimple(relishVal)
+		}
+	default:
+	   err = errors.New("When unmarshalling into a SortedSet, a JSON list is expected.")		
+	}
+	obj = c
+	return 
+}
+
 /*
 TODO Use more standard flag-based deproxify
  */
@@ -867,7 +960,9 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	coll = &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil, nil}
+	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil, nil}
+	s.rcollection.robject.this = s
+	coll = s		
 	if ! markSense {
 	    coll.SetMarked()
 	}
@@ -1279,6 +1374,29 @@ func (s *rlist) ClearInMemory() {
 
 
 /*
+*/
+func (c *rlist) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	var relishVal RObject
+	switch tree.(type) {
+	case []interface{}:
+		slice := tree.([]interface{})
+		for _,val := range slice {
+			prototypeObj := c.ElementType().Prototype()
+			relishVal, err = prototypeObj.FromMapListTree(val)
+			if err != nil {
+				return
+			}
+			c.AddSimple(relishVal)
+		}
+	default:
+	   err = errors.New("When unmarshalling into a List, a JSON list is expected.")		
+	}
+	obj = c
+	return 
+}
+
+
+/*
    Constructor
 */
 func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll List, err error) {
@@ -1289,7 +1407,9 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	coll = &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil}
+	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil}
+	lst.rcollection.robject.this = lst
+	coll = lst	
 	if ! markSense {
 	    coll.SetMarked()
 	}	
@@ -1326,14 +1446,23 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	}
 	switch keyType {
 	case StringType:
-		coll = &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[string]RObject)}	
+		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[string]RObject)}	
+	    m.rcollection.robject.this = m
+	    coll = m
 	case IntType, Int32Type:
-		coll = &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[int64]RObject)}
+		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[int64]RObject)}
+	    m.rcollection.robject.this = m
+	    coll = m	
 	case UintType, Uint32Type:
-		coll = &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[uint64]RObject)}		
+		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[uint64]RObject)}
+	    m.rcollection.robject.this = m				
+	    coll = m	
 	default:
-		coll = &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[RObject]RObject)}							
+		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[RObject]RObject)}		
+	    m.rcollection.robject.this = m			
+	    coll = m				
 	}
+	
 	if ! markSense {
 	    coll.SetMarked()
 	}
@@ -1452,6 +1581,39 @@ func (s *rstringmap) ClearInMemory() {
 
 	s.m = nil
 }
+
+
+/*
+*/
+func (c *rstringmap) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	var relishVal RObject
+	switch tree.(type) {
+	case []interface{}:
+
+	case map[string]interface{}:
+		theMap := tree.(map[string]interface{})		
+
+		for key,val := range theMap {
+			prototypeObj := c.ValType().Prototype()
+			relishVal, err = prototypeObj.FromMapListTree(val)
+			if err != nil {
+				return
+			}
+			c.PutSimple(String(key), relishVal)
+		}
+	default:
+	   err = errors.New("When unmarshalling into a Map, a JSON map is expected.")		
+	}
+	obj = c
+	return 
+}
+
+
+
+
+
+
+
 
 type ruint64map struct {
 	rcollection
@@ -1614,7 +1776,10 @@ func (s *ruint64map) ClearInMemory() {
 
 
 
-
+func (c *ruint64map) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")		
+	return 
+}
 
 
 
@@ -1783,6 +1948,12 @@ func (s *rint64map) ClearInMemory() {
 	s.m = nil
 }
 
+func (c *rint64map) FromMapListTree(tree interface{}) (obj RObject, err error) {
+    err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")		
+	return 
+}
+
+
 
 type rpointermap struct {
 	rcollection
@@ -1900,6 +2071,11 @@ func (s *rpointermap) Remove(key RObject) (removed bool, removedIndex int) {
 func (s *rpointermap) ClearInMemory() {
 
 	s.m = nil
+}
+
+func (c *rpointermap) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")			
+	return 
 }
 
 /*

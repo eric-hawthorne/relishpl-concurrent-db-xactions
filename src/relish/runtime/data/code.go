@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
@@ -249,6 +249,16 @@ func (o *RMultiMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
+func (o *RMultiMethod) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a MultiMethod in JSON.")
+   return
+}
+
+func (o *RMultiMethod) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a MultiMethod.")
+   return
+}
+
 /*
    A method implementation that applies to a particular tuple of argument types.
 */
@@ -409,6 +419,16 @@ func (o *RMethod) IsTransient() bool { return true }
 
 func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (o *RMethod) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Method in JSON.")
+   return
+}
+
+func (o *RMethod) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Method.")
+   return
 }
 
 
@@ -832,4 +852,14 @@ func (o *RClosure) IsTransient() bool { return true }
 
 func (o *RClosure) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (o *RClosure) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a Closure in JSON.")
+   return
+}
+
+func (o *RClosure) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a Closure.")
+   return
 }

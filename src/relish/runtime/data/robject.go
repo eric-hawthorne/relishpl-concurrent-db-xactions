@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
@@ -191,6 +191,37 @@ type RObject interface {
     zero-ness is what is tested for in ifs, whiles, and by the and, or, not functions.
     */
 	IsZero() bool
+	
+   /*
+      Converts the value or object or collection to an value tree suitable for encoding into JSON.
+      If this ROBJECT is a primitive value, a value of the corresponding Go primitive type is
+      returned as tree.
+      If this is a structured object, a map from attribute name to tree-ified value is returned.
+      if this is a relish map, then if the key type is String, the map is converted to a 
+      Go map from string to tree-ified mapped values.
+      If this is a relish map with non-String key type, an error is returned. Such a map cannot
+      be JSON encoded.
+      If this is any other type of relish collection, a slice of the tree-ified elements of the collection
+      is returned.
+      
+      The includePrivate flag determines whether private attributes of a structured object are included
+      in the returned map/tree.
+   */ 	
+   ToMapListTree(includePrivate bool) (tree interface{}, err error) 
+
+   /*
+   Populate a tree of relish objects and attribute values given a map/list tree of Go values.
+   Typically, the tree of Go values has come from a JSON unmarshalling.
+   Allocates new objects as needed.
+   The object that this method is called on serves as a prototype for the root of the object
+   tree to be created. This object may be re-used as the returned object, or may be thrown
+   away after its type information is used to guide construction of the object tree.
+   In any case, you should not rely on modification (or non-modification) of the target
+   object of this method, but should use the returned object as the root of the JSON-populated
+   relish-object tree.
+   */
+   FromMapListTree(tree interface{}) (obj RObject, err error)
+	
 }
 
 /*
@@ -585,11 +616,141 @@ func (o *runit) markAttributes()  {
 
 
 
+/*
+Convert object to a map of strings (attribute names) to attribute values,
+with attribute values themselves converted to maps and slices.
+*/
+func (o *runit) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+	
+	// Go through all the attributes and map-tree-ify their values
+	
+	m := make(map[string]interface{})
+	
+	var key string
+	var val interface{}
+	
+	for _, attr := range o.rtype.Attributes {
+
+        if includePrivate || attr.Part.IsPublicReadable() {
+            key = attr.Part.Name
+
+			value, found := RT.AttrValue(o, attr, true, true)
+			if !found {
+				break
+			}
+			val, err = value.ToMapListTree(includePrivate)	
+			if err != nil {
+				return
+			}
+			m[key] = val
+		}
+	}
+
+	for _, typ := range o.rtype.Up {
+		for _, attr := range typ.Attributes {
+	        if includePrivate || attr.Part.IsPublicReadable() {
+	            key = attr.Part.Name
+
+				value, found := RT.AttrValue(o, attr, true, true)
+				if !found {
+					break
+				}
+				val, err = value.ToMapListTree(includePrivate)	
+				if err != nil {
+					return
+				}
+				m[key] = val
+			}
+		}
+	}
+	
+	tree = m
+	
+	return	
+}
 
 
+func (o *runit) FromMapListTree(tree interface{}) (obj RObject, err error) {
+	myType := o.Type()
+	
+	obj = o
+	
+	var relishVal RObject	
+	
+	switch tree.(type) {
+	case map[string]interface{}:
+		theMap := tree.(map[string]interface{})
+		
+        bestType, nMatchingAttrs := myType.BestMatchingSubtype(theMap) 			
+		
+		if nMatchingAttrs == 0 {
+		   err = errors.New("Unmarshalling target object's type is not compatible with JSON map-keys.")	
+		}
+		
+		// re-use the target object, unless the best type is a subtype, in which case,
+		// create a new instance of the subtype.
+		if bestType != myType {
+			obj, err = RT.NewObject(bestType.Name) 
+			if err != nil {
+				return
+			}
+		}
+		
+		for key, value := range theMap {
+			
+			// Find the attribute spec given the rtype of o and the key.
+			
+			attr, found := bestType.GetAttribute(key)
+			
+			if ! found {
+				continue
+			}
+			
+			// check if the object already has a value of that attribute.
+			
+            val, valFound := RT.AttrVal(obj, attr) 
+            if valFound {
+	           relishVal, err = val.FromMapListTree(value) 
+  	     	   if err != nil {
+				  return
+			   }	
+	           RT.RestoreAttr(obj, attr, relishVal)
+            } else {	
+			
+			   // if not, ... instantiate an instance of the attribute value type 
+			  
+			   var prototypeVal RObject
+			   var relishVal RObject
+			 
+			   attrValType := attr.Part.Type
+		
+		      
+			   // Is it a collection type? Handle later
+						 
+			   // Is it a primitive type?
 
+               if attrValType.IsPrimitive {
+	              prototypeVal = attrValType.Zero()
+               } else {			
+				  prototypeVal, err = RT.NewObject(attrValType.Name) 
+				  if err != nil {
+					 return
+				  }			
+		       }
 
-
+	           relishVal, err = prototypeVal.FromMapListTree(value) 
+  	     	   if err != nil {
+				  return
+			   }	
+	           RT.RestoreAttr(obj, attr, relishVal)		
+			}
+		}
+	default:
+		err = errors.New("Cannot restore a structured object except from a map.")
+		return
+	}
+	return 
+}
 
 
 

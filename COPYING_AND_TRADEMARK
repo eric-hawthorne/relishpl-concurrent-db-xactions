@@ -1,8 +1,8 @@
-Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 
 The relish(TM) compiler-interpreter and other relish language tools are free software; you can redistribute this software and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
-The relish(TM) standard libraries and runtime-library of built-in functions are free software; you can redistribute them and/or modify it under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+The relish(TM) standard libraries and runtime-library of built-in functions are free software; you can redistribute them and/or modify them under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
 
 The relish(TM) compiler-interpreter includes some software written by and copyrighted by the Go authors.
 (See golang.org).
@@ -15,9 +15,9 @@ relish(TM) software is distributed in the hope that it will be useful, but WITHO
 A copy of the GNU Lesser General Public License is included in the relish software distribution in the file LICENSE_GPL3. If you did not receive this copy, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 
 TRADEMARK RESTRICTION
-You may not distribute forked or modified or derivative versions of any of the relish(TM) software under the name relish (nor names confusable with relish), "relish" is a trademark (and service mark) of EveryBitCounts Software Services Inc. The purpose of this clause is to give users of the relish programming language and libraries a single stable and predictable language and language evolution that they can rely on, refer to accurately, and collectively improve.
-You may not market, offer, or distribute other software or software-or-programming-related materials or services, such as but not limited to manuals, tutorials, books, videos, or instruction courses, using the name relish (nor names confusable with relish), without written permission from EveryBitCounts Software Services Inc. Such permission may be obtainable if requested and will be considered on a case-by-case basis.
-The same restrictions apply to the use of the relish ("linked green blocks") logo.
+You may not distribute forked or modified or derivative versions of any of the relish(TM) software under the name relish (nor a name confusable with relish, nor a name including relish). "relish" is a trademark (and service mark) of EveryBitCounts Software Services Inc. The purpose of this clause is to give users of the relish programming language and libraries a single stable and predictable language and language evolution that they can rely on, refer to accurately, and collectively improve.
+You may not market, offer, or distribute other software or software-or-programming-related materials or services, such as but not limited to manuals, tutorials, books, videos, or instruction courses, using the name relish (nor names confusable with relish, nor a name including relish), without written permission from EveryBitCounts Software Services Inc. Such permission may be obtainable if requested and will be considered on a case-by-case basis.
+The same trademark and service mark restrictions also apply to the use of the relish ("linked green blocks") logo.
 
 --
 

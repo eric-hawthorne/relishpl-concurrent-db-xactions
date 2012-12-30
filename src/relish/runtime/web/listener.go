@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package implements a web application server for the relish language environment.
@@ -489,6 +489,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
              return               
        }		
        fmt.Fprintln(w, htmlContent)		
+
 	  case "HTML FILE":
        var filePath string
        if len(results) < 2 {
@@ -506,12 +507,42 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
         }        
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)
-	  case "JSON":
-       fmt.Println("JSON response not implemented yet.")			
-	   fmt.Fprintln(w, "JSON response not implemented yet.")		
+
+	  case "JSON":	
+	   var jsonContent string
+       if len(results) < 2 {
+         err = fmt.Errorf("%s JSON response requires a second return value, which is to be converted to JSON", methodName) 
+        return       
+      } else if len(results) == 2 { 
+	     obj := results[1]           
+	     includePrivate := false
+         jsonContent, err = JsonMarshal(obj, includePrivate) 
+         if err != nil {
+	         err = fmt.Errorf("%s JSON encoding error: %s", methodName, err.Error()) 
+             return
+         }
+       } else {
+             err = fmt.Errorf("%s JSON response has too many return values. Should be 'JSON' then an object/value to be converted to JSON", methodName) 
+             return               
+       }		
+       w.Header().Set("Content-Type", "text/json")
+       fmt.Fprintln(w, jsonContent)	
+	
 	  case "JSON FILE":
-       fmt.Println("JSON FILE response not implemented yet.")			
-	   fmt.Fprintln(w, "JSON FILE response not implemented yet.")		
+        var filePath string		
+        if len(results) < 2 {
+          err = fmt.Errorf("%s JSON FILE response requires a filepath", methodName) 
+          return       
+        } else if len(results) == 2 {  
+           w.Header().Set("Content-Type", "text/json")		          
+           filePath = string(results[1].(String))    
+	       filePath = makeAbsoluteFilePath(methodName, filePath)        
+	       http.ServeFile(w,r,filePath)
+       } else {		
+           err = fmt.Errorf("%s JSON FILE response has too many return values. Should be filepath", methodName) 
+           return	
+	   }
+
 	  case "IMAGE":
        fmt.Println("IMAGE response not implemented yet.")			
 	   fmt.Fprintln(w, "IMAGE response not implemented yet.")		
@@ -565,8 +596,22 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)		
 	  case "MEDIA":
-       fmt.Println("MEDIA response not implemented yet.")			
-	   fmt.Fprintln(w, "MEDIA response not implemented yet.")		
+		var mediaContent string
+        var mimeType string		
+	    if len(results) < 3 {
+	        err = fmt.Errorf("%s MEDIA response requires a mimetype then a content string", methodName) 
+	        return       
+        } else if len(results) == 3 {
+            mimeType = string(results[1].(String))     
+	        mediaContent = string(results[2].(String)) 
+            w.Header().Set("Content-Type", mimeType)	
+        } else {
+             err = fmt.Errorf("%s MEDIA response has too many return values. Should be 'MEDIA' then a mimetype then a content string", methodName) 
+             return               
+        }		
+        fmt.Fprintln(w, mediaContent)
+	
+			
 	  case "MEDIA FILE":
        var filePath string   
        var mimeType string
@@ -627,6 +672,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
        } 
        http.Error(w, message, code)  
 			
+	  // Do we not need a MIME type argument for this one???
 	  case "TEMPLATE": // An inline template as a string	
 		if len(results) < 3 { 
 		      err = fmt.Errorf("%s (with a templated response) requires return values which are a template string and an object to pass to the template", methodName)            

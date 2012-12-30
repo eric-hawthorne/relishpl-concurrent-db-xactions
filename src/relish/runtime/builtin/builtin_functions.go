@@ -1,4 +1,4 @@
-// Copyright 2012 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU LESSER GPL v3 license, found in the LICENSE_LGPL3 file.
 
 package builtin
@@ -28,6 +28,7 @@ import (
 	"net/url"	
 	"io/ioutil"
 	"encoding/csv"
+	"encoding/json"
 )
 
 // Reader for reading from standard input
@@ -3585,6 +3586,112 @@ func builtinCsvWrite(th InterpreterThread, objects []RObject) []RObject {
 	
 	
 	
+/*
+jsonMarshal val Any > jsonEncoded String err String
+"""
+ Marshals the argument value/object/collection including only the public
+ attributes of structured objects.
+"""
+
+jsonMarshal val Any includePrivate bool > jsonEncoded String err String  
+"""
+ Marshals the argument value/object/collection including the public
+ and if indicated also the private attributes of structured objects.
+"""
+
+*/	
+func builtinJsonMarshal(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   var includePrivate bool
+   if len(objects) == 2 {
+      	includePrivate = bool(objects[1].(Bool))
+   } 
+   encoded, err := JsonMarshal(obj, includePrivate) 
+   errStr := err.Error()
+   return []RObject{String(encoded), String(errStr)}
+}	
+
+	
+/*
+jsonUnmarshal json String > val Any err String 
+jsonUnmarshal json String obj Any > obj Any err String 
+"""
+
+
+ Decodes the json-encoded string argument into a relish object or object tree, which is returned.
+ If the second argument is summplied, attempts to populate the supplied object, 
+ which must be a collection, a map, or a structured object. In that case, the object argument itself
+ is returned, after being populated with attribute/collection values from the JSON string.
+"""
+*/	
+func builtinJsonUnmarshal(th InterpreterThread, objects []RObject) []RObject {
+   content := string(objects[0].(String))
+   b := []byte(content)
+   var v interface{}
+   var errStr string
+   var resultObj RObject
+
+   err := json.Unmarshal(b, v)
+   if err != nil {
+      errStr = err.Error()
+   } else if len(objects) == 2 {
+	  prototypeObj := objects[1]
+	  resultObj, err = prototypeObj.FromMapListTree(v) 
+      if err != nil {
+         errStr = err.Error()	
+      }
+   } else {
+      resultObj = treeFromGoToRelish(v)
+   }
+   return []RObject{resultObj, String(errStr)}
+}
+
+/*
+From a Go map/slice/primitive-value tree, create and return a relish map-list-tree.
+*/
+func treeFromGoToRelish(v interface{}) RObject {
+	if v == nil {
+		return NIL
+	}	
+	switch v.(type) {
+	 case bool:
+		return Bool(v.(bool))
+	 case float64:
+		return Float(v.(float64))	
+	 case string:
+		return String(v.(string)) 
+	 case []interface{}:
+		relishList, err := RT.Newrlist(AnyType, 0, -1, nil, nil)
+		if err != nil {
+		   panic(err)
+		}
+		theList := v.([]interface{})
+	    for _,val := range theList {
+		   obj := treeFromGoToRelish(val)
+		   relishList.AddSimple(obj)		
+		}
+		return relishList
+     case map[string]interface{}:
+        relishMap,err := RT.Newmap(StringType, AnyType, 0, -1, nil, nil)	
+		if err != nil {
+		   panic(err)
+		}	
+	    theMap := v.(map[string]interface{})
+	    for key, val := range theMap {
+		   obj := treeFromGoToRelish(val)
+		   relishMap.PutSimple(String(key),obj)
+	    }
+		return relishMap 	
+	 default: panic("Unexpected value type.")	
+    }
+    return nil
+}
+
+
+
+
+
+
 
 
 
