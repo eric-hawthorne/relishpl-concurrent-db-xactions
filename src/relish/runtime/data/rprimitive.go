@@ -530,7 +530,7 @@ func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 }
 
 
-func (p Channel) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Channel) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Channel in JSON.")
    return
 }
@@ -719,7 +719,7 @@ func (p TimeChannel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p TimeChannel) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p TimeChannel) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Channel in JSON.")
    return
 }
@@ -878,7 +878,7 @@ func (p Mutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Mutex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Mutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Mutex in JSON.")
    return
 }
@@ -1045,7 +1045,7 @@ func (p RWMutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p RWMutex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p RWMutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent an RWMutex in JSON.")
    return
 }
@@ -1217,7 +1217,7 @@ func (p RTime) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p RTime) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p RTime) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = Time(p)
    return
 }
@@ -1370,7 +1370,7 @@ func (p Int) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Int) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Int) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = int64(p)
    return
 }
@@ -1519,7 +1519,7 @@ func (p Int32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Int32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Int32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = int32(p)
    return
 }
@@ -1668,7 +1668,7 @@ func (p Uint) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Uint) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Uint) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = uint64(p)
    return
 }
@@ -1817,7 +1817,7 @@ func (p Uint32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Uint32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Uint32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = uint32(p)
    return
 }
@@ -1966,7 +1966,7 @@ func (p Float) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Float) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Float) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = float64(p)
    return
 }
@@ -2115,7 +2115,7 @@ func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Bool) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Bool) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = bool(p)
    return
 }
@@ -2265,7 +2265,7 @@ func (p Nil) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Nil) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Nil) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = nil
    return
 }
@@ -2424,7 +2424,7 @@ func (p Complex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Complex) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Complex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Complex number in JSON.")
    return
 }
@@ -2573,7 +2573,7 @@ func (p Complex32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Complex32) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Complex32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Complex32 number in JSON.")
    return
 }
@@ -2744,7 +2744,7 @@ func (p String) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p String) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p String) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = string(p)
    return
 }
@@ -2908,7 +2908,7 @@ func (p Proxy) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Proxy) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (p Proxy) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Proxy in JSON.")
    return
 }

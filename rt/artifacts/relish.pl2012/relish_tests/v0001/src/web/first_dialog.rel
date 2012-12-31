@@ -80,3 +80,29 @@ double a Int > String Int
 
    => "double.html"
       times a 2     
+
+
+jason > String vehicles.Car
+"""
+ Returns the car as a JSON-encoded string
+"""
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+   => "JSON"
+      car2
+
+
+jason2 
+> 
+   String 
+   Map 
+"""
+ Returns the map as a JSON-encoded string
+"""
+   args = {
+             "firstName" => "Joe"
+             "lastName"  => "Cool"
+             "age"       => 23
+             "numbers"   => [1 2 3 5 8 13 21]
+          }String > Any
+   => "JSON"
+      args

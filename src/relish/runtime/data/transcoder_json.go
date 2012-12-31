@@ -15,8 +15,9 @@ import (
         "bytes"
 )
 
-func JsonMarshal(obj RObject, includePrivate bool) (encoded string, err error) {	
-   tree, err := obj.ToMapListTree(includePrivate)
+func JsonMarshal(obj RObject, includePrivate bool) (encoded string, err error) {
+   visited := make(map[RObject]bool)		
+   tree, err := obj.ToMapListTree(includePrivate, visited)
    if err != nil {
       return		
    } 

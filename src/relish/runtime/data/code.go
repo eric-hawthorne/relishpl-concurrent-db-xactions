@@ -249,7 +249,7 @@ func (o *RMultiMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RMultiMethod) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (o *RMultiMethod) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a MultiMethod in JSON.")
    return
 }
@@ -421,7 +421,7 @@ func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RMethod) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (o *RMethod) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Method in JSON.")
    return
 }
@@ -854,7 +854,7 @@ func (o *RClosure) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RClosure) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (o *RClosure) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Closure in JSON.")
    return
 }

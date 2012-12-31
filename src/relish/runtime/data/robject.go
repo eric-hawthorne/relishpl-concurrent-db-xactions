@@ -207,7 +207,7 @@ type RObject interface {
       The includePrivate flag determines whether private attributes of a structured object are included
       in the returned map/tree.
    */ 	
-   ToMapListTree(includePrivate bool) (tree interface{}, err error) 
+   ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) 
 
    /*
    Populate a tree of relish objects and attribute values given a map/list tree of Go values.
@@ -620,10 +620,13 @@ func (o *runit) markAttributes()  {
 Convert object to a map of strings (attribute names) to attribute values,
 with attribute values themselves converted to maps and slices.
 */
-func (o *runit) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+	
+	// Record myself in the visited set so we don't infinitely loop.
+	visited[o] = true
 	
 	// Go through all the attributes and map-tree-ify their values
-	
+		
 	m := make(map[string]interface{})
 	
 	var key string
@@ -638,7 +641,12 @@ func (o *runit) ToMapListTree(includePrivate bool) (tree interface{}, err error)
 			if !found {
 				break
 			}
-			val, err = value.ToMapListTree(includePrivate)	
+			
+	        if visited[value] {
+	           continue
+	        }			
+			
+			val, err = value.ToMapListTree(includePrivate, visited)	
 			if err != nil {
 				return
 			}
@@ -655,7 +663,12 @@ func (o *runit) ToMapListTree(includePrivate bool) (tree interface{}, err error)
 				if !found {
 					break
 				}
-				val, err = value.ToMapListTree(includePrivate)	
+				
+	            if visited[value] {
+	               continue
+	            }
+					
+				val, err = value.ToMapListTree(includePrivate, visited)	
 				if err != nil {
 					return
 				}

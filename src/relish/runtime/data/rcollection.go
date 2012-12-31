@@ -281,7 +281,11 @@ func (c rcollection) IsIndexSettable() bool {
    return false  // default, override in sub-types
 }
 
-func (c *rcollection) ToMapListTree(includePrivate bool) (tree interface{}, err error) {
+func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+	
+	// Record myself in the visited set so we don't infinitely loop.
+	visited[c.This()] = true	
+	
 	var val interface{}
 	coll := c.This().(RCollection)
 	if coll.IsMap() {
@@ -292,7 +296,10 @@ func (c *rcollection) ToMapListTree(includePrivate bool) (tree interface{}, err 
         strMap := coll.(*rstringmap) 
         resultMap := make(map[string]interface{})
         for key, value := range strMap.m {
-	        val, err = value.ToMapListTree(includePrivate)
+	        if visited[value] {
+		       continue
+	        }
+	        val, err = value.ToMapListTree(includePrivate, visited)
 	        if err != nil {
 		       return
 	        }
@@ -302,7 +309,10 @@ func (c *rcollection) ToMapListTree(includePrivate bool) (tree interface{}, err 
 	} else {
 		resultSlice := make([]interface{},0)
 		for value := range coll.Iter(nil) {
-	        val, err = value.ToMapListTree(includePrivate)
+            if visited[value] {
+	           continue
+            }			
+	        val, err = value.ToMapListTree(includePrivate, visited)
 	        if err != nil {
 		       return
 	        }	
