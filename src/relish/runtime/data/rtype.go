@@ -29,6 +29,9 @@ import (
 The datatype of a Relish object.
 Should it also have a direct map by occurrence pos to type tuples it occurs in?
 So far no need for that identified.
+
+Parameterized types are either a type-pattern, which has ParameterConstraints and ParameterTypeVarNames
+or they are an actual specific type (an instantiated type pattern), with actual types for its type parameters.
 */
 type RType struct {
 	Name                    string
@@ -43,8 +46,14 @@ type RType struct {
 	Attributes             []*AttributeSpec
 	AttributesByName       map[string]*AttributeSpec
 	NumPrimitiveAttributes int
-	IsParameterized        bool
+	IsParameterized        bool  // Is a parameterized specific type or a parameterized type-pattern
+	IsPattern              bool  // True if this is a parameterized type-pattern with type parameter constraints 
+	                             // but no actual type parameters
+	ParameterConstraints   []*RType   // One or more types which type parameters must be same as or a subtype of
+	ParameterTypeVarNames  []string   // Type variable names - the use is to identify which parameter types must be the same
+	ActualParameters       []*RType   // An instantiated parameterized type lists its actual types of its parameters
 }
+
 
 
 
@@ -73,6 +82,65 @@ func (t *RType) Less(t2 *RType) bool {
 func (t *RType) LessEq(t2 *RType) bool {
 	return (t == t2) || t2 == AnyType || t == NothingType || t.Less(t2)
 }
+
+
+/*
+Convenience function for parameterized types with a single parameter, such as List_of_X, Channel of X
+*/
+func (t *RType) ElementType() *RType {
+	return t.ActualParameters[0]
+}
+
+/*
+Convenience function for map types.
+*/
+func (t *RType) KeyType() *RType {
+	return t.ActualParameters[0]	
+}
+
+/*
+Convenience function for map types.
+*/
+func (t *RType) ValType() *RType {
+	return t.ActualParameters[1]	
+}
+
+/*
+Convenience function for parameterized types with a single parameter, such as List_of_X, Channel of X
+*/
+func (t *RType) SetElementType(elementType *RType) {
+	t.ActualParameters = []*RType{elementType}
+}
+
+/*
+Convenience function for map types.
+*/
+func (t *RType) SetKeyAndValTypes(keyType *RType, valType *RType) {
+	t.ActualParameters = []*RType{keyType, valType}	
+}
+
+
+/*
+Convenience function for parameterized types with a single parameter, such as List_of_X, Channel of X
+*/
+func (t *RType) ElementTypeConstraint() *RType {
+	return t.ParameterConstraints[0]
+}
+
+/*
+Convenience function for map types.
+*/
+func (t *RType) KeyTypeConstraint() *RType {
+	return t.ParameterConstraints[0]	
+}
+
+/*
+Convenience function for map types.
+*/
+func (t *RType) ValTypeConstraint() *RType {
+	return t.ParameterConstraints[1]	
+}
+
 
 /*
    Traverses the supertypes lattice to produce a list of all the supertypes in a
@@ -650,6 +718,8 @@ func (rt *RuntimeEnv) GetSetType(elementType *RType) (typ *RType, err error) {
 	typ, found := rt.Types[typeName]
 	if !found {
 		typ, err = rt.CreateType(typeName, typeShortName, []string{"Set"})
+		typ.IsParameterized = true
+		typ.SetElementType(elementType)		
 	}
 	return
 }
@@ -664,6 +734,8 @@ func (rt *RuntimeEnv) GetListType(elementType *RType) (typ *RType, err error) {
 	typ, found := rt.Types[typeName]
 	if !found {
 		typ, err = rt.CreateType(typeName, typeShortName, []string{"List"})
+		typ.IsParameterized = true		
+		typ.SetElementType(elementType)
 	}
 	return
 }
@@ -678,6 +750,8 @@ func (rt *RuntimeEnv) GetMapType(keyType *RType, valType *RType) (typ *RType, er
 	typ, found := rt.Types[typeName]
 	if !found {
 		typ, err = rt.CreateType(typeName, typeShortName, []string{"Map"})
+		typ.IsParameterized = true		
+		typ.SetKeyAndValTypes(keyType,valType)		
 	}
 	return
 }

@@ -266,12 +266,16 @@ type RMethod struct {
 	multiMethod    *RMultiMethod
 	ParameterNames []string               // names of parameters
 	Signature      *RTypeTuple            // types of parameters
+	WildcardKeywordsParameterName string  // "" or name of the special parameter which takes any number of keyword=val args
+	WildcardKeywordsParameterType *RType  // nil or type of val allowed for wildcard keyword=val args
+	VariadicParameterName string          // "" or name of the special variadic parameter which accepts remainder args
+	VariadicParameterType *RType          // nil or type of val allowed for remainder (variadic) args
 	ReturnSignature *RTypeTuple           // types of return values
 	ReturnArgsNamed bool                  // Whether the return arguments are named and have to be initialized on method call.
 	Code           *ast.MethodDeclaration // abstract syntax tree
 	NumReturnArgs  int
 	NumLocalVars   int
-	NumFreeVars    int
+	NumFreeVars    int  // Usually 0 but may be more in the case of an anonymous Closure-method
 	PrimitiveCode  func(InterpreterThread, []RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
 	File           *ast.File
@@ -472,6 +476,27 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 						                  allowRedefinition)
 }
 
+
+func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+    wildcardKeywordsParameterName string,
+    wildcardKeywordsParameterType string,	
+	variadicParameterName string,
+	variadicParameterType string,
+	returnValTypes []string,
+	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
+		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
+						                  nil,
+						                  nil,
+						                  wildcardKeywordsParameterName,
+						                  wildcardKeywordsParameterType,						
+						                  variadicParameterName,
+						                  variadicParameterType,						
+						                  returnValTypes,
+						                  returnValNamed, 
+						                  numLocalVars, 
+						                  allowRedefinition)
+}
+
 /*
    Create a new relish method.
    Methods are collected by name into multi-methods.
@@ -571,10 +596,42 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	if err != nil {
 		return nil, err
 	}	
+	
+	
+    var wildcardKeywordsParamType *RType = nil
+	var variadicParamType *RType = nil
+
+    if wildcardKeywordsParameterName != "" {
+       typ, typFound := rt.Types[wildcardKeywordsParameterType]
+       if ! typFound {
+	      return nil, fmt.Errorf("Method '%v' keyword parameter type %v not found.", methodName, wildcardKeywordsParameterType)
+       }  	
+       wildcardKeywordsParamType, err = rt.GetMapType(StringType, typ)	 
+       if err != nil {
+	      return nil, err
+       }
+    }
+
+	if variadicParameterName != "" {
+	   typ, typFound := rt.Types[variadicParameterType]
+	   if ! typFound {
+	      return nil, fmt.Errorf("Method '%v' variadic parameter type %v not found.", methodName, variadicParameterType)
+	   } 	
+       variadicParamType, err = rt.GetListType(typ)	 
+       if err != nil {
+	      return nil, err
+       }	
+	}
+	
+	
 	method := &RMethod{
 		multiMethod:    multiMethod,
 		ParameterNames: parameterNames,
 		Signature:      typeTuple,
+		WildcardKeywordsParameterName: wildcardKeywordsParameterName,
+		WildcardKeywordsParameterType: wildcardKeywordsParamType,
+		VariadicParameterName: variadicParameterName,
+		VariadicParameterType: variadicParamType,
 		ReturnSignature: resultTypeTuple,
 		ReturnArgsNamed: returnArgsNamed,		
 		NumReturnArgs:  numReturnArgs,

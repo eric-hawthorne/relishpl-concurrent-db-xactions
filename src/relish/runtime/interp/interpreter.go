@@ -251,31 +251,58 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
        return
    }
 
+   var variadicElementType *RType
+   var variadicArgList List
+   if method.VariadicParameterName != "" {
+      variadicElementType = method.VariadicParameterType.ElementType()
+	  variadicArgList = method.VariadicParameterType.Prototype().(List)
+   }
+   exhaustedPositionalArgs := false
+
    // Now map URL path components to unfilled method parameters
 
    for j,valStr := range positionalArgStringValues {
    	  slotFound := false
-   	  for ix,v := range args {
-   	  	 if v == nil {
-		      // Convert string arg to an RObject, checking for type conversion errors
-		     err = i.setMethodArg(args, paramTypes, ix, valStr, valStr) 
-		     if err != nil {
-			     return
-			 } 
-             slotFound = true
-             break
-   	  	 }
-   	  }
+      if ! exhaustedPositionalArgs {
+	   	  for ix,v := range args {
+	   	  	 if v == nil {
+			      // Convert string arg to an RObject, checking for type conversion errors
+			     err = i.setMethodArg(args, paramTypes, ix, valStr, valStr) 
+			     if err != nil { // Parameter type incompatibility
+				     return
+				 } 
+	             slotFound = true
+	             break
+	   	  	 }
+	   	  }
+      }
    	  if ! slotFound {   // Raise error if too many URL path components in web request
+	      exhaustedPositionalArgs = true
    	  	  nExtraArgs := len(positionalArgStringValues) - j
-   	  	  if nExtraArgs == 1 {
-             err = fmt.Errorf("Web service request has %d extra URI path component that doesn't map to a handler method parameter.",nExtraArgs)   
-          } else {	  	  
-             err = fmt.Errorf("Web service request has %d extra URI path components that don't map to handler method parameters.",nExtraArgs)
+
+	      if method.VariadicParameterName != "" {
+		     var obj RObject
+             obj, err = i.variadicArg(variadicElementType, valStr) 
+	         if err != nil {   // Parameter type incompatibility
+		        return
+		     }
+             variadicArgList.AddSimple(obj)
+
+          } else {   // no variadic parameter to absorb extra arguments.
+	   	  	  if nExtraArgs == 1 {
+	             err = fmt.Errorf("Web service request has %d extra URI path component that doesn't map to a handler method parameter.",nExtraArgs)   
+	          } else {	  	  
+	             err = fmt.Errorf("Web service request has %d extra URI path components that don't map to handler method parameters.",nExtraArgs)
+	          }
+              return	
           }
-          return
    	  }   
    }
+
+   if method.VariadicParameterName != "" {
+      args = append(args,variadicArgList)
+   }
+
 
    // Raise error if too few URL path components and other arguments combined to satisfy the handler method parameter signature.
 
@@ -363,6 +390,77 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
     return
 }
 
+/*
+Converts the valStr to the type of the ith parameter of a method, and sets args[i] to the resulting RObject.
+Returns type conversion errors.
+argKey should be set to the valStr if the argument is not a keyword argument.
+*/
+func (interp *Interpreter) variadicArg(paramType *RType, valStr string) (obj RObject, err error) {
+    switch paramType {
+	case IntType : 
+       var v64 int64
+       v64, err = strconv.ParseInt(valStr, 0, 64)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Int(v64)		
+
+	case Int32Type : 
+       var v64 int64
+       v64, err = strconv.ParseInt(valStr, 0, 32)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Int32(int32(v64))				
+
+	case Int16Type : rterr.Stop("Int16 Parameter type not yet allowed in a web service handler method.")
+	case Int8Type : rterr.Stop("Int8 Parameter type not yet allowed in a web service handler method.")
+	case UintType : 
+       var v64 uint64
+       v64, err = strconv.ParseUint(valStr, 0, 64)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Uint(v64)	
+
+	case Uint32Type : 
+       var v64 uint64
+       v64, err = strconv.ParseUint(valStr, 0, 32)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Uint32(uint32(v64))
+
+	case Uint16Type : rterr.Stop("Uint16 Parameter type not yet allowed in a web service handler method.")
+	case ByteType : rterr.Stop("Byte Parameter type not yet allowed in a web service handler method.")
+	case BitType : rterr.Stop("Bit Parameter type not yet allowed in a web service handler method.")
+	case BoolType : 
+       var v bool
+       v, err = strconv.ParseBool(valStr)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Bool(v)
+
+	case FloatType : 
+       var v64 float64
+       v64, err = strconv.ParseFloat(valStr, 64)  
+	   if err != nil {
+		   return
+	   }
+	   obj = Float(v64)
+
+	case Float32Type : rterr.Stop("Float32 Parameter type not yet allowed in a web service handler method.")
+	case StringType :
+       obj = String(valStr)
+
+       // TODO !! IMPORTANT !! Should I be checking/filtering for injection attacks here? Do Go net libs provide help?
+
+    default: 
+       err = fmt.Errorf("Cannot map web service request argument to a parameter of type %s",paramType.Name)
+    }
+    return
+}
 
 
 

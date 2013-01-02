@@ -567,11 +567,27 @@ func (g *Generator) generateMethods() {
 	
 		   var parameterNames []string
 		   var parameterTypes []string
+		
+           var wildcardKeywordsParameterName string
+           var wildcardKeywordsParameterType string		
+		   var variadicParameterName string
+		   var variadicParameterType string	
+		
 		   var returnValTypes []string
 		   var returnArgsAreNamed bool		   
 		   for _,inputArgDecl := range methodDeclaration.Type.Params {
-			  parameterNames = append(parameterNames, inputArgDecl.Name.Name)
-			  parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
+			  if inputArgDecl.IsVariadic {
+                 if inputArgDecl.Type.CollectionSpec.Kind == token.LIST { 
+			         variadicParameterName = inputArgDecl.Name.Name
+			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)	
+	              } else { // inputArgDecl.Type..CollectionSpec.Kind == token.MAP				
+				     wildcardKeywordsParameterName = inputArgDecl.Name.Name
+				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)
+			      }
+			  } else {
+			     parameterNames = append(parameterNames, inputArgDecl.Name.Name)
+			     parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
+		      }
 		   }
 	
 		   for _,returnArgDecl := range methodDeclaration.Type.Results {
@@ -600,11 +616,15 @@ func (g *Generator) generateMethods() {
 			   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
 		   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
 	
-			   rMethod, err = data.RT.CreateMethod(g.packageName,
+			   rMethod, err = data.RT.CreateMethodV(g.packageName,
 			   	                                   file,
 			   	                                   methodName,
 			   	                                   parameterNames, 
 				                                   parameterTypes, 
+												   wildcardKeywordsParameterName,
+												   wildcardKeywordsParameterType,				
+												   variadicParameterName,
+												   variadicParameterType,				
 				                                   returnValTypes,
 				                                   returnArgsAreNamed,
 				                                   methodDeclaration.NumLocalVars,

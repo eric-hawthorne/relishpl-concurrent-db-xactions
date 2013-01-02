@@ -10,6 +10,7 @@ package  web
 
 import
    model/machines/vehicles
+   strings
 
 
 index > String vehicles.Car
@@ -106,3 +107,11 @@ jason2
           }String > Any
    => "JSON"
       args
+
+
+rest id Int ...args [] String > String String
+"""
+ Test variadic argument.
+"""
+   => "echo.html"
+      cat id "|" (join args "|")
