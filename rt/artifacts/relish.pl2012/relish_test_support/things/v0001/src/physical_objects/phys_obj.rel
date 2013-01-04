@@ -8,7 +8,9 @@ package  physical_objects
  Physical objects in the spatio-temporal world.
 """
 
+
 PI = 3  // Circle circumference to diameter ratio
+
 
 PhysObj
 """
@@ -35,6 +37,7 @@ SelfLocomotive <: MovementCapableObject
 """
  Any object that moves of its own accord ("under its own steam").
 """
+
 
 Conveyer <: MovementCapableObject
 """
