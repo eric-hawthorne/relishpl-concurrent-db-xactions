@@ -13,6 +13,7 @@ var StandardLibPackagePath map[string]bool = map[string]bool {
 	"datetime" : true,
 	"http" : true,
 	"csv" : true,	
+	"json" : true,		
 }
 
 

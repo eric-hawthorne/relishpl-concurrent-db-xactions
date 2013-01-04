@@ -1491,6 +1491,14 @@ func (o *rstringmap) Debug() string {
 	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
 }
 
+func (o *rstringmap) String() string {
+	encoded, err := JsonMarshal(o, false)
+	if err != nil {
+		return "({}String > T with unserializable elements)"
+	}
+	return encoded
+}
+
 func (c *rstringmap) Iter(th InterpreterThread) <-chan RObject {
 	ch := make(chan RObject)
 	go func() {

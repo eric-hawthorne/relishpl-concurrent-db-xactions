@@ -49,43 +49,43 @@ func InitBuiltinFunctions() {
 	}
 	debugMethod.PrimitiveCode = builtinDebug
 
-	printMethod, err := RT.CreateMethod("",nil,"print", []string{"p"}, []string{"RelishPrimitive"}, nil, false, 0, false)
+	printMethod, err := RT.CreateMethod("",nil,"print", []string{"p"}, []string{"Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	printMethod.PrimitiveCode = builtinPrint
 
-	print2Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print2Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2"}, []string{"Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print2Method.PrimitiveCode = builtinPrint
 
-	print3Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print3Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3"}, []string{"Any", "Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print3Method.PrimitiveCode = builtinPrint
 
-	print4Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print4Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4"}, []string{"Any", "Any", "Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print4Method.PrimitiveCode = builtinPrint
 
-	print5Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print5Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print5Method.PrimitiveCode = builtinPrint
 
-	print6Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print6Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"Any", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	print6Method.PrimitiveCode = builtinPrint
 
-	print7Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive", "RelishPrimitive"}, nil, false, 0, false)
+	print7Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -289,6 +289,67 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	csvWrite2Method.PrimitiveCode = builtinCsvWrite
+
+
+
+
+
+
+
+
+	/*
+	jsonMarshal val Any > jsonEncoded String err String
+	"""
+	 Marshals the argument value/object/collection including only the public
+	 attributes of structured objects.
+	"""
+
+	jsonMarshal val Any includePrivate bool > jsonEncoded String err String  
+	"""
+	 Marshals the argument value/object/collection including the public
+	 and if indicated also the private attributes of structured objects.
+	"""
+
+	*/	
+	jsonMarshalMethod, err := RT.CreateMethod("relish/pkg/json",nil,"jsonMarshal", []string{"val"}, []string{"Any"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	jsonMarshalMethod.PrimitiveCode = builtinJsonMarshal	
+	
+	jsonMarshal2Method, err := RT.CreateMethod("relish/pkg/json",nil,"jsonMarshal", []string{"val","includePrivate"}, []string{"Any","Bool"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	jsonMarshal2Method.PrimitiveCode = builtinJsonMarshal	
+	
+	
+
+	/*
+	jsonUnmarshal json String > val Any err String 
+	jsonUnmarshal json String obj Any > obj Any err String 
+	"""
+
+
+	 Decodes the json-encoded string argument into a relish object or object tree, which is returned.
+	 If the second argument is summplied, attempts to populate the supplied object, 
+	 which must be a collection, a map, or a structured object. In that case, the object argument itself
+	 is returned, after being populated with attribute/collection values from the JSON string.
+	"""
+	*/
+	jsonUnmarshalMethod, err := RT.CreateMethod("relish/pkg/json",nil,"jsonUnmarshal", []string{"json"}, []string{"String"}, []string{"Any","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	jsonUnmarshalMethod.PrimitiveCode = builtinJsonUnmarshal	
+	
+	jsonUnmarshal2Method, err := RT.CreateMethod("relish/pkg/json",nil,"jsonUnmarshal", []string{"json","prototype"}, []string{"String","Any"}, []string{"Any","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	jsonUnmarshal2Method.PrimitiveCode = builtinJsonUnmarshal
+
+
 
 
 
@@ -1629,6 +1690,11 @@ func builtinDebug(th InterpreterThread, objects []RObject) []RObject {
    s := objects[0].Debug()
    return []RObject{String(s)}
 }
+
+
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Comparison functions
@@ -3603,11 +3669,14 @@ jsonMarshal val Any includePrivate bool > jsonEncoded String err String
 func builtinJsonMarshal(th InterpreterThread, objects []RObject) []RObject {
    obj := objects[0]
    var includePrivate bool
+   var errStr string
    if len(objects) == 2 {
       	includePrivate = bool(objects[1].(Bool))
    } 
    encoded, err := JsonMarshal(obj, includePrivate) 
-   errStr := err.Error()
+   if err != nil {
+      errStr = err.Error()
+   }
    return []RObject{String(encoded), String(errStr)}
 }	
 
@@ -3630,8 +3699,7 @@ func builtinJsonUnmarshal(th InterpreterThread, objects []RObject) []RObject {
    var v interface{}
    var errStr string
    var resultObj RObject
-
-   err := json.Unmarshal(b, v)
+   err := json.Unmarshal(b, &v)
    if err != nil {
       errStr = err.Error()
    } else if len(objects) == 2 {

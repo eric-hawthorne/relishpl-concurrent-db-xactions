@@ -18,6 +18,7 @@ main
  Main program.
 """
    testCsv
+   testJson
 
 
 testCsv
