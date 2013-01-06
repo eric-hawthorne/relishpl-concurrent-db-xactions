@@ -222,6 +222,68 @@ func (g *Generator) qualifyTypeName(typeName string) string {
 }
 
 
+
+/*
+Returns the fully qualified name of the type.
+If the type spec is of a collection type, then ensures that the composite type exists in the runtime, 
+and if not, creates it. 
+TODO Handle Maps
+TODO Handle nested collection types, like [] [] String
+
+TypeSpec struct {
+	Doc            *CommentGroup       // associated documentation; or nil
+	Name           *Ident              // type name (or type variable name)
+	Type           Expr                // *Ident, *ParenExpr, *SelectorExpr, *StarExpr, or any of the *XxxTypes
+	Comment        *CommentGroup       // line comments; or nil
+	Params         []*TypeSpec         // Type parameters (egh)
+	SuperTypes     []*TypeSpec         // Only valid if this is a type variable (egh)
+	CollectionSpec *CollectionTypeSpec // nil or a collection specification
+	typ interface{}  // The actual *RType - associated at generation time.
+}
+
+type CollectionTypeSpec struct {
+	Kind        token.Token
+	LDelim      token.Pos
+	RDelim      token.Pos
+	IsSorting   bool
+	IsAscending bool
+	OrderFunc   string
+}
+*/
+func (g *Generator) ensureTypeName(typeSpec *ast.TypeSpec, fileNameRoot string) string {
+	
+   var typ *data.RType
+   var err error	
+   baseTypeName := g.qualifyTypeName(typeSpec.Name.Name) 
+   baseType, baseTypeFound := data.RT.Types[baseTypeName]
+
+   if ! baseTypeFound {
+      rterr.Stopf("Error in file %s: Type %s not found.", fileNameRoot +".rel", baseTypeName)
+      // panic(fmt.Sprintf("Error in file %s: Type %s not found.", fileNameRoot +".rel", baseTypeName))		
+   }
+  	
+   if typeSpec.CollectionSpec == nil {
+	  typ = baseType
+   } else {	
+	    switch typeSpec.CollectionSpec.Kind {
+	    case token.LIST:		
+			typ, err = data.RT.GetListType(baseType)
+			if err != nil {
+			   rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())				
+			}
+	    case token.SET:
+			typ, err = data.RT.GetSetType(baseType)
+			if err != nil {
+			   rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())				
+			}			
+	    case token.MAP:
+	       panic("I don't handle Map types yet.")			
+	    }
+	}	
+    return typ.Name
+}
+
+
 /*
 Processes the TypeDecls from a set of ast.File objects (which have been created by the parser.)
 Generates the runtime environment's objects for datatypes and attributes, and also ensures that db tables exist for these.
@@ -412,6 +474,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
 */	
  
           attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
+                            // g.ensureTypeName(attrDecl.Type, sourceFilename)  ??????
 
           
 /*"vector"
@@ -579,14 +642,16 @@ func (g *Generator) generateMethods() {
 			  if inputArgDecl.IsVariadic {
                  if inputArgDecl.Type.CollectionSpec.Kind == token.LIST { 
 			         variadicParameterName = inputArgDecl.Name.Name
-			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)	
+			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot) ???
+			
+			
 	              } else { // inputArgDecl.Type..CollectionSpec.Kind == token.MAP				
 				     wildcardKeywordsParameterName = inputArgDecl.Name.Name
-				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)
+				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
 			      }
 			  } else {
 			     parameterNames = append(parameterNames, inputArgDecl.Name.Name)
-			     parameterTypes = append(parameterTypes, g.qualifyTypeName(inputArgDecl.Type.Name.Name))
+			     parameterTypes = append(parameterTypes, g.ensureTypeName(inputArgDecl.Type, fileNameRoot))
 		      }
 		   }
 	
@@ -594,7 +659,7 @@ func (g *Generator) generateMethods() {
                if returnArgDecl.Name != nil {
                	  returnArgsAreNamed = true
                }
-			   returnValTypes = append(returnValTypes, g.qualifyTypeName(returnArgDecl.Type.Name.Name))               
+			   returnValTypes = append(returnValTypes, g.ensureTypeName(returnArgDecl.Type, fileNameRoot))               
 		   }
 
            var rMethod *data.RMethod

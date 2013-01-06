@@ -18,7 +18,6 @@ import
    strings
    
 
-
 listTest
    a vehicles.Wheel
    b vehicles.Wheel
@@ -247,3 +246,14 @@ testCollections
    clear opps4
 
    print len opps4
+
+   foo places
+
+
+foo a [] String
+"""
+ Tests argument type compatibility of collection-type args.
+ This was failing to be dispatched to when called on a [] String argument.
+"""
+   print a
+   print "Succeeded"
