@@ -4715,7 +4715,7 @@ func (p *parser) parseOneLineVariableReference(mustBeLocalVar bool, mustBeAssign
 
     var x ast.Expr = varName
 
-    for p.parseOneLineIndexExpression(x,&x) {	
+    for p.parseOneLineIndexOrSliceExpression(x,&x) {	
 	    p.required(! mustBeLocalVar, "a simple local variable name, not an indexed expression")	
     }
 
@@ -4746,7 +4746,7 @@ func (p *parser) parseOneLineVariableReference1(exprSoFar ast.Expr, expr *ast.Ex
     // translate
     var x ast.Expr = &ast.SelectorExpr{exprSoFar,varName}
 
-    for p.parseOneLineIndexExpression(x,&x) {	
+    for p.parseOneLineIndexOrSliceExpression(x,&x) {	
     }
     for p.Match1('.') {
 	    p.required(p.parseOneLineVariableReference1(x,&x),"a variable or accessor-method name")
@@ -4769,7 +4769,7 @@ func (p *parser) parseIndentedVariableReference(mustBeAssignable bool,mustBeDefi
 
     var x ast.Expr = varName
 
-    for p.parseIndexExpression(x,&x) {	
+    for p.parseIndexOrSliceExpression(x,&x) {	
     }
     for p.Match1('.') {
 	    p.required(p.parseIndentedVariableReference1(x,&x),"a variable or accessor-method name")
@@ -4794,7 +4794,7 @@ func (p *parser) parseIndentedVariableReference1(exprSoFar ast.Expr, expr *ast.E
     // translate
     var x ast.Expr = &ast.SelectorExpr{exprSoFar,varName}
 
-    for p.parseIndexExpression(x,&x) {	
+    for p.parseIndexOrSliceExpression(x,&x) {	
     }
     for p.Match1('.') {
 	    p.optional(p.Indent(col))
@@ -4811,6 +4811,13 @@ func (p *parser) parseIndexExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
        defer un(trace(p, "IndexExpression"))
     }
     return p.parseIndentedIndexExpression(exprSoFar,x) || p.parseOneLineIndexExpression(exprSoFar,x)
+}
+
+func (p *parser) parseIndexOrSliceExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
+	if p.trace {
+	   defer un(trace(p, "IndexOrSliceExpression"))
+	}	
+	return p.parseIndentedIndexOrSliceExpression(exprSoFar, x) || p.parseOneLineIndexOrSliceExpression(exprSoFar, x)
 }
 
 
@@ -4881,6 +4888,91 @@ func (p *parser) parseOneLineIndexExpression(exprSoFar ast.Expr, x *ast.Expr) bo
 
     return true
 }
+
+func (p *parser) parseIndentedIndexOrSliceExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
+	return p.parseIndentedSliceExpression(exprSoFar, x) || p.parseIndentedIndexExpression(exprSoFar, x)
+}
+
+func (p *parser) parseIndentedSliceExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "IndentedSliceExpression"))
+    }
+    st := p.State()
+    col := p.Col()
+    lBracketPos := p.Pos()
+
+    if ! p.Match1('[') {
+       return false
+    }
+    if ! p.Indent(col) {
+	   return p.Fail(st)
+	}
+	
+	var low, high ast.Expr
+		
+	if ! p.Match1(':') {
+	  if ! p.parseExpression(&low) {
+	     return p.Fail(st)
+	  }
+	  if ! p.Indent(col) {
+	     return p.Fail(st)			
+	  } 
+	  if ! p.Match1(':') {
+	     return p.Fail(st)	
+	  }
+	}	
+	
+    if p.Indent(col) {	
+	   p.required(p.parseExpression(&high), "an expression, indented from the brackets")
+	}
+	
+    p.required(p.Below(col),"] below [")
+
+    rBracketPos := p.Pos()
+    p.required(p.Match1(']'),"] below [") 
+
+    *x = &ast.SliceExpr{exprSoFar,lBracketPos, low, high, rBracketPos}
+
+    return true
+}
+
+
+func (p *parser) parseOneLineIndexOrSliceExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
+	return p.parseOneLineSliceExpression(exprSoFar, x) || p.parseOneLineIndexExpression(exprSoFar, x)
+}
+
+
+func (p *parser) parseOneLineSliceExpression(exprSoFar ast.Expr, x *ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "OneLineSliceExpression"))
+    }
+    st := p.State()
+    lBracketPos := p.Pos()
+
+    if ! p.Match1('[') {
+	   return false
+    }
+
+	var low, high ast.Expr
+    
+    if ! p.Match1(':') {
+      if ! p.parseOneLineExpression(&low,false,false) {
+	     return p.Fail(st)
+      }
+      if ! p.Match1(':') {
+	     return p.Fail(st)	
+      }
+    }
+    p.optional(p.parseOneLineExpression(&high,false,false))
+    rBracketPos := p.Pos()
+    p.required(p.Match1(']'),"']'")
+
+    *x = &ast.SliceExpr{exprSoFar,lBracketPos, low, high, rBracketPos}
+
+    return true
+}
+
+
 
 
 /*
@@ -6699,6 +6791,7 @@ func (p *parser) parseTypeAssertion(x ast.Expr) ast.Expr {
 	return &ast.TypeAssertExpr{x, typ}
 }
 
+// Go
 func (p *parser) parseIndexOrSlice(x ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "IndexOrSlice"))

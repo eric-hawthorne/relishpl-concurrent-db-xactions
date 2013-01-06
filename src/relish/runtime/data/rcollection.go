@@ -138,6 +138,14 @@ type List interface {
 	Vector() *RVector
 	AsSlice(th InterpreterThread) []RObject
     ReplaceContents(objs []RObject)	
+
+    /*
+    Returns a new list of the same element type, containing elements from the start index (inclusive)
+    to the end index (exclusive) of the original list.
+    If the end index is < 0, the length of the original list is added to it. So start:0, end:-1 returns
+    all but the last element of the list.
+    */
+    Slice(th InterpreterThread, start int, end int) List
 }
 
 /*
@@ -353,7 +361,8 @@ func (o *rset) String() string {
 	   }
 	   s += "\n   }"
    	} else { // Horizontal layout
-	   sep := "{"
+	   s = "{"
+	   sep := ""	
 	   for obj := range o.Iter(nil) {
 	      s += sep + obj.String()
 	      sep = "   "
@@ -589,7 +598,8 @@ func (o *rsortedset) String() string {
 	   }
 	   s += "\n   }"
    	} else { // Horizontal layout
-	   sep := "{"
+	   s = "{"
+	   sep := ""	
 	   for obj := range o.Iter(nil) {
 	      s += sep + obj.String()
 	      sep = "   "
@@ -1012,7 +1022,8 @@ func (o *rlist) String() string {
 	   }
 	   s += "\n   ]"
    	} else { // Horizontal layout
-	   sep := "["
+	   s = "["
+	   sep := ""
 	   for obj := range o.Iter(nil) {
 	      s += sep + obj.String()
 	      sep = "   "
@@ -1059,6 +1070,62 @@ func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 	}()
 	return ch
 }
+
+
+
+
+func (c *rlist) Slice(th InterpreterThread, start int, end int) (slice List) {
+	slice = c.Type().Prototype().(List)
+	length := int(c.Length())	
+	if end < 0 {
+		end = length + end
+	}
+	vec := c.v
+	if vec == nil {
+		return
+	}
+	defer sliceErrHandle(start,end, length)		
+	sliceVec := vec.Slice(start,end)
+	sl := slice.(*rlist)
+	sl.v = sliceVec
+	return	
+}	
+
+func sliceErrHandle(start int, end int, length int) {
+      r := recover()	
+      if r != nil {
+          rterr.Stopf("Error in list slice [%d:%d]: index out of range. List length is %d.",start,end,length)
+      }	
+}		
+	
+
+
+
+
+	    // substring or slice
+	/*
+		slice s String start Int end Int > String
+		
+		slice s String start Int > String		
+
+Counts in bytes.
+
+func builtinStringSlice(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	start := int(objects[1].(Int))
+	length := len(s)
+	end := length
+	if len(objects) == 3 {
+		end = int(objects[2].(Int))
+		if end < 0 {
+			end = length + end
+		}
+	}
+	substr := s[start:end]
+    return []RObject{String(substr)}
+}
+*/
+
 
 /*
 If the object is not already marked as reachable, flag it as reachable.

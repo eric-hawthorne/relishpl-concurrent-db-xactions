@@ -126,6 +126,28 @@ testCollections
    sales = [1.29 4.25 0.33 5.981]
    print sum sales  // should print 11.851
 
+   sales1 = sales[:neg 2]
+   print sales1
+   sales1 = sales[1:neg 2]
+   print sales1
+   sales1 = sales[2:neg 2]
+   print sales1
+   sales1 = sales[:]
+   print sales1
+   sales1 = sales[2:]
+   print sales1
+   sales1 = sales[:3]
+   print sales1
+   sales1 = sales[2:3]
+   print sales1
+   sales1 = sales[
+                    2
+                    :
+                    plus 1
+                         2
+                 ]
+   print sales1
+
    scores = [22 9 0 13]
    print sum scores  // should print 44
 

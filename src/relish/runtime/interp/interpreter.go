@@ -548,6 +548,9 @@ func (i *Interpreter) EvalExpr(t *Thread, expr ast.Expr) {
 
 	case *ast.IndexExpr:
 		i.EvalIndexExpr(t, expr.(*ast.IndexExpr))
+		
+	case *ast.SliceExpr:
+		i.EvalSliceExpr(t, expr.(*ast.SliceExpr))		
 
 	case *ast.ListConstruction:
 		i.EvalListConstruction(t, expr.(*ast.ListConstruction))		
@@ -646,6 +649,75 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 		rterr.Stopf1(t,idxExpr,"[ ] (access by index/key) applies to an ordered collection or a map; not to a %v. ", obj.Type())
    }
 }
+
+
+/*
+   someExpr[lowIndexExpr:highIndexExpr]
+   someExpr[lowIndexExpr:]     // to the end
+   someExpr[:highIndexExpr]      // from the beginning
+   someExpr[:]    // a copy of the list
+
+  Evaluates someExpr to yield a list collection. Evaluates the index expressions to yield the low and 
+  high indexes. 
+  Copies the slice of the list specified by the low and high indexes.
+  Leaves on the stack the slice copy. 
+*/
+func (i *Interpreter) EvalSliceExpr(t *Thread, sliceExpr *ast.SliceExpr) {
+	defer UnM(t,TraceM(t,INTERP_TR3, "EvalSliceExpr"))
+
+   var val RObject
+
+   i.EvalExpr(t, sliceExpr.X) // Evaluate the left part of the index expression.		      
+
+   obj := t.Pop() // the object to be indexed into
+   list,isList := obj.(List)
+   if ! isList {
+		rterr.Stopf1(t, sliceExpr,"[:] slicing applies to a list; not to an object of type %v. ", obj.Type())
+   }
+
+   var low, high int
+   if sliceExpr.Low != nil {
+      i.EvalExpr(t, sliceExpr.Low) // Evaluate the inside-square-brackets part of the index expression.	
+      lowIdx := t.Pop()	
+	  switch lowIdx.(type) {
+	  case Int:
+	  	low = int(int64(lowIdx.(Int)))
+	  case Int32:
+	  	low = int(int32(lowIdx.(Int32)))
+	  case Uint:
+	  	low = int(uint64(lowIdx.(Uint)))                    	                    
+	  case Uint32:
+	  	low = int(uint32(lowIdx.(Uint32)))
+	  default:
+		rterr.Stop1(t,sliceExpr,"Index value must be an Integer")
+	  }
+   }
+
+   if sliceExpr.High == nil {
+	  high = int(list.Length()) 	
+   } else {
+      i.EvalExpr(t, sliceExpr.High) // Evaluate the inside-square-brackets part of the index expression.	
+      highIdx := t.Pop()	
+	  switch highIdx.(type) {
+	  case Int:
+	  	high = int(int64(highIdx.(Int)))
+	  case Int32:
+	  	high = int(int32(highIdx.(Int32)))
+	  case Uint:
+	  	high = int(uint64(highIdx.(Uint)))                    	                    
+	  case Uint32:
+	  	high = int(uint32(highIdx.(Uint32)))
+	  default:
+		rterr.Stop1(t,sliceExpr,"Index value must be an Integer")
+	  }
+   }
+		
+   val = list.Slice(t, low, high)
+
+   t.Push(val)        
+}
+
+
 
 
 /*

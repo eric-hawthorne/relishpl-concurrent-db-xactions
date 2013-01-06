@@ -3134,7 +3134,7 @@ func builtinStringLastIndex(th InterpreterThread, objects []RObject) []RObject {
 	/*
 		slice s String start Int end Int > String
 		
-		slice s String start Int end Int > String		
+		slice s String start Int > String		
 	*/
 
 /*
