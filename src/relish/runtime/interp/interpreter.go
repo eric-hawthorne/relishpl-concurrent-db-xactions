@@ -2633,11 +2633,6 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 				
 	} else {
 		returnFrom = true
-		
-
-		for _, resultExpr := range stmt.Results {
-			i.EvalExpr(t, resultExpr)
-		}
 
 		for j := n-1; j >=0; j-- {	
 			t.Stack[t.Base+j-n] = t.Pop()   
