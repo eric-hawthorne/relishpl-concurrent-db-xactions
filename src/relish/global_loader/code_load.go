@@ -463,6 +463,13 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	    var zipFileContents []byte
 
 	    hostURL := ldr.DefaultCodeHost(originAndArtifactPath)
+	
+        // Note: The correct order to do things is to load the metadata.txt file from the default host
+        // (if possible) then to search for secondary hosts to get the version zip file, selecting
+        // one AT RANDOM, 
+        // then if all of those (some number of) mirrors fail, get it from the default host
+        // Also, use port 80 then 8088.	
+	
 
 	    zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
 	    if err != nil {
