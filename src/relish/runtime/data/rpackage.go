@@ -34,6 +34,7 @@ Note
 type RPackage struct {
 	runit
 	Name string  // Full origin, artifact, package
+	Path string  // The Name with "/" appended
 	
 	// include some bytes of uuidabbrev to include in ShortName()
 	ShortName string // unique in the runtime and db
@@ -100,6 +101,7 @@ func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPa
 	}
 	pkg := &RPackage{runit: runit{robject: robject{rtype: typ}},
 		Name:  path,
+		Path: path + "/",
         MultiMethods: make(map[string]*RMultiMethod),	
         ClosureMethods: make(map[string]*RMethod),	
         Dependencies: make(map[string]*RPackage),

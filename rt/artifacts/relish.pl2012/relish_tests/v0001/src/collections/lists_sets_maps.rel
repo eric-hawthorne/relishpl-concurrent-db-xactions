@@ -247,7 +247,16 @@ testCollections
 
    print len opps4
 
+   records = [
+                ["First name" "Last name"]
+                ["Joe" "DiMaggio"]
+             ][] String   
+
+   print records  
+
    foo places
+
+
 
 
 foo a [] String
@@ -257,3 +266,6 @@ foo a [] String
 """
    print a
    print "Succeeded"
+
+
+        

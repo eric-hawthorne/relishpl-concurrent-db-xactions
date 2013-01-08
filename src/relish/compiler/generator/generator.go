@@ -215,10 +215,13 @@ If the type name is unqualified (has no package path), prefixes it with the curr
 A little bit inefficient.
 */
 func (g *Generator) qualifyTypeName(typeName string) string {
+   return g.Interp.QualifyTypeName(g.packagePath, typeName)
+   /*
    if strings.LastIndex(typeName,"/") == -1 && ! BuiltinTypeName[typeName] {
        return g.packagePath + typeName  	
    }	
    return typeName
+   */
 }
 
 
@@ -252,6 +255,13 @@ type CollectionTypeSpec struct {
 */
 func (g *Generator) ensureTypeName(typeSpec *ast.TypeSpec, fileNameRoot string) string {
 	
+   typ, err := g.Interp.EnsureType(g.packagePath, typeSpec) 
+   if err != nil {
+	  rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())	   	
+   }
+   return typ.Name
+
+/*   
    var typ *data.RType
    var err error	
    baseTypeName := g.qualifyTypeName(typeSpec.Name.Name) 
@@ -281,6 +291,7 @@ func (g *Generator) ensureTypeName(typeSpec *ast.TypeSpec, fileNameRoot string) 
 	    }
 	}	
     return typ.Name
+*/
 }
 
 

@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"net/url"
 	"strings"
+	. "relish/defs"
 )
 
 
@@ -1081,12 +1082,64 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
 }
 
 
-func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, error) {
-	// Find the type
-   typ, typFound := i.rt.Types[elementType.Name.Name]
-   if ! typFound {
-      rterr.Stopf1(t, elementType, "List Element Type '%s' not found.",elementType.Name.Name)	
+
+/*
+If the type name is unqualified (has no package path), prefixes it with the specified package path.
+A little bit inefficient.
+*/
+func (i *Interpreter) QualifyTypeName(packagePath string, typeName string) string {
+   if strings.LastIndex(typeName,"/") == -1 && ! BuiltinTypeName[typeName] {
+       return packagePath + typeName  	
+   }	
+   return typeName
+}
+
+/*
+Used to create List_of etc types on the fly if needed.
+Looks up the type by name, with the appropriate "List_of" etc prefixed on if appropriate.
+If not found in the runtime types list, creates the type.
+Returns the type corresponding to the TypeSpec.
+If the base simple type is not found, returns nil and an appropriate error message.
+*/
+func (i *Interpreter) EnsureType(packagePath string, typeSpec *ast.TypeSpec) (typ *RType, err error) {
+	
+   baseTypeName := i.QualifyTypeName(packagePath, typeSpec.Name.Name) 
+   baseType, baseTypeFound := i.rt.Types[baseTypeName]
+
+   if ! baseTypeFound {
+      err = fmt.Errorf("Type %s not found.",baseTypeName)
+      return		
    }
+  	
+   if typeSpec.CollectionSpec == nil {
+	  typ = baseType
+   } else {	
+	    switch typeSpec.CollectionSpec.Kind {
+	    case token.LIST:		
+			typ, err = i.rt.GetListType(baseType)
+			if err != nil {
+			   return			
+			}
+	    case token.SET:
+			typ, err = i.rt.GetSetType(baseType)
+			if err != nil {
+			   return			
+			}			
+	    case token.MAP:
+	       panic("I don't handle Map type specifications in this context yet.")			
+	    }
+	}	
+    return
+}
+
+
+func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, error) {
+   // Find the element type
+   typ, err := i.EnsureType(t.ExecutingPackage.Path, elementType)
+   if err != nil {
+      rterr.Stopf1(t, elementType, "List Element Type Error: %s", err.Error())	
+   }
+//   fmt.Printf("CreateList: typ.Name=%s from elementType %s\n",typ.Name,elementType.Name.Name)
 
    // TODO sorting-lists
    return i.rt.Newrlist(typ, 0, -1, nil, nil)
@@ -1096,10 +1149,10 @@ func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, er
 Not handling sorting sets yet.
 */
 func (i *Interpreter) CreateSet(t *Thread, elementType *ast.TypeSpec) (RCollection, error) {
-	// Find the type
-   typ, typFound := i.rt.Types[elementType.Name.Name]
-   if ! typFound {
-      rterr.Stopf1(t, elementType, "Set Element Type '%s' not found.",elementType.Name.Name)	
+   // Find the element type
+   typ, err := i.EnsureType(t.ExecutingPackage.Path, elementType)
+   if err != nil {
+      rterr.Stopf1(t, elementType, "Set Element Type Error: %s", err.Error())	
    }
 
    // TODO sorting-sets
@@ -1110,32 +1163,17 @@ func (i *Interpreter) CreateSet(t *Thread, elementType *ast.TypeSpec) (RCollecti
 Note it is not really the key type, since the type of the keyType typeSpec has a collectionTypeSpec
 */
 func (i *Interpreter) CreateMap(t *Thread, keyType *ast.TypeSpec, valType *ast.TypeSpec) (Map, error) {
-	// Find the key and value types
-	
-   keyTyp, typFound := i.rt.Types[keyType.Name.Name]
-   if ! typFound {
-      rterr.Stopf1(t,keyType,"Map Key Type '%s' not found.",keyType.Name.Name)	
-   }	
-   valTyp, typFound := i.rt.Types[valType.Name.Name]
-   if ! typFound {
-      rterr.Stopf1(t,valType,"Map Value Type '%s' not found.",valType.Name.Name)	
-   }
-   collType := valType.CollectionSpec
-   if collType != nil {
-   	  var err error
-   	  switch collType.Kind {
-   	  case token.LIST:
-   	  	 valTyp, err = i.rt.GetListType(valTyp)
-   	  	 if err != nil {
-   	  	 	rterr.Stopf1(t,valType,"Error finding or creating type List_of_%s",valType.Name.Name)
-   	  	 }
-   	  case token.SET:
-   	  	 valTyp, err = i.rt.GetSetType(valTyp)
-   	  	 if err != nil {
-   	  	 	rterr.Stopf1(t,valType,"Error finding or creating type Set_of_%s",valType.Name.Name)
-   	  	 }   	  	
-   	  }
-   }
+
+   // Find the key and value types
+   keyTyp, err := i.EnsureType(t.ExecutingPackage.Path, keyType)
+   if err != nil {
+      rterr.Stopf1(t, keyType, "Map Key Type Error: %s", err.Error())	
+   }   
+
+   valTyp, err := i.EnsureType(t.ExecutingPackage.Path, valType)
+   if err != nil {
+      rterr.Stopf1(t, valType, "Map Value Type Error: %s", err.Error())	
+   } 
 
    // TODO sorting-maps
    return i.rt.Newmap(keyTyp, valTyp, 0, -1, nil, nil)

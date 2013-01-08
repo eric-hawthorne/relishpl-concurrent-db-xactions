@@ -3884,12 +3884,12 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
        defer un(trace(p, "OneLineListConstruction"))
     }
 
-    pos := p.Pos()
-    var end token.Pos
+//    pos := p.Pos()
+//    var end token.Pos
 
     var typeSpec *ast.TypeSpec
 
-    var collectionTypeSpec *ast.CollectionTypeSpec
+//    var collectionTypeSpec *ast.CollectionTypeSpec
 
     var elementExprs []ast.Expr    
 
@@ -3897,7 +3897,7 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
     hasType := false
     
     if p.Match2('[',']') {
-        end = p.Pos()
+//        end = p.Pos()
         emptyList = true
     } else if p.Match1('[') {
 
@@ -3907,7 +3907,7 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
                    "zero or more list-element expressions on the same line as [, followed by closing square-bracket ]")
 
         p.required(p.Match1(']'), "closing square-bracket ]")   
-        end = p.Pos()            
+//        end = p.Pos()            
     } else { 
 	     return false // Did not match a list-specifying square-bracket
     }
@@ -3931,14 +3931,14 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
           p.stop("Cannot infer element-type constraint of list. Specify element type. e.g. []Widget")
        } 
     }
-
+/*
     isSorting := false // TODO allow sorting-list specifications in list constructions!!!!
     isAscending := false 
     orderFunc := "" 
     collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
 
     typeSpec.CollectionSpec = collectionTypeSpec
-
+*/
     
 
     var queryStringExprs []ast.Expr  // there is only allowed to be one query string
@@ -4001,12 +4001,12 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
        defer un(trace(p, "IndentedListConstruction"))
     }
     st := p.State()
-    pos := p.Pos()
-    var end token.Pos
+//    pos := p.Pos()
+//    var end token.Pos
 
     var typeSpec *ast.TypeSpec
 
-    var collectionTypeSpec *ast.CollectionTypeSpec
+//    var collectionTypeSpec *ast.CollectionTypeSpec
 
     var rangeStmt *ast.RangeStatement
 
@@ -4016,7 +4016,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
     hasType := false
 
     if p.Match2('[',']') {
-        end = p.Pos()
+//        end = p.Pos()
         emptyList = true
     } else if p.Match1('[') {
         if p.parseIndentedForGenerator(st.RuneColumn, &rangeStmt) {
@@ -4032,7 +4032,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
 	           p.required(p.Match1(']'), "closing square-bracket ]")              
 	        }
 	    }
-        end = p.Pos()            
+//        end = p.Pos()            
     } else { 
        return false // Did not match a list-specifying square-bracket
     }
@@ -4056,14 +4056,14 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
           p.stop("Cannot infer element-type constraint of list. Specify element type. e.g. []Widget")
        } 
     }
-
+/*
     isSorting := false // TODO allow sorting-list specifications in empty list constructions!!!!
     isAscending := false 
     orderFunc := "" 
     collectionTypeSpec = &ast.CollectionTypeSpec{token.LIST,pos,end,isSorting,isAscending,orderFunc}
 
     typeSpec.CollectionSpec = collectionTypeSpec
-
+*/
 
 
 
@@ -4134,13 +4134,13 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
        defer un(trace(p, "OneLineMapOrSetConstruction"))
     }
 
-    pos := p.Pos()
-    var end token.Pos
+//    pos := p.Pos()
+//    var end token.Pos
 
     var typeSpec *ast.TypeSpec
     var valTypeSpec *ast.TypeSpec
 
-    var collectionTypeSpec *ast.CollectionTypeSpec
+//    var collectionTypeSpec *ast.CollectionTypeSpec
 
     var keyExprs []ast.Expr
     var elementExprs []ast.Expr    
@@ -4153,7 +4153,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
     setEntriesFound := false
     
     if p.Match2('{','}') {
-        end = p.Pos()
+//        end = p.Pos()
         emptyMapOrSet = true
     } else if p.Match1('{') {
 
@@ -4181,7 +4181,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
 */
 
         p.required(p.Match1('}'), "closing squiggly-bracket ]")   
-        end = p.Pos()            
+//        end = p.Pos()            
     } else { 
 	     return false // Did not match a map-or-set-specifying squiggly-bracket
     }
@@ -4239,7 +4239,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
 	       } 
        }
     }
-
+/*
     isSorting := false // TODO allow sorting specifications in empty set/map constructions!!!!
     isAscending := false 
     orderFunc := "" 
@@ -4250,7 +4250,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
        collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isSorting,isAscending,orderFunc}	
     }
     typeSpec.CollectionSpec = collectionTypeSpec
-
+*/
     if knownToBeMap {
 	
 		// translate
@@ -4286,13 +4286,13 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
     }
 
     st := p.State()
-  	pos := p.Pos()
-  	var end token.Pos
+//  	pos := p.Pos()
+//  	var end token.Pos
 
   	var typeSpec *ast.TypeSpec
   	var valTypeSpec *ast.TypeSpec
 
-  	var collectionTypeSpec *ast.CollectionTypeSpec
+//  	var collectionTypeSpec *ast.CollectionTypeSpec
 
     var rangeStmt *ast.RangeStatement
 
@@ -4307,7 +4307,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	setEntriesFound := false
 
   	if p.Match2('{','}') {
-  	    end = p.Pos()
+//  	    end = p.Pos()
   	    emptyMapOrSet = true
   	} else if p.Match1('{') {
         if p.parseIndentedForGenerator(st.RuneColumn, &rangeStmt) {		
@@ -4347,7 +4347,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
 	  	    knownToBeMap = mapEntriesFound
 	  	    knownToBeSet = setEntriesFound
          }
-         end = p.Pos()            
+//         end = p.Pos()            
       } else { 
          return false // Did not match a map-or-set-specifying squiggly-bracket
       }
@@ -4435,7 +4435,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	       } 
   	   }
   	}
-
+/*
     isSorting := false // TODO allow sorting specifications in empty set/map constructions!!!!
     isAscending := false 
     orderFunc := "" 
@@ -4446,7 +4446,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
        collectionTypeSpec = &ast.CollectionTypeSpec{token.SET,pos,end,isSorting,isAscending,orderFunc}  
     }
     typeSpec.CollectionSpec = collectionTypeSpec
-
+*/
     if knownToBeMap {
   
       // translate

@@ -1,7 +1,7 @@
 RELISH INSTALLATION AND BUILD INSTRUCTIONS
 ==========================================
 
-SOURCE DISTRIBUTION hg clone https://code.google.com/p/relish
+SOURCE DISTRIBUTION hg clone https://code.google.com/p/relish/
 
 
 Steps for Linux    (See Apple Mac steps below this subsection)
@@ -12,10 +12,10 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
 2. Install the sqlite3 database software and its header files on your machine if not already installed.
 
-   apt-cache show sqlite3
+   aptitude show sqlite3
    ...and if State: not installed...
    sudo apt-get install sqlite3
-   apt-cache show libsqlite3-dev
+   aptitude show libsqlite3-dev
    ...and if State: not installed...
    sudo apt-get install libsqlite3-dev
 
@@ -24,17 +24,19 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
 3. Install mercurial version control system on your machine if not already installed.
 
-   sudo aptitude install mercurial
+   aptitude show mercurial
+   ...and if State: not installed...   
+   sudo apt-get install install mercurial
 
    or equivalent package installation procedure on your linux distribution.
 
-4. Install Go 1.0 or higher (from golang.org)
+4. Install Go 1.0 or higher (from golang.org). binary distribution is available for some linuxes including Ubuntu. Or install and build the Go source distribution.
 
 5. Install the gosqlite package into the Go environment.
 
    go get code.google.com/p/gosqlite/sqlite
 
-6. Choose where you will create your mercurial repository
+6. Choose where you will create your mercurial repository for relish
 
    You will probably want to have your relish root i.e. relish home directory be one of the standard
    locations. Several standard locations are recognized by the relish tools, so that if you
@@ -51,9 +53,10 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
    or 
 
-   sudo chmod go+w /opt
+
    cd /opt
-   mkdir devel
+   sudo mkdir devel
+   sudo chmod go+w devel   
    cd devel   
 
    or 
@@ -67,7 +70,7 @@ Steps for Linux    (See Apple Mac steps below this subsection)
    cd /my/random/location
 
 
-7. hg clone https://relishpl@code.google.com/p/relish/ 
+7. hg clone https://code.google.com/p/relish/ 
 
    Note that the repo directory that you are developing in and running relish tools from must be called relish.
    If you want to have multiple clones, you can clone them into e.g. relish_mybranch then
@@ -92,13 +95,14 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
    export GOPATH=/opt/relish
 
-10. Open a new terminal window to have a shell that recognizes the new PATH.
+10. Open a new terminal window to have a shell that recognizes the new PATH, or else 
+    source ~/.bashrc  in your current terminal window.
 
 11. build the relish compiler-interpreter 
 
     go install relish/relish
 
-    and make it an executable file:
+    and make it an executable file, if it is not already executable:
 
     chmod go+x /opt/relish/bin/relish
 
@@ -159,13 +163,13 @@ Steps for Apple Mac
    which hg   
    does not already tell you about an hg executable.
 
-4. Install Go 1.0 or higher (from golang.org)
+4. Install Go 1.0 or higher (from golang.org). A binary distribution is available for MacOSX
 
 5. Install the gosqlite package into the Go environment.
 
    go get code.google.com/p/gosqlite/sqlite
 
-6. Choose where you will create your mercurial repository
+6. Choose where you will create your mercurial repository for relish
 
    You will probably want to have your relish root i.e. relish home directory be one of the standard
    locations. Several standard locations are recognized by the relish tools, so that if you
@@ -191,7 +195,7 @@ Steps for Apple Mac
    cd /my/random/location
 
 
-7. hg clone https://relishpl@code.google.com/p/relish/ 
+7. hg clone https://code.google.com/p/relish/ 
 
    Note that the repo directory that you are developing in and running relish tools from must be called relish.
    If you want to have multiple clones, you can clone them into e.g. relish_mybranch then
@@ -214,13 +218,14 @@ Steps for Apple Mac
 
    export GOPATH=~/relish
 
-10. Open a new terminal window to have a shell that recognizes the new PATH.
+10. Open a new terminal window to have a shell that recognizes the new PATH, or else 
+    source ~/.bash-profile in your current terminal window.
 
 11. build the relish compiler-interpreter 
 
     go install relish/relish
 
-    and make it an executable file:
+    and make it an executable file, if it is not already executable:
 
     chmod go+x ~/relish/bin/relish
 

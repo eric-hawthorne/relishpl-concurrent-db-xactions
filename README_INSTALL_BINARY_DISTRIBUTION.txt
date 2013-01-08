@@ -19,11 +19,11 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 3. Install the sqlite3 database software on your machine if not already installed.
    Unfortunately, this is not currently distributed with the relish binary distribution.
    
-   apt-cache show sqlite3
+   aptitude show sqlite3
    ...and if State: not installed...
    sudo apt-get install sqlite3
 
-
+   works nicely on Ubuntu,
    or equivalent package installation procedure on your linux distribution.
 
 4. Create your desired relish home directory.
