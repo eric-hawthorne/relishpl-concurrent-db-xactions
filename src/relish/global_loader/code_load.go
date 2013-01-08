@@ -362,7 +362,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
 		        // did not find the metadata.txt file in the shared artifact dir tree
 		        //
-		        // so there is no lshared artifact in the filesystem.
+		        // so there is no shared artifact in the filesystem.
 
 		    } else { // found the metadata.txt file in the shared artifact dir tree
 		     
@@ -796,9 +796,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
 
 /*
-Finds hosts that host the artifact.
-Returns an empty list if there are no such hosts.
-Returns an error if the search service cannot be reached or does not return a valid result page.
+Returns the URL of the default host that should host the artifact.
 */
 func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) (hostURL string) {
 	hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
