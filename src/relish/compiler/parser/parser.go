@@ -5047,27 +5047,27 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	
 	      // translate
  	      var stmtList2 []ast.Stmt
-        blockPos = p.Pos()	
+        	blockPos = p.Pos()	
 	     
-        if isGeneratorExpr {
-           var rs *ast.ReturnStatement  
-           var ifStatmt *ast.IfStatement
+	        if isGeneratorExpr {
+	           var rs *ast.ReturnStatement  
+	           var ifStatmt *ast.IfStatement
 
-           // parse
-           if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
-              stmtList2 = []ast.Stmt{ifStatmt}
-           } else {
-              p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
-              stmtList2 = []ast.Stmt{rs}
-           }
-        } else {
+	           // parse
+	           if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+	              stmtList2 = []ast.Stmt{ifStatmt}
+	           } else {
+	              p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
+	              stmtList2 = []ast.Stmt{rs}
+	           }
+	        } else {
 
-            // parse
-            p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
-            for ; p.BlanksAndIndent(col,true) ; {
-               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement") 
-            }
-        } 
+	            // parse
+	            p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
+	            for ; p.BlanksAndIndent(col,true) ; {
+	               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement") 
+	            }
+	        } 
 	      st2 = p.State()
 	
 	      // translate
@@ -5112,7 +5112,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	        break       	  
        } else {
 	       p.Fail(st2)
-         break
+           break
        }
     }
     return true
@@ -5228,6 +5228,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 	      break       	  
        } else {
 	      p.Fail(st2)
+	      break
        }
     }
     return true

@@ -19,34 +19,13 @@ main
 """
    testMisc
 
-
-foo a String b String > c String d String
-"""
- Arbitrary method.
-"""
-   print "foo" a b
-   c = a
-   d = b
-
-
-// bar e String f String > String String
-// """
-// Arbitrary method 2.
-// """
-//    j k = foo e f
-//    => j k
-
-
-bar e String f String > String String
-"""
- Arbitrary method 2.
-"""
-   => foo e f
    
-
 testMisc
 """
  Test the String data type and methods that operate on Strings.
 """
-   g h = bar "1" "2"
-   print g h
+   a = 10 
+   while gt a 0
+      print "foo"
+      a = minus a 1
+   print "bar"
