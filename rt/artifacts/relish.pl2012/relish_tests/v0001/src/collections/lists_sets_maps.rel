@@ -256,7 +256,9 @@ testCollections
 
    foo places
 
+   places += "right"
 
+   print places
 
 
 foo a [] String

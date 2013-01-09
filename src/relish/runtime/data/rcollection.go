@@ -88,7 +88,7 @@ A collection which can have a member added. It is added at the end (appended) if
 It is added in the appropriate place in the order, if this is a sorting collection.
 It is added in undetermined place if an unordered set.
 */
-type AddableCollection interface {
+type AddableMixin interface {
 	Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int)
 
 	/*
@@ -99,10 +99,15 @@ type AddableCollection interface {
 	AddSimple(obj RObject) (newLen int)
 }
 
+type AddableCollection interface {
+	RCollection
+	AddableMixin
+}
+
 /*
 A collection which can have a member removed.
 */
-type RemovableCollection interface {
+type RemovableMixin interface {
 	/*
 	   removedIndex will be -1 if not applicable or if removed is false
 	*/
@@ -122,6 +127,12 @@ type RemovableCollection interface {
 	// Clear()
 }
 
+type RemovableCollection interface {
+	RCollection
+	RemovableMixin
+}
+
+
 type OrderedCollection interface {
 	Index(obj RObject, start int) int
 	At(th InterpreterThread, i int) RObject	
@@ -132,8 +143,8 @@ A collection which can return its go list implementation
 */
 type List interface {
 	RCollection
-	AddableCollection
-	RemovableCollection
+	AddableMixin
+	RemovableMixin
 	OrderedCollection
 	Vector() *RVector
 	AsSlice(th InterpreterThread) []RObject
@@ -153,14 +164,14 @@ A collection which can return its go map implementation
 */
 type Set interface {
 	RCollection
-	AddableCollection
-	RemovableCollection
+	AddableMixin
+	RemovableMixin
 	BoolMap() map[RObject]bool
 }
 
 type Map interface {
 	RCollection
-	RemovableCollection
+	RemovableMixin
 	KeyType() *RType
 	ValType() *RType
 	Get(key RObject) (val RObject, found bool)

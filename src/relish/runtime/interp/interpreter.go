@@ -1360,7 +1360,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 	      rterr.Stop1(t, setConstruction, err)
       }	
 
-      aSet := set.(AddableCollection)
+      aSet := set.(AddableMixin)
       for _,obj := range objs {
 		 aSet.Add(obj, t.EvalContext) 
       }
@@ -1370,7 +1370,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
    } else if setConstruction.Generator != nil { // Generator expression to yield elements  
       i.iterateGenerator(t, setConstruction.Generator, 1)
-      aSet := set.(AddableCollection)
+      aSet := set.(AddableMixin)
       for _,obj := range t.Objs {
 		 aSet.Add(obj, t.EvalContext) 
       }
@@ -2328,12 +2328,49 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			case *ast.Ident: // A local variable or parameter or result parameter
 				LogM(t,INTERP2_, "assignment base %d varname %s offset %d\n", t.Base, lhsExpr.(*ast.Ident).Name, lhsExpr.(*ast.Ident).Offset)
                              
-				t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
 
-				// TODO TODO TODO
-				// Will have to have reserved space for the local variables here when calling the method!!!     
-				// So have to know how many locals there are in the body!!!! Store it in the RMethod!!!
-				// Why is this comment here? We already do that.
+
+				switch stmt.Tok {
+				case token.ASSIGN:
+
+				   t.Stack[t.Base+lhsExpr.(*ast.Ident).Offset] = t.Pop()
+
+	              
+				case token.ADD_ASSIGN:
+
+					assignee, err := t.GetVar(lhsExpr.(*ast.Ident).Offset)
+					if err != nil {
+						rterr.Stopf1(t, lhsExpr, "Attempt to access the value of unassigned variable %s.",lhsExpr.(*ast.Ident).Name)
+					}	
+					coll,isAddColl := assignee.(AddableCollection) 
+					if ! isAddColl {
+						rterr.Stopf1(t, lhsExpr, "%s is not an appendable list or set.",lhsExpr.(*ast.Ident).Name)						
+					}
+                    val := t.Pop()
+					if !val.Type().LessEq(coll.ElementType()) {
+						rterr.Stopf1(t,lhsExpr,"Cannot append a '%v' to %s. Elements must be of type '%v'.",  val.Type(), lhsExpr.(*ast.Ident).Name, coll.ElementType())
+						return
+					}					
+					// TODO The persistence aspect of appending to a collection
+                    coll.Add(val, t.EvalContext)				
+
+				case token.SUB_ASSIGN:
+
+					assignee, err := t.GetVar(lhsExpr.(*ast.Ident).Offset)
+					if err != nil {
+						rterr.Stopf1(t, lhsExpr, "Attempt to access the value of unassigned variable %s.",lhsExpr.(*ast.Ident).Name)
+					}	
+					coll,isRemColl := assignee.(RemovableCollection) 
+					if ! isRemColl {
+						rterr.Stopf1(t, lhsExpr, "%s is not a list or set allowing element removal.",lhsExpr.(*ast.Ident).Name)						
+					}
+                    val := t.Pop()					
+					// TODO The persistence aspect of removing from a collection
+	                coll.Remove(val)
+				default:
+					panic("Unrecognized assignment operator")
+				}
+
 
 			// TODO handle dot expressions and [ ] selector expressions. First lhsEvaluate lhsExpr to put a
 			// cell reference onto the stack, then pop it and assign to it.

@@ -377,7 +377,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 		return
 	}
 
-	addColl := objColl.(AddableCollection)     // Will throw an exception if collection type does not implement Add(..)
+	addColl := objColl.(AddableMixin)     // Will throw an exception if collection type does not implement Add(..)
 	added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
 
 	/* TODO figure out efficient persistence of collection updates
@@ -442,7 +442,7 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 	   }
     }
 
-	collection := objColl.(RemovableCollection) // Will throw an exception if collection type does not implement ClearInMemory()
+	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement ClearInMemory()
 	collection.ClearInMemory()	
 	
 	
@@ -475,7 +475,7 @@ func (rt *RuntimeEnv) AddToCollectionTypeChecked(coll RCollection, val RObject, 
 		return
 	}
 	
-	addColl := coll.(AddableCollection)     // Will throw an exception if collection type does not implement Add(..)
+	addColl := coll.(AddableMixin)     // Will throw an exception if collection type does not implement Add(..)
 	
 	// Re-enable when we implement persisting of independent collections.
 	// added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
@@ -690,7 +690,7 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 		return
 	}
 
-	collection := objColl.(RemovableCollection) // Will throw an exception if collection type does not implement Remove(..)
+	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement Remove(..)
 	removed, removedIndex := collection.Remove(val)
 
 

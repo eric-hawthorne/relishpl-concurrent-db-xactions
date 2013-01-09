@@ -345,7 +345,7 @@ func (db *SqliteDB) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObje
 func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string, radius int) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchCollection", collectionOrOwnerId, collectionTableName))
 
-	remColl := collection.(RemovableCollection)
+	remColl := collection.(RemovableMixin)
 	remColl.ClearInMemory()
 
 	orderClause := ""
@@ -383,7 +383,7 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 		} else { // Just put proxy objects into the collection.
 			val = Proxy(id1)
 		}
-		addColl := collection.(AddableCollection)
+		addColl := collection.(AddableMixin)
 		addColl.AddSimple(val)
 	}
 	return
