@@ -1667,6 +1667,10 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 		breakLoop, continueLoop, returnFrom = i.ExecWhileStatement(t, stmt.(*ast.WhileStatement))
 	case *ast.RangeStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecForRangeStatement(t, stmt.(*ast.RangeStatement))
+	case *ast.BreakStatement:
+		breakLoop = true
+	case *ast.ContinueStatement:
+		continueLoop = true
 	case *ast.MethodCall:
 		i.ExecMethodCall(t, nil, stmt.(*ast.MethodCall))
 	case *ast.AssignmentStatement:

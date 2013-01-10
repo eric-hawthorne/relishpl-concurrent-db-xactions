@@ -860,6 +860,17 @@ type (
 		IsYield bool      // If true, this is a generator "yield" statement 
 	}
 
+	// EGH A BreakStatement node represents a break statement.
+	BreakStatement struct {
+		Break  token.Pos // position of "break" keyword
+	}
+
+	// EGH A ContinueStatement node represents a continue statement.
+	ContinueStatement struct {
+		Continue  token.Pos // position of "continue" keyword
+	}	
+
+
 	// A ReturnStmt node represents a return statement.
 	ReturnStmt struct {
 		Return  token.Pos // position of "return" keyword
@@ -1008,6 +1019,8 @@ func (s *GoStmt) Pos() token.Pos              { return s.Go }
 func (s *DeferStmt) Pos() token.Pos           { return s.Defer }
 func (s *ReturnStmt) Pos() token.Pos          { return s.Return }
 func (s *ReturnStatement) Pos() token.Pos     { return s.Return }
+func (s *BreakStatement) Pos() token.Pos      { return s.Break }
+func (s *ContinueStatement) Pos() token.Pos   { return s.Continue }
 func (s *BranchStmt) Pos() token.Pos          { return s.TokPos }
 func (s *BlockStmt) Pos() token.Pos           { return s.Lbrace }
 func (s *BlockStatement) Pos() token.Pos      { return s.Start }
@@ -1053,6 +1066,14 @@ func (s *ReturnStatement) End() token.Pos {
 		return s.Results[n-1].End()
 	}
 	return s.Return + 2 // len("=>")
+}
+
+func (s *BreakStatement) End() token.Pos {
+	return s.Break + 5 
+}
+
+func (s *ContinueStatement) End() token.Pos {
+	return s.Continue + 8
 }
 
 func (s *BranchStmt) End() token.Pos {
@@ -1117,6 +1138,8 @@ func (s *GoStatement) stmtNode()         {}
 func (s *DeferStatement) stmtNode()      {}
 func (s *ReturnStmt) stmtNode()          {}
 func (s *ReturnStatement) stmtNode()     {}
+func (s *BreakStatement) stmtNode()      {}
+func (s *ContinueStatement) stmtNode()   {}
 func (s *BranchStmt) stmtNode()          {}
 func (s *BlockStmt) stmtNode()           {}
 func (s *IfStmt) stmtNode()              {}

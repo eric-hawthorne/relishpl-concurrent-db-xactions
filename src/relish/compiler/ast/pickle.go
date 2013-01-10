@@ -89,6 +89,8 @@ func registerAstNodeTypes() {
 	gob.Register(&GoStatement{})
 	gob.Register(&DeferStatement{})
 	gob.Register(&ReturnStatement{})
+	gob.Register(&BreakStatement{})
+	gob.Register(&ContinueStatement{})	
 	gob.Register(&BranchStmt{})
 	gob.Register(&BlockStatement{})
 	gob.Register(&IfStatement{})

@@ -1805,7 +1805,9 @@ func (p *parser) parseMethodName(allowImported bool, methodName **ast.Ident) boo
 	   }
 	   if name == "apply" {
 	      kind = token.CLOSURE
-	   } else {
+	   } else if p.reservedWords[name] {
+          return p.Fail(st)	
+       } else {
 	      kind = token.FUNC
        }
    }
@@ -2641,7 +2643,7 @@ func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt, nReturnVals int, no
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s, nReturnVals) {
+    if p.parseControlStatement(&s, nReturnVals, false) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2686,14 +2688,14 @@ func (p *parser) parseMethodBodyStatement(stmts *[]ast.Stmt, nReturnVals int, no
 /*
 Add a break and continue statement and also a return statement modifier "."
 */
-func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt, nReturnVals int) bool {
+func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt, nReturnVals int, isInsideLoop bool) bool {
     if p.trace {
        defer un(trace(p, "IfClauseStatement"))
     }
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s, nReturnVals) {
+    if p.parseControlStatement(&s, nReturnVals, isInsideLoop) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2723,8 +2725,60 @@ func (p *parser) parseIfClauseStatement(stmts *[]ast.Stmt, nReturnVals int) bool
 	   return true	
     }
 
+    var bks *ast.BreakStatement
+    if p.parseBreakStatement(&bks) {
+    	if ! isInsideLoop {
+	       p.stop("break statement can only occur inside a loop")	
+	   }
+	   // translate
+	   *stmts = append(*stmts,bks)	
+	   return true	    	
+    }
+
+    var cs *ast.ContinueStatement
+    if p.parseContinueStatement(&cs) {
+    	if ! isInsideLoop {
+	       p.stop("continue statement can only occur inside a loop")	
+	   }
+	   // translate
+	   *stmts = append(*stmts,cs)	
+	   return true	    	
+    }    
+
+
     return false
 }
+
+func (p *parser) parseBreakStatement(stmt **ast.BreakStatement) bool {
+    if p.trace {
+       defer un(trace(p, "BreakStatement"))
+    }	
+    pos := p.Pos()	
+	if ! p.MatchWord("break") {
+		return false
+	}
+    // translate
+    *stmt = &ast.BreakStatement{pos}	
+
+    return true
+}
+
+
+func (p *parser) parseContinueStatement(stmt **ast.ContinueStatement) bool {
+    if p.trace {
+       defer un(trace(p, "ContinueStatement"))
+    }	
+    pos := p.Pos()	
+	if ! p.MatchWord("continue") {
+		return false
+	}
+
+    // translate
+    *stmt = &ast.ContinueStatement{pos}
+
+    return true
+}
+
 
 /*
 How is this different from method body?
@@ -2736,7 +2790,7 @@ func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt, nReturnVals int) bool
 
     var s ast.Stmt
     // parse
-    if p.parseControlStatement(&s, nReturnVals) {
+    if p.parseControlStatement(&s, nReturnVals, true) {
 	   // translate
 	   *stmts = append(*stmts,s)
 	   return true
@@ -2770,17 +2824,17 @@ func (p *parser) parseLoopBodyStatement(stmts *[]ast.Stmt, nReturnVals int) bool
 }
 
 
-func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int) bool {
+func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int, isInsideLoop bool) bool {
     if p.trace {
        defer un(trace(p, "ControlStatement"))
     }
     var ifStmt *ast.IfStatement
-    if p.parseIfStatement(&ifStmt, nReturnVals, false) {
+    if p.parseIfStatement(&ifStmt, nReturnVals, false, isInsideLoop) {
 	   *stmt = ifStmt
 	   return true
     } 
     var whileStmt *ast.WhileStatement
-    if p.parseWhileStatement(&whileStmt, nReturnVals) {
+    if p.parseWhileStatement(&whileStmt, nReturnVals, isInsideLoop) {
 	   *stmt = whileStmt
 	   return true
     }  
@@ -4985,7 +5039,7 @@ if expr
 
   If isGeneratorExpr is true, the blocks can only contain "yield" statements i.e. ReturnStatements with IsYield==true
 */
-func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isGeneratorExpr bool) bool {
+func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isGeneratorExpr bool, isInsideLoop bool) bool {
     if p.trace {
        defer un(trace(p, "IfStatement"))
     }
@@ -5013,7 +5067,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
        var ifStatmt *ast.IfStatement
 
        // parse
-       if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+       if p.parseIfStatement(&ifStatmt, nReturnVals, true, false) {
           stmtList = []ast.Stmt{ifStatmt}
        } else {
           p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
@@ -5022,9 +5076,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
     } else {
 
         // parse
-        p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")
+        p.required(p.parseIfClauseStatement(&stmtList, nReturnVals, isInsideLoop),"a statement")
         for ; p.BlanksAndIndent(col,true) ; {
-           p.required(p.parseIfClauseStatement(&stmtList, nReturnVals),"a statement")	
+           p.required(p.parseIfClauseStatement(&stmtList, nReturnVals, isInsideLoop),"a statement")	
         }
     } 
 
@@ -5054,7 +5108,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	           var ifStatmt *ast.IfStatement
 
 	           // parse
-	           if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+	           if p.parseIfStatement(&ifStatmt, nReturnVals, true, false) {
 	              stmtList2 = []ast.Stmt{ifStatmt}
 	           } else {
 	              p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
@@ -5063,9 +5117,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	        } else {
 
 	            // parse
-	            p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
+	            p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement")
 	            for ; p.BlanksAndIndent(col,true) ; {
-	               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement") 
+	               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement") 
 	            }
 	        } 
 	      st2 = p.State()
@@ -5089,7 +5143,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
              var ifStatmt *ast.IfStatement
 
              // parse
-             if p.parseIfStatement(&ifStatmt, nReturnVals, true) {
+             if p.parseIfStatement(&ifStatmt, nReturnVals, true, false) {
                 stmtList3 = []ast.Stmt{ifStatmt}
              } else {
                 p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
@@ -5099,9 +5153,9 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
           } else {
 
               // parse
-              p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
+              p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement")
               for ; p.BlanksAndIndent(col,true) ; {
-                 p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement") 
+                 p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement") 
               }
           }  
 	
@@ -5136,7 +5190,7 @@ WhileStatement struct {
 
 
 */
-func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals int) bool {
+func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals int, isInsideLoop bool) bool {
     if p.trace {
        defer un(trace(p, "WhileStatement"))
     }
@@ -5187,9 +5241,9 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
           blockPos = p.Pos()	
 	     
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
+	      p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement")
 	      for ; p.BlanksAndIndent(col, true) ; {
-	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals),"a statement")
+	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement")
 	      }	
 	      st2 = p.State()
 	
@@ -5212,9 +5266,9 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
           blockPos = p.Pos()
 	
 	      // parse
-	      p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")	
+	      p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement")	
 	      for ; p.BlanksAndIndent(col,true) ; {
-		 	p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals),"a statement")
+		 	p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement")
 	      }  
 	
 	      // translate
@@ -5405,7 +5459,7 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
        var ifStmt *ast.IfStatement
 
        // parse
-       if p.parseIfStatement(&ifStmt, nReturnVals, true) {
+       if p.parseIfStatement(&ifStmt, nReturnVals, true, false) {
           stmtList = []ast.Stmt{ifStmt}
        } else {
 	        p.required(p.parseReturnStatement(&rs, nReturnVals, true), "an 'if' or an expression or expressions that this generator will yield")
