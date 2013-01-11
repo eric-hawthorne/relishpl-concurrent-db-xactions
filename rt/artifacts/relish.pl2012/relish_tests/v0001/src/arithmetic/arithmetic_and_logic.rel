@@ -175,3 +175,7 @@ testArithmeticAndLogic
    print div 8 3.0
 
    print mod 7 3
+
+   print neg 4
+
+   print plus -4 -5

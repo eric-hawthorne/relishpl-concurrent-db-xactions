@@ -796,7 +796,6 @@ func (i *Interpreter) EvalBasicLit(t *Thread, lit *ast.BasicLit) {
 	switch lit.Kind {
 	case token.INT:
 		i, err := strconv.ParseInt(lit.Value, 10, 64)
-
 		if err != nil {
 			panic(err)
 		}

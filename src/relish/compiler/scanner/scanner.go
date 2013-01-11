@@ -787,7 +787,6 @@ func (S *Scanner) ScanNumber() (bool, token.Token, string) {
 
 	// determine token value
 	switch ch := S.ch; {
-
 	case digitVal(ch) < 10:
 		tok = S.scanNumber(false)
 		found = true

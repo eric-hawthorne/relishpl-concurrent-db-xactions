@@ -5689,10 +5689,21 @@ func (p *parser) parseNumberLiteral(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "NumberLiteral"))
     }
+    st := p.State()
     pos := p.Pos()
+    negated := false
+    if p.Match1('-') {
+	   negated = true
+    }  
     found, tok, lit := p.ScanNumber()
     if ! found {
+	   if negated {
+	      return p.Fail(st)	
+	   }
 	   return false // Look for String literals or Boolean literals
+    }
+    if negated {
+	   lit = "-" + lit
     }
     dbg.Log(dbg.PARSE_,"%s '%s'\n",tok,lit)
 
