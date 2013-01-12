@@ -2674,8 +2674,24 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 	} else {
 		returnFrom = true
 
+		if t.ExecutingMethod.NumReturnArgs != n {          
+		   rterr.Stopf1(t,stmt,"Method is declared to return %d values. Returning %d values.", t.ExecutingMethod.NumReturnArgs,n)
+		}
+
+        types := t.ExecutingMethod.ReturnSignature.Types 
+
 		for j := n-1; j >=0; j-- {	
-			t.Stack[t.Base+j-n] = t.Pop()   
+			val := t.Pop()   
+
+			// TODO IMPORTANT This type checking should first be sped up by a typetuple compatibility checking cache,
+			// Then eventually replaced by static type inference within the method body.
+
+            if ! val.Type().LessEq(types[j]) {
+            	rterr.Stopf1(t,stmt,"Returned value #%d has type '%v' - not compatible with method's declared return type '%v'.",j+1,val.Type(),types[j])
+            }
+			t.Stack[t.Base+j-n] = val
+			// t.Stack[t.Base+j-n] = t.Pop()  
+
 		}
     }
     return

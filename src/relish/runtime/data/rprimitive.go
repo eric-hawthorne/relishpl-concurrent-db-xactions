@@ -44,6 +44,7 @@ ONLY for the purpose of persisting it independently. NEED TO THINK FURTHER ABOUT
 */
 
 var PrimitiveType *RType
+var IntOrStringType *RType
 var NumericType *RType
 var IntegerType *RType
 var IntType *RType
@@ -111,9 +112,10 @@ var SetOfUintType *RType
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	PrimitiveType, _ = rt.CreateType("RelishPrimitive", "", []string{})
+	IntOrStringType,_ = rt.CreateType("IntOrString", "", []string{"RelishPrimitive"})
 	NumericType, _ = rt.CreateType("Numeric", "", []string{"RelishPrimitive"})
 	IntegerType, _ = rt.CreateType("Integer", "", []string{"Numeric"})
-	IntType, _ = rt.CreateType("Int", "", []string{"Integer"})
+	IntType, _ = rt.CreateType("Int", "", []string{"Integer","IntOrString"})
 	Int32Type, _ = rt.CreateType("Int32", "", []string{"Integer"})
 	Int16Type, _ = rt.CreateType("Int16", "", []string{"Integer"})
 	Int8Type, _ = rt.CreateType("Int8", "", []string{"Integer"})
@@ -131,7 +133,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	ComplexNumberType, _ = rt.CreateType("ComplexNumber", "", []string{"Numeric"})
 	ComplexType, _ = rt.CreateType("Complex", "", []string{"ComplexNumber"})
 	Complex32Type, _ = rt.CreateType("Complex32", "", []string{"ComplexNumber"})
-	StringType, _ = rt.CreateType("String", "", []string{"Text"})
+	StringType, _ = rt.CreateType("String", "", []string{"Text","IntOrString"})
 	TimeType, _ = rt.CreateType("Time", "", []string{"RelishPrimitive"})
 	ProxyType, _ = rt.CreateType("Proxy", "", []string{})
 
@@ -249,7 +251,9 @@ func (t *RType) Zero() RObject {
     	var t Time
     	z = RTime(t)
     case AnyType:
-		z = Int(0)	    	
+		z = Int(0)	 
+	case IntOrStringType:
+		z = Int(0)			   	
     default:
     	z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
     }   

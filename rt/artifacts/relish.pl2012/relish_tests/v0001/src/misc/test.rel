@@ -19,13 +19,19 @@ main
 """
    testMisc
 
+
+returnsThreeResults > String String String
+"""
+ A function that returns 3 values.
+"""
+   => "Thing 1" "Thing 2" 9
    
+
 testMisc
 """
- Test the String data type and methods that operate on Strings.
+ Test random badness.
 """
-   a = 10 
-   while gt a 0
-      print "foo"
-      a = minus a 1
-   print "bar"
+   a b c = returnsThreeResults
+   print "yeah"
+   print b
+   print c

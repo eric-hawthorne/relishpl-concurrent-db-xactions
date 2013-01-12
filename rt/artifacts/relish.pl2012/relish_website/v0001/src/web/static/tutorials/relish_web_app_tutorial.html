@@ -219,6 +219,332 @@ main
 </pre></code>
 <br/>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"XML" "mime/type" AnyObjectToBeConverted      -NOT IMPLEMENTED - Convert structs, collections, maps to XML in some default way.
+
+
+"XML PRE" 
+"mime/type"                          
+"""
+<?xml version="1.0"?>
+<sometag>
+</sometag>
+"""
+
+// Can we live without the xml tag at beginning? For literal string, for file? Do we add it? probably?
+
+"XML FILE" "mime/type" "some/file/path.xml"
+
+
+"HTML"
+
+"HTML FILE" "foo.html"
+
+
+"JSON" AnyObjectToBeConverted
+
+"JSON PRE" "{'John Smith':[2,6,4]}"  
+
+"JSON FILE" "some/file/path.json"
+
+
+"IMAGE" ["jpeg"] ObjectPossiblyToBeConverted
+
+"IMAGE FILE" ["jpeg"] "some/file/path.jpg"
+
+
+"VIDEO" ["mpeg4"] ObjectPossiblyToBeConverted  
+
+"VIDEO FILE" ["mpeg4"] "some/file/path.mp4"
+
+
+"MEDIA" "mime/type" ObjectPossiblyToBeConverted
+
+"MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
+
+
+
+"REDIRECT"  [code] UrlOrString
+
+
+"path/to/template.html" SomeObjToPassToTemplate
+
+"TEMPLATE" "literal template text" SomeObjToPassToTemplate
+
+
+"HTTP ERROR" 404 ["Resource Not Found"]  // or 403 (no permission) etc  
+
+"HTTP CODE" 200 ["OK"]  // Same as HTTP ERROR except ERROR only accepts error codes i.e. 4XX through 5XX.
+
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+"BODY"
+obj              // literally serialized out
+
+
+NOT IMPLEMENTED
+
+
+Or HEADERS can prefix any of the other forms, to add additional http headers. Should not be inconsistent. What if is?
+
+"""
+HEADERS 
+Content-Disposition: attachment; filename="fname.png"
+"""
+"MEDIA FILE" 
+"image/png" 
+"some/file/path.png"
+
+
+NOT IMPLEMENTED
+
+
+
+
+
+
+-------------------------------
+OLDER IDEA
+
+
+Decisions: 
+
+1. web or webservice dialog handler functions are public-section functions found
+   in the web package or web/something, web/something/else packages.
+
+2. These methods must have a pattern of return arguments which directs the relish runtime as to how
+to find, format, and return the response to a web request. The return argument pattern are as follows:
+
+"XML" AnyObjectToBeConverted
+
+"XML"  // pre-formatted if a string 
+"""
+<?xml version="1.0"?>
+<sometag>
+</sometag>
+"""
+
+// Can we live without the xml tag at beginning? For literal string, for file? Do we add it? probably?
+
+"XML FILE" "some/file/path.xml"
+
+
+"HTML" "some html string"
+
+"HTML FILE" "foo.html"
+
+
+"JSON" AnyObjectToBeConverted
+
+"JSON" "literal JSON string"
+
+"JSON FILE" "some/file/path.json"
+
+
+"MEDIA image/jpeg" AnyObjectPossiblyToBeConverted
+
+"MEDIA FILE image/jpeg" "some/file/path.jpg"
+
+
+"REDIRECT" [301,302,303,or 307] UrlOrString  http response code defaults to 303 POST-Redirect-GET style.
+
+
+"path/to/template.html" SomeObjToPassToTemplate
+
+TEMPLATE "literal template text" SomeObjToPassToTemplate
+
+
+"HTTP ERROR" 404  ["message"] // or 403 (no permission) etc - message defaults to ""
+
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+obj              // literally serialized out
+
+Or HEADERS can prefix any of the other forms, to add additional http headers. Should not be inconsistent. What if is?
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+"MEDIA FILE image/png" 
+"some/file/path.png"
+
+
+
+
+--------------------------
+OLDEST STUFF
+
+
+
+TODO
+
+Here are some possibilities for how exposed handler methods are recognized
+
+1. All (public-section) methods in files named [some_thing_]handlers.rel
+or maybe [some_thing_]dialog.rel
+or maybe [some_thing_]interface.rel
+
+2. Variant on 1 where only public methods (no __private__ or __protected__) are allowed
+in those files, if the files occur in subdirs of web directory.
+
+(Sub-question: should it really be called web?? is it only for http protocol?)
+
+3. Have an __exposed__ code section marker which if it occurs in a file takes the place of 
+the implicit __exported__ i.e. __public__ section. You cannot have a file which has both
+__exposed__ methods in it and also  __exported__ i.e. __public__ ones.
+So a file can either contain default (public),__protected__,__private__
+or it can contain __exposed__,__protected__,__private
+
+(Note: we don't actually know the definition of protected, private yet! Oops!)
+
+4. Have the methods explicitly annotated in source code, such as
+web foo a1 Int a2 String
+
+5. Have any public method which occurs under the web package tree and which
+returns as its first return arg a token that indicates the kind of
+return value type / processing that is to take place !!!!!!!
+Like the special strings below except constants, like
+
+foo a1 Int a2 String > web.ResponseType vehicles.Car
+"""
+"""
+   => web.XML 
+      car1   
+
+bar a1 Int a2 String > 
+   how web.ResponseType
+   what SomeType
+"""
+"""
+   how = web.JSON
+   what = car1
+
+baz a1 Int a2 String > 
+   how web.ResponseType
+   name String
+   what SomeType
+"""
+"""
+   how = web.TEMPLATE
+   name = "foo.html"  // the template file name (or do we figure out if it is an actual template)
+   what = car1   
+
+                      // allow filenames like foo.txt a/b/foo.xml etc otherwise is a raw template string
+
+boz a1 Int a2 String > 
+   how web.ResponseType
+   name String
+   what SomeType
+"""
+"""
+   how = web.MEDIA
+   type = "image/jpeg"
+
+   what = car1      
+
+Automatically is an exposed web handler function. also allow args such as disposition encoding etc    
+*/
+
+
+
+// TODO Implement Post/Redirect/Get webapp pattern http://en.wikipedia.org/wiki/Post/Redirect/Get
+//
+// functions in web/handlers.rel web/subpackage/handlers.rel etc must have this pattern:
+//
+// => "XML" obj 
+//
+// => "JSON" obj
+//
+// => "MEDIA application/octetstream" obj
+//
+// => "MEDIA text/plain" obj
+//
+// => "MEDIA image/jpeg" obj
+//
+// => "MEDIA mime/type" obj
+//
+// => """
+// HEADERS 
+// Content-Type: application/octetstream
+// Content-Disposition: attachment; filename="fname.ext"
+//    """
+//    obj
+//
+// => "path/to/template" obj          OOPS! Can't distinguish this from mime type
+//
+// => "REDIRECT" "/path/on/my/webapp/site?a1=v1&a2=v2"
+//
+// => "REDIRECT" "http://www.foo.com/some/path"
+//
+// => "REDIRECT" 
+//     Url
+//        protocol = "https"                  // defaults to http
+//        host = "www.foo.com"                // if not specified, creates a path-only url
+//        port = 8080                         // defaults to 80 or 443 depending on protocol
+//        path = "/some/path"                 // relative paths not supported?
+//        kw = { 
+//                "a1" => v1
+//                "a2" => v2
+//             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </div>
 
 </body>

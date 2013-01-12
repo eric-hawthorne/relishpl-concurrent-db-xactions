@@ -429,6 +429,28 @@ func getKeywordArgs(r *http.Request) (args url.Values, err error) {
    return 
 }
 
+/*
+headers is expected to be one or more \n terminated http header lines.
+Sends these to the ResponseWriter.
+*/
+func sendHeaders(w http.ResponseWriter, headers string) (err error) {
+   headerList := strings.Split(headers,"\n")
+   for _,header := range headerList {
+      header = strings.TrimSpace(header)
+      if len(header) == 0 {
+         break
+      }
+      headerNameVal := strings.Split(header,":") 
+      if len(headerNameVal) != 2 {
+         err = fmt.Errorf(`Malformed http header '%s'`, header) 
+         return 
+      }
+      headerName := strings.TrimSpace(headerNameVal[0])
+      headerVal := strings.TrimSpace(headerNameVal[1])  
+      w.Header().Set(headerName, headerVal)          
+   }
+   return
+}
 
 /*
 Note should do considerably more checking of Content-Type (detected) and mimesubtype returnval,
@@ -436,43 +458,88 @@ to ensure they are consistent with the kind of processing directive.
 */
 func processResponse(w http.ResponseWriter, r *http.Request, methodName string, results []RObject) (err error) {
 
+   
    processingDirective := string(results[0].(String))
+
+   if strings.HasPrefix(processingDirective, "HEADERS") {
+      if len(results) < 2 {
+         err = fmt.Errorf(`%s HEADERS directive must be followed by another result processing directive.`, methodName) 
+        return         
+      }
+      firstLineEndPos := strings.Index(processingDirective,"\n")
+      if firstLineEndPos == -1 {
+         err = fmt.Errorf(`%s HEADERS directive must include some http headers, each on a separate line.`, methodName) 
+        return         
+      }        
+      headers := processingDirective[firstLineEndPos+1:]
+      if len(headers) == 0 {
+         err = fmt.Errorf(`%s HEADERS directive must include some http headers, each on a separate line.`, methodName) 
+        return         
+      }      
+
+      sendHeaders(w, headers)
+
+      results = results[1:]
+      processingDirective = string(results[0].(String))      
+   }
    
    switch processingDirective {
 
-	  case "XML":
+    case "XML":
+        fmt.Println("XML response not implemented yet.")      
+        fmt.Fprintln(w, "XML response not implemented yet.")  
+
+	  case "XML PRE":
 	   var xmlContent string
-       if len(results) < 2 {
-         err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
+     var mimeType string
+
+       if len(results) < 3 {
+         err = fmt.Errorf(`%s XML PRE response requires a mime/type e.g. "text/xml" then an xml-formatted string as third return value`, methodName) 
         return       
-      } else if len(results) == 2 {            
-         xmlContent = string(results[1].(String)) 
+      } else if len(results) == 3 {  
+
+         mimeType = string(results[1].(String))     
+
+         xmlContent = string(results[2].(String)) 
          if ! strings.HasPrefix(xmlContent,"<?xml") {
-           err = fmt.Errorf("%s XML response requires an xml-formatted string as second return value", methodName) 
+           err = fmt.Errorf("%s XML PRE response requires an xml-formatted string as third return value", methodName) 
            return      
          }
        } else {
-             err = fmt.Errorf("%s XML response has too many return values. Should be 'XML' then an xml-formatted string", methodName) 
+             err = fmt.Errorf(`%s XML PRE response has too many return values. Should be "XML PRE" then  a mime/type e.g. "text/xml" then an xml-formatted string`, methodName) 
              return               
-       }		
+       }           
+
+       w.Header().Set("Content-Type", mimeType)         
        fmt.Fprintln(w, xmlContent)		
+
 	  case "XML FILE":
-       var filePath string
-       if len(results) < 2 {
-         err = fmt.Errorf("%s XML FILE response requires a filepath", methodName) 
+       var filePath string      
+       var mimeType string
+
+
+
+       if len(results) < 3 {
+         err = fmt.Errorf(`%s XML FILE response requires a mime/type e.g. "text/xml" then a filepath`, methodName) 
          return       
-       } else if len(results) == 2 {            
-          filePath = string(results[1].(String))       
+       } else if len(results) == 3 {  
+          mimeType = string(results[1].(String))                    
+          filePath = string(results[2].(String))       
         } else {
-              err = fmt.Errorf("%s XML FILE response has too many return values. Should be filepath", methodName) 
+              err = fmt.Errorf(`%s XML FILE response has too many return values. Should be a mime/type e.g. "text/xml" then a filepath`, methodName) 
               return               
         } 
-        if ! strings.HasSuffix(filePath,".html") {
+        if ! strings.HasSuffix(filePath,".xml") {
             err = fmt.Errorf("%s XML FILE response expecting a .xml file", methodName) 
             return   
         }
+
+        w.Header().Set("Content-Type", mimeType)    
+               
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)		
+
+
 	  case "HTML":
 	   var htmlContent string
        if len(results) < 2 {
@@ -484,7 +551,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
            err = fmt.Errorf("%s HTML response requires a html-formatted string as second return value", methodName) 
            return      
          }
-       } else {
+       } else if ! ( len(results) == 3 && results[2].IsZero() ) {
              err = fmt.Errorf("%s HTML response has too many return values. Should be 'HTML' then a html-formatted string", methodName) 
              return               
        }		
@@ -497,14 +564,14 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          return       
        } else if len(results) == 2 {            
           filePath = string(results[1].(String))       
-        } else {
+        } else if ! ( len(results) == 3 && results[2].IsZero() ) {
               err = fmt.Errorf("%s HTML FILE response has too many return values. Should be filepath", methodName) 
               return               
         } 
         if ! strings.HasSuffix(filePath,".html") {
             err = fmt.Errorf("%s HTML FILE response expecting a .html file", methodName) 
             return   
-        }        
+        }          
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)
 
@@ -521,12 +588,26 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 	         err = fmt.Errorf("%s JSON encoding error: %s", methodName, err.Error()) 
              return
          }
-       } else {
+       } else if ! ( len(results) == 3 && results[2].IsZero() ) {
              err = fmt.Errorf("%s JSON response has too many return values. Should be 'JSON' then an object/value to be converted to JSON", methodName) 
              return               
        }		
        w.Header().Set("Content-Type", "text/json")
        fmt.Fprintln(w, jsonContent)	
+
+    case "JSON PRE":
+     var jsonContent string
+       if len(results) < 2 {
+         err = fmt.Errorf("%s JSON PRE response requires an json-formatted string as second return value", methodName) 
+         return       
+       } else if len(results) == 2 {            
+         jsonContent = string(results[1].(String)) 
+       } else if ! ( len(results) == 3 && results[2].IsZero() ) {
+             err = fmt.Errorf("%s JSON PRE response has too many return values. Should be 'XML' then an xml-formatted string", methodName) 
+             return               
+       }           
+       w.Header().Set("Content-Type", "text/json")           
+       fmt.Fprintln(w, jsonContent)           
 	
 	  case "JSON FILE":
         var filePath string		
@@ -538,15 +619,17 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
            filePath = string(results[1].(String))    
 	       filePath = makeAbsoluteFilePath(methodName, filePath)        
 	       http.ServeFile(w,r,filePath)
-       } else {		
+       } else if ! ( len(results) == 3 && results[2].IsZero() ) {		
            err = fmt.Errorf("%s JSON FILE response has too many return values. Should be filepath", methodName) 
            return	
 	   }
 
+
 	  case "IMAGE":
        fmt.Println("IMAGE response not implemented yet.")			
-	   fmt.Fprintln(w, "IMAGE response not implemented yet.")		
-      case "IMAGE FILE":  // [mime subtype] filePath
+	     fmt.Fprintln(w, "IMAGE response not implemented yet.")		
+
+    case "IMAGE FILE":  // [mime subtype] filePath
        var filePath string
        var mimeSubtype string       
        var mimeType string
@@ -557,9 +640,14 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
           filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeSubtype = string(results[1].(String))
-          mimeType = "image/" + mimeSubtype
-          filePath = string(results[2].(String))    
+
+          if results[2].IsZero() {           
+            filePath = string(results[1].(String))              
+          } else {
+             mimeSubtype = string(results[1].(String))
+             mimeType = "image/" + mimeSubtype
+             filePath = string(results[2].(String))   
+          } 
         } else {
               err = fmt.Errorf("%s IMAGE FILE response has too many return values. Should be filepath or mimesubtype filepath", methodName) 
               return               
@@ -583,9 +671,13 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
           filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeSubtype = string(results[1].(String))
-          mimeType = "video/" + mimeSubtype
-          filePath = string(results[2].(String))    
+          if results[2].IsZero() {           
+            filePath = string(results[1].(String))              
+          } else {
+            mimeSubtype = string(results[1].(String))
+            mimeType = "video/" + mimeSubtype
+            filePath = string(results[2].(String))  
+          }  
         } else {
               err = fmt.Errorf("%s VIDEO FILE response has too many return values. Should be filepath or mimesubtype filepath", methodName) 
               return               
@@ -603,7 +695,9 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 	        return       
         } else if len(results) == 3 {
             mimeType = string(results[1].(String))     
-	        mediaContent = string(results[2].(String)) 
+
+            // TODO Need to be more flexible about the type conversions here!!!!!!!!!!!!!!!!!!
+	          mediaContent = string(results[2].(String)) 
             w.Header().Set("Content-Type", mimeType)	
         } else {
              err = fmt.Errorf("%s MEDIA response has too many return values. Should be 'MEDIA' then a mimetype then a content string", methodName) 
@@ -622,10 +716,14 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
           filePath = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          mimeType = string(results[1].(String))
-          filePath = string(results[2].(String))    
+          if results[2].IsZero() {           
+            filePath = string(results[1].(String))              
+          } else {          
+            mimeType = string(results[1].(String))
+            filePath = string(results[2].(String)) 
+          }   
         } else {
-              err = fmt.Errorf("%s IMEDIA FILE response has too many return values. Should be filepath or mimetype filepath", methodName) 
+              err = fmt.Errorf("%s MEDIA FILE response has too many return values. Should be filepath or mimetype filepath", methodName) 
               return               
         } 
         if mimeType != "" {
@@ -633,7 +731,8 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
         }
         filePath = makeAbsoluteFilePath(methodName, filePath)
         http.ServeFile(w,r,filePath)		
-	  case "REDIRECT": // url [301,302,303,or 307]
+
+	  case "REDIRECT": // [301,302,303,or 307] url 
        var urlStr string
        var code int
        if len(results) < 2 {
@@ -645,14 +744,22 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
           urlStr = string(results[1].(String))    
 
         } else if len(results) == 3 {
-          code = int(results[1].(Int))           
-          // TODO Should handle a builtin URL type as well as String
-          urlStr = string(results[2].(String))    
+          if results[2].IsZero() {           
+             code = 303   
+            // TODO Should handle a builtin URL type as well as String               
+            urlStr = string(results[1].(String))             
+          } else {  
+
+            code = int(results[1].(Int))           
+            // TODO Should handle a builtin URL type as well as String
+            urlStr = string(results[2].(String))    
+          }
         } else {
               err = fmt.Errorf("%s redirect has too many return values. Should be URL or e.g. 307 URL", methodName) 
               return               
         } 
         http.Redirect(w,r,urlStr,code)
+
 
 	  case "HTTP ERROR":
        var message string
@@ -670,7 +777,29 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
               err = fmt.Errorf("%s HTTP ERROR response has too many return values. Should be e.g. 404 [message]", methodName) 
               return               
        } 
+       if code < 400 || code > 599 {
+             err = fmt.Errorf("%s HTTP ERROR requires an error code value between 400 and 599 inclusive.", methodName) 
+       }
        http.Error(w, message, code)  
+
+    case "HTTP CODE":
+       var message string
+       var code int
+       if len(results) < 2 {
+         err = fmt.Errorf("%s HTTP CODE response requires an http response code # e.g. 200", methodName) 
+         return       
+       } else if len(results) == 2 {
+          code = int(results[1].(Int))         
+       } else if len(results) == 3 {
+          code = int(results[1].(Int))           
+          message = string(results[2].(String))    
+
+       } else {
+              err = fmt.Errorf("%s HTTP ERROR response has too many return values. Should be e.g. 404 [message]", methodName) 
+              return               
+       } 
+       http.Error(w, message, code)  
+
 			
 	  // Do we not need a MIME type argument for this one???
 	  case "TEMPLATE": // An inline template as a string	
@@ -686,10 +815,12 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 	    obj := results[2]
 	    err = processTemplateResponse(w, r, methodName, "", relishTemplateText, obj)
 		
-      case "HEADERS":
+
+    case "HEADERS":
         fmt.Println("HEADERS response not implemented yet.")			
         fmt.Fprintln(w, "HEADERS response not implemented yet.")	
 	
+
 	  default: // Must be a template file path or raise an error
 	     templateFilePath := processingDirective
 		 if ! strings.Contains(templateFilePath,".") { // not a valid path
@@ -700,14 +831,14 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
          err = fmt.Errorf("%s (with a templated response) has no second return value to pass to template", methodName)                       
          return
       }
-	    if len(results) > 2 { 
+	    if len(results) > 3 || (len(results) == 3 && ! results[2].IsZero() ) { 
 	        err = fmt.Errorf("%s (with a templated response) has unexpected 3rd return value", methodName)	
           return
       }
 
-          templateFilePath = makeAbsoluteFilePath(methodName, templateFilePath) 
-	      obj := results[1]
-          err = processTemplateFileResponse(w, r, methodName, templateFilePath, obj) 
+      templateFilePath = makeAbsoluteFilePath(methodName, templateFilePath) 
+	    obj := results[1]
+      err = processTemplateFileResponse(w, r, methodName, templateFilePath, obj) 
    }
 
    return
