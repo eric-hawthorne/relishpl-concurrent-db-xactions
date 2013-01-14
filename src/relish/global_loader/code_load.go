@@ -17,7 +17,6 @@ import (
 	"bytes"
     "strings"
     "strconv"
-    "errors"
     "os"
 //	. "relish/runtime/data"
     "relish/compiler/ast"
@@ -242,6 +241,15 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	   return
     }
 
+
+    localArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/artifacts/" + originAndArtifactPath + "/metadata.txt"	
+	
+    sharedArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
+    
+    // Current version of artifact according to shared artifact metadata found in this relish directory tree.
+    sharedCurrentVersion := 0
+
+
     ldr.PackagesBeingLoaded[packageIdentifier] = true
 
     Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
@@ -299,47 +307,11 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
     if version == 0 {
 
         if ! mustBeFromShared {
-
-		    localArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/artifacts/" + originAndArtifactPath + "/metadata.txt"	
 		
-		    _,statErr := os.Stat(localArtifactMetadataFilePath)
-		    if statErr != nil {
-		        if ! os.IsNotExist(statErr) {
-					err = fmt.Errorf("Can't stat '%s': %v\n", localArtifactMetadataFilePath, statErr)
-					return		       
-		        }
-
-		        // did not find the metadata.txt file in the local (private) artifact dir tree
-		        //
-		        // so there is no local (private) artifact
-
-		    } else { // found the metadata.txt file in the local (private) artifact dir tree
-		     
-		        var body []byte
-				body, err = ioutil.ReadFile(localArtifactMetadataFilePath)	
-				if err != nil {
-					return
-				}
-
-			    match := re.FindSubmatchIndex(body)
-		        if match == nil {
-			       err = errors.New("metadata.txt file must have a line like current version: 14")
-			       return
-		        }
-			    versionNumStart := match[2]
-			    versionNumEnd := match[3]	
-		    
-			    s := string(body[versionNumStart:versionNumEnd])
-		 
-		        var v64 int64
-		        v64, err = strconv.ParseInt(s, 0, 32)  
-			    if err != nil {
-				   return
-			    }
-		
-			    version = int(v64)	
-		
-		    }	
+            version, err = ldr.readMetadataFile(localArtifactMetadataFilePath) 	
+		    if err != nil {
+			   return
+		    }
 		}
 
         if version == 0 {
@@ -351,46 +323,11 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		       return               		
         	}
 
-		    sharedArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
-		
-		    _,statErr := os.Stat(sharedArtifactMetadataFilePath)
-		    if statErr != nil {
-		        if ! os.IsNotExist(statErr) {
-					err = fmt.Errorf("Can't stat '%s': %v\n", sharedArtifactMetadataFilePath, statErr)
-					return		       
-		        }
-
-		        // did not find the metadata.txt file in the shared artifact dir tree
-		        //
-		        // so there is no shared artifact in the filesystem.
-
-		    } else { // found the metadata.txt file in the shared artifact dir tree
-		     
-		        var body []byte
-				body, err = ioutil.ReadFile(sharedArtifactMetadataFilePath)	
-				if err != nil {
-					return
-				}
-
-			    match := re.FindSubmatchIndex(body)
-		        if match == nil {
-			       err = errors.New("metadata.txt file must have a line like current version: 14")
-			       return
-		        }
-			    versionNumStart := match[2]
-			    versionNumEnd := match[3]	
-		    
-			    s := string(body[versionNumStart:versionNumEnd])
-		 
-		        var v64 int64
-		        v64, err = strconv.ParseInt(s, 0, 32)  
-			    if err != nil {
-				   return
-			    }
-		
-			    version = int(v64)	
-		
-		    }	
+            version, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath) 	
+		    if err != nil {
+			   return
+		    }		
+			sharedCurrentVersion = version				
 		}
 	}
 
@@ -470,7 +407,26 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
         // then if all of those (some number of) mirrors fail, get it from the default host
         // Also, use port 80 then 8088.	
 	
-
+	    if sharedCurrentVersion == 0 {
+		   sharedCurrentVersion, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath)
+	    }
+	
+        // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
+        // we should download and cache the metadata.txt file from the remote repository.
+        // 
+        // Then, if we do not have a specified version yet, we should set version # from that,
+	
+	    var currentVersion int
+	    // Read remote metadata file. Store it locally if its current version is >= this tree's shared artifact metadata current version.
+	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedArtifactMetadataFilePath) 	
+	    if err != nil {
+		   return   // TODO We are demanding that the metadata be found at the default host.
+		            // Maybe need to backup from that.
+		}
+		if version == 0 {
+			version = currentVersion
+		}
+		
 	    zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
 	    if err != nil {
 		    var hostURLs []string
@@ -486,18 +442,6 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 			    // consider logging the missed fetch and or developing a bad reputation for the host.
 		    }
 	    }
-
-        // TODO TODO TODO MAYBE UP HIGHER A BIT 
-        // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
-        // we should download and cache the metadata.txt file from the remote repository.
-        // 
-        // Then, if we do not have a specified version yet, we should set version # from that,
-
-
-
-
-
-
 
 	    if zipFileContents == nil {
 		   err = fmt.Errorf("Search of Internet did not find relish software artifact '%s'",originAndArtifactPath)
@@ -800,6 +744,55 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
    return
 }
   	
+/*
+If a file at the specified path exists, reads the current version info from it.
+If file does not exist, returned version is 0 with no error.
+If not a properly formatted metadata file, returns an error.
+*/
+func (ldr *Loader) readMetadataFile(path string) (currentVersion int, err error) {
+
+	_,statErr := os.Stat(path)
+	if statErr != nil {
+	    if ! os.IsNotExist(statErr) {
+			err = fmt.Errorf("Can't stat '%s': %v\n", path, statErr)
+			return		       
+	    }
+
+	    // did not find the metadata.txt file in the local (private) artifact dir tree
+	    //
+	    // so there is no local (private) artifact
+
+	} else { // found the metadata.txt file in the local (private) artifact dir tree
+ 
+	    var body []byte
+		body, err = ioutil.ReadFile(path)	
+		if err != nil {
+			return
+		}
+        currentVersion, err = readCurrentVersion(body, path) 			
+	}
+	return
+}
+
+func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersion int, err error) {
+    match := re.FindSubmatchIndex(metadata)
+    if match == nil {
+       err = fmt.Errorf("%s file must have a line like current version: 14", metadataFilePath)
+       return
+    }
+    versionNumStart := match[2]
+    versionNumEnd := match[3]	
+
+    s := string(metadata[versionNumStart:versionNumEnd])
+
+    var v64 int64
+    v64, err = strconv.ParseInt(s, 0, 32)  
+    if err != nil {
+	   return
+    }
+    currentVersion = int(v64)	
+    return
+}
 
 
 /*

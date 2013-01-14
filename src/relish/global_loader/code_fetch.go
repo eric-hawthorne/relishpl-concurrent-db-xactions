@@ -14,8 +14,7 @@ import (
     "regexp"
 //	"bytes"
 //    "strings"
-    "strconv"
-    "errors"
+    "os"
 //	. "relish/runtime/data"
 )
 
@@ -141,32 +140,7 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
     // TODO The metadata.txt file fetch should happen every time, even if version # is supplied.
     // and the metadata.txt file should replace the existing local one if the fetched one is newer. <- how determine if newer?
 
-	if version == 0 {
-	   	url = hostUrl + "/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"
-	    
-		resp, err := http.Get(url)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-		body, err := ioutil.ReadAll(resp.Body)	
 
-	    match := re.FindSubmatchIndex(body)
-        if match == nil {
-	       return nil, errors.New("metadata.txt file must have a line like current version: 14")
-        }
-	    versionNumStart := match[2]
-	    versionNumEnd := match[3]	
-	    
-	    s := string(body[versionNumStart:versionNumEnd])
-	
-        v64, err := strconv.ParseInt(s, 0, 32)  
-	    if err != nil {
-		   return nil, err
-	    }
-	
-	    version = int(v64)	
-	}
 	
 	// TODO %4d or whatever v0014
 	url = fmt.Sprintf("%s/relish/artifacts/%s/v%s.zip",hostUrl,originAndArtifactPath,version)
@@ -182,3 +156,47 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 	return body,nil
 }
 
+
+/*
+Fetches and installs in 11111
+*/
+func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existingSharedCurrentVersion int, sharedArtifactMetadataFilePath string)  (currentVersion int, err error) {
+
+   	url := hostUrl + "/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"
+    
+    var resp *http.Response
+    var body []byte
+
+	resp, err = http.Get(url)
+	if err != nil {
+		return 
+	}
+	defer resp.Body.Close()
+	body, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}	
+
+    var remoteCurrentVersion int
+    remoteCurrentVersion, err = readCurrentVersion(body, url)
+	if err != nil {
+		return
+	}
+
+    if remoteCurrentVersion >= existingSharedCurrentVersion {
+        currentVersion = remoteCurrentVersion
+
+        // Write body to local shared metadata.txt file
+
+        metadataFilePath := "/metadata.txt"
+
+        var perm os.FileMode = 0777
+        err = ioutil.WriteFile(metadataFilePath, body, perm)
+	    if err != nil {
+		   return 
+	    }	
+     } else {
+        currentVersion = existingSharedCurrentVersion	
+     }	
+     return
+}	
