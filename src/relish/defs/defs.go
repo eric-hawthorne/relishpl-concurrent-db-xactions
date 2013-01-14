@@ -24,6 +24,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Numeric" : true,
 "Integer" : true,
 "Int" : true,
+"IntOrString" : true,
 "Int32" : true,
 "Int16" : true,
 "Int8" : true,
