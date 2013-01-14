@@ -1589,20 +1589,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 	return 
 }
 
-/*
-DEPRECATED
-Apply the appropriate method implementation to the arguments, after determining the appropriate method by
-multi-argument polymorphic dispatch. 
-Puts the results on the stack, in reserved slots BELOW the current method-call's stack frame.
-TODO.
-*/
-func (i *Interpreter) Apply(t *Thread, mm *RMultiMethod, args []RObject) {
-	method, typeTuple := i.dispatcher.GetMethod(mm, args)
-	if method == nil {
-		rterr.Stopf("No method '%s' is compatible with %s", mm.Name, typeTuple)
-	}
-	i.apply1(t, method, args)
-}
+
 
 /*
 Apply the method implementation to the arguments.
@@ -1636,7 +1623,7 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 		
 		n := len(objs)		
 		for j, obj := range objs {
-			t.Stack[t.Base+j-n] = obj   // was t.Base-j-1 (return args in reverse order on stack)
+			t.Stack[t.Base+j-n] = obj   
 		}	
 	}
 }

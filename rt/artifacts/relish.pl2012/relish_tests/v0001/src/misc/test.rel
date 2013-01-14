@@ -24,7 +24,7 @@ returnsThreeResults > String String String
 """
  A function that returns 3 values.
 """
-   => "Thing 1" "Thing 2" 9
+   => "Thing 1" "Thing 2" nil
    
 
 testMisc
