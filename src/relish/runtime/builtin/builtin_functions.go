@@ -3978,7 +3978,7 @@ func builtinInitInt(th InterpreterThread, objects []RObject) []RObject {
 func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
     valStr := string(objects[1].(String))
 
-    // ignore the first Int argument
+    // ignore the first Float argument
     var errStr string
     v64, err := strconv.ParseFloat(valStr, 64)  
     if err != nil {
@@ -3991,13 +3991,22 @@ func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
     initFloat i Int s String > j Int err String
 */
 func builtinInitBool(th InterpreterThread, objects []RObject) []RObject {
-    valStr := string(objects[1].(String))
 
-    // ignore the first Int argument
-    var errStr string
-    v64, err := strconv.ParseBool(valStr)  
-    if err != nil {
-	   errStr = err.Error()
-    }
+    // ignore the first Bool argument	
+    valStr := string(objects[1].(String))
+    var v64 bool
+    var err error
+    var errStr string    
+    switch valStr {
+       case "Y","y","YES","Yes","yes":
+       	   v64 = true
+       case "N","n","NO","No","no":
+           v64 = false
+       default:
+           v64, err = strconv.ParseBool(valStr)  
+		    if err != nil {
+			   errStr = err.Error()
+		    }
+	}
 	return []RObject{Bool(v64),String(errStr)}
 }
