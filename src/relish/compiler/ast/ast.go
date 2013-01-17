@@ -1216,6 +1216,8 @@ type (
 		Params         []*TypeSpec         // Type parameters (egh)
 		SuperTypes     []*TypeSpec         // Only valid if this is a type variable (egh)
 		CollectionSpec *CollectionTypeSpec // nil or a collection specification
+		NilAllowed     bool                // Whether a nil value is considered to satisfy the type constraint.
+		NilElementsAllowed bool            // If a collection, if nil values are permitted. Replace by Params[i].NilAllowed
 		typ interface{}  // The actual *RType - associated at generation time.
 		
 		// This is wrong !! The Method object needs to get a list of actual *RTypes of its return types
