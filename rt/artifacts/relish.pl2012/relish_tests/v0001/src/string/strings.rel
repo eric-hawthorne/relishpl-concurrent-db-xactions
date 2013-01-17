@@ -99,6 +99,11 @@ multi-line %s string in relish!!
       print err
    else
       print i   
+   i err = Int "-45"
+   if err
+      print err
+   else
+      print i        
    flt err = Float "45.659"
    if err
       print err
@@ -109,3 +114,9 @@ multi-line %s string in relish!!
       print err
    else
       print b
+
+      b err = Bool 1
+   if err
+      print err
+   else
+      print b   

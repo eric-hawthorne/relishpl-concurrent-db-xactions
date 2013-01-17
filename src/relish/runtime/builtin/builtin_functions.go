@@ -1671,6 +1671,11 @@ replace s String old String new String n Int > String
 	}
 	boolInitMethod.PrimitiveCode = builtinInitBool
 		
+	boolInitMethod2, err := RT.CreateMethod("",nil,"initBool", []string{"b","i"}, []string{"Bool","Integer"},  []string{"Bool","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	boolInitMethod2.PrimitiveCode = builtinInitBoolFromInteger		
 }
 
 
@@ -3987,9 +3992,7 @@ func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{Float(v64),String(errStr)}
 }
 
-/*
-    initFloat i Int s String > j Int err String
-*/
+
 func builtinInitBool(th InterpreterThread, objects []RObject) []RObject {
 
     // ignore the first Bool argument	
@@ -4009,4 +4012,30 @@ func builtinInitBool(th InterpreterThread, objects []RObject) []RObject {
 		    }
 	}
 	return []RObject{Bool(v64),String(errStr)}
+}
+
+
+func builtinInitBoolFromInteger(th InterpreterThread, objects []RObject) []RObject {
+
+    
+    // ignore the first Bool argument	
+
+    var val int64
+    switch(objects[1].(type)) {
+       case Int:
+          val = int64(objects[1].(Int))       	
+       case Uint:
+          val = int64(objects[1].(Uint))     	
+       case Int32:
+       	  val = int64(objects[1].(Int32))
+       case Uint32:
+          val = int64(objects[1].(Uint32))
+       // TODO Add smaller Integer types	
+    }
+    if val == 0 {
+    	return []RObject{Bool(false),String("")}
+    } else if val == 1 {
+    	return []RObject{Bool(true),String("")}    	
+    }
+    return []RObject{Bool(false),String(fmt.Sprintf("Invalid Integer value %d for conversion to Bool (0,1 accepted)",val))}    
 }

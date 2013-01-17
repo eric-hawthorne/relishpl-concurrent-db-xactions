@@ -61,6 +61,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a href="#TypeParameters">Type Parameters</a><br/>	
 	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>			
   <a href="#LiteralValues">Literal Values</a><br/>   	
+  <a href="#InbuiltTypeCasts">Inbuilt Type Casts</a><br/>    
   <a href="#ListsSetsMaps">Lists, Sets, and Maps</a><br/>  
   <a href="#AssignmentStatements">Assignment Statements</a><br/>    
   <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
@@ -486,6 +487,113 @@ sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can
 grudgingly unicode behaviours of Go strings, but relish Strings are stuck with them for now.
 </p>
 
+<br/>
+<a name="InbuiltTypeCasts"><h3>Inbuilt Type Casts</h3></a> 
+
+<h4>Type casting to obtain an Int value</h4>
+<code><pre>
+   n err = Int "9347"
+
+   mStr = "-8"
+   m err = Int mStr
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
+  Only strings containing a (negative or non-negative) Integer literal can be converted to Int in this manner.
+</p>
+
+<h4>Type casting to obtain a Float value</h4>
+<code><pre>
+   minusPi err = Float "-3.1415926535"
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
+  Only strings containing a (negative or non-negative) Float literal can be converted to Float in this manner.
+</p>
+
+<h4>Type casting to obtain a Bool value</h4>
+<code><pre>
+   copacetic err = Bool "T"
+   ok err = Bool 0
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.<br/>
+  The following Strings yield true: "1","T","t","TRUE","true","True","Y","y","YES","yes","Yes"<br/>
+  The following Strings yield false: "0", "F", "f", "FALSE", "false", "False","N","n","NO","no","No"<br/>
+  The following Integer value yields true: 1, whereas the Integer 0 yields false.<br/>
+  All other String or Integer argument values result in a conversion error.<br/>  
+</p>
+
+<h4>Type casting to obtain a String value</h4>
+<code><pre>
+   s = String obj
+   s = String 195
+</pre></code>
+<p>
+   All relish data values / objects / collections are convertable to a String representation in this manner.
+   However, for programmer-defined object types, the default representation of the object is currently just the object's
+   type name and an instance identifier.  
+</p>
+<p>
+  If you wish to define a more specific String representation of objects of a data type that you have defined,
+  create a method of the form:
+</p>
+<code><pre>
+initString s String obj MyType > String
+</pre></code>
+<p>
+  That method (or the method whose "MyType" is closest compatible with your object's type) will be
+  selected and run to perform the conversion, when you call <code><pre>s = String objOfMyTypeOrASubType</pre></code>
+</p>
+
+<h4>Type casting to obtain a Time value</h4>
+<code><pre>
+t err = Time "2012-09-23T14:23Z"
+
+// ISO 8601 format as in W3C   (Z means UTC time zone)
+
+t err = Time "2012-09-23T14:23:00Z"
+
+t err = Time "2012-09-23T14:23:00.000Z"
+
+// The last 3 digits are the number of milliseconds
+
+
+t err = Time "2012-09-23 14:23 UTC"
+
+t err = Time "2012-09-23 14:23:00.000 Local" 
+
+t err = Time "2012-09-23 14:23:00 America/New_York"
+
+// Time locations are as in the IANA time zone database, or "Local" or "UTC"
+
+
+t err = Time "2012-09-23 14:23:00.000" "2006-01-02 15:04:05.999"
+
+// First String is the time, second String is the format template.
+// See description of format Constants and Time.Format at http://golang.org/pkg/time/
+//
+// In this case above, the last part of the time is in milliseconds
+
+
+t err = Time 2012 12 30 18 36 29 0 "UTC"
+
+t err = Time 2012 12 30 18 36 29 437654300 "Local"
+
+t err = Time 2012 12 30 18 36 29 0 "Asia/Jakarta"
+
+// In this case, the date and time are assembled from the 
+// individual year, month, day, hr, min, sec, nanosecond time parts.
+//
+// Note: Underlying time resolution of relish in-memory Time values is nanoseconds, 
+// defaulting to 0 if not specified.
+// IMPORTANT NOTE: When Time values are persisted in the local database, only milliseconds 
+// precision is retained, so when Time values are retrieved from local persistence, 
+// they are only accurate to nearest millisecond with further less significant digits of 
+// the nanosecond value zeroed.
+</pre></code>
+
+<br/>
 <a name="ListsSetsMaps"><h3>Lists, Sets, and Maps</h3></a>		
 
 <h4>List literals</h4>
