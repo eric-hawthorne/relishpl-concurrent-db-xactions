@@ -1538,7 +1538,7 @@ func (p *parser) parseOneLineAttributeDecl(attrs *[]*ast.AttributeDecl, read, wr
     // Note: The {} or {<} or [] or [<] or {<width} etc are part of a type spec. 
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(false,true,true,false,forceCollection,&typeSpec) {
+    if ! p.parseTypeSpec(true,true,true,false,forceCollection,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2246,7 +2246,7 @@ func (p *parser) parseOneLineInputArgDecl(inputArgs *[]*ast.InputArgDecl, isKeyw
     }
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(false,true,true,false,false,&typeSpec) {
+    if ! p.parseTypeSpec(true,true,true,false,false,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2309,7 +2309,7 @@ func (p *parser) parseInputArgDecl(inputArgs *[]*ast.InputArgDecl, isKeywordDefa
 
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(false,true,true,false,false,&typeSpec) {
+    if ! p.parseTypeSpec(true,true,true,false,false,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2591,6 +2591,7 @@ func (p *parser) parseOneLineReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) boo
    }
 
     var typeSpec *ast.TypeSpec
+    // Should I allow maybe? Yes probably.
     if ! p.parseTypeSpec(false,true, true, false, false, &typeSpec) {
 	    return p.Fail(st)
     }
@@ -3982,7 +3983,7 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
 	     return false // Did not match a list-specifying square-bracket
     }
 
-    if p.parseTypeSpec(false,true,false,false,false,&typeSpec) {
+    if p.parseTypeSpec(true,true,false,false,false,&typeSpec) {
        hasType = true 
     }
 
@@ -4107,7 +4108,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
        return false // Did not match a list-specifying square-bracket
     }
 
-    if p.parseTypeSpec(false,true,false,false,false,&typeSpec) {
+    if p.parseTypeSpec(true,true,false,false,false,&typeSpec) {
        hasType = true 
     }
 
@@ -4279,7 +4280,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
 	   
 	   if knownToBeMap {
 	      p.required(p.Space(),"a space followed by the map value-type specification")
-          p.required(p.parseTypeSpec(false,true,false,false,false,&valTypeSpec),"the map value-type specification")
+          p.required(p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),"the map value-type specification")
 	   }
     }
 
@@ -4462,18 +4463,18 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	   if knownToBeMap {
           if horizontalTypeRelationLayout {
   	         p.required(p.Space(),"a space followed by the map value-type specification")
-             p.required(p.parseTypeSpec(false,true,false,false,false,&valTypeSpec),"the map value-type specification")           
+             p.required(p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),"the map value-type specification")           
           } else { // vertical layout 
              foundValType := false
              if p.Space() {
-                if p.parseTypeSpec(false,true,false,false,false,&valTypeSpec) {
+                if p.parseTypeSpec(true,true,false,false,false,&valTypeSpec) {
                    foundValType = true
                 } else {
                    p.required(p.Space() || (p.Ch()  == '\n'),"the map value-type specification")
                 }
              }
              if ! foundValType {
-                p.required(p.Indent(typeCol) && p.parseTypeSpec(false,true,false,false,false,&valTypeSpec),
+                p.required(p.Indent(typeCol) && p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),
                            "the map value-type specification, after a space or indented on next line")                                        
              } 
           }  
@@ -5624,11 +5625,17 @@ func (p *parser) parseConstantDeclaration(constDecls *[]*ast.ConstantDecl) bool 
     	return p.Fail(st)
     }
 
-    if p.Space() {
-	    p.required(p.parseConstExpr(&expr) || (p.Indent(st.RuneColumn) && p.parseConstExpr(&expr)),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
-    } else {
-	    p.required(p.Indent(st.RuneColumn) && p.parseConstExpr(&expr),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
-    }
+//    if p.Space() {
+//	    p.required(p.parseConstExpr(&expr) || (p.Indent(st.RuneColumn) && p.parseConstExpr(&expr)),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
+//   } else {
+//	    p.required(p.Indent(st.RuneColumn) && p.parseConstExpr(&expr),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
+//    }
+
+	if p.Space() {
+	    p.required(p.parseExpression(&expr) || (p.Indent(st.RuneColumn) && p.parseExpression(&expr)),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
+	} else {
+	    p.required(p.Indent(st.RuneColumn) && p.parseExpression(&expr),"a constant expression (a literal, or a function of literals and constants) on the same line or indented below.")
+	}
 
     constDecl := &ast.ConstantDecl{Name:constant,Value:expr}
 

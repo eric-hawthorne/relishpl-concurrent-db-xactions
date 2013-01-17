@@ -652,6 +652,9 @@ func (g *Generator) generateMethods() {
 		   var returnValTypes []string
 		   var returnArgsAreNamed bool		   
 		   for _,inputArgDecl := range methodDeclaration.Type.Params {
+			
+			  nilArgAllowed = append(nilArgAllowed, inputArgDecl.Type.NilAllowed)
+			
 			  if inputArgDecl.IsVariadic {
                  if inputArgDecl.Type.CollectionSpec.Kind == token.LIST { 
 			         variadicParameterName = inputArgDecl.Name.Name
@@ -666,10 +669,7 @@ func (g *Generator) generateMethods() {
 			     parameterNames = append(parameterNames, inputArgDecl.Name.Name)
 			     parameterTypes = append(parameterTypes, g.ensureTypeName(inputArgDecl.Type, fileNameRoot))
 		      }
-		   }
-
-           // TODO Temporary!! Create this incrementally above tdepending on the inputArgDecl !!
-		   nilArgAllowed = make([]bool,len(parameterTypes))		   
+		   }	   
 	
 		   for _,returnArgDecl := range methodDeclaration.Type.Results {
                if returnArgDecl.Name != nil {

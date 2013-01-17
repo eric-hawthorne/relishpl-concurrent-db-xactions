@@ -1648,6 +1648,29 @@ replace s String old String new String n Int > String
 		panic(err)
 	}
 	stringInitMethod.PrimitiveCode = builtinInitString  
+	
+	
+
+	intInitMethod, err := RT.CreateMethod("",nil,"initInt", []string{"i","s"}, []string{"Int","String"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod.PrimitiveCode = builtinInitInt	
+	
+	
+	floatInitMethod, err := RT.CreateMethod("",nil,"initFloat", []string{"i","s"}, []string{"Float","String"},  []string{"Float","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	floatInitMethod.PrimitiveCode = builtinInitFloat	
+	
+	
+	boolInitMethod, err := RT.CreateMethod("",nil,"initBool", []string{"b","s"}, []string{"Bool","String"},  []string{"Bool","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	boolInitMethod.PrimitiveCode = builtinInitBool
+		
 }
 
 
@@ -3932,4 +3955,49 @@ func builtinInitString(th InterpreterThread, objects []RObject) []RObject {
     // ignore the first String argument
     obj := objects[1]
 	return []RObject{String(obj.String())}
+}
+
+/*
+    initInt i Int s String > j Int err String
+*/
+func builtinInitInt(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseInt(valStr, 0, 64)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Int(v64),String(errStr)}
+}
+
+/*
+    initFloat i Int s String > j Int err String
+*/
+func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseFloat(valStr, 64)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Float(v64),String(errStr)}
+}
+
+/*
+    initFloat i Int s String > j Int err String
+*/
+func builtinInitBool(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseBool(valStr)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Bool(v64),String(errStr)}
 }

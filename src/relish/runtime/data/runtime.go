@@ -599,7 +599,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 		var binaryMethod *RMultiMethod
 		var orderAttr *AttributeSpec
 
-		fmt.Println(attr.Part.CollectionType)
+		// fmt.Println(attr.Part.CollectionType)
 
 		if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
 			if attr.Part.OrderMethodArity == 1 {
