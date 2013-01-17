@@ -27,11 +27,20 @@ returnsThreeResults > String String String
    => "Thing 1" "Thing 2" nil
    
 
+expectsThreeArgs a1 String a2 String a3 Int
+"""
+ A function that rexpects 3 args and prints them.
+"""
+   print a1 a2 a3
+
+
 testMisc
 """
  Test random badness.
 """
    a b c = returnsThreeResults
-   print "yeah"
+   print a
    print b
    print c
+   print NIL
+   expectsThreeArgs a b c

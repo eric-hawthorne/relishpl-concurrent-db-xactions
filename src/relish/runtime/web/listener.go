@@ -371,10 +371,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
    // RUN THE WEB DIALOG HANDLER METHOD 	
 
    Log(WEB_,"Running dialog handler method: %s\n",handlerMethod.Name)   
-   
-
-   //args := []RObject{}  // Temporary - TODO get these from the request remaining path and keyword args or POST content	
-   //resultObjects := interpreter.RunMultiMethod(handlerMethod, args) 	
 
    positionalArgStringValues := remainingPathSegments
    keywordArgStringValues, err := getKeywordArgs(r)

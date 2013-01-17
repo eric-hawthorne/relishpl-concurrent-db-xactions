@@ -265,6 +265,12 @@ func (o *RMultiMethod) FromMapListTree(tree interface{}) (obj RObject, err error
 type RMethod struct {
 	multiMethod    *RMultiMethod
 	ParameterNames []string               // names of parameters
+
+    // TODO We're going to need a slice of bools as to whether the method parameters
+    // accept nil or not.
+    //
+    NilArgAllowed []bool    
+
 	Signature      *RTypeTuple            // types of parameters
 	WildcardKeywordsParameterName string  // "" or name of the special parameter which takes any number of keyword=val args
 	WildcardKeywordsParameterType *RType  // nil or type of val allowed for wildcard keyword=val args
@@ -463,7 +469,8 @@ func (o *RMethod) FromMapListTree(tree interface{}) (obj RObject, err error) {
 func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
-		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
+	    nilArgAllowed := make([]bool,len(parameterTypes))
+		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
 						                  "",
@@ -477,14 +484,14 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 }
 
 
-func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodName string, parameterNames []string, nilArgAllowed []bool, parameterTypes []string, 
     wildcardKeywordsParameterName string,
     wildcardKeywordsParameterType string,	
 	variadicParameterName string,
 	variadicParameterType string,
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
-		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
+		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
 						                  wildcardKeywordsParameterName,
@@ -519,7 +526,7 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
    TODO How do we handle incremental compilation that includes redefinitions of method
    implementations?
 */
-func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, methodName string,  parameterNames []string, nilArgAllowed []bool, parameterTypes []string, 
 	                  // FROM HERE DOWN IS NEW
 	                  keyWordParameterDefaults map[string] RObject,
 	                  keyWordParameterTypes map[string]string,
@@ -627,6 +634,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	method := &RMethod{
 		multiMethod:    multiMethod,
 		ParameterNames: parameterNames,
+		NilArgAllowed: nilArgAllowed,
 		Signature:      typeTuple,
 		WildcardKeywordsParameterName: wildcardKeywordsParameterName,
 		WildcardKeywordsParameterType: wildcardKeywordsParamType,
@@ -675,10 +683,10 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 
 	
 	
-func (rt *RuntimeEnv) CreateClosureMethod(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateClosureMethod(packageName string, file *ast.File, methodName string, parameterNames []string, nilArgAllowed []bool, parameterTypes []string, 
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, numFreeVars int) (*RMethod, error) {
-		return rt.CreateClosureMethodGeneral(packageName, file, methodName, parameterNames, parameterTypes, 
+		return rt.CreateClosureMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
 						                  "",
@@ -692,7 +700,7 @@ func (rt *RuntimeEnv) CreateClosureMethod(packageName string, file *ast.File, me
 }	
 
 
-func (rt *RuntimeEnv) CreateClosureMethodGeneral(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
+func (rt *RuntimeEnv) CreateClosureMethodGeneral(packageName string, file *ast.File, methodName string, parameterNames []string, nilArgAllowed []bool, parameterTypes []string, 
 	                  // FROM HERE DOWN IS NEW
 	                  keyWordParameterDefaults map[string] RObject,
 	                  keyWordParameterTypes map[string]string,
@@ -730,6 +738,7 @@ func (rt *RuntimeEnv) CreateClosureMethodGeneral(packageName string, file *ast.F
 	method := &RMethod{
 		multiMethod:    nil,
 		ParameterNames: parameterNames,
+		NilArgAllowed: nilArgAllowed,
 		Signature:      typeTuple,
 		ReturnSignature: resultTypeTuple,
 		ReturnArgsNamed: returnArgsNamed,		

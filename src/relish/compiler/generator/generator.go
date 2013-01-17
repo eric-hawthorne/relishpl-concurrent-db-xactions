@@ -640,7 +640,9 @@ func (g *Generator) generateMethods() {
 		   }
 	
 		   var parameterNames []string
+		   var nilArgAllowed []bool
 		   var parameterTypes []string
+
 		
            var wildcardKeywordsParameterName string
            var wildcardKeywordsParameterType string		
@@ -665,6 +667,9 @@ func (g *Generator) generateMethods() {
 			     parameterTypes = append(parameterTypes, g.ensureTypeName(inputArgDecl.Type, fileNameRoot))
 		      }
 		   }
+
+           // TODO Temporary!! Create this incrementally above tdepending on the inputArgDecl !!
+		   nilArgAllowed = make([]bool,len(parameterTypes))		   
 	
 		   for _,returnArgDecl := range methodDeclaration.Type.Results {
                if returnArgDecl.Name != nil {
@@ -676,11 +681,13 @@ func (g *Generator) generateMethods() {
            var rMethod *data.RMethod
            var err error
 
+
            if methodDeclaration.IsClosureMethod {
                rMethod, err = data.RT.CreateClosureMethod(g.packageName,
 			   	                                          file,
 			   	                                          methodName,
 			   	                                          parameterNames, 
+				   	                                      nilArgAllowed,		   	                                          
 				                                          parameterTypes, 
 				                                          returnValTypes,
 				                                          returnArgsAreNamed,
@@ -696,6 +703,7 @@ func (g *Generator) generateMethods() {
 			   	                                   file,
 			   	                                   methodName,
 			   	                                   parameterNames, 
+			   	                                   nilArgAllowed,
 				                                   parameterTypes, 
 												   wildcardKeywordsParameterName,
 												   wildcardKeywordsParameterType,				

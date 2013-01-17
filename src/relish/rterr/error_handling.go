@@ -40,7 +40,7 @@ then exits the relish process with status 1 (meaning abnormal exit as opposed to
 */
 func Stop1(cfl CodeFileLocated, p Positioned, errorMessage interface{}) {
 
-	errorMsgStr := fmt.Sprint("Runtime Error:",errorMessage)
+	errorMsgStr := fmt.Sprint("Runtime Error: ",errorMessage)
 	file := cfl.CodeFile()
 	if file == nil {
 		Stop(errorMessage)

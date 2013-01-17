@@ -115,8 +115,9 @@ func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
 	return
 }
 
-func (rt *RuntimeEnv) GetConstant(name string) RObject {
-	return rt.constants[name]
+func (rt *RuntimeEnv) GetConstant(name string) (val RObject, found bool) {
+	val, found = rt.constants[name]
+	return
 }
 
 /*

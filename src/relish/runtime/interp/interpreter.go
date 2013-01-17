@@ -92,7 +92,10 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 
     go i.GCLoop()
 
-	i.apply1(t, method, args)
+	err := i.apply1(t, method, args)
+    if err != nil {
+    	rterr.Stopf("Error calling main: %s",err.Error())
+    }
 
 	t.PopN(t.Pos + 1) // Pop everything off the stack for good measure.	
 
@@ -165,7 +168,10 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 	t.ExecutingMethod = method
 	t.ExecutingPackage = method.Pkg
  
-	i.apply1(t, method, args)
+	err = i.apply1(t, method, args)
+	if err != nil {
+    	rterr.Stopf("Error calling web service handler %s: %s",method, err.Error())
+    }
 	
 	t.PopN(t.Pos - t.Base + 1) 	// Leave only the return values on the stack
 	
@@ -470,6 +476,11 @@ func (interp *Interpreter) variadicArg(paramType *RType, valStr string) (obj ROb
 
 /*
 Runs the multimethod in a new stack and returns a slice of the method's return values 
+
+TODO Check this against EvalMethodCall to see if the improvements made there have been implemented here.
+
+IS THIS EVEN USED ANYMORE??
+
 */
 func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultObjects []RObject) {
 	defer Un(Trace(INTERP_TR, "RunMultiMethod", fmt.Sprintf("%s", mm.Name)))	
@@ -513,7 +524,10 @@ func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultOb
 	t.ExecutingMethod = method
 	t.ExecutingPackage = method.Pkg
 
-	i.apply1(t, method, args)
+	err := i.apply1(t, method, args)
+	if err != nil {
+    	rterr.Stopf("Error calling %s: %s",mm.Name, err.Error())
+    }	
 	
 	
 	t.PopN(t.Pos - t.Base + 1) 	// Leave only the return values on the stack
@@ -780,7 +794,11 @@ TODO handle fully qualified constant names properly.
 */
 func (i *Interpreter) EvalConst(t *Thread, id *ast.Ident) {
 	defer UnM(t,TraceM(t,INTERP_TR, "EvalConst", id.Name))
-	t.Push(i.rt.GetConstant(id.Name))
+	val, found := i.rt.GetConstant(id.Name)
+	if ! found {
+		rterr.Stopf1(t,id,"Constant %s used before it has been assigned a value.",id.Name)
+	}
+	t.Push(val)	
 }
 
 /*
@@ -975,6 +993,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	p1 := t.Pos
 	nArgs := p1 - p0
 	
+    evaluatedArgs := t.TopN(constructorArg + nArgs) 
+
 	// 
 	// TODO We are going to have to handle varargs differently here. Basically, eval and push only the non-variable
 	// args here, then, below, reserve space for one list (of varargs) then reserve space for the local vars, 
@@ -992,12 +1012,16 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	switch meth.(type) {
 	case *RMultiMethod:
 		mm := meth.(*RMultiMethod)
-		
-// !!!!!!!!!!!!!!! TODO TODO TODO SEVERELY WRONG !!! Can't do dispatch at all
-// until have evaluated the argument expressions and know how many args were pushed on
-// the stack.	
-		
-		method, typeTuple = i.dispatcher.GetMethod(mm, t.TopN(constructorArg + nArgs)) // nArgs is WRONG! Use Type.Param except vararg
+			
+//		// Shouldn't this possibility be caught by the compiler?
+//		//	
+//		for j,arg := range evaluatedArgs {
+//			if arg == nil {
+//			    rterr.Stopf1(t, call, "Argument %d in method %s call has no value - used before assigned.",j+1,mm.Name)   
+//			}
+//		}
+			
+		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
                // Unsetup the aborted constructor method call.
@@ -1022,6 +1046,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 		panic("Expecting a Method or MultiMethod.")
 	}
 
+    errorContextMethod := t.ExecutingMethod 
+
     if t2 == nil { 
 
 		// put currently executing method on stack in reserved parking place
@@ -1030,7 +1056,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 		t.ExecutingMethod = method       // Shortcut for dispatch efficiency
 		t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
 
-		t.Reserve(method.NumLocalVars) // This only works with next TopN call because builtin methods have 0 local vars.
+		t.Reserve(method.NumLocalVars) 
 
         if isClosureApplication {
 	        for _,obj := range closure.Bindings {
@@ -1038,12 +1064,18 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	        }
         }
 
-		i.apply1(t, method, t.TopN(constructorArg + nArgs)) // Puts results on stack BELOW the current stack frame.	
+		// t.Dump()
+		// fmt.Println("nArgs",nArgs)
+
+		err := i.apply1(t, method, evaluatedArgs) // Puts results on stack BELOW the current stack frame.	
+	    if err != nil {
+    	   rterr.Stop1(errorContextMethod, call, err.Error())
+        }			
 
     } else { // This is a go statement execution
     	t2.copyStackFrameFrom(t, nReturnArgs)  // copies the frame for the execution of this method, 
     	                                               // including space reserved for return val(s)
-        go i.GoApply(t2, method)
+        go i.GoApply(t2, method, errorContextMethod, call)
     }
 
 	t.PopBase() // We need to worry about relish-level panics leaving the stack state inconsistent. TODO
@@ -1064,7 +1096,7 @@ Applies the method using thread t to pre-evaluated arguments that are in the cur
 TODO This is NOT updated to handle closure applications yet !!!
 
 */
-func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
+func (i *Interpreter) GoApply(t *Thread, method *RMethod, file rterr.CodeFileLocated, pos rterr.Positioned) {
     
 	t.Stack[t.Base+1] = method
 
@@ -1072,9 +1104,15 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod) {
 	t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
 
     nArgs := t.Pos - t.Base - 3
-	t.Reserve(method.NumLocalVars)   // This only works with next TopN call because builtin methods have 0 local vars.
+
+    evaluatedArgs := t.TopN(nArgs) 
+
+	t.Reserve(method.NumLocalVars)   
  
-	i.apply1(t, method, t.TopN(nArgs)) // Puts results on stack BELOW the current stack frame.	
+	err := i.apply1(t, method, evaluatedArgs) // Puts results on stack BELOW the current stack frame.	
+	if err != nil {
+       rterr.Stop1(file, pos, err.Error())
+    }		
 
 	t.PopBase()
 	t.PopN(method.NumReturnArgs) // Pop everything off the stack for good measure.		
@@ -1508,7 +1546,10 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 
 	t.Reserve(method.NumLocalVars)
 
-	i.apply1(t, method, args) // Puts results on stack BELOW the current stack frame.	
+	err := i.apply1(t, method, args) // Puts results on stack BELOW the current stack frame.	
+	if err != nil {
+		rterr.Stopf1(t, t.ExecutingMethod.File, "Error calling sorting method %s: %s", mm.Name, err.Error())		
+	}
 
 	t.PopBase() // We need to worry about panics leaving the stack state inconsistent. TODO
 
@@ -1599,7 +1640,7 @@ Does not pop the m method's stack frame from the stack i.e. does not pop (move d
 TODO TODO We cannot have the return values on the stack in reverse order like this.
 It will not work for using the values as args to the next outer method.
 */
-func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
+func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) (err error) {
 	defer UnM(t, TraceM(t,INTERP_TR, "apply1", m, "to", args))	
 //	if strings.Contains(m.String(),"spew") {
 //		fmt.Println(args)
@@ -1615,6 +1656,20 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
             	t.Stack[t.Base+j-n] = typ.Zero()
             }
 		}
+
+        // Experimental
+        for j, arg := range args {
+        	if arg == nil {
+               err = fmt.Errorf("Argument %d in method call has no value - used before assigned.",j+1)
+               return
+           } else if arg == NIL {
+               if ! m.NilArgAllowed[j] {
+                  err = fmt.Errorf("nil value not permitted for argument %d in method call.",j+1)      
+                  return         	
+               } 
+           } 
+        }
+
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
@@ -1626,6 +1681,7 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) {
 			t.Stack[t.Base+j-n] = obj   
 		}	
 	}
+	return
 }
 
 /*
