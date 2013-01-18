@@ -548,49 +548,55 @@ initString s String obj MyType > String
 
 <h4>Type casting to obtain a Time value</h4>
 <code><pre>
-t err = Time "2012-09-23T14:23Z"
+   t err = Time "2012-09-23T14:23Z"
 
-// ISO 8601 format as in W3C   (Z means UTC time zone)
+   // ISO 8601 format as in W3C   (Z means UTC time zone)
 
-t err = Time "2012-09-23T14:23:00Z"
+   t err = Time "2012-09-23T14:23:00Z"
 
-t err = Time "2012-09-23T14:23:00.000Z"
+   t err = Time "2012-09-23T14:23:00.000Z"
 
-// The last 3 digits are the number of milliseconds
-
-
-t err = Time "2012-09-23 14:23 UTC"
-
-t err = Time "2012-09-23 14:23:00.000 Local" 
-
-t err = Time "2012-09-23 14:23:00 America/New_York"
-
-// Time locations are as in the IANA time zone database, or "Local" or "UTC"
+   // The last 3 digits are the number of milliseconds, in this format.
 
 
-t err = Time "2012-09-23 14:23:00.000" "2006-01-02 15:04:05.999"
+   t err = Time "2012-09-23 14:23 UTC"
 
-// First String is the time, second String is the format template.
-// See description of format Constants and Time.Format at http://golang.org/pkg/time/
-//
-// In this case above, the last part of the time is in milliseconds
+   t err = Time "2012-09-23 14:23:00.000 Local" 
+
+   t err = Time "2012-09-23 14:23:00 America/New_York"
+
+   // Time locations are as in the IANA time zone database, or "Local" or "UTC"
 
 
-t err = Time 2012 12 30 18 36 29 0 "UTC"
+   t err = Time "2012-09-23 14:23:00.000" "2006-01-02 15:04:05.999"
 
-t err = Time 2012 12 30 18 36 29 437654300 "Local"
+   // First String is the time, second String is the format template.
+   // See description of format Constants and Time.Format at http://golang.org/pkg/time/
+   //
+   // In this case above, the last part of the time is in milliseconds
 
-t err = Time 2012 12 30 18 36 29 0 "Asia/Jakarta"
 
-// In this case, the date and time are assembled from the 
-// individual year, month, day, hr, min, sec, nanosecond time parts.
-//
-// Note: Underlying time resolution of relish in-memory Time values is nanoseconds, 
-// defaulting to 0 if not specified.
-// IMPORTANT NOTE: When Time values are persisted in the local database, only milliseconds 
-// precision is retained, so when Time values are retrieved from local persistence, 
-// they are only accurate to nearest millisecond with further less significant digits of 
-// the nanosecond value zeroed.
+   t err = Time 2012 12 30 18 36 29 0 "UTC"
+
+   t err = Time 2012 12 30 18 36 29 437654300 "Local"
+
+   t err = Time 2012 12 30 18 36 29 0 "Asia/Jakarta"
+
+   // In this case, the date and time are assembled from the 
+   // individual year, month, day, hr, min, sec, nanosecond time parts.
+   //
+   // Note: Underlying time resolution of relish in-memory Time values is nanoseconds, 
+   // defaulting to 0 if not specified.
+   // IMPORTANT NOTE: When Time values are persisted in the local database, only milliseconds 
+   // precision is retained, so when Time values are retrieved from local persistence, 
+   // they are only accurate to nearest millisecond with further less significant digits of 
+   // the nanosecond value zeroed.
+
+   t = Time
+
+   // This  assigns a "zero" Time value to t. This value is false-equivalent and no 
+   // date/time pertaining to events in the current or last two millenia will have this 
+   // value.
 </pre></code>
 
 <br/>

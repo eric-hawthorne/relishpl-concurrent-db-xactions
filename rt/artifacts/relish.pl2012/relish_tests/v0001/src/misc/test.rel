@@ -18,6 +18,24 @@ main
  Main program.
 """
    testMisc
+   t1 = TestType
+   t1.attr = "Abracadabra!"
+   s = String t1
+   print s
+
+
+TestType
+"""
+ A type.
+"""
+   attr String
+
+
+initString s String t TestType > String
+"""
+ Custom string method.
+"""
+   => t.attr
 
 
 returnsThreeResults > String String String

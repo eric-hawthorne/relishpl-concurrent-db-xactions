@@ -635,7 +635,9 @@ func (g *Generator) generateMethods() {
 		   //
 	  	   // TODO   OOPS Which package are we executing when looking for web handler methods?????
 	
-		   if (methodName == "main") || (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z') || (g.isWebDialogHandlerMethod(fileNameRoot)) {
+		   if ((methodName == "main") || 
+		       (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z' && !BuiltinTypeName[methodName[4:]]) || 
+		       (g.isWebDialogHandlerMethod(fileNameRoot))) {
 		      methodName = g.packagePath + methodName	
 		   }
 	
