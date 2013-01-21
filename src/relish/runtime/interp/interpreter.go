@@ -66,7 +66,10 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	}
 	Logln(GENERATE2_, "----------")	
 	
-    pkg := i.rt.Packages[fullUnversionedPackagePath]
+    pkg, pkgFound := i.rt.Packages[fullUnversionedPackagePath]
+    if !pkgFound {
+	   rterr.Stop("Package for main function is not loaded. Is package name in .rel file different than package directory?")
+    }
 	mm, found := pkg.MultiMethods[fullUnversionedPackagePath + "/main"]
 	if !found {
 		rterr.Stop("No main function defined.")

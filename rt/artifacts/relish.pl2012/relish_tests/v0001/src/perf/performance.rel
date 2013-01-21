@@ -1,0 +1,69 @@
+origin   relish.pl2012
+artifact relish_tests
+package  perf
+
+""" 
+ performance.rel
+
+ Test whatever operations seem to be possibly a performance bottleneck.
+ Note: This test is not included in the "all" test.
+"""
+
+import
+   datetime
+
+
+main
+"""
+ Main program.
+"""
+   testInsertPerf
+   
+
+Event
+"""
+ Dummy event type.
+"""
+   startTime Time
+   durationMinutes Int
+
+
+Calendar
+"""
+ A calendar of events.
+"""
+   events 0 N [<startTime] Event
+
+
+testInsertPerf
+"""
+ Test database insert performance.
+"""
+   c = Calendar
+   generateEvents c 1000 5 true
+
+
+generateEvents c Calendar n Int m Int persist Bool
+"""
+ Generates n events m minutes apart and inserts them in the calendar.
+"""
+   print "Testing inserting events in order into a sorting collection."
+   t0 = now "Local"
+   t = t0
+   interval = minutes m
+   eventsToGo = n
+   while gt eventsToGo 0
+      e = Event
+      e.startTime = t
+      e.durationMinutes = m
+      c.events += e
+      t = plus t interval
+      eventsToGo = minus eventsToGo 1
+   if persist
+      dub c "Eric's Calendar"
+   t1 = now "Local"
+   elapsedNs = minus t1 t0
+   s = secondsEquivalentOf elapsedNs
+   se = div s n
+   print s "seconds to insert" n "events. That is" se "seconds per event."
+

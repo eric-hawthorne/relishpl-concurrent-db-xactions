@@ -444,6 +444,7 @@ func (db *SqliteDB) exists(id int64) (found bool, err error) {
 */
 func (db *SqliteDB) NameObject(obj RObject, name string) {
 	id := obj.DBID()
+	name = SqlStringValueEscape(name)
 	stmt := fmt.Sprintf("INSERT INTO RName(name,id) VALUES('%s',%v);", name, id)
 	db.QueueStatements(stmt)
 }
@@ -452,6 +453,7 @@ func (db *SqliteDB) NameObject(obj RObject, name string) {
 Returns true if an object has been named in the database with the argument name.
 */
 func (db *SqliteDB) ObjectNameExists(name string) (found bool, err error) {
+	name = SqlStringValueEscape(name)	
 	stmt := fmt.Sprintf("SELECT count(*) FROM RName where name='%s'", name)
 	selectStmt, err := db.conn.Prepare(stmt)
 	if err != nil {
@@ -521,6 +523,7 @@ func (db *SqliteDB) Fetch(id int64, radius int) (obj RObject, err error) {
 */
 func (db *SqliteDB) FetchByName(name string, radius int) (obj RObject, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchByName", name, radius))
+	name = SqlStringValueEscape(name)	
 	stmt := fmt.Sprintf("SELECT * FROM RObject WHERE id IN (SELECT id FROM RName WHERE name='%s')", name)
 	//fmt.Printf("FetchByName:  %s\n",name)	
 	return db.fetch1(stmt, radius, fmt.Sprintf("name='%s'", name), true)
