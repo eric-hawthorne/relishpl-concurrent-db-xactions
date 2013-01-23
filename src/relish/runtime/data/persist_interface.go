@@ -115,5 +115,7 @@ type InterpreterThread interface {
 	AllowGC()
 	
 	DisallowGC()
+
+	EvaluationContext() MethodEvaluationContext
 }
 

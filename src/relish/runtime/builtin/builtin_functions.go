@@ -29,6 +29,7 @@ import (
 	"io/ioutil"
 	"encoding/csv"
 	"encoding/json"
+	"sort"
 )
 
 // Reader for reading from standard input
@@ -1492,6 +1493,26 @@ replace s String old String new String n Int > String
 	}
 	clearMethod.PrimitiveCode = builtinClear
 
+	/*
+	Defers (disables) auto-sorting on add element.
+	*/
+	deferSortingMethod, err := RT.CreateMethod("",nil,"deferSorting", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	deferSortingMethod.PrimitiveCode = builtinDeferSorting
+
+	/*
+	Resumes auto-sorting. Does a sort.
+	*/
+	resumeSortingMethod, err := RT.CreateMethod("",nil,"resumeSorting", []string{"c"}, []string{"Collection"},  nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	resumeSortingMethod.PrimitiveCode = builtinResumeSorting	
+
+
+
 
 /*
 	slice s List of T start Int end Int > List of T
@@ -2860,6 +2881,41 @@ func builtinClear(th InterpreterThread, objects []RObject) []RObject {
     coll.ClearInMemory()
 	return []RObject{}
 }
+
+/*
+Defers (disables) auto-sorting on add element.
+*/
+func builtinDeferSorting(th InterpreterThread, objects []RObject) []RObject {
+	coll,isSortableMixin := objects[0].(SortableMixin)
+    if ! isSortableMixin || ! coll.IsSorting() {
+    	rterr.Stop("Can only apply deferSorting to a sorting collection or map.")
+    }
+    coll.SetSortingDeferred(true)
+	return []RObject{}
+}
+
+/*
+Resumes auto-sorting. Does a sort.
+TODO TODO !!! Will have to figure out the best way to sort in the db to go along with this!!
+*/
+func builtinResumeSorting(th InterpreterThread, objects []RObject) []RObject {
+	sortable,isSortableMixin := objects[0].(SortableMixin)
+	coll,isCollection := objects[0].(RCollection)	
+    if ! isSortableMixin || !isCollection || ! coll.IsSorting() {
+    	rterr.Stop("Can only apply resumeSorting to a sorting collection or map.")
+    }
+    sortable.SetSortingDeferred(false)
+
+	RT.SetEvalContext(coll, th.EvaluationContext())
+    defer RT.UnsetEvalContext(coll)
+    sort.Sort(sortable)
+
+	return []RObject{}
+}
+
+
+
+
 
 ///////////////////////////////////////////////////////////////////////
 // Concurrency functions

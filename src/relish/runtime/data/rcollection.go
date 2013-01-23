@@ -16,6 +16,7 @@ import (
 	"relish/rterr"
 	. "relish/dbg"
 	"errors"
+	"time"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -252,6 +253,8 @@ type sortOp struct {
 	unaryFunction *RMultiMethod
 	lessFunction  *RMultiMethod
 	descending    bool
+	sortingDeferred bool  // if true, do not do any sorting of collection for the moment.
+	                      // Used while inserting a large number of elements all at once into a sorting collection.
 }
 
 func (o *rcollection) String() string {
@@ -262,8 +265,19 @@ func (o *rcollection) Debug() string {
 	return (&(o.robject)).Debug() 
 }
 
+/*
+Only applies to sorting collections
+*/
+func (o *rcollection) IsSortingDeferred() bool {
+	return o.sortWith.sortingDeferred
+}
 
-
+/*
+Only applies to sorting collections
+*/
+func (o *rcollection) SetSortingDeferred(status bool) {
+	o.sortWith.sortingDeferred = status
+}
 
 func (c rcollection) IsUnit() bool {
 	return false
@@ -640,9 +654,11 @@ func (s *rsortedset) Add(obj RObject, context MethodEvaluationContext) (added bo
 		s.m[obj] = true
 		s.v.Push(obj)
 
-		RT.SetEvalContext(s, context)
-		defer RT.UnsetEvalContext(s)
-		sort.Sort(s)
+        if ! s.IsSortingDeferred() {	
+		   RT.SetEvalContext(s, context)
+		   defer RT.UnsetEvalContext(s)
+		   sort.Sort(s)
+	    } 
 	}
 	newLen = len(s.m)
 	return
@@ -794,6 +810,18 @@ type sortOp {
 	descending bool
 }
 */
+
+type SortableMixin interface {
+   sort.Interface
+   IsSortingDeferred() bool 
+
+   SetSortingDeferred(status bool)
+
+   IsSorting() bool
+
+   // Swap(i, j int)    
+}
+
 
 /*
 Not valid to call on indexes >= the length of the collection.
@@ -1276,7 +1304,7 @@ func (s *rlist) Add(obj RObject, context MethodEvaluationContext) (added bool, n
 	}
 	s.v.Push(obj)
 
-	if s.IsSorting() {
+	if s.IsSorting() && ! s.IsSortingDeferred() {
 		RT.SetEvalContext(s, context)
 		defer RT.UnsetEvalContext(s)
 		sort.Sort(s)
@@ -1335,6 +1363,8 @@ func (s *rlist) Less(i, j int) bool {
 	
 	//var isLess RObject
 
+	var goLess bool
+
 	if s.sortWith.attr != nil {
 
 		// Get attr value of both list members
@@ -1351,16 +1381,34 @@ func (s *rlist) Less(i, j int) bool {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
 		}
 
-		// Use the "less" multimethod to compare them.
+        // depending on the type of the values to compare, use an optimized sorting method.
 
-		// Assumes that the sortWith has been given the "less" multimethod. TODO!
-		// 
-		isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})
+        // TODO - Does not currently permit mixed-type numbers in a sorted collection
+
+        switch val1.(type) {
+            case RTime:
+            	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+            case String:
+            	goLess = string(val1.(String)) < string(val2.(String))
+            case Int:
+            	goLess = int64(val1.(Int)) < int64(val2.(Int))
+            case Float:
+            	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+            case Bool: 
+            	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+            default:
+				// Use the "less" multimethod to compare them.
+
+				// Assumes that the sortWith has been given the "less" multimethod. TODO!
+				// 
+				isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+				goLess = ! isLess.IsZero()       
+        }
 
 		if s.sortWith.descending {
-			return isLess.IsZero()
+			return ! goLess
 		}
-		return !isLess.IsZero()
+		return goLess
 
 	} else if s.sortWith.unaryFunction != nil {
 
@@ -1372,20 +1420,31 @@ func (s *rlist) Less(i, j int) bool {
 		obj2 := s.At(th, j)
 		val2 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj2})
 
-		// Use the "less" multimethod to compare them.
 
+        switch val1.(type) {
+            case RTime:
+            	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+            case String:
+            	goLess = string(val1.(String)) < string(val2.(String))
+            case Int:
+            	goLess = int64(val1.(Int)) < int64(val2.(Int))
+            case Float:
+            	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+            case Bool: 
+            	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+            default:
+				// Use the "less" multimethod to compare them.
 
-		// Assumes that the sortWith has been given the "less" multimethod. TODO!
-		//
-		isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})
+				// Assumes that the sortWith has been given the "less" multimethod. TODO!
+				// 
+				isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+				goLess = ! isLess.IsZero()       
+        }
 
 		if s.sortWith.descending {
-			return isLess.IsZero()
+			return ! goLess
 		}
-		return !isLess.IsZero()
-
-		// Use the inbuilt "less" multimethod to compare the function return values.
-
+		return goLess
 	}
 	// else ... lessFunction
 
@@ -1393,19 +1452,34 @@ func (s *rlist) Less(i, j int) bool {
 
 	// Get attr value of both list members
 
-	obj1 := s.At(th, i)
+	val1 := s.At(th, i)
 
-	obj2 := s.At(th, j)
+	val2 := s.At(th, j)
 
-	// Use the multimethod to compare them.
+    switch val1.(type) {
+        case RTime:
+        	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+        case String:
+        	goLess = string(val1.(String)) < string(val2.(String))
+        case Int:
+        	goLess = int64(val1.(Int)) < int64(val2.(Int))
+        case Float:
+        	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+        case Bool: 
+        	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+        default:
+			// Use the "less" multimethod to compare them.
 
-	isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{obj1, obj2})
+			// Assumes that the sortWith has been given the "less" multimethod. TODO!
+			// 
+			isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+			goLess = ! isLess.IsZero()       
+    }
 
 	if s.sortWith.descending {
-		return isLess.IsZero()
+		return ! goLess
 	}
-	return !isLess.IsZero()
-
+	return goLess
 }
 
 /*
@@ -2223,4 +2297,8 @@ func (f FakeInterpreterThread) AllowGC()  {
 /*
 */
 func (f FakeInterpreterThread) DisallowGC()  {
+}
+
+func (f FakeInterpreterThread) EvaluationContext() MethodEvaluationContext {
+	return nil
 }

@@ -31,6 +31,7 @@ Event
 Calendar
 """
  A calendar of events.
+   events 0 N [<startTime] Event 
 """
    events 0 N [<startTime] Event
 
@@ -40,7 +41,7 @@ testInsertPerf
  Test database insert performance.
 """
    c = Calendar
-   generateEvents c 1000 5 true
+   generateEvents c 200 5 false
 
 
 generateEvents c Calendar n Int m Int persist Bool
@@ -60,7 +61,7 @@ generateEvents c Calendar n Int m Int persist Bool
       t = plus t interval
       eventsToGo = minus eventsToGo 1
    if persist
-      dub c "Eric's Calendar"
+      dub c "Erics Unsorted Calendar"
    t1 = now "Local"
    elapsedNs = minus t1 t0
    s = secondsEquivalentOf elapsedNs

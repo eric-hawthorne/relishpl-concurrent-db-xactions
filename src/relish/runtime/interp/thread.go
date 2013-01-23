@@ -390,7 +390,9 @@ func (t *Thread) Err() string {
 	return t.err
 }
 
-
+func (t *Thread) EvaluationContext() MethodEvaluationContext {
+	return t.EvalContext
+}
 
 /*
     Has a reference to the DB. 

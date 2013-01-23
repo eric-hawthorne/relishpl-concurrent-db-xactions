@@ -49,6 +49,7 @@ import (
 		"relish/global_loader"
 		"regexp"
 		"strconv"
+		"runtime/pprof"
 )
 
 var reVersionAtEnd *regexp.Regexp = regexp.MustCompile("/v([0-9]{4})$")
@@ -61,6 +62,7 @@ func main() {
     var sharedCodeOnly bool  // do not use local artifacts - only those in shared directory.
     var runningArtifactMustBeFromShared bool
     var dbName string 
+    var cpuprofile string
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
@@ -69,9 +71,26 @@ func main() {
 
 	flag.BoolVar(&sharedCodeOnly, "shared", false, "Use shared version of all artifacts - ignore local/dev copy of artifacts")		
  
+    flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
+
+
+
+
+
     flag.Parse()
+
+
     pathParts := flag.Args() // full path to package, or originAndArtifact and path to package
 
+    if cpuprofile != "" {
+        f, err := os.Create(cpuprofile)
+        if err != nil {
+		     fmt.Println(err)
+		     return 
+		}
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+    }
 
    	dbg.InitLogging(int32(loggingLevel))
 	//relish.InitRuntime("relish.db")
