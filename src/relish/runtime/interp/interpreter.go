@@ -183,20 +183,22 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 }
 
 /*
-In future, a thread panic would cause t.Err to be an error message.
+In future, a thread panic would cause t.err to be an error message.
 
 TODO: Make some way of setting t.err when relish-panicking.
 
-TODO: If error on the commit, wait, try again a couple of times, backing off,
+TODO TODO: If error on the commit, wait, try again a couple of times, backing off,
 then try a rollback.
 If error on the rollback, wait, try again a couple of times, backing off, 
 then do a releaseDB.
 */
 func (t *Thread) CommitOrRollback() {
 	if t.err == "" {
-	   t.DB().CommitTransaction()
+	   err := t.DB().CommitTransaction()
+	   Logln(ALWAYS_,err.Error())	   
     } else {
-	   t.DB().RollbackTransaction()
+	   err := t.DB().RollbackTransaction()
+	   Logln(ALWAYS_,err.Error())
 	
 	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
     }

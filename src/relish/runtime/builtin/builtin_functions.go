@@ -1010,6 +1010,48 @@ func InitBuiltinFunctions() {
 	}
 	existsMethod.PrimitiveCode = builtinExists
 
+    // err = begin  // Begins a db transaction. On success returns an empty string.
+    //
+	beginMethod, err := RT.CreateMethod("",nil,"begin", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	beginMethod.PrimitiveCode = builtinBeginTransaction
+
+    // err = local  // Begins a db transaction which TODO: never contributes new or fetched-from-db objects to the global
+    //              // in-memory object cache. On success returns an empty string.
+    //
+	localMethod, err := RT.CreateMethod("",nil,"local", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	localMethod.PrimitiveCode = builtinBeginLocalTransaction	
+
+    // err = commit  // Commits the in-progress db transaction. On success returns an empty string.
+    //               // TODO: If succeeds and is not a local transaction, adds new and fetched-from-db objects to the
+    //               // global in-memory object cache if they were not already there.
+    //
+	commitMethod, err := RT.CreateMethod("",nil,"commit", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	commitMethod.PrimitiveCode = builtinCommitTransaction	
+
+    // err = rollback  // Rolls back the in-progress db transaction. On success returns an empty string.
+    //                 // TODO - NEED TO DETERMINE POLICY FOR REVERTING CHANGES MADE TO IN MEMORY OBJECTS IF
+    //                 // THIS WAS A NON-LOCAL TRANSACTION.
+    //                 // PROBABLY WHAT WE HAVE TO DO IS DECLARE ALL OBJECTS THAT WERE MODIFIED/RELATED DURING
+    //                 // THE TRANSACTION (IE DIRTY OBJECTS) AS BEING INVALID-IN-MEMORY I.E. THEY NEED TO BE
+    //                 // RESTORED FROM THE DB BEFORE THEIR STATE IS ACCESSED AGAIN. IS THIS RESTORATION DONE
+    //                 // RIGHT NOW UPON ROLLBACK, OR ON DEMAND IN GET-ATTR-VAL OPERATION?
+    //
+	rollbackMethod, err := RT.CreateMethod("",nil,"rollback", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rollbackMethod.PrimitiveCode = builtinRollbackTransaction	
+
+
 
     ///////////////////////////////////////////////////////////////////
     // Boolean Logical functions - not and or
@@ -2800,6 +2842,86 @@ func builtinExists(th InterpreterThread, objects []RObject) []RObject {
 
 	return []RObject{Bool(found)}
 }
+
+
+
+
+
+
+// err = begin  // Begins a db transaction. On success returns an empty string.
+//
+func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject {
+	relish.EnsureDatabase()
+    var errStr string
+
+    err := th.DB().BeginTransaction()
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	return []RObject{String(errStr)}
+}
+
+
+
+
+// err = local  // Begins a db transaction which TODO: never contributes new or fetched-from-db objects to the global
+//              // in-memory object cache. On success returns an empty string.
+//
+// TODO: Implement
+//
+func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []RObject {
+	relish.EnsureDatabase()
+    var errStr string
+
+    err := th.DB().BeginTransaction()
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	return []RObject{String(errStr)}
+}
+
+
+
+// err = commit  // Commits the in-progress db transaction. On success returns an empty string.
+//               // TODO: If succeeds and is not a local transaction, adds new and fetched-from-db objects to the
+//               // global in-memory object cache if they were not already there.
+//
+func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject {
+	relish.EnsureDatabase()
+    var errStr string
+
+    err := th.DB().CommitTransaction()
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	return []RObject{String(errStr)}
+}
+
+
+// err = rollback  // Rolls back the in-progress db transaction. On success returns an empty string.
+//                 // TODO - NEED TO DETERMINE POLICY FOR REVERTING CHANGES MADE TO IN MEMORY OBJECTS IF
+//                 // THIS WAS A NON-LOCAL TRANSACTION.
+//                 // PROBABLY WHAT WE HAVE TO DO IS DECLARE ALL OBJECTS THAT WERE MODIFIED/RELATED DURING
+//                 // THE TRANSACTION (IE DIRTY OBJECTS) AS BEING INVALID-IN-MEMORY I.E. THEY NEED TO BE
+//                 // RESTORED FROM THE DB BEFORE THEIR STATE IS ACCESSED AGAIN. IS THIS RESTORATION DONE
+//                 // RIGHT NOW UPON ROLLBACK, OR ON DEMAND IN GET-ATTR-VAL OPERATION?
+//
+func builtinRollbackTransaction(th InterpreterThread, objects []RObject) []RObject {
+	relish.EnsureDatabase()
+    var errStr string
+
+    err := th.DB().RollbackTransaction()
+	if err != nil {
+		errStr = err.Error()
+	}
+
+	return []RObject{String(errStr)}
+}
+
+
 
 //////////////////////////////////////////////////////////////////////
 // Boolean logic functions
