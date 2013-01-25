@@ -3019,6 +3019,17 @@ func builtinDeferSorting(th InterpreterThread, objects []RObject) []RObject {
 /*
 Resumes auto-sorting. Does a sort.
 TODO TODO !!! Will have to figure out the best way to sort in the db to go along with this!!
+
+Firstly, the bulk of this needs to move out of here into being implemented by the collection, and the
+rt methods for manipulating collections.
+
+Strategy should be:
+While sorting is deferred, objects should be inserted into the collection association table as if
+it were an unsorted "list".
+
+Then, after the in-memory sort, a persistence operation called reorder should happen,
+which goes through all collection elements in order in memory and updates the corresponding database
+row to have the correct ordinal value.
 */
 func builtinResumeSorting(th InterpreterThread, objects []RObject) []RObject {
 	sortable,isSortableMixin := objects[0].(SortableMixin)

@@ -817,6 +817,8 @@ type SortableMixin interface {
 
    SetSortingDeferred(status bool)
 
+   // This just means the collection is in general supposed to maintain itself in sorted order. 
+   // It does not reflect whether sorting is deferred right now or not.
    IsSorting() bool
 
    // Swap(i, j int)    
