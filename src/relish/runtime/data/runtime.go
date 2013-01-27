@@ -130,7 +130,7 @@ func (rt *RuntimeEnv) Cache(obj RObject) {
 }
 
 /*
-   Return the object with the given uuid from the in-memory cache, or nil if not found.
+   Return the object with the given dbid from the in-memory cache, or nil if not found.
 */
 func (rt *RuntimeEnv) GetObject(id int64) (obj RObject, found bool) {
 	obj, found = rt.objects[id]
@@ -138,7 +138,20 @@ func (rt *RuntimeEnv) GetObject(id int64) (obj RObject, found bool) {
 }
 
 func (rt *RuntimeEnv) Uncache(obj RObject) {
-	delete(rt.objects, obj.DBID()) // delete(rt.objects,obj.UUIDstr())
+	delete(rt.objects, obj.DBID()) 
+}
+
+type MemCache interface {
+	/*
+	   Caches the object in the in-memory object cache. Assumes an object instance with the same
+	   dbid is not already in the cache.
+	   Assumes the object already has a dbid i.e. has been persisted locally.
+	*/	
+	Cache(obj RObject)
+	
+    GetObject(id int64) (obj RObject, found bool) 
+	
+    Uncache(obj RObject)	
 }
 
 /*

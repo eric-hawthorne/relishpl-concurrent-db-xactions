@@ -715,6 +715,8 @@ func (s *rsortedset) Len() int {
 	return len(s.m)
 }
 
+// TODO TODO Optimize this one the same as for rlist !!!!!!
+
 func (s *rsortedset) Less(i, j int) bool {
 	// TODO !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!	
 

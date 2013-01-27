@@ -195,10 +195,14 @@ then do a releaseDB.
 func (t *Thread) CommitOrRollback() {
 	if t.err == "" {
 	   err := t.DB().CommitTransaction()
-	   Logln(ALWAYS_,err.Error())	   
+	   if err != nil {
+	      Logln(ALWAYS_,err.Error())
+	   }	   
     } else {
 	   err := t.DB().RollbackTransaction()
-	   Logln(ALWAYS_,err.Error())
+	   if err != nil {
+	      Logln(ALWAYS_,err.Error())
+       }
 	
 	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
     }
