@@ -87,9 +87,25 @@ The string that was being parsed when the scanner's Fail method was last called.
 */
 func (S *Scanner) FailedOnString() string {
 
+    r := rune(S.src[S.failStartOffset])
+
+    if IsAsciiLetter(r) || IsAsciiDigit(r) {
+    	srcLen := len(S.src)
+    	for off := S.failStartOffset+1; off < srcLen; off++ {
+           r = rune(S.src[off])  
+           S.failEndOffset = off                  
+           if ! (IsAsciiLetter(r) || IsAsciiDigit(r) || r == '_')  {	
+           	   break
+           }           
+    	}
+    }
+
 	//DEBUG fmt.Printf("fail offsets: %v %v ch: '%s'\n",S.failStartOffset,S.failEndOffset,string(S.ch))	
 	return string(S.src[S.failStartOffset:S.failEndOffset])
 }
+
+
+
 
 /*
 The string created by slicing the src byte-slice from the startOffset to the endOffset.
@@ -579,6 +595,21 @@ func (S *Scanner) BlanksAndBelow(col int, lineCommentsAllowed bool) bool {
 }
 
 
+
+
+/*
+Gobbles blank lines until the first line comment indented one level from col. The line comment is also gobbled.
+*/
+func (S *Scanner) BlanksThenIndentedLineComment(col int) bool {
+	st := S.State()
+    if ! S.BlanksAndIndent(col, false) {
+    	return false
+    }
+	if ! S.LineComment() {
+		return S.Fail(st)
+	} 
+	return true
+}
 
 /*
 Returns true if there is nothing but rest-of-line comment or blanks then an EOL

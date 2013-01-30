@@ -45,19 +45,36 @@ returnsThreeResults > String String String
    => "Thing 1" "Thing 2" nil
    
 
-expectsThreeArgs a1 String a2 String a3 ?Int
+expectsThreeArgs a1 String a2 String a3 ?Int > String
 """
  A function that rexpects 3 args and prints them.
 """
    print a1 a2 a3
+   => a1
 
 
 testMisc
 """
  Test random badness.
 """
+  
+   count = [
+              3
+              4
+           ]
    a b c = returnsThreeResults
-   print a
-   print b
-   print c
-   expectsThreeArgs a b c
+   for n in count
+
+      // Foo
+
+      print a
+      print b
+      print c
+      print expectsThreeArgs
+               a 
+               b            
+               c
+               
+      // Hallelujah!          
+   
+   // This is a trailing line comment         

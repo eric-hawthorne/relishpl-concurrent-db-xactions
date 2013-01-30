@@ -1590,7 +1590,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 		case token.FUNC:
 			multiMethod, found := t.ExecutingPackage.MultiMethods[id.Name]
 			if !found {
-				rterr.Stopf1(t, fun, "No method named '%s' is visible from within package %s.", id.Name, t.ExecutingPackage.Name)
+				rterr.Stopf1(t, fun, "'%s' is not a method visible from within package %s, nor an assigned local variable, nor a method-parameter name.", id.Name, t.ExecutingPackage.Name)
 			}
 			t.Push(multiMethod)
 			args = call.Args
