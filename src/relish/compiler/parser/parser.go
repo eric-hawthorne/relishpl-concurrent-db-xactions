@@ -123,12 +123,26 @@ type parser struct {
 	probableCausePos token.Pos   // token position	
 }
 
-func (p *parser) SetProbableCause(reason string) {
+/*
+If an indentation error has been detected, set the probableErrorCause to an indentation error message.
+*/
+func (p *parser) checkForIndentError() {
+	if p.IndentWobble != 0 {
+		if p.IndentWobble == 1 {
+           p.probableErrorCause = "Must indent with 3 spaces. Indented with 4 spaces."
+		} else { // -1
+           p.probableErrorCause = "Must indent with 3 spaces. Only indented 2 spaces."
+		}
+		p.probableCausePos = p.IndentWobblePos
+	}
+}
+
+func (p *parser) setProbableCause(reason string) {
 	p.probableErrorCause = reason
 	p.probableCausePos = p.Pos()
 }
 
-func (p *parser) ClearProbableCause() {
+func (p *parser) clearProbableCause() {
 	p.probableErrorCause = ""
 }
 
@@ -136,12 +150,12 @@ func (p *parser) ClearProbableCause() {
 There has been a probable cause (of a syntax error) recorded, and it is for a problem occurring near where the actual
 parsing failure was finally detected.
 */
-func (p *parser) HaveProbableCause(failurePos token.Pos) bool {
+func (p *parser) haveProbableCause(failurePos token.Pos) bool {
 	fmt.Println("failurePos",failurePos,"p.probableCausePos",p.probableCausePos)
 	return p.probableErrorCause != "" && failurePos <= p.probableCausePos + 3
 }
 
-func (p *parser) GetProbableCause() string {
+func (p *parser) getProbableCause() string {
 	return p.probableErrorCause
 }
 
@@ -2654,17 +2668,7 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
     // parse
     st := p.State()
     if ! p.BlanksAndIndent(col,true) {
-
-       // Look for indentation errors as probable causes of not finding this    
-       if p.BlanksAndIndent(col-1,true) {
-          p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-          p.Fail(st)        
-
-       } else if p.BlanksAndIndent(col+1,true) {
-          p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-          p.Fail(st)         
-       } 
-
+       p.checkForIndentError()	
 	   return false
     }
 
@@ -2684,17 +2688,7 @@ func (p *parser) parseMethodBody(col int,methodDecl *ast.MethodDeclaration) bool
 
     for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments
 
-    // Look for indentation errors as probable causes of not finding this    
-    st2 := p.State()
-    if p.BlanksAndIndent(col-1,true) {
-      p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-      p.Fail(st2)        
-
-    } else if p.BlanksAndIndent(col+1,true) {
-       p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-       p.Fail(st2)         
-    } 
-
+    p.checkForIndentError()	
 
     methodDecl.Body = &ast.BlockStatement{blockPos,stmts}
 
@@ -3082,7 +3076,7 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
     // Generate a guess of the programmer's intention for a better error message.
 
 	if p.Space() && p.parseOneLineExpression(x, isOneOfMultiple, isInsideBrackets)  {
-	  	p.SetProbableCause("Extra space before expression.")
+	  	p.setProbableCause("Extra space before expression.")
 	}
 	return p.Fail(st)
 }
@@ -3162,7 +3156,7 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
     // Generate a guess of the programmer's intention for a better error message.
 
 	if p.Space() && p.parseIndentedExpression(x)  {
-	  	p.SetProbableCause("Extra space before expression.")
+	  	p.setProbableCause("Extra space before expression.")
 	}
 
     return p.Fail(st)
@@ -3366,10 +3360,10 @@ func (p *parser) parseIndentedExpressions(col int, xs *[]ast.Expr) bool {
     	// Look for indentation errors as probable causes of not finding this
 	    if p.Indent(col-1) {
            if ! (p.Match1(']') || p.Match1('}')) {
-              p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
+              p.setProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
            }
 	    } else if p.Indent(col+1) {
-	       p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	        
+	       p.setProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	        
 	    } 
 
 	   return p.Fail(st)
@@ -3393,12 +3387,12 @@ func (p *parser) parseIndentedExpressions(col int, xs *[]ast.Expr) bool {
     // Look for indentation errors as probable causes of not finding this    
     if p.Indent(col-1) {
        if ! (p.Match1(']') || p.Match1('}')) {
-          p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
+          p.setProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
        }
        p.Fail(st2)        
 
     } else if p.Indent(col+1) {
-       p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
+       p.setProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
        p.Fail(st2)         
     } 
 
@@ -3461,15 +3455,7 @@ func (p *parser) parseIndentedExpressionsOrKeywordParamAssignments(col int, xs *
        }
     }
 
-    st := p.State()
-    if p.Indent(col-1) {
-       p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-       p.Fail(st)        
-
-    } else if p.Indent(col+1) {
-       p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-       p.Fail(st)         
-    }
+    p.checkForIndentError()	
 
     return foundIndent
 }
@@ -5183,7 +5169,12 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 
     // parse
     p.required(p.parseExpression(&x),"an expression") 
-    p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'if'")
+
+    st2 := p.State()
+    if ! p.BlanksAndIndent(col, true) {  // TODO Should limit this to one allowed blank line in each gap
+       p.checkForIndentError()
+       p.required(false, "a statement, indented from the 'if'")
+    }     
 
     blockPos := p.Pos()
 
@@ -5205,6 +5196,10 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
         for ; p.BlanksAndIndent(col,true) ; {
            p.required(p.parseIfClauseStatement(&stmtList, nReturnVals, isInsideLoop),"a statement")	
         }
+
+        for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments        
+        
+        p.checkForIndentError()
     } 
 
     // translate
@@ -5214,7 +5209,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
     *ifStmt = if0
 
     // parse
-    st2 := p.State()
+    st2 = p.State()
     for ; p.Below(col) ; {
 
        pos = p.Pos()
@@ -5222,7 +5217,10 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
        if p.Match("elif ") {
 	
 	      p.required(p.parseExpression(&x),"an expression") 
-	      p.required(p.BlanksAndIndent(col, true),"a statement, indented from the 'elif'")
+	      if ! p.BlanksAndIndent(col, true) {
+	      	 p.checkForIndentError()
+	         p.required(false, "a statement, indented from the 'elif'")
+	      }
 	
 	      // translate
  	      var stmtList2 []ast.Stmt
@@ -5246,6 +5244,12 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	            for ; p.BlanksAndIndent(col,true) ; {
 	               p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement") 
 	            }
+        
+                for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments        
+        
+                p.checkForIndentError()
+
+
 	        } 
 	      st2 = p.State()
 	
@@ -5257,7 +5261,11 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 	
 	   // parse
        } else if p.Match("else") {
-	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'else'")
+
+	      if ! p.BlanksAndIndent(col, true) {
+	      	 p.checkForIndentError()
+	         p.required(false, "a statement, indented from the 'else'")
+	      }	      
 
           // translate
           var stmtList3 []ast.Stmt
@@ -5282,6 +5290,10 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
               for ; p.BlanksAndIndent(col,true) ; {
                  p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement") 
               }
+
+              for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments        
+        
+              p.checkForIndentError()
           }  
 	
 	        // translate
@@ -5334,19 +5346,8 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
     // parse
     p.required(p.parseExpression(&x),"an expression") 
 
-    st2 := p.State()
     if ! p.BlanksAndIndent(col, true) {  // TODO Should limit this to one allowed blank line in each gap
-	       
-	   // Look for indentation errors as probable causes of not finding this    
-	   if p.BlanksAndIndent(col-1,true) {
-	      p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-	      p.Fail(st2)        
-
-	   } else if p.BlanksAndIndent(col+1,true) {
-	      p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-	      p.Fail(st2)         
-	   } 
-
+       p.checkForIndentError()	       
        p.required(false, "a statement, indented from the 'while'")
     } 
 
@@ -5361,18 +5362,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 
     for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments
 
-    // Look for indentation errors as probable causes of not finding this    
-    st2 = p.State()
-    if p.BlanksAndIndent(col-1,true) {
-        p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-         p.Fail(st2)        
-    } else if p.BlanksAndIndent(col+1,true) {
-         p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-         p.Fail(st2)         
-    } 
-
-
-
+    p.checkForIndentError()
 
     // translate
     body := &ast.BlockStatement{blockPos,stmtList}
@@ -5382,16 +5372,21 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
     *whileStmt = while0
 
     // parse
-    st2 = p.State()
-    for ; p.Below(col) ; {
+    st2 := p.State()
+    for p.Below(col) {
 
        pos = p.Pos()
 
        if p.Match("elif ") {
 	
 	      p.required(p.parseExpression(&x),"an expression") 
-	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'elif'")
-	
+	      
+	      if ! p.BlanksAndIndent(col, true) {
+	      	 p.checkForIndentError()
+	         p.required(false, "a statement, indented from the 'elif'")
+	      }	
+
+
 	      // translate
  	      var stmtList2 []ast.Stmt
           blockPos = p.Pos()	
@@ -5401,6 +5396,11 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 	      for ; p.BlanksAndIndent(col, true) ; {
 	         p.required(p.parseIfClauseStatement(&stmtList2, nReturnVals, isInsideLoop),"a statement")
 	      }	
+
+          for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments        
+        
+          p.checkForIndentError()
+
 	      st2 = p.State()
 	
 	      // translate
@@ -5415,7 +5415,11 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 	
 	   // parse
        } else if p.Match("else") {
-	      p.required(p.BlanksAndIndent(col,true),"a statement, indented from the 'else'")
+
+	      if ! p.BlanksAndIndent(col, true) {
+	      	 p.checkForIndentError()
+	         p.required(false, "a statement, indented from the 'else'")
+	      }		      
 	
           // translate
           var stmtList3 []ast.Stmt
@@ -5427,6 +5431,9 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 		 	p.required(p.parseIfClauseStatement(&stmtList3, nReturnVals, isInsideLoop),"a statement")
 	      }  
 
+          for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments        
+        
+          p.checkForIndentError()
 
 	
 	      // translate
@@ -5605,20 +5612,8 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
 
     // TODO for the above: Check that each expression's type is a collection
 
-    st2 := p.State()
-    if ! p.BlanksAndIndent(col, true) {  // TODO Should limit this to one allowed blank line in each gap
-	       
-	   // Look for indentation errors as probable causes of not finding this    
-	   if p.BlanksAndIndent(col-1,true) {
-	      p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-	      p.Fail(st2)        
-
-	   } else if p.BlanksAndIndent(col+1,true) {
-	      p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-	      p.Fail(st2)         
-	   } 
-
-
+    if ! p.BlanksAndIndent(col, true) {  // TODO Should limit this to one allowed blank line in each gap    
+       p.checkForIndentError()	       
        p.required(false, "a statement, indented from the 'for'")
     } 
 
@@ -5648,15 +5643,7 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
 
          for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments
 
-	     // Look for indentation errors as probable causes of not finding this    
-         st2 = p.State()
-	     if p.BlanksAndIndent(col-1,true) {
-	         p.SetProbableCause("Must indent with 3 spaces. Only indented 2 spaces.")
-	         p.Fail(st2)        
-	     } else if p.BlanksAndIndent(col+1,true) {
-	         p.SetProbableCause("Must indent with 3 spaces. Indented with 4 spaces.")  	
-	         p.Fail(st2)         
-	     } 
+         p.checkForIndentError()	
     }
 
     // translate
@@ -6061,8 +6048,8 @@ func (p *parser) required(elementFound bool, whatIsExpected string) bool {
 	if len(fs) > 0 {
       //panic(fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, fs))    
 
-		if p.HaveProbableCause(p.FailedPos()) {
-           p.error(p.FailedPos(),p.GetProbableCause())
+		if p.haveProbableCause(p.FailedPos()) {
+           p.error(p.FailedPos(),p.getProbableCause())
 		} else {
     	   p.error(p.FailedPos(),fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, fs))
         }
@@ -6077,8 +6064,8 @@ func (p *parser) required(elementFound bool, whatIsExpected string) bool {
 		       found = string(c)
         }
       //panic(fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, found))        
-		if p.HaveProbableCause(p.Pos()) {
-           p.error(p.Pos(),p.GetProbableCause())
+		if p.haveProbableCause(p.Pos()) {
+           p.error(p.Pos(),p.getProbableCause())
 		} else {        
     	   p.error(p.Pos(),fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, found))
 	    }

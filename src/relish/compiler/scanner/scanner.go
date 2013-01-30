@@ -78,6 +78,13 @@ type Scanner struct {
 	failStartOffset int // start of the string that parsing failed on
 	failEndOffset   int // end of the string that parsing failed on
 
+    // Following two items are used in generation of appropriate indentation-error compiler error messages.
+
+	IndentWobble int // 0 if most recent text-starts-at-column test succeeded or is way off. 
+	                 // 1 if indentation is +1 from there. -1 if indentation is -1 from there.
+
+    IndentWobblePos token.Pos // If IndentWobble is +1 or -1, the file position where the non-space text starts
+
 	// public state - ok to modify
 	ErrorCount int // number of errors encountered
 }
@@ -523,6 +530,8 @@ The assertion is that there is some language token starting at the specified pos
 */
 func (S *Scanner) Below(col int) bool {
 
+	S.IndentWobble = 0
+
 	if S.ch != ' ' && S.ch != '\n' && S.ch != -1 && S.Col() == col {
 		return true // Make it idempotent
 	}
@@ -542,13 +551,22 @@ func (S *Scanner) Below(col int) bool {
 	for S.Space() {
 	} // Gobble spaces
 
-	if S.Col() != col {
+    scannerCol := S.Col()
+	if scannerCol != col {
+		if scannerCol == col + 1 {
+           S.IndentWobble = -1			
+           S.IndentWobblePos = S.Pos()
+		} else if scannerCol == col - 1 {
+           S.IndentWobble = -1
+           S.IndentWobblePos = S.Pos()           
+		}
 		return S.Fail(st)
 	}
 
 	if S.ch == '\n' || S.ch == -1 { // EOL or EOF
 		return S.Fail(st)
 	}
+
 
 	return true
 }
@@ -561,6 +579,8 @@ Gobbles blank lines before the indented thing. Note: Should I have a version
 of this that only allows a certain number of blank lines or fewer?
 */
 func (S *Scanner) BlanksAndBelow(col int, lineCommentsAllowed bool) bool {
+
+	S.IndentWobble = 0
 
 	if S.ch != ' ' && S.ch != '\n' && S.ch != -1 && S.Col() == col {
 		return true // Make it idempotent
@@ -588,9 +608,18 @@ func (S *Scanner) BlanksAndBelow(col int, lineCommentsAllowed bool) bool {
 	for S.Space() {
 	} // Gobble spaces
 
-	if S.Col() != col {
+    scannerCol := S.Col()
+	if scannerCol != col {
+		if scannerCol == col + 1 {
+           S.IndentWobble = 1			
+           S.IndentWobblePos = S.Pos()
+		} else if scannerCol == col - 1 {
+           S.IndentWobble = -1
+           S.IndentWobblePos = S.Pos()           
+		}
 		return S.Fail(st)
 	}
+
 	return true
 }
 
