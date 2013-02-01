@@ -24,7 +24,7 @@ var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9
 
 /*
 */
-func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) {
+func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius))
 	
 	var sqlQuery string
@@ -33,6 +33,9 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, 
     polymorphic := typ.HasSubtypes()
 	
 	idsOnly := (radius == 0) || polymorphic
+
+	mayContainProxies = idsOnly
+	
     sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, idsOnly) 	
     if err != nil {
 	      err = fmt.Errorf("Query syntax error:\n%v\n while translating selection criteria:\n\"%s\"",err, oqlSelectionCriteria)

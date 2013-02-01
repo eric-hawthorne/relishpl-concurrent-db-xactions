@@ -703,6 +703,7 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 	if err != nil {
 		return
 	}
+
 	for selectStmt.Next() {
 	
 	    var obj RObject

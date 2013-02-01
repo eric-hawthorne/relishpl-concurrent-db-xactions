@@ -1298,12 +1298,13 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 	
 
-      err = t.DB().FetchN(list.ElementType(), query, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
       }	
 
       list.ReplaceContents(objs)
+      list.SetMayContainProxies(mayContainProxies)
 
       // fmt.Println(len(*objs))
 
@@ -1401,7 +1402,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
 	
 
-      err = t.DB().FetchN(set.ElementType(), query, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
       }	
@@ -1410,6 +1411,8 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
       for _,obj := range objs {
 		 aSet.Add(obj, t.EvalContext) 
       }
+
+      set.SetMayContainProxies(mayContainProxies)
 
 
       // fmt.Println(len(*objs))

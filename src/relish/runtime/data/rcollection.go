@@ -17,6 +17,7 @@ import (
 	. "relish/dbg"
 	"errors"
 	"time"
+	"sync"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -82,6 +83,12 @@ type RCollection interface {
     Contains(th InterpreterThread, obj RObject) bool // true if the collection contains the element, false otherwise
                                // uses value equality for primitive element types, reference equality otherwise.
                                // for maps, it is whether the map contains a key equal to the argument object. 
+
+
+    SetMayContainProxies(status bool)  // Set to true when collection is lazily fetched, false after deproxifying
+
+    MayContainProxies() bool    // Some or all collection elements may be Proxy objects which need to be replaced by a 
+                                // db fetch of the real object.
 }
 
 /*
@@ -233,9 +240,18 @@ type rcollection struct {
 	owner       RObject
 
 	sortWith *sortOp // Which attribute of a member, or which unary func of member or which less function to sort with. May be nil.
+
+	mayContainProxies bool // If this collection was fetched from the db, could there still be some elements which are proxies?
+	                       // set to false when deproxified.
 }
 
+func (o *rcollection) SetMayContainProxies(status bool) {
+   o.mayContainProxies = status
+}
 
+func (o *rcollection) MayContainProxies() bool {
+   return o.mayContainProxies
+}
 
 /*
 Only one of the attr or unaryFunction will be non-nil.
@@ -478,44 +494,71 @@ TODO TODO TODO - Uses the wrong db to do Fetch !!! Should be th.DB().
 */
 func (c *rset) Iter(th InterpreterThread) <-chan RObject {
 		
+    c.deproxify(th)	
+
 	ch := make(chan RObject)
 	go func() {
+		for obj, _ := range c.m {
+			ch <- obj
+		}
+		close(ch)
+	}()
+	return ch
+}
+
+
+
+var mapFetchMutex sync.Mutex  // Why allowing only one map globally to be deproxified at one time?
+
+/*
+   Converts all proxies in the collection to real objects.
+   TODO: Reconsider the kludge of accepting a nil interpreterThread.
+   Currently used in String method to list the elements.
+*/
+func (c *rset) deproxify(th InterpreterThread) {
+
+    if c.MayContainProxies() {
+
+		var db DB
+		if th == nil {
+			db = RT.DB()
+		} else {
+			db = th.DB()
+		}
+
+        mapFetchMutex.Lock()
+
 		var fromPersistence map[RObject]RObject
-		var dbt *DBThread
 		for robj, _ := range c.m {
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				if dbt == nil {
-					dbt = &DBThread{db:RT.DB()}
-				}
-
-				robj, err = dbt.Fetch(int64(proxy), 0)
+				robj, err = db.Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching set element: %s", err))
 				}
-
 				if fromPersistence == nil {
 					fromPersistence = make(map[RObject]RObject)
 				}
 				fromPersistence[proxy] = robj
-
 			}
-			ch <- robj
 		}
-
 		// Replace proxies in the set with real objects.
 
 		// TODO Need to mutex lock the map here to guarantee the len of the map is always correct.
+
+
 		for proxy, robj := range fromPersistence {
 			c.m[robj] = true
 			delete(c.m, proxy) // delete(c,m)				
 		}
 
-		close(ch)
-	}()
-	return ch
+		c.SetMayContainProxies(false)
+
+		mapFetchMutex.Unlock()		
+    }
 }
+
 
 
 /*
@@ -579,7 +622,7 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil}, nil}
+	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil, false}, nil}
 	s.rcollection.robject.this = s
 	coll = s		
     if ! markSense {
@@ -917,25 +960,14 @@ func (c *rsortedset) FromMapListTree(tree interface{}) (obj RObject, err error) 
 TODO Use more standard flag-based deproxify
  */
 func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
+
+    c.deproxify(th)
+
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
-			var dbt *DBThread
-			for i, obj := range *(c.v) {
-				robj := obj.(RObject)
-				if robj.IsProxy() {
-					if dbt == nil {
-						dbt = &DBThread{db:RT.DB()}
-					}					
-					var err error
-					proxy := robj.(Proxy)
-					robj, err = dbt.Fetch(int64(proxy), 0)
-					if err != nil {
-						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
-					}
-				    (*(c.v))[i] = robj					
-				}
-				ch <- robj
+			for _, obj := range *(c.v) {
+				ch <- obj
 			}
 		}
 		close(ch)
@@ -966,27 +998,30 @@ func (o *rsortedset) Mark() bool {
 
 
 func (c *rsortedset) deproxify(th InterpreterThread) {
-
-	var db DB
-	if th == nil {
-		db = RT.DB()
-	} else {
-		db = th.DB()
-	}	
-	if c.v != nil {
-		for i, obj := range *(c.v) {
-			robj := obj.(RObject)
-			if robj.IsProxy() {
-				var err error
-				proxy := robj.(Proxy)
-				robj, err = db.Fetch(int64(proxy), 0)
-				if err != nil {
-					panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
+    if c.MayContainProxies() {
+		var db DB
+		if th == nil {
+			db = RT.DB()
+		} else {
+			db = th.DB()
+		}	
+		if c.v != nil {
+			for i, obj := range *(c.v) {
+				robj := obj.(RObject)
+				if robj.IsProxy() {
+					var err error
+					proxy := robj.(Proxy)
+					robj, err = db.Fetch(int64(proxy), 0)
+					if err != nil {
+						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
+					}
+					(*(c.v))[i] = robj
 				}
-				(*(c.v))[i] = robj
 			}
 		}
-	}
+
+		c.SetMayContainProxies(false)	
+    } 
 }
 
 /*
@@ -1020,7 +1055,7 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil, nil}
+	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith, false}, nil, nil}
 	s.rcollection.robject.this = s
 	coll = s		
 	if ! markSense {
@@ -1083,25 +1118,13 @@ Currently used in String method to list the elements.
 */
 func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 
+	c.deproxify(th)
+
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
-			var dbt *DBThread
-			for i, obj := range *(c.v) {
-				robj := obj.(RObject)
-				if robj.IsProxy() {
-					if dbt == nil {
-						dbt = &DBThread{db:RT.DB()}
-					}
-					var err error
-					proxy := robj.(Proxy)
-					robj, err = dbt.Fetch(int64(proxy), 0)
-					if err != nil {
-						panic(fmt.Sprintf("Error fetching list element: %s", err))
-					}
-					(*(c.v))[i] = robj
-				}
-				ch <- robj
+			for _, obj := range *(c.v) {
+				ch <- obj
 			}
 		}
 		close(ch)
@@ -1192,27 +1215,29 @@ func (o *rlist) Mark() bool {
    Currently used in String method to list the elements.
 */
 func (c *rlist) deproxify(th InterpreterThread) {
-
-	var db DB
-	if th == nil {
-		db = RT.DB()
-	} else {
-		db = th.DB()
-	}
-	if c.v != nil {
-		for i, obj := range *(c.v) {
-			robj := obj.(RObject)
-			if robj.IsProxy() {
-				var err error
-				proxy := robj.(Proxy)
-				robj, err = db.Fetch(int64(proxy), 0)
-				if err != nil {
-					panic(fmt.Sprintf("Error fetching list element: %s", err))
+    if c.MayContainProxies() {
+		var db DB
+		if th == nil {
+			db = RT.DB()
+		} else {
+			db = th.DB()
+		}
+		if c.v != nil {
+			for i, obj := range *(c.v) {
+				robj := obj.(RObject)
+				if robj.IsProxy() {
+					var err error
+					proxy := robj.(Proxy)
+					robj, err = db.Fetch(int64(proxy), 0)
+					if err != nil {
+						panic(fmt.Sprintf("Error fetching list element: %s", err))
+					}
+					(*(c.v))[i] = robj				
 				}
-				(*(c.v))[i] = robj				
 			}
 		}
-	}
+		c.SetMayContainProxies(false)
+    }
 }
 
 /*
@@ -1568,7 +1593,7 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith}, nil}
+	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith, false}, nil}
 	lst.rcollection.robject.this = lst
 	coll = lst	
 	if ! markSense {
@@ -1607,19 +1632,19 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	}
 	switch keyType {
 	case StringType:
-		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[string]RObject)}	
+		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[string]RObject)}	
 	    m.rcollection.robject.this = m
 	    coll = m
 	case IntType, Int32Type:
-		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith}, valType, make(map[int64]RObject)}
+		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[int64]RObject)}
 	    m.rcollection.robject.this = m
 	    coll = m	
 	case UintType, Uint32Type:
-		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[uint64]RObject)}
+		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false},valType, make(map[uint64]RObject)}
 	    m.rcollection.robject.this = m				
 	    coll = m	
 	default:
-		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith},valType, make(map[RObject]RObject)}		
+		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false},valType, make(map[RObject]RObject)}		
 	    m.rcollection.robject.this = m			
 	    coll = m				
 	}

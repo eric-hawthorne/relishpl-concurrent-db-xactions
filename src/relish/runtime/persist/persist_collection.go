@@ -367,6 +367,8 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 		return
 	}
 
+    collection.SetMayContainProxies(radius <= 0) 
+
 	var val RObject
 
 	for selectStmt.Next() {

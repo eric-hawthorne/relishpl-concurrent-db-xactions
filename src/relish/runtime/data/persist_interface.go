@@ -35,9 +35,11 @@ type DB interface {
 	the matching objects from the the database.
 
 	e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
+
+	mayContainProxies will be true if the collection was fetched lazily from db.
 	*/
 	
-    FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) 
+    FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) 
 
     /*
     Close the connection to the database.
@@ -351,9 +353,9 @@ the matching objects from the the database.
 e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 */
 	
-func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (err error) {
+func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
    dbt.UseDB()
-   err = dbt.db.FetchN(typ, oqlSelectionCriteria, radius, objs)
+   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, radius, objs)
    dbt.ReleaseDB()	
    return
 }
