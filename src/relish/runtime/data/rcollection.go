@@ -474,23 +474,23 @@ TODO MAPS AND PROXIES ARE NOT HAPPY TOGETHER YET!!!!
 IT WOULD ONLY WORK IF THE ROBJECT IDENTITY IN THE MAP IS BASED ON THE DBID instead of object address.
 TODO
 
+TODO TODO TODO - Uses the wrong db to do Fetch !!! Should be th.DB().
 */
 func (c *rset) Iter(th InterpreterThread) <-chan RObject {
-	
-	var db DB
-	if th == nil {
-		db = RT.DB()
-	} else {
-		db = th.DB()
-	}		
+		
 	ch := make(chan RObject)
 	go func() {
 		var fromPersistence map[RObject]RObject
+		var dbt *DBThread
 		for robj, _ := range c.m {
 			if robj.IsProxy() {
 				var err error
 				proxy := robj.(Proxy)
-				robj, err = db.Fetch(int64(proxy), 0)
+				if dbt == nil {
+					dbt = &DBThread{db:RT.DB()}
+				}
+
+				robj, err = dbt.Fetch(int64(proxy), 0)
 				if err != nil {
 					panic(fmt.Sprintf("Error fetching set element: %s", err))
 				}
@@ -917,22 +917,19 @@ func (c *rsortedset) FromMapListTree(tree interface{}) (obj RObject, err error) 
 TODO Use more standard flag-based deproxify
  */
 func (c *rsortedset) Iter(th InterpreterThread) <-chan RObject {
-
-	var db DB
-	if th == nil {
-		db = RT.DB()
-	} else {
-		db = th.DB()
-	}	
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
+			var dbt *DBThread
 			for i, obj := range *(c.v) {
 				robj := obj.(RObject)
 				if robj.IsProxy() {
+					if dbt == nil {
+						dbt = &DBThread{db:RT.DB()}
+					}					
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = db.Fetch(int64(proxy), 0)
+					robj, err = dbt.Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 					}
@@ -1086,21 +1083,19 @@ Currently used in String method to list the elements.
 */
 func (c *rlist) Iter(th InterpreterThread) <-chan RObject {
 
-	var db DB
-	if th == nil {
-		db = RT.DB()
-	} else {
-		db = th.DB()
-	}	
 	ch := make(chan RObject)
 	go func() {
 		if c.v != nil {
+			var dbt *DBThread
 			for i, obj := range *(c.v) {
 				robj := obj.(RObject)
 				if robj.IsProxy() {
+					if dbt == nil {
+						dbt = &DBThread{db:RT.DB()}
+					}
 					var err error
 					proxy := robj.(Proxy)
-					robj, err = db.Fetch(int64(proxy), 0)
+					robj, err = dbt.Fetch(int64(proxy), 0)
 					if err != nil {
 						panic(fmt.Sprintf("Error fetching list element: %s", err))
 					}
