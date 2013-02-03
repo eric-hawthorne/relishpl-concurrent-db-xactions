@@ -1177,7 +1177,7 @@ for i val
       someList<span class="future">OrOrderedSet</span>
    statement
    statement
-<span class="future">
+
 for key val in someMap  
    statement
    statement
@@ -1187,15 +1187,16 @@ for key val
       someMap
    statement
    statement   
-</span>
+
 for val in someList<span class="future">OrSet</span>
    statement
    statement
-<span class="future">
+
 for key in someMap  
    statement
    statement   
 
+<span class="future">
 for i key val in someOrderedMap  
    statement
    statement
@@ -1252,10 +1253,10 @@ for i = 0   less i n   i = plus i 1  // one-line 3-spaces-separated form allowed
 Iteration proceeds from the lowest-indexed to highest-indexed element of an ordered collection or ordered map. The single-variable form of "for" can iterate over an unordered set (or unordered map), and returns the elements (keys) in unspecified order.
 </p>
 <p>
-IMPORTANT NOTE: "for" iteration is <b>not thread-safe</b>. <span class="future">You need to lock explicitly to ensure exclusive access while iterating, if multiple go-routines may modify the collection/map.</span>  
+IMPORTANT NOTE: "for" iteration is <b>not thread-safe</b>. You need to lock explicitly with a Mutex lock to ensure exclusive access while iterating, if multiple go-routines may modify the collection/map. 
 </p>
 <p>
-IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are being modified (by the same or another go-routine) during the iteration is <b>undefined</b>. That means you should never attempt it. It may or may not cause a panic, but even if it does not, the execution sequence and index and value variable settings are undefined and cannot be relied on.</span>  
+IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are being modified (by the same or another go-routine) during the iteration is <b>undefined</b>. That means you should never attempt it. It may or may not cause a panic, but even if it does not, the execution sequence and index and value variable settings are undefined and cannot be relied on.
 </p>
 <p>
 <b>Semantics: "for" with index incrementing and test expressions</b>
