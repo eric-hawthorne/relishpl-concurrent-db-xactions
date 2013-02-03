@@ -309,6 +309,13 @@ func (S *Scanner) DoubleSpace() bool {
 }
 
 /*
+Parse three spaces, or fail back to the starting position.
+*/
+func (S *Scanner) TripleSpace() bool {
+	return S.Match("   ")
+}
+
+/*
 Parse the beginning token of a line-comment or rest-of-line comment.
 */
 func (S *Scanner) lineCommentSymbol() bool {

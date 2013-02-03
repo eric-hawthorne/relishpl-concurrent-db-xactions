@@ -2905,6 +2905,13 @@ func (p *parser) parseControlStatement(stmt *ast.Stmt, nReturnVals int, isInside
 	   *stmt = rangeStmt
 	   return true
     }   
+
+    var forStmt *ast.ForStatement
+    if p.parseForStatement(&forStmt, nReturnVals) {
+	   *stmt = forStmt
+	   return true
+    }
+
     var goStmt *ast.GoStatement
     if p.parseGoStatement(&goStmt) {
 	   *stmt = goStmt
@@ -5210,7 +5217,7 @@ func (p *parser) parseIfStatement(ifStmt **ast.IfStatement, nReturnVals int, isG
 
     // parse
     st2 = p.State()
-    for ; p.Below(col) ; {
+    for p.BlanksAndBelow(col, true)  {
 
        pos = p.Pos()
 
@@ -5373,7 +5380,7 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 
     // parse
     st2 := p.State()
-    for p.Below(col) {
+    for p.BlanksAndBelow(col, true) {
 
        pos = p.Pos()
 
@@ -5489,13 +5496,127 @@ func (p *parser) parseWhileStatement(whileStmt **ast.WhileStatement, nReturnVals
 */
 
 
+
+/*
+for i = 0 
+    less i n
+    i = plus i 1
+   statement
+   statement
+
+for i j =
+       min a b
+       min c d
+    and less i m
+        less j n
+    i j = 
+       plus i 1
+       calcJ i
+   statement
+   statement
+
+for i = 0   less i n   i = plus i 1
+ 
+
+
+
+// EGH A ForStatement represents a for statement.
+ForStatement struct {
+	For  token.Pos // position of "for" keyword
+	Init Stmt      // initialization statement
+	Cond Expr      // condition
+	Post Stmt    // post iteration statement
+	Body *BlockStatement
+}
+
+
+*/
+
 func (p *parser) parseForStatement(forStmt **ast.ForStatement, nReturnVals int) bool {
     if p.trace {
        defer un(trace(p, "ForStatement"))
     }
 
-    return false
+    pos := p.Pos()
+
+    // parse
+    col := p.Col()
+    if ! p.Match("for ") {
+	   return false
+    }
+    exprCol := p.Col()
+
+    var init *ast.AssignmentStatement
+    var cond ast.Expr
+    var post *ast.AssignmentStatement
+
+	var stmtList []ast.Stmt
+
+    // parse
+    p.required(p.parseAssignmentStatement(&init), "an assignment statement or 'var(s) in collections' expression")    	
+	
+    if p.Below(exprCol) { // vertical expressions
+	   p.required(p.parseExpression(&cond), "a condition expression")
+	   p.required(p.Below(exprCol),"a post-iteration assignment statement, directly below the condition expression")
+	   p.required(p.parseAssignmentStatement(&post), "a post-iteration assignment statement")
+	
+       if len(init.Lhs) != len(post.Lhs) {
+          p.stop("Number of post-iteration assigned variables must be same as number of initialized variables")
+       }	
+	
+       for p.BlanksThenIndentedLineComment(exprCol) {}  // Gobble trailing indented line comments	
+	
+    } else {
+	   p.required(p.TripleSpace(), "a condition expression, separated by 3 spaces from assignment statement, or directly below assignment statement")
+	 
+	   p.required(p.parseOneLineExpression(&cond, false, false), "a condition expression, separated by 3 spaces from assignment statement, or directly below assignment statement")
+	
+       if len(init.Lhs) > 1 {
+	       p.stop("The single-line, 3-space separated form of 'for i' can only initialize (assign to) one index variable")
+	   }
+
+	   p.required(p.TripleSpace(), "a post-iteration assignment statement, separated by 3 spaces from condition")
+	
+	   p.required(p.parseAssignmentStatement(&post), "a post-iteration assignment statement, separated by 3 spaces from condition")
+
+       if len(post.Lhs) > 1 {
+          p.stop("The single-line, 3-space separated form of 'for i' can only assign to a single index variable")
+       }
+    } 
+
+
+   
+    // loop body statements
+
+	if ! p.BlanksAndIndent(col, true) {  // TODO Should limit this to one allowed blank line in each gap    
+	   p.checkForIndentError()	       
+	   p.required(false, "a statement, indented from the 'for'")
+	} 
+
+	blockPos := p.Pos()
+
+	// parse
+    p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")
+    for p.BlanksAndIndent(col,true) {
+       p.required(p.parseLoopBodyStatement(&stmtList, nReturnVals),"a statement")	
+    }
+
+    for p.BlanksThenIndentedLineComment(col) {}  // Gobble trailing indented line comments
+
+    p.checkForIndentError()	
+	
+
+	// translate
+	body := &ast.BlockStatement{blockPos,stmtList}	
+	
+	*forStmt = &ast.ForStatement{pos, init, cond, post, body}
+
+	return true
 }
+
+
+
+
 /*
     st := p.State()
     pos := p.Pos()
@@ -5596,6 +5717,8 @@ func (p *parser) parseForRangeStatement(rangeStmt **ast.RangeStatement, nReturnV
         if ! p.parseIndentedExpressions(col2, &collectionExprs) {	
 		    return p.Fail(st)
 	    }
+    } else {
+	    return p.Fail(st)
     }
 
     // declare any undeclared variables

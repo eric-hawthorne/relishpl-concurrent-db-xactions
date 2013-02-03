@@ -965,9 +965,9 @@ type (
 	// EGH A ForStatement represents a for statement.
 	ForStatement struct {
 		For  token.Pos // position of "for" keyword
-		Init Stmt      // initialization statement; or nil
-		Cond Expr      // condition; or nil
-		Post []Stmt    // post iteration statement; or nil - number of Post statements must equal number of Init variables
+		Init *AssignmentStatement      // initialization statement
+		Cond Expr      // condition
+		Post *AssignmentStatement    // post iteration statement 
 		Body *BlockStatement
 	}
 

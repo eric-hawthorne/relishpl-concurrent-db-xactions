@@ -1222,12 +1222,12 @@ for val1 val2 in someList<span class="future">OrOrderedSetOrOrderedMap</span> so
    statement      
 
 
-<span class="future">      
+    
 // Traditional C-style "for" loop incrementing and testing index variables
 
 for i = 0 
     less i n
-    i += 1
+    i = plus i 1
    statement
    statement
 
@@ -1236,14 +1236,14 @@ for i j =
        min c d
     and less i m
         less j n
-    i += 1
-    j = calcJ i
+    i j = plus i 1
+          calcJ i
    statement
    statement
 
-for i = 0   less i n   i += 1  // one-line 3-spaces-separated form allowed if a single index-variable
+for i = 0   less i n   i = plus i 1  // one-line 3-spaces-separated form allowed if a single index-variable
    statement
-   statement</span>
+   statement
     </pre></code>
 <p>
 <b>Semantics: "for" iteration over one or more Collections/Maps</b>
@@ -1258,11 +1258,15 @@ IMPORTANT NOTE: "for" iteration is <b>not thread-safe</b>. <span class="future">
 IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are being modified (by the same or another go-routine) during the iteration is <b>undefined</b>. That means you should never attempt it. It may or may not cause a panic, but even if it does not, the execution sequence and index and value variable settings are undefined and cannot be relied on.</span>  
 </p>
 <p>
-<b> <span class="future">Semantics: "for" with index incrementing and test expressions</span></b>
+<b>Semantics: "for" with index incrementing and test expressions</b>
 </p>
 <p>
-   <span class="future">TBD</span> 
-  </p>
+   The traditional C-like for statement requires an initializing assignment statement, a condition expression, and a post-iteration assignment statement.</p>
+<p> The initializing assignment statement is called once before the first execution of the loop body statements, and is used to set initial values for indexing or counting variables.</p>
+<p>The condition expression can be any expression that returns a single value, and the test is whether the value is the zero-value of the return type of the expression, also known as the false-equivalent value of the type.
+</p>
+<p>The post-iteration assignment statement must affect the same variables that were initialized. It is executed at the end of each execution of the loop body statements block. Note that multi-variable assignment statements evaluate their right-hand-sides first (in left-to-right order), and only then assign to the left-hand-side variables.
+</p>
 
 <br/>
   <a name="MethodCalls"><h3>Method Calls</h3></a>   

@@ -1721,6 +1721,8 @@ func (i *Interpreter) ExecStatement(t *Thread, stmt ast.Stmt) (breakLoop, contin
 		breakLoop, continueLoop, returnFrom = i.ExecWhileStatement(t, stmt.(*ast.WhileStatement))
 	case *ast.RangeStatement:
 		breakLoop, continueLoop, returnFrom = i.ExecForRangeStatement(t, stmt.(*ast.RangeStatement))
+	case *ast.ForStatement:
+		breakLoop, continueLoop, returnFrom = i.ExecForStatement(t, stmt.(*ast.ForStatement))		
 	case *ast.BreakStatement:
 		breakLoop = true
 	case *ast.ContinueStatement:
@@ -1788,6 +1790,32 @@ func (i *Interpreter) ExecWhileStatement(t *Thread, stmt *ast.WhileStatement) (b
 	}
 	return
 }
+
+
+
+func (i *Interpreter) ExecForStatement(t *Thread, stmt *ast.ForStatement) (breakLoop, continueLoop, returnFrom bool) {
+	defer UnM(t,TraceM(t,INTERP_TR2, "ExecForStatement"))
+
+    i.ExecAssignmentStatement(t, stmt.Init)
+
+	for (!breakLoop) && (!returnFrom) {
+		i.EvalExpr(t, stmt.Cond)
+		if t.Pop().IsZero() {
+			break
+		}
+		breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
+		if ! breakLoop && ! returnFrom {
+           i.ExecAssignmentStatement(t, stmt.Post)
+        }		
+	}
+	breakLoop = false
+	continueLoop = false
+	return
+}
+
+
+
+
 
 /* ast.RangeStatement
 For        token.Pos   // position of "for" keyword

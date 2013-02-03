@@ -50,7 +50,10 @@ expectsThreeArgs a1 String a2 String a3 ?Int > String
  A function that rexpects 3 args and prints them.
 """
    print a1 a2 a3
-   => a1
+   if lt a1 a2
+      => a1
+
+   => a2
 
 
 testMisc
@@ -67,14 +70,25 @@ testMisc
 
       // Foo
 
-      print a
-      print b
-      print c
-      print expectsThreeArgs
-               a 
-               b            
-               c
-               
+      for i j = 1 1   
+          lt (minus j i) 10  
+          i j = plus i 1
+                times i 3
+         print i
+         if lt a b
+            print a
+            print b
+            print c
+            print expectsThreeArgs
+                     a 
+                     b            
+                     c
+
+         // 
+
+         else
+            print "otherwise"
+         
       // Hallelujah!          
    
    // This is a trailing line comment         
