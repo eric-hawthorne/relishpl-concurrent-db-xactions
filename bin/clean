@@ -26,7 +26,7 @@
 # If you have not set the RELISH_HOME environment variable and don't want to,
 # then edit the following two variable value to match where your relish source distribution working directory is 
 #
-DEFAULT_RELISH_HOME=/opt/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
+DEFAULT_RELISH_HOME=~/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
 
 # Use the environment variable preferentially, but if not set, use the default above.
 RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}

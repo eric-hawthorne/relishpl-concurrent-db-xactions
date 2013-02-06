@@ -45,13 +45,15 @@ mkdir -p $DISTDIR
 
 # Read release version and architecture from the command line.
 RELEASE_VERSION=$1         # e.g. 1.0.2
-RELEASE_ARCHITECTURE=$2    # darwin-amd64 | linux_386 | linux_amd64
+RELEASE_ARCHITECTURE=$2    # darwin_amd64 | linux_386 | linux_amd64
 
 RELEASEDIR=$DISTDIR/relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}
 
 mkdir -p $RELEASEDIR/pl/bin
 
 cp -p $SRCDIR/bin/relish $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
+cp -p $SRCDIR/bin/clean $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
+cp -p $SRCDIR/bin/rmdb $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 
 cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
 
