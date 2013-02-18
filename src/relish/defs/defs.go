@@ -60,6 +60,9 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Channel" : true,
 "Mutex" : true,
 "RWMutex" : true,
+"Bytes": true,
+"Bits": true,
+"CodePoints": true,
 }
 
 

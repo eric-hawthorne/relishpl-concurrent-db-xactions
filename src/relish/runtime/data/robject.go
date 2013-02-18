@@ -825,7 +825,27 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
     case MutexType:
     	return &Mutex{}, nil
     case RWMutexType:
-    	return &RWMutex{}, nil    	    	
+    	return &RWMutex{}, nil    
+	
+   case BitType:
+	   var b Bit
+	   return b, nil
+	
+   case ByteType:
+	   var b Byte
+	   return b, nil	
+	
+   case CodePointType:
+	   var c CodePoint
+	   return c, nil
+	
+   case BitsType:
+	  fallthrough
+   case BytesType:
+      fallthrough	
+   case CodePointsType:
+	   return typ.Zero(), nil		
+	    	
     default:
        if typ.IsParameterized {
        	   if typ == ChannelType || strings.HasPrefix(typeName, "Channel of ") {  // TODO May need to change to just == "Channel"

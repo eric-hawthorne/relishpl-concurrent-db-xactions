@@ -109,6 +109,16 @@ var ListOfUintType *RType
 var SetOfUintType *RType
 
 
+// Slice Types
+var SliceType *RType
+var BytesType *RType
+var CodePointsType *RType
+// var IntsType *RType
+var BitsType *RType
+
+
+
+
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	PrimitiveType, _ = rt.CreateType("RelishPrimitive", "", []string{})
@@ -183,7 +193,14 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	ListOfUintType, _ = rt.GetListType(UintType)
 	SetOfUintType, _  = rt.GetSetType(UintType)		
 
+    // Slice types
 
+	SliceType, _ = rt.CreateType("Slice", "", []string{"RelishPrimitive"})    
+	BytesType, _ = rt.CreateType("Bytes", "", []string{"Slice"})    
+	CodePointsType, _ = rt.CreateType("CodePoints", "", []string{"Slice"})    
+// 	IntsType, _ = rt.CreateType("Ints", "", []string{"Slice"})    
+	BitsType, _ = rt.CreateType("Bits", "", []string{"Slice"})    
+	
 }
 
 
@@ -253,7 +270,16 @@ func (t *RType) Zero() RObject {
     case AnyType:
 		z = Int(0)	 
 	case IntOrStringType:
-		z = Int(0)			   	
+		z = Int(0)		
+	case BytesType:
+		z = Bytes(make([]byte,0))
+	case CodePointsType:
+		z = CodePoints(make([]rune,0))
+//	case IntsType:
+//		z = Ints(make([]int64,0))		
+	case BitsType:
+		
+		z = &Bits{   make([]byte,0)  ,    0}		
     default:
     	z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
     }   
@@ -2284,9 +2310,6 @@ const NIL Nil = 0
 
 
 type Float32 float32
-type Byte byte
-type Bit byte
-type CodePoint uint32  // Should we call it Rune ?? Probably not. CodePoint is unambiguous, if boring.
 
 
 
@@ -2955,3 +2978,1041 @@ func main() {
 }
 
 */
+
+
+type Byte byte
+
+/*
+TODO This will require fetching the real object
+*/
+func (p Byte) IsZero() bool {
+	return p == 0
+}
+
+func (p Byte) Type() *RType {
+	return ByteType
+}
+
+func (p Byte) This() RObject {
+	return p
+}
+
+func (p Byte) IsUnit() bool {
+	return true
+}
+
+func (p Byte) IsCollection() bool {
+	return false
+}
+
+func (p Byte) String() string {
+	return strconv.FormatUint(uint64(p),10)
+}
+
+func (p Byte) BitString() string {
+	return fmt.Sprintf("%08b",byte(p)) 
+}
+
+func (p Byte) Debug() string {
+	return p.String()
+}
+
+func (p Byte) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Byte) UUID() []byte {
+	panic("A Byte cannot have a UUID.")
+	return nil
+}
+
+func (p Byte) DBID() int64 {
+	panic("A Byte cannot have a DBID.")
+	return 0
+}
+
+func (p Byte) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Byte cannot have a UUID.")
+	return
+}
+
+func (p Byte) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Byte cannot have a UUID.")
+	return
+}
+
+func (p Byte) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Byte cannot have a UUID.")
+	return
+}
+
+func (p Byte) UUIDstr() string {
+	panic("A Byte cannot have a UUID.")
+	return ""
+}
+
+func (p Byte) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Byte cannot have a UUID.")
+	return
+}
+
+func (p Byte) UUIDabbrev() string {
+	panic("A Byte cannot have a UUID.")
+	return ""
+}
+
+func (p Byte) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Byte cannot have a UUID.")
+	return
+}
+
+func (p Byte) RemoveUUID() {
+	panic("A Byte does not have a UUID.")
+	return
+}
+
+func (p Byte) Flags() int8 {
+	panic("A Byte has no Flags.")
+	return 0
+}
+
+func (p Byte) IsDirty() bool {
+	return false
+}
+func (p Byte) SetDirty() {
+}
+func (p Byte) ClearDirty() {
+}
+
+func (p Byte) IsIdReversed() bool {
+	return false
+}
+
+func (p Byte) SetIdReversed() {}
+
+func (p Byte) ClearIdReversed() {}
+
+func (p Byte) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Byte) SetLoadNeeded()   {}
+func (p Byte) ClearLoadNeeded() {}
+
+func (p Byte) IsValid() bool { return true }
+func (p Byte) SetValid()     {}
+func (p Byte) ClearValid()   {}
+
+func (p Byte) IsMarked() bool { return false }
+func (p Byte) SetMarked()    {}
+func (p Byte) ClearMarked()  {}
+func (p Byte) ToggleMarked()  {}
+
+func (p Byte) Mark() bool { return false }
+
+func (p Byte) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Byte) SetStoredLocally()     {}
+func (p Byte) ClearStoredLocally()   {}
+
+func (p Byte) IsProxy() bool { return false }
+
+func (p Byte) IsTransient() bool { return false }
+
+func (p Byte) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p Byte) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   tree = byte(p)
+   return
+}
+
+func (p Byte) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Byte(byte(tree.(float64)))
+   return
+}
+
+
+
+
+
+
+type Bit byte
+
+/*
+TODO This will require fetching the real object
+*/
+func (p Bit) IsZero() bool {
+	return p == 0
+}
+
+func (p Bit) Type() *RType {
+	return BitType
+}
+
+func (p Bit) This() RObject {
+	return p
+}
+
+func (p Bit) IsUnit() bool {
+	return true
+}
+
+func (p Bit) IsCollection() bool {
+	return false
+}
+
+func (p Bit) String() string {
+	return strconv.FormatUint(uint64(p),10)
+}
+
+
+func (p Bit) Debug() string {
+	return p.String()
+}
+
+func (p Bit) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Bit) UUID() []byte {
+	panic("A Bit cannot have a UUID.")
+	return nil
+}
+
+func (p Bit) DBID() int64 {
+	panic("A Bit cannot have a DBID.")
+	return 0
+}
+
+func (p Bit) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Bit cannot have a UUID.")
+	return
+}
+
+func (p Bit) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Bit cannot have a UUID.")
+	return
+}
+
+func (p Bit) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Bit cannot have a UUID.")
+	return
+}
+
+func (p Bit) UUIDstr() string {
+	panic("A Bit cannot have a UUID.")
+	return ""
+}
+
+func (p Bit) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Bit cannot have a UUID.")
+	return
+}
+
+func (p Bit) UUIDabbrev() string {
+	panic("A Bit cannot have a UUID.")
+	return ""
+}
+
+func (p Bit) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Bit cannot have a UUID.")
+	return
+}
+
+func (p Bit) RemoveUUID() {
+	panic("A Bit does not have a UUID.")
+	return
+}
+
+func (p Bit) Flags() int8 {
+	panic("A Bit has no Flags.")
+	return 0
+}
+
+func (p Bit) IsDirty() bool {
+	return false
+}
+func (p Bit) SetDirty() {
+}
+func (p Bit) ClearDirty() {
+}
+
+func (p Bit) IsIdReversed() bool {
+	return false
+}
+
+func (p Bit) SetIdReversed() {}
+
+func (p Bit) ClearIdReversed() {}
+
+func (p Bit) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Bit) SetLoadNeeded()   {}
+func (p Bit) ClearLoadNeeded() {}
+
+func (p Bit) IsValid() bool { return true }
+func (p Bit) SetValid()     {}
+func (p Bit) ClearValid()   {}
+
+func (p Bit) IsMarked() bool { return false }
+func (p Bit) SetMarked()    {}
+func (p Bit) ClearMarked()  {}
+func (p Bit) ToggleMarked()  {}
+
+func (p Bit) Mark() bool { return false }
+
+func (p Bit) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Bit) SetStoredLocally()     {}
+func (p Bit) ClearStoredLocally()   {}
+
+func (p Bit) IsProxy() bool { return false }
+
+func (p Bit) IsTransient() bool { return false }
+
+func (p Bit) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p Bit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   tree = byte(p)
+   return
+}
+
+func (p Bit) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Bit(byte(tree.(float64)))
+   return
+}
+
+
+
+
+
+
+
+type CodePoint rune  // Should we call it Rune ?? Probably not. CodePoint is unambiguous, if boring.
+
+/*
+TODO This will require fetching the real object
+*/
+func (p CodePoint) IsZero() bool {
+	return p == 0
+}
+
+func (p CodePoint) Type() *RType {
+	return CodePointType
+}
+
+func (p CodePoint) This() RObject {
+	return p
+}
+
+func (p CodePoint) IsUnit() bool {
+	return true
+}
+
+func (p CodePoint) IsCollection() bool {
+	return false
+}
+
+func (p CodePoint) String() string {
+	return strconv.FormatInt(int64(p),10)
+}
+
+
+func (p CodePoint) Debug() string {
+	return p.String()
+}
+
+func (p CodePoint) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p CodePoint) UUID() []byte {
+	panic("A CodePoint cannot have a UUID.")
+	return nil
+}
+
+func (p CodePoint) DBID() int64 {
+	panic("A CodePoint cannot have a DBID.")
+	return 0
+}
+
+func (p CodePoint) EnsureUUID() (theUUID []byte, err error) {
+	panic("A CodePoint cannot have a UUID.")
+	return
+}
+
+func (p CodePoint) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A CodePoint cannot have a UUID.")
+	return
+}
+
+func (p CodePoint) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A CodePoint cannot have a UUID.")
+	return
+}
+
+func (p CodePoint) UUIDstr() string {
+	panic("A CodePoint cannot have a UUID.")
+	return ""
+}
+
+func (p CodePoint) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A CodePoint cannot have a UUID.")
+	return
+}
+
+func (p CodePoint) UUIDabbrev() string {
+	panic("A CodePoint cannot have a UUID.")
+	return ""
+}
+
+func (p CodePoint) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A CodePoint cannot have a UUID.")
+	return
+}
+
+func (p CodePoint) RemoveUUID() {
+	panic("A CodePoint does not have a UUID.")
+	return
+}
+
+func (p CodePoint) Flags() int8 {
+	panic("A CodePoint has no Flags.")
+	return 0
+}
+
+func (p CodePoint) IsDirty() bool {
+	return false
+}
+func (p CodePoint) SetDirty() {
+}
+func (p CodePoint) ClearDirty() {
+}
+
+func (p CodePoint) IsIdReversed() bool {
+	return false
+}
+
+func (p CodePoint) SetIdReversed() {}
+
+func (p CodePoint) ClearIdReversed() {}
+
+func (p CodePoint) IsLoadNeeded() bool {
+	return false
+}
+
+func (p CodePoint) SetLoadNeeded()   {}
+func (p CodePoint) ClearLoadNeeded() {}
+
+func (p CodePoint) IsValid() bool { return true }
+func (p CodePoint) SetValid()     {}
+func (p CodePoint) ClearValid()   {}
+
+func (p CodePoint) IsMarked() bool { return false }
+func (p CodePoint) SetMarked()    {}
+func (p CodePoint) ClearMarked()  {}
+func (p CodePoint) ToggleMarked()  {}
+
+func (p CodePoint) Mark() bool { return false }
+
+func (p CodePoint) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p CodePoint) SetStoredLocally()     {}
+func (p CodePoint) ClearStoredLocally()   {}
+
+func (p CodePoint) IsProxy() bool { return false }
+
+func (p CodePoint) IsTransient() bool { return false }
+
+func (p CodePoint) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p CodePoint) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   tree = rune(p)
+   return
+}
+
+func (p CodePoint) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = CodePoint(rune(tree.(float64)))
+   return
+}
+
+
+/*
+Bytes
+CodePoints
+Bits
+*/
+
+
+
+
+type Bytes []byte
+
+/*
+ TODO This will require fetching the real object
+*/
+func (p Bytes) IsZero() bool {
+	return len(p) == 0
+}
+
+func (p Bytes) Type() *RType {
+	return BytesType
+}
+
+func (p Bytes) This() RObject {
+	return p
+}
+
+func (p Bytes) IsUnit() bool {
+	return false
+}
+
+func (p Bytes) IsCollection() bool {
+	return true
+}
+
+func (p Bytes) String() string {
+   bt := ([]byte)(p)
+   return string(bt)
+}
+
+func (p Bytes) Debug() string {
+   bt := ([]byte)(p)
+   s := ""
+   if len(bt) > 16 {
+	   sep := "\n   [ "	
+	   for i,b := range bt {
+		  if (i > 0) {
+			 if (i % 8 == 0) {
+		        sep = "\n     "
+		     } else {
+		        sep = " "	
+		     }
+		  }		
+	      s += sep + fmt.Sprintf("%3d",b)
+	   }
+	   s += "\n   ]"
+   	} else { // Horizontal layout
+	   s = "["
+	   sep := ""
+	   for _,b := range bt {
+	      s += sep + fmt.Sprintf("%3d",b)
+	      sep = " "
+	   }	   
+	   s += "]"
+   }
+   return s
+}
+
+
+func (p Bytes) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p Bytes) UUID() []byte {
+	panic("A Bytes cannot have a UUID.")
+	return nil
+}
+
+func (p Bytes) DBID() int64 {
+	panic("A Bytes cannot have a DBID.")
+	return 0
+}
+
+func (p Bytes) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Bytes cannot have a UUID.")
+	return
+}
+
+func (p Bytes) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Bytes cannot have a UUID.")
+	return
+}
+
+func (p Bytes) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Bytes cannot have a UUID.")
+	return
+}
+
+func (p Bytes) UUIDstr() string {
+	panic("A Bytes cannot have a UUID.")
+	return ""
+}
+
+func (p Bytes) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Bytes cannot have a UUID.")
+	return
+}
+
+func (p Bytes) UUIDabbrev() string {
+	panic("A Bytes cannot have a UUID.")
+	return ""
+}
+
+func (p Bytes) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Bytes cannot have a UUID.")
+	return
+}
+
+func (p Bytes) RemoveUUID() {
+	panic("A Bytes does not have a UUID.")
+	return
+}
+
+func (p Bytes) Flags() int8 {
+	panic("A Bytes has no Flags.")
+	return 0
+}
+
+func (p Bytes) IsDirty() bool {
+	return false
+}
+func (p Bytes) SetDirty() {
+}
+func (p Bytes) ClearDirty() {
+}
+
+func (p Bytes) IsIdReversed() bool {
+	return false
+}
+
+func (p Bytes) SetIdReversed() {}
+
+func (p Bytes) ClearIdReversed() {}
+
+func (p Bytes) IsLoadNeeded() bool {
+	return false
+}
+
+func (p Bytes) SetLoadNeeded()   {}
+func (p Bytes) ClearLoadNeeded() {}
+
+func (p Bytes) IsValid() bool { return true }
+func (p Bytes) SetValid()     {}
+func (p Bytes) ClearValid()   {}
+
+func (p Bytes) IsMarked() bool { return false }
+func (p Bytes) SetMarked()    {}
+func (p Bytes) ClearMarked()  {}
+func (p Bytes) ToggleMarked()  {}
+
+func (p Bytes) Mark() bool { return false }
+
+func (p Bytes) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p Bytes) SetStoredLocally()     {}
+func (p Bytes) ClearStoredLocally()   {}
+
+func (p Bytes) IsProxy() bool { return false }
+
+func (p Bytes) IsTransient() bool { return false }
+
+func (p Bytes) Iterable() (sliceOrMap interface{}, err error) {
+	return ([]byte)(p),nil
+}
+
+func (p Bytes) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   tree = ([]byte)(p)
+   return
+}
+
+func (p Bytes) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   obj = Bytes(tree.([]byte))
+   return
+}
+
+
+
+
+
+
+type Bits struct {
+	b []byte
+	n int 
+}
+
+/*
+TODO This will require fetching the real object
+*/
+func (p *Bits) IsZero() bool {
+	return p.n == 0
+}
+
+func (p *Bits) Type() *RType {
+	return BitsType
+}
+
+func (p *Bits) This() RObject {
+	return p
+}
+
+func (p *Bits) IsUnit() bool {
+	return false
+}
+
+func (p *Bits) IsCollection() bool {
+	return true
+}
+
+/*
+How many bits of the bit string are stored in a last extra byte not all of which is used.
+If the answer is 0, there is no extra partially used byte.
+*/
+func (p *Bits) NumRemainderBits() int {
+	return p.n % 8
+}
+
+func (p *Bits) String() string {
+   bt := p.b
+   nWholeBytes := len(p.b)
+   rem := p.NumRemainderBits() 
+   if rem > 0 {
+      nWholeBytes--	
+   } 
+
+   s := ""
+   sep := ""
+   var i int
+   for i = 0; i < nWholeBytes; i++ {
+	   if i > 0 && i % 8 == 0 {
+	      sep = "\n"	
+	   }
+	   s += sep +  fmt.Sprintf("%08b",bt[i])    
+	   sep = " "
+   }
+
+   if rem > 0 {
+	
+	  byteString := fmt.Sprintf("%08b",bt[i])   
+      if i > 0 && i % 8 == 0 {
+         sep = "\n"	
+      }	
+	  s += sep + byteString[:rem]
+   }	
+   s += "\n"
+   return s	
+}
+
+
+
+func (p *Bits) Debug() string {
+	return p.String()
+}
+
+func (p *Bits) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p *Bits) UUID() []byte {
+	panic("A Bits cannot have a UUID.")
+	return nil
+}
+
+func (p *Bits) DBID() int64 {
+	panic("A Bits cannot have a DBID.")
+	return 0
+}
+
+func (p *Bits) EnsureUUID() (theUUID []byte, err error) {
+	panic("A Bits cannot have a UUID.")
+	return
+}
+
+func (p *Bits) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A Bits cannot have a UUID.")
+	return
+}
+
+func (p *Bits) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A Bits cannot have a UUID.")
+	return
+}
+
+func (p *Bits) UUIDstr() string {
+	panic("A Bits cannot have a UUID.")
+	return ""
+}
+
+func (p *Bits) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A Bits cannot have a UUID.")
+	return
+}
+
+func (p *Bits) UUIDabbrev() string {
+	panic("A Bits cannot have a UUID.")
+	return ""
+}
+
+func (p *Bits) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A Bits cannot have a UUID.")
+	return
+}
+
+func (p *Bits) RemoveUUID() {
+	panic("A Bits does not have a UUID.")
+	return
+}
+
+func (p *Bits) Flags() int8 {
+	panic("A Bits has no Flags.")
+	return 0
+}
+
+func (p *Bits) IsDirty() bool {
+	return false
+}
+func (p *Bits) SetDirty() {
+}
+func (p *Bits) ClearDirty() {
+}
+
+func (p *Bits) IsIdReversed() bool {
+	return false
+}
+
+func (p *Bits) SetIdReversed() {}
+
+func (p *Bits) ClearIdReversed() {}
+
+func (p *Bits) IsLoadNeeded() bool {
+	return false
+}
+
+func (p *Bits) SetLoadNeeded()   {}
+func (p *Bits) ClearLoadNeeded() {}
+
+func (p *Bits) IsValid() bool { return true }
+func (p *Bits) SetValid()     {}
+func (p *Bits) ClearValid()   {}
+
+func (p *Bits) IsMarked() bool { return false }
+func (p *Bits) SetMarked()    {}
+func (p *Bits) ClearMarked()  {}
+func (p *Bits) ToggleMarked()  {}
+
+func (p *Bits) Mark() bool { return false }
+
+func (p *Bits) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p *Bits) SetStoredLocally()     {}
+func (p *Bits) ClearStoredLocally()   {}
+
+func (p *Bits) IsProxy() bool { return false }
+
+func (p *Bits) IsTransient() bool { return false }
+
+func (p *Bits) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Iterable is not implemented yet for Bits.")
+}
+
+func (p *Bits) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   err = errors.New("Bits type does not yet support ToMapListTree")
+   return
+}
+
+func (p *Bits) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Bits type does not yet support FroMapListTree")
+   return
+}
+
+
+
+
+
+
+
+type CodePoints []rune  // Should we call it Rune ?? Probably not. CodePoint is unambiguous, if boring.
+
+/*
+TODO This will require fetching the real object
+*/
+func (p CodePoints) IsZero() bool {
+	return len(p) == 0
+}
+
+func (p CodePoints) Type() *RType {
+	return CodePointsType
+}
+
+func (p CodePoints) This() RObject {
+	return p
+}
+
+func (p CodePoints) IsUnit() bool {
+	return false
+}
+
+func (p CodePoints) IsCollection() bool {
+	return true
+}
+
+func (p CodePoints) String() string {
+   bt := ([]rune)(p)
+   s := ""
+   if len(bt) > 16 {
+	   sep := "\n   ["
+	   for i,b := range bt {
+	      s += sep + fmt.Sprintf("%10d",b)
+		  if (i > 0) && (i % 8 == 0) {
+		     sep = "\n      "
+		  } else {
+		     sep = " "	
+		  }	
+	   }
+	   s += "\n   ]"
+   	} else { // Horizontal layout
+	   s = "["
+	   sep := ""
+	   for _,b := range bt {
+	      s += sep + fmt.Sprintf("%v",b)
+	      sep = " "
+	   }	   
+	   s += "]"
+   }
+   return s
+}
+
+
+
+func (p CodePoints) Debug() string {
+	return p.String()
+}
+
+func (p CodePoints) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p CodePoints) UUID() []byte {
+	panic("A CodePoints cannot have a UUID.")
+	return nil
+}
+
+func (p CodePoints) DBID() int64 {
+	panic("A CodePoints cannot have a DBID.")
+	return 0
+}
+
+func (p CodePoints) EnsureUUID() (theUUID []byte, err error) {
+	panic("A CodePoints cannot have a UUID.")
+	return
+}
+
+func (p CodePoints) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A CodePoints cannot have a UUID.")
+	return
+}
+
+func (p CodePoints) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A CodePoints cannot have a UUID.")
+	return
+}
+
+func (p CodePoints) UUIDstr() string {
+	panic("A CodePoints cannot have a UUID.")
+	return ""
+}
+
+func (p CodePoints) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A CodePoints cannot have a UUID.")
+	return
+}
+
+func (p CodePoints) UUIDabbrev() string {
+	panic("A CodePoints cannot have a UUID.")
+	return ""
+}
+
+func (p CodePoints) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A CodePoints cannot have a UUID.")
+	return
+}
+
+func (p CodePoints) RemoveUUID() {
+	panic("A CodePoints does not have a UUID.")
+	return
+}
+
+func (p CodePoints) Flags() int8 {
+	panic("A CodePoints has no Flags.")
+	return 0
+}
+
+func (p CodePoints) IsDirty() bool {
+	return false
+}
+func (p CodePoints) SetDirty() {
+}
+func (p CodePoints) ClearDirty() {
+}
+
+func (p CodePoints) IsIdReversed() bool {
+	return false
+}
+
+func (p CodePoints) SetIdReversed() {}
+
+func (p CodePoints) ClearIdReversed() {}
+
+func (p CodePoints) IsLoadNeeded() bool {
+	return false
+}
+
+func (p CodePoints) SetLoadNeeded()   {}
+func (p CodePoints) ClearLoadNeeded() {}
+
+func (p CodePoints) IsValid() bool { return true }
+func (p CodePoints) SetValid()     {}
+func (p CodePoints) ClearValid()   {}
+
+func (p CodePoints) IsMarked() bool { return false }
+func (p CodePoints) SetMarked()    {}
+func (p CodePoints) ClearMarked()  {}
+func (p CodePoints) ToggleMarked()  {}
+
+func (p CodePoints) Mark() bool { return false }
+
+func (p CodePoints) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p CodePoints) SetStoredLocally()     {}
+func (p CodePoints) ClearStoredLocally()   {}
+
+func (p CodePoints) IsProxy() bool { return false }
+
+func (p CodePoints) IsTransient() bool { return false }
+
+func (p CodePoints) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p CodePoints) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   err = errors.New("CodePoints type does not yet support ToMapListTree")
+   return
+}
+
+func (p CodePoints) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("CodePoints type does not yet support FroMapListTree")
+   return
+}
+
+
+

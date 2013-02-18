@@ -1704,6 +1704,23 @@ replace s String old String new String n Int > String
 	}
 	channelInit1Method.PrimitiveCode = builtinInitChannel	
 
+	bytesInitMethod, err := RT.CreateMethod("",nil,"initBytes", []string{"b","n"}, []string{"Bytes","Int"},  []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesInitMethod.PrimitiveCode = builtinInitBytes 
+	
+	bytesInitMethod2, err := RT.CreateMethod("",nil,"initBytes", []string{"b","n","c"}, []string{"Bytes","Int","Int"},  []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesInitMethod2.PrimitiveCode = builtinInitBytes	
+	
+	bytesFromStringInitMethod, err := RT.CreateMethod("",nil,"initBytes", []string{"b","s"}, []string{"Bytes","String"},  []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesFromStringInitMethod.PrimitiveCode = builtinInitBytesFromString	
 
 
 	stringInitMethod, err := RT.CreateMethod("",nil,"initString", []string{"s","o"}, []string{"String","Any"},  []string{"String"}, false, 0, false)
@@ -4135,6 +4152,38 @@ func builtinInitChannel(th InterpreterThread, objects []RObject) []RObject {
 	} 
 	c.Ch = make(chan RObject, n)
 	return []RObject{c}
+}
+
+
+
+func builtinInitBytes(th InterpreterThread, objects []RObject) []RObject {
+
+	var n int
+	var c int
+	if len(objects) >= 2 {
+		n = int(objects[1].(Int))
+		if n < 0 {
+			rterr.Stop("Bytes length cannot be specified to be less than zero.")
+		}
+		if len(objects) == 3 {
+			c = int(objects[2].(Int))
+			if c < n {
+				rterr.Stop("Bytes capacity cannot be specified to be less than length.")
+			}			
+		} else {
+			c = n
+		}
+	} 
+	b := Bytes(make([]byte,n,c))
+	return []RObject{b}
+}
+
+func builtinInitBytesFromString(th InterpreterThread, objects []RObject) []RObject {
+   
+    s := string(objects[1].(String))
+
+    b := ([]byte)(s)
+	return []RObject{Bytes(b)}
 }
 
 

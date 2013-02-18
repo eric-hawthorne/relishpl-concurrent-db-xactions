@@ -120,3 +120,11 @@ multi-line %s string in relish!!
       print err
    else
       print b   
+
+
+   s = "I am going to be transmogrified.\nAre you?"
+   print s
+   b = Bytes s
+   dbg b
+   print String b
+

@@ -34,16 +34,16 @@ originating organization/organizational unit for the majority of the year. The y
 software artifact was produced.
 
 Relish code artifact originators can and should register their code origin domain at the website 
-http://register.relishing.org. This ensures origin uniqueness. Originators can also register each software artifact 
+http://register.relish.pl . This ensures origin uniqueness. Originators can also register each software artifact 
 there if they wish. Doing so will ensure their software appears in a directory of relish code artifacts.
  
 An artifact must be named according to the following conventions:
 some_artifact_name or some/long_path/to/some_artifact_name
 
 Each publicly released relish code artifact should be hosted at (by example):
-http://mysuborg.example.org/relish/artifacts/some/long_path/to/some_artifact_name 
+http://mysuborg.example.org/relish/artifacts/mysuborg.example.org2012/some/long_path/to/some_artifact_name 
 but in any case, must be hosted on some Google-searchable website at the path:
-/relish/artifacts/some/long_path/to/some_artifact_name 
+/relish/artifacts/mysuborg.example.org2012/some/long_path/to/some_artifact_name 
 in order to be found by the relish code fetching-and-building system.
 
 For each artifact that is published, the minimum file set that must be present on the website
