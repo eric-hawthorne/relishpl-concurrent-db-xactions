@@ -16,6 +16,10 @@ var StandardLibPackagePath map[string]bool = map[string]bool {
 	"json" : true,		
 }
 
+var StandardLibPackageArtifact map[string]string = map[string]string {
+	"testrelishpkg" : "relish.pl2012/lib/test1",		
+}
+
 
 // Lookup table of relish language builtin type names
 

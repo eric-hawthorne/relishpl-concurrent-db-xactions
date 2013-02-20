@@ -668,7 +668,10 @@ func (p *parser) parsePackageImport(importSpecs *[]*ast.RelishImportSpec) bool {
 	  originAndArtifactName = packagePath[:pkgPos]
 	  packageName = packagePath[pkgPos+5:]
    } else {
-	  if StandardLibPackagePath[packagePath] {
+      libArtifact,libArtifactFound := StandardLibPackageArtifact[packagePath]	
+      if libArtifactFound {
+	     originAndArtifactName = libArtifact
+      } else if StandardLibPackagePath[packagePath] {
 	      originAndArtifactName = "relish"	
 	  } else {
 	      originAndArtifactName = p.currentOriginAndArtifactName
