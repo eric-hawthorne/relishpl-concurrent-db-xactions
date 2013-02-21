@@ -260,6 +260,10 @@ testCollections
 
    print places
 
+   fakeCollection = nil
+   for i val in fakeCollection
+      print "Oops!"
+      
 
 foo a [] String
 """
