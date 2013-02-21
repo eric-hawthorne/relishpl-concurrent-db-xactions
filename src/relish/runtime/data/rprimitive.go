@@ -116,8 +116,21 @@ var CodePointsType *RType
 // var IntsType *RType
 var BitsType *RType
 
-
-
+// IO library Types
+var WriterType *RType
+var ReaderType *RType
+var WriterAtType *RType
+var ReaderAtType *RType
+var SeekerType *RType
+var CloserType *RType
+var WriteCloserType *RType
+var WriteSeekerType *RType
+var ReadCloserType *RType
+var ReadSeekerType *RType
+var ReadWriterType *RType
+var ReadWriteCloserType *RType
+var ReadWriteSeekerType *RType
+var FileType *RType
 
 func (rt *RuntimeEnv) createPrimitiveTypes() {
 
@@ -2178,6 +2191,25 @@ func (p Nil) IsUnit() bool {
 func (p Nil) IsCollection() bool {
 	return false
 }
+
+/*
+Return a closed channel that can be tested to ascertain it will return no collection elements.
+*/
+func (p Nil) Iter(th InterpreterThread) <-chan RObject {
+	ch := make(chan RObject)
+	close(ch)
+	return ch
+}
+
+func (p Nil) Length() int64 {
+	return 0
+}
+
+func (p Nil) Cap() int64 {
+	return 0
+}
+
+
 
 func (p Nil) String() string {
 	return "*nil*"

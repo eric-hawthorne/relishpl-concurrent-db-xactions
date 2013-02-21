@@ -1841,11 +1841,27 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 	lastCollectionPos := t.Pos
 	nCollections := lastCollectionPos - stackPosBefore // the number of collections pushed onto the stack.	
 
+    var haveNilCollection bool = false  // check for a special case
+
 	var iters []<-chan RObject
 	for collPos := stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
-		collection := t.Stack[collPos].(RCollection)
-		iter := collection.Iter(t)
+		var iter <-chan RObject
+		coll := t.Stack[collPos]
+		switch coll.(type) {
+		   case Nil:
+		   	  haveNilCollection = true
+		   	  break
+		   	  // iter = coll.(Nil).Iter(t)  // unnecessary
+		   default:
+			 collection := coll.(RCollection)
+		     iter = collection.Iter(t)	   	
+		}
 		iters = append(iters, iter)
+	}
+
+	if haveNilCollection {
+	    t.PopN(nCollections) // Pop the collections off the stack. 
+	   return
 	}
 
 	var idx int64 = 0 // value of index integer in each loop iteration
