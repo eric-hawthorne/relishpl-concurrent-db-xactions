@@ -31,8 +31,13 @@ fi
 if [ $# -eq 1 ]  
 then
 	ARTIFACT=$1
-	rm -fr $DATADIR/$ARTIFACT/db1.db 
-        echo "Removed $DATADIR/$ARTIFACT/db1.db" 
+	if [ -f $DATADIR/$ARTIFACT/db1.db ] # database exists
+	then
+		rm -fr $DATADIR/$ARTIFACT/db1.db 
+		echo "Removed $DATADIR/$ARTIFACT/db1.db" 
+	else
+		echo "$DATADIR/$ARTIFACT/db1.db NOT FOUND! Do you have RELISH_HOME set correctly?" 
+	fi
 else
 	echo "usage: rmdb origin/artifact    e.g.  rmdb relishpl2012/relish_tests" 
 fi

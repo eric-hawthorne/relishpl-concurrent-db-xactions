@@ -169,6 +169,7 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
    NOT HAPPY WITH THE UNCERTAINTY OF STORAGE IN THE FLAG VALUE !!!
 */
 func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
+    defer Un(Trace(PERSIST_TR2, "EnsurePersisted", obj))	
 	if obj.IsStoredLocally() {
 		return
 	}
@@ -207,13 +208,15 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 	for _, attr := range objTyp.Attributes {
 
+        Logln(PERSIST2_,attr)
+
 		if !attr.Part.Type.IsPrimitive {
 
 			table := db.TableNameIfy(attr.ShortName())
 
 			val, found := RT.AttrValue(obj, attr, false, true)
 			if !found {
-				break
+				continue
 			}
 			if attr.Part.CollectionType != "" { // a collection of non-primitives
 				collection := val.(RCollection)
@@ -278,7 +281,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 				val, found := RT.AttrValue(obj, attr, false, true)
 				if !found {
-					break
+					continue
 				}
 				if attr.Part.CollectionType != "" { // a collection of non-primitives
 					collection := val.(RCollection)
