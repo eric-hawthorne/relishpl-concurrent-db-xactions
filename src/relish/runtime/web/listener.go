@@ -352,8 +352,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
       // a subdirectory controller package.
       handlerMethod = findHandlerMethod(pkg,"default") 
       if handlerMethod != nil {   
-	     remainingPathSegments = remainingPathSegments[1:]     
-       Log(WEB_,"3. Found default handler method in %s\n",pkg.Name) 
+	     // remainingPathSegments = remainingPathSegments[1:]     
+         Log(WEB_,"3. Found default handler method in %s\n",pkg.Name) 
 	     break
 	  }    
       http.Error(w, "404 page or resource not found", http.StatusNotFound)	
