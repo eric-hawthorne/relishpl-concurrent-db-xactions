@@ -660,12 +660,15 @@ func (g *Generator) generateMethods() {
 			  if inputArgDecl.IsVariadic {
                  if inputArgDecl.Type.CollectionSpec.Kind == token.LIST { 
 			         variadicParameterName = inputArgDecl.Name.Name
-			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot) ???
+			         variadicParameterType = g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+//			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot) ???
 			
 			
 	              } else { // inputArgDecl.Type..CollectionSpec.Kind == token.MAP				
 				     wildcardKeywordsParameterName = inputArgDecl.Name.Name
-				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+				     wildcardKeywordsParameterType = g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+//				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+
 			      }
 			  } else {
 			     parameterNames = append(parameterNames, inputArgDecl.Name.Name)

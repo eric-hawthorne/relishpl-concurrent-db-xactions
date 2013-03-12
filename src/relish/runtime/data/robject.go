@@ -844,9 +844,13 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
    case BytesType:
       fallthrough	
    case CodePointsType:
-	   return typ.Zero(), nil		
+	   return typ.Zero(), nil	
+	
+   case FileType:
+	  w := &GoWrapper{nil,typ}
+      return w, nil		
 	    	
-    default:
+   default:
        if typ.IsParameterized {
        	   if typ == ChannelType || strings.HasPrefix(typeName, "Channel of ") {  // TODO May need to change to just == "Channel"
               c := &Channel{} // this is an uninitialized Channel value

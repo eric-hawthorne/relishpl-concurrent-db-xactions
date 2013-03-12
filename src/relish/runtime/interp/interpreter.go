@@ -257,9 +257,40 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
       }
    }
 
-   // Finished handling keyword args. For now, throw error if extra unmapped ones. Til we can handle these with method kw params.
+   // Finished handling keyword args whose keys are method parameter names.
+   // Now check to see if the method declared a wildcardKeywords parameter.
+   // If so, append the remaining unmatched key=val arguments to a new Map, and 
+   // make that map the value of the wildcardKeywords parameter.
+   // If the method does not declare that it expects wildcard keywords, 
+   // throw an error if the web request included extra unmatched key=val arguents.
 
-   if len(extraArgKeys) == 1 {
+   var keywordsValType *RType
+   var keywordsArgMap Map
+   if method.WildcardKeywordsParameterName != "" {  // method has a keywords parameter  
+	
+      keywordsValType = method.WildcardKeywordsParameterType.ValType()
+
+	  keywordsArgMap = method.WildcardKeywordsParameterType.Prototype().(Map)	
+	
+	  for _,key := range extraArgKeys {
+	     	
+          valStr := keywordArgStringValues.Get(key)   
+          if valStr == "" {
+          	panic(fmt.Sprintf("How is it that the value of argument '%s' is the empty string? Shouldn't be able to happen.", key))
+          }	
+	
+		  var obj RObject
+          obj, err = i.variadicArg(keywordsValType, valStr)  
+	      if err != nil {   // Parameter type incompatibility
+		     return
+		  }
+          keywordsArgMap.PutSimple(String(key), obj)	
+	  }
+	
+	  // Now what? assign the keywordArgMap to something.
+   	
+	 
+   } else if len(extraArgKeys) == 1 {
        err = fmt.Errorf("Web service request has extra argument %s.",extraArgKeys[0])
        return
    } else if len(extraArgKeys) > 1 {
@@ -313,6 +344,10 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
               return	
           }
    	  }   
+   }
+
+   if method.WildcardKeywordsParameterName != "" {
+      args = append(args,keywordsArgMap)
    }
 
    if method.VariadicParameterName != "" {
@@ -407,9 +442,8 @@ func (interp *Interpreter) setMethodArg(args []RObject, paramTypes []*RType, i i
 }
 
 /*
-Converts the valStr to the type of the ith parameter of a method, and sets args[i] to the resulting RObject.
+Converts the valStr to the specified type.
 Returns type conversion errors.
-argKey should be set to the valStr if the argument is not a keyword argument.
 */
 func (interp *Interpreter) variadicArg(paramType *RType, valStr string) (obj RObject, err error) {
     switch paramType {
@@ -1172,7 +1206,14 @@ func (i *Interpreter) EnsureType(packagePath string, typeSpec *ast.TypeSpec) (ty
 			   return			
 			}			
 	    case token.MAP:
-	       panic("I don't handle Map type specifications in this context yet.")			
+		    var valTyp *RType
+			valTyp, err = i.EnsureType(packagePath, typeSpec.Params[0])
+			if err != nil {
+			   return			
+			}		
+            typ, err = i.rt.GetMapType(baseType, valTyp) 		
+		
+	        // panic("I don't handle Map type specifications in this context yet.")			
 	    }
 	}	
     return

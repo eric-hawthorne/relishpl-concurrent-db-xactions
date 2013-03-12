@@ -325,23 +325,23 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	      remainingPathSegments = remainingPathSegments[1:]
         Log(WEB_, "    remainingPathSegments: %v\n",remainingPathSegments)       
 	      break
-	    }
+	  }
       pkgName += "/" + name
       Log(WEB_, "2. pkgName: %s\n", pkgName)       
       nextPkg := RT.Packages[pkgName]
       if nextPkg != nil {
 	     remainingPathSegments = remainingPathSegments[1:]
-       pkg = nextPkg
-       continue  	   
+         pkg = nextPkg
+         continue  	   
       }  
       Logln(WEB_, "     package was not found in RT.Packages")           
 
       if strings.HasSuffix(pkgName,"/pkg/web/favicon.ico") {
          handlerMethod = findHandlerMethod(pkg,"icon")
          if handlerMethod != nil {  
-           Log(WEB_, "%s %s\n",pkg.Name,methodName)  
-           remainingPathSegments = remainingPathSegments[1:]      
-           break
+            Log(WEB_, "%s %s\n",pkg.Name,methodName)  
+            remainingPathSegments = remainingPathSegments[1:]      
+            break
          } else {
             http.Error(w, "", http.StatusNotFound) 
             return

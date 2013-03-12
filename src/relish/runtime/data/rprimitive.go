@@ -185,6 +185,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	RWMutexType, _ = rt.CreateType("RWMutex", "", []string{})	
 
+	FileType,_ = rt.CreateType("relish.pl2012/lib/core/pkg/io/File", "", []string{"Any"})
 
     // Primitive collection types
 
@@ -292,7 +293,11 @@ func (t *RType) Zero() RObject {
 //		z = Ints(make([]int64,0))		
 	case BitsType:
 		
-		z = &Bits{   make([]byte,0)  ,    0}		
+		z = &Bits{   make([]byte,0)  ,    0}	
+		
+	 case FileType: 
+	    z = &GoWrapper{nil,t}	
+			
     default:
     	z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
     }   
@@ -4043,6 +4048,181 @@ func (p CodePoints) ToMapListTree(includePrivate bool, visited map[RObject]bool)
 
 func (p CodePoints) FromMapListTree(tree interface{}) (obj RObject, err error) {
    err = errors.New("CodePoints type does not yet support FroMapListTree")
+   return
+}
+
+/*
+Non-persistable objects which wrap a Go object.
+Used for os.File presently.
+May also be used for other standard library builtin types, but may also be used
+for extension of relish with Go objects in custom builds of relish.
+Only usable for "unitary" as opposed to collection types.
+*/
+
+type GoWrapper struct {
+	GoObj interface{}
+	typ *RType
+}
+
+func (p GoWrapper) IsZero() bool {
+	return p.GoObj == nil
+}
+
+func (p GoWrapper) Type() *RType {
+	return p.typ
+}
+
+func (p GoWrapper) This() RObject {
+	return p
+}
+
+/*
+Hmmm. TODO
+*/
+func (p GoWrapper) IsUnit() bool {
+	return true
+}
+
+/*
+Hmmm. TODO Maybe a GoWrapper should be considered a collection???
+*/
+func (p GoWrapper) IsCollection() bool {
+	return false
+}
+
+func (p GoWrapper) String() string {
+	return fmt.Sprintf("%v", p.GoObj)
+}
+
+func (p GoWrapper) Debug() string {
+	return p.String()
+}
+
+func (p GoWrapper) HasUUID() bool {
+	return false
+}
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p GoWrapper) UUID() []byte {
+	panic("A GoWrapper cannot have a UUID.")
+	return nil
+}
+
+func (p GoWrapper) DBID() int64 {
+	panic("A GoWrapper cannot have a DBID.")
+	return 0
+}
+
+func (p GoWrapper) EnsureUUID() (theUUID []byte, err error) {
+	panic("A GoWrapper cannot have a UUID.")
+	return
+}
+
+func (p GoWrapper) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A GoWrapper cannot have a UUID.")
+	return
+}
+
+func (p GoWrapper) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A GoWrapper cannot have a UUID.")
+	return
+}
+
+func (p GoWrapper) UUIDstr() string {
+	panic("A GoWrapper cannot have a UUID.")
+	return ""
+}
+
+func (p GoWrapper) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A GoWrapper cannot have a UUID.")
+	return
+}
+
+func (p GoWrapper) UUIDabbrev() string {
+	panic("A GoWrapper cannot have a UUID.")
+	return ""
+}
+
+func (p GoWrapper) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A GoWrapper cannot have a UUID.")
+	return
+}
+
+func (p GoWrapper) RemoveUUID() {
+	panic("A GoWrapper does not have a UUID.")
+	return
+}
+
+func (p GoWrapper) Flags() int8 {
+	panic("A GoWrapper has no Flags.")
+	return 0
+}
+
+func (p GoWrapper) IsDirty() bool {
+	return false
+}
+func (p GoWrapper) SetDirty() {
+}
+func (p GoWrapper) ClearDirty() {
+}
+
+func (p GoWrapper) IsIdReversed() bool {
+	return false
+}
+
+func (p GoWrapper) SetIdReversed() {}
+
+func (p GoWrapper) ClearIdReversed() {}
+
+func (p GoWrapper) IsLoadNeeded() bool {
+	return false
+}
+
+func (p GoWrapper) SetLoadNeeded()   {}
+func (p GoWrapper) ClearLoadNeeded() {}
+
+func (p GoWrapper) IsValid() bool { return true }
+func (p GoWrapper) SetValid()     {}
+func (p GoWrapper) ClearValid()   {}
+
+func (p GoWrapper) IsMarked() bool { return false }
+func (p GoWrapper) SetMarked()    {}
+func (p GoWrapper) ClearMarked()  {}
+func (p GoWrapper) ToggleMarked()  {}
+
+/*
+TODO TODO TODO !!! What do we do about objects that are sitting in buffered-channel queues but are nowhere else referred to?
+
+Those should not be removed from the objects map nor the attributes maps !!!!!!
+Is this going to require a separate flag? Quite possibly, unless we, upon taking an object out of a channel,
+immediately mark it as reachable!
+*/
+func (p GoWrapper) Mark() bool { return false }
+
+
+func (p GoWrapper) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p GoWrapper) SetStoredLocally()     {}
+func (p GoWrapper) ClearStoredLocally()   {}
+
+func (p GoWrapper) IsProxy() bool { return false }
+
+func (p GoWrapper) IsTransient() bool { return true }
+
+
+func (p GoWrapper) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+
+func (p GoWrapper) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   err = fmt.Errorf("Cannot represent a %v in JSON.",p.Type())
+   return
+}
+
+func (p GoWrapper) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = fmt.Errorf("Cannot unmarshal JSON into a %v.", p.Type())
    return
 }
 

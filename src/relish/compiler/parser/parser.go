@@ -1284,7 +1284,7 @@ func (p *parser) parseOneLineSupertypes(typeSpec *ast.TypeSpec) bool {
 	
     var superTypeSpec *ast.TypeSpec
 
-    p.required( p.parseTypeSpec(false,false,false,false,false,&superTypeSpec), "a type name." )
+    p.required( p.parseTypeSpec(false, false,false,false,false,false,&superTypeSpec), "a type name." )
 
     // translate
     typeSpec.SuperTypes = append(typeSpec.SuperTypes, superTypeSpec)
@@ -1292,7 +1292,7 @@ func (p *parser) parseOneLineSupertypes(typeSpec *ast.TypeSpec) bool {
     st2 := p.State()
 
     for p.Space() {
-	   if p.parseTypeSpec(false,false,false,false,false,&superTypeSpec) {
+	   if p.parseTypeSpec(false, false,false,false,false,false,&superTypeSpec) {
 		
 		   // translate
            typeSpec.SuperTypes = append(typeSpec.SuperTypes, superTypeSpec)		
@@ -1367,7 +1367,7 @@ func (p *parser) parseOneLineTypeParameters(typeSpec *ast.TypeSpec) bool {
 }
 
 func (p *parser) parseTypeParameter(typeSpec **ast.TypeSpec) bool {
-   return p.parseTypeSpec(false,true, true, true, false, typeSpec)	
+   return p.parseTypeSpec(false, false,true, true, true, false, typeSpec)	
 }
 
 
@@ -1432,13 +1432,13 @@ func (p *parser) parseVerticalSupertypes(col int, typeSpec *ast.TypeSpec) bool {
 
     var superTypeSpec *ast.TypeSpec
 
-    p.required(p.parseTypeSpec(false,true, true, false, false, &superTypeSpec), "a type specification" )	
+    p.required(p.parseTypeSpec(true, false,true, true, false, false, &superTypeSpec), "a type specification" )	
 
     // translate
     typeSpec.SuperTypes = append(typeSpec.SuperTypes, superTypeSpec)
 	
     for p.Indent(col) {
-       p.required(p.parseTypeSpec(false,true, true, false, false, &superTypeSpec),"a type specification")	
+       p.required(p.parseTypeSpec(true, false,true, true, false, false, &superTypeSpec),"a type specification")	
 
        // translate
        typeSpec.SuperTypes = append(typeSpec.SuperTypes, superTypeSpec)	
@@ -1581,7 +1581,7 @@ func (p *parser) parseOneLineAttributeDecl(attrs *[]*ast.AttributeDecl, read, wr
     // Note: The {} or {<} or [] or [<] or {<width} etc are part of a type spec. 
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(true,true,true,false,forceCollection,&typeSpec) {
+    if ! p.parseTypeSpec(false, true,true,true,false,forceCollection,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2289,7 +2289,7 @@ func (p *parser) parseOneLineInputArgDecl(inputArgs *[]*ast.InputArgDecl, isKeyw
     }
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(true,true,true,false,false,&typeSpec) {
+    if ! p.parseTypeSpec(false, true,true,true,false,false,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2352,7 +2352,7 @@ func (p *parser) parseInputArgDecl(inputArgs *[]*ast.InputArgDecl, isKeywordDefa
 
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(true,true,true,false,false,&typeSpec) {
+    if ! p.parseTypeSpec(true,true,true,true,false,false,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -2425,7 +2425,8 @@ func (p *parser) parseTypeAssertion(assertion **ast.TypeAssertion) bool {
    forceCollection means that this type is actually a collection even if no collection type expression occurs. 
    If forceCollection is true and there is no collection type expression, this type is a Set of the base type.
 */
-func (p *parser) parseTypeSpec(canBeMaybe bool,
+func (p *parser) parseTypeSpec(canBeMultiLineOrMap bool,  // if false, single line and not map required.
+	                           canBeMaybe bool,
 	                           canBeParameterized bool, 
 	                           canBeVariable bool, 
 	                           canSpecifySuperTypes bool, 
@@ -2459,7 +2460,10 @@ func (p *parser) parseTypeSpec(canBeMaybe bool,
            nilElementsAllowed = true
     	}		
 	}
-	if ! p.parseTypeName(true, &typeName) { 
+	
+	typeCol := p.Col()
+	
+	if ! p.parseTypeName(true, &typeName) {   // TODO This needs to be another full typespec here!!!!!!!!
 	   return p.Fail(st)
 	}
 	
@@ -2471,7 +2475,45 @@ func (p *parser) parseTypeSpec(canBeMaybe bool,
 	// IDEA: Maybe the key type goes as a sub part of the collection type!!!!
 	// Do this when changing the collection type from token.SET to token.MAP
 	
-    *typeSpec = &ast.TypeSpec{CollectionSpec: collectionTypeSpec, Name: typeName, NilAllowed: nilAllowed, NilElementsAllowed: nilElementsAllowed}
+	// Look for evidence that it is a Map type as opposed to a Set.
+	
+	var params []*ast.TypeSpec = nil
+
+	
+	if canBeMultiLineOrMap && collectionTypeSpec != nil && collectionTypeSpec.Kind == token.SET {
+	    var valTypeSpec *ast.TypeSpec		
+	    knownToBeMap := false
+		if p.Match2(' ','>') {
+	       p.required(p.Space(),"a space followed by the map value-type specification")
+           p.required(p.parseTypeSpec(true,true,true,false,false,false,&valTypeSpec),"the map value-type specification")		
+		   knownToBeMap = true
+
+		} else if p.Below(typeCol) {
+           p.required(p.Match1('>'),"> T : the map's value-type")
+	
+		   foundValType := false
+		   if p.Space() {
+			   if p.parseTypeSpec(true, true,true,false,false,false,&valTypeSpec) {
+			      foundValType = true
+			   } else {
+			      p.required(p.Space() || (p.Ch()  == '\n'),"the map value-type specification")
+			   }
+		    }
+			if ! foundValType {
+			   p.required(p.Indent(typeCol) && p.parseTypeSpec(true, true,true,false,false,false,&valTypeSpec),
+			              "the map value-type specification, after a space or indented on next line")                                        
+			}
+		    knownToBeMap = true			
+		}
+		
+		if knownToBeMap {
+		   collectionTypeSpec.Kind = token.MAP			
+		   params = append(params, valTypeSpec)	
+		}	
+	}
+	
+	
+    *typeSpec = &ast.TypeSpec{CollectionSpec: collectionTypeSpec, Name: typeName, Params: params, NilAllowed: nilAllowed, NilElementsAllowed: nilElementsAllowed}
     return true
 }
 
@@ -2635,7 +2677,7 @@ func (p *parser) parseOneLineReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) boo
 
     var typeSpec *ast.TypeSpec
     // Should I allow maybe? Yes probably.
-    if ! p.parseTypeSpec(false,true, true, false, false, &typeSpec) {
+    if ! p.parseTypeSpec(false, false,true, true, false, false, &typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -4087,7 +4129,7 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
 	     return false // Did not match a list-specifying square-bracket
     }
 
-    if p.parseTypeSpec(true,true,false,false,false,&typeSpec) {
+    if p.parseTypeSpec(false, true,true,false,false,false,&typeSpec) {
        hasType = true 
     }
 
@@ -4212,7 +4254,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
        return false // Did not match a list-specifying square-bracket
     }
 
-    if p.parseTypeSpec(true,true,false,false,false,&typeSpec) {
+    if p.parseTypeSpec(true, true,true,false,false,false,&typeSpec) {
        hasType = true 
     }
 
@@ -4362,7 +4404,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
     }
 
 //    col := p.Col()
-    if p.parseTypeSpec(false,true,false,false,false,&typeSpec) {
+    if p.parseTypeSpec(false, false,true,false,false,false,&typeSpec) {
        hasType = true 
     }
 
@@ -4384,7 +4426,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
 	   
 	   if knownToBeMap {
 	      p.required(p.Space(),"a space followed by the map value-type specification")
-          p.required(p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),"the map value-type specification")
+          p.required(p.parseTypeSpec(false, true,true,false,false,false,&valTypeSpec),"the map value-type specification")
 	   }
     }
 
@@ -4528,8 +4570,8 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
       }
 
     typeCol := p.Col()
-  	if p.parseTypeSpec(false,true,false,false,false,&typeSpec) {
-  	   hasType = true 
+  	if p.parseTypeSpec(false,false,true,false,false,false,&typeSpec) { // TODO first arg should be true
+  	   hasType = true                                                 // replacing some of the below
   	}
 
   	if hasType {
@@ -4567,18 +4609,18 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	   if knownToBeMap {
           if horizontalTypeRelationLayout {
   	         p.required(p.Space(),"a space followed by the map value-type specification")
-             p.required(p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),"the map value-type specification")           
+             p.required(p.parseTypeSpec(true, true,true,false,false,false,&valTypeSpec),"the map value-type specification")           
           } else { // vertical layout 
              foundValType := false
              if p.Space() {
-                if p.parseTypeSpec(true,true,false,false,false,&valTypeSpec) {
+                if p.parseTypeSpec(true, true,true,false,false,false,&valTypeSpec) {
                    foundValType = true
                 } else {
                    p.required(p.Space() || (p.Ch()  == '\n'),"the map value-type specification")
                 }
              }
              if ! foundValType {
-                p.required(p.Indent(typeCol) && p.parseTypeSpec(true,true,false,false,false,&valTypeSpec),
+                p.required(p.Indent(typeCol) && p.parseTypeSpec(true, true,true,false,false,false,&valTypeSpec),
                            "the map value-type specification, after a space or indented on next line")                                        
              } 
           }  

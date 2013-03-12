@@ -273,9 +273,9 @@ type RMethod struct {
 
 	Signature      *RTypeTuple            // types of parameters
 	WildcardKeywordsParameterName string  // "" or name of the special parameter which takes any number of keyword=val args
-	WildcardKeywordsParameterType *RType  // nil or type of val allowed for wildcard keyword=val args
+	WildcardKeywordsParameterType *RType  // nil or type of Map used for wildcard keyword=val args
 	VariadicParameterName string          // "" or name of the special variadic parameter which accepts remainder args
-	VariadicParameterType *RType          // nil or type of val allowed for remainder (variadic) args
+	VariadicParameterType *RType          // nil or type of List used for remainder (variadic) args
 	ReturnSignature *RTypeTuple           // types of return values
 	ReturnArgsNamed bool                  // Whether the return arguments are named and have to be initialized on method call.
 	Code           *ast.MethodDeclaration // abstract syntax tree
@@ -607,7 +607,23 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	
     var wildcardKeywordsParamType *RType = nil
 	var variadicParamType *RType = nil
+	var typFound bool
 
+
+	if wildcardKeywordsParameterName != "" {
+	   wildcardKeywordsParamType, typFound = rt.Types[wildcardKeywordsParameterType]
+	   if ! typFound {
+	      return nil, fmt.Errorf("Method '%v' keyword parameter type %v not found.", methodName, wildcardKeywordsParameterType)
+	   }  	
+	}
+
+	if variadicParameterName != "" {
+	   variadicParamType, typFound = rt.Types[variadicParameterType]
+	   if ! typFound {
+	      return nil, fmt.Errorf("Method '%v' variadic parameter type %v not found.", methodName, variadicParameterType)
+	   } 		
+	}
+/*
     if wildcardKeywordsParameterName != "" {
        typ, typFound := rt.Types[wildcardKeywordsParameterType]
        if ! typFound {
@@ -629,7 +645,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	      return nil, err
        }	
 	}
-	
+*/	
 	
 	method := &RMethod{
 		multiMethod:    multiMethod,
