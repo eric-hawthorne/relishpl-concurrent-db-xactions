@@ -1558,7 +1558,7 @@ func (p *parser) parseWriteOnlyAttributeDecl(attrs *[]*ast.AttributeDecl,visibil
 }
 
 
-func (p *parser) parseOneLineAttributeDecl(attrs *[]*ast.AttributeDecl, read, write bool, visibilityLevel string) bool {
+func (p *parser) parseAttributeDecl(attrs *[]*ast.AttributeDecl, read, write bool, visibilityLevel string) bool {
 	
     var attrName *ast.Ident
 
@@ -1581,7 +1581,7 @@ func (p *parser) parseOneLineAttributeDecl(attrs *[]*ast.AttributeDecl, read, wr
     // Note: The {} or {<} or [] or [<] or {<width} etc are part of a type spec. 
 
     var typeSpec *ast.TypeSpec
-    if ! p.parseTypeSpec(false, true,true,true,false,forceCollection,&typeSpec) {
+    if ! p.parseTypeSpec(true, true,true,true,false,forceCollection,&typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -1643,12 +1643,12 @@ func (p *parser) parseOneLineAttributeDecl(attrs *[]*ast.AttributeDecl, read, wr
 
 /*
    Temporary implementation - need to handle indented type spec
-*/
+
 func (p *parser) parseAttributeDecl(attrs *[]*ast.AttributeDecl, read, write bool, visibilityLevel string) bool {
 	
    return p.parseOneLineAttributeDecl(attrs,read,write,visibilityLevel)
 }
-
+*/
 
 
 
