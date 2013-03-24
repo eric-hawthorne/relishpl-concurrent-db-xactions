@@ -165,7 +165,9 @@ func (t *Thread) PushBase(numReturnArgs int) int {
 	}
 	t.Push(Int32(t.Base))
 	t.Reserve(2) // Reserve space for the currently-executing-method reference and code offset in current method	
-	return t.Pos - 2
+	return t.Pos - 2  // Return the stack position where the previous base-index is now stored.
+	                  // This position will become the new "base" position, when SetBase is soon called
+	                  // to complete the switch into the new method's stack context.
 	
 }
 
@@ -193,6 +195,22 @@ func (t *Thread) PopBase() {
 	t.ExecutingPackage = t.ExecutingMethod.Pkg
 	LogM(t, INTERP3_, "---Base = %d\n", t.Base)
 }
+
+/*
+Call this to return from the initial method call in a new Thread used for GoRoutine execution.
+Pops all objects off the stack, and
+sets the Pos to -1 thread's Base pointer to -2, indicating a de-activated goroutine thread.
+*/
+func (t *Thread) PopFinalBase(numReturnArgs int) {
+	defer UnM(t, TraceM(t, INTERP_TR3, "PopBase"))
+	obj := t.PopN(t.Pos - t.Base + numReturnArgs + 1) // 9 - 7 + 1 = 3
+	t.Base = int(obj.(Int32))  // Sets to -2 meaning A de-activated thread.
+	t.ExecutingMethod = nil
+	t.ExecutingPackage = nil
+	LogM(t, INTERP3_, "---Final Base = %d\n", t.Base)
+}
+
+
 
 /*
 Return the value of the local variable (or parameter) with the given offset from the current routine's 
@@ -251,7 +269,7 @@ func (t *Thread) PopN(n int) RObject {
 	
 	lastPopped := t.Pos - n + 1
 	obj := t.Stack[lastPopped]
-	defer UnM(t, TraceM(t, INTERP_TR3, "PopN", n, "==>", obj))
+	defer UnM(t, TraceM(t, INTERP_TR3, "PopN(", n, ") ==> val:", obj," | Pos: ", t.Pos - n))
 	for i := t.Pos; i >= lastPopped; i-- {
 		t.Stack[i] = nil // ensure var/param value is garbage-collectable if not otherwise referred to.
 	}
@@ -270,13 +288,19 @@ func (t *Thread) TopN(n int) []RObject {
 	return t.Stack[t.Pos-n+1 : t.Pos+1]
 }
 
+/*
+Preparatory to executing the first-called method in a new goroutine, on t the new Stack,
+we copy 
+*/
 func (t *Thread) copyStackFrameFrom(parent *Thread, numReturnVals int) {
-   n := parent.Pos - parent.Base + numReturnVals + 1	
+   n := parent.Pos - parent.Base + numReturnVals + 1
+   // defer UnM(t, TraceM(t, INTERP_TR3, "copyStackFrameFrom: copying ",n))	
    src := parent.Stack[parent.Base - numReturnVals:parent.Pos+1]
    if copy(t.Stack, src) != n {
    	   panic("stack copy range exception during go-routine spawn.")
    }
    t.Base = numReturnVals
+   t.Stack[t.Base] = Int32(-2)  // Indicates that thread will be de-activated if this base is ever popped.
    t.Pos = n - 1	   
 }
 

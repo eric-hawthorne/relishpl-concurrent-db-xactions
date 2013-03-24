@@ -974,7 +974,9 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
     // If it is a type constructor, puts the type constructor function and the new object on the
     // stack. 
 
-    // TODO PASS THE WHOLE call , return the remaining args
+    // PASS THE WHOLE call , return the remaining args, after slicing the arg list to remove the
+    // RClosure object if the call is "func anRClosure remainingArgs..."
+    // args returned is remaining args  
 	isTypeConstructor, hasInitFunction, isClosureApplication, args := i.EvalFunExpr(t, call) // token.FUN (regular method) or token.TYPE (constructor) or token.CLOSURE (closure application)
 	
 	
@@ -1020,8 +1022,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	newBase := t.PushBase(nReturnArgs) // begin but don't complete, storing outer routine context. 
 
 	// NOTE NOTE !!
-	// At some point, when leaving this context, we may want to also push just above this the offset into the method's code
-	// where we left off. We might wish to leave a space on the stack for that, and make initial variableOffset 3 instead of 2
+	// When leaving this stack context, we may in future want to also push just above the method the offset into the method's code
+	// where we left off. PushBase is leaving a space on the stack for that, and makes initial variableOffset 3 instead of 2
 
     constructorArg := 0
     if isTypeConstructor {
@@ -1157,8 +1159,9 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod, file rterr.CodeFileLoc
        rterr.Stop1(file, pos, err.Error())
     }		
 
-	t.PopBase()
-	t.PopN(method.NumReturnArgs) // Pop everything off the stack for good measure.		
+	t.PopFinalBase(method.NumReturnArgs)  // Pop off all of the executing method's context (for GC non-reference)
+	                                      // But do not set the thread's ExecutingMethod, because there is none.
+	// t.PopN(method.NumReturnArgs) // Also pop any return args off t's stack (for GC non-reference)		
 }
 
 
