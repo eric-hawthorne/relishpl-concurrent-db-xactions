@@ -178,6 +178,8 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 	
 	t.PopN(t.Pos - t.Base + 1) 	// Leave only the return values on the stack
 	
+	t.SetBase(-2)  // Set to invalid - indicating that no function is running.
+	
     resultObjects = t.TopN(nReturnArgs)  // Note we are hanging on to the stack array here.
 	return 
 }

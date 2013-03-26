@@ -17,6 +17,7 @@ import (
     "errors"
 	. "relish/runtime/data"
 	"relish/runtime/interp"
+	"sync"
   "relish/rterr"
   "net/url"
 )
@@ -229,6 +230,7 @@ func init() {
 var funcMap template.FuncMap = template.FuncMap{
     "get": AttrVal, 
     "nonempty": NonEmpty,  
+    // "eq": Eq,
     "iterable": Iterable,	
     "fun": InvokeRelishMultiMethod,
 }
@@ -263,6 +265,12 @@ var re3 *regexp.Regexp = regexp.MustCompile(`index ([^ ]+)`)
 
 // Looking for "afunc" or " aFunc" or "aFuncName123" or " aFuncName123"
 var re4 *regexp.Regexp = regexp.MustCompile(`(?:^| )([a-z][A-Za-z0-9]*)`)
+
+var responseProcessingThread *interp.Thread = nil  // current thread - implies serial web method result processing
+
+var responseProcessingPackage *RPackage = nil  // current web package - implies serial web method result processing
+
+var responseProcessingMutex sync.Mutex
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	
@@ -402,7 +410,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    }   
 
    
-   err = processResponse(w,r,handlerMethod.Name, resultObjects)
+   err = processResponse(w,r,pkg, handlerMethod.Name, resultObjects, t)
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
@@ -451,8 +459,9 @@ func sendHeaders(w http.ResponseWriter, headers string) (err error) {
 /*
 Note should do considerably more checking of Content-Type (detected) and mimesubtype returnval,
 to ensure they are consistent with the kind of processing directive. 
+Serialize this, and accept a thread.
 */
-func processResponse(w http.ResponseWriter, r *http.Request, methodName string, results []RObject) (err error) {
+func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, methodName string, results []RObject, thread *interp.Thread) (err error) {
 
    
    processingDirective := string(results[0].(String))
@@ -809,7 +818,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 	    }	
 	    relishTemplateText := string(results[1].(String))
 	    obj := results[2]
-	    err = processTemplateResponse(w, r, methodName, "", relishTemplateText, obj)
+	    err = processTemplateResponse(w, r, pkg, methodName, "", relishTemplateText, obj, thread)
 		
 
     case "HEADERS":
@@ -834,7 +843,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, methodName string, 
 
       templateFilePath = makeAbsoluteFilePath(methodName, templateFilePath) 
 	    obj := results[1]
-      err = processTemplateFileResponse(w, r, methodName, templateFilePath, obj) 
+      err = processTemplateFileResponse(w, r, pkg, methodName, templateFilePath, obj, thread) 
    }
 
    return
@@ -870,7 +879,7 @@ func makeAbsoluteFilePath(methodName string, filePath string) string {
    return webPackageSrcDirPath + packagePath + "/" + filePath
 }
 
-func processTemplateFileResponse(w http.ResponseWriter, r *http.Request, methodName string, templateFilePath string, obj RObject) (err error) {
+func processTemplateFileResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, methodName string, templateFilePath string, obj RObject, thread *interp.Thread) (err error) {
    bytes,err := ioutil.ReadFile(templateFilePath)
     if err != nil {
        fmt.Println(err)		
@@ -878,14 +887,22 @@ func processTemplateFileResponse(w http.ResponseWriter, r *http.Request, methodN
        return	
     }
     relishTemplateText := string(bytes)	
-    err = processTemplateResponse(w, r, methodName, templateFilePath, relishTemplateText, obj)
+    err = processTemplateResponse(w, r, pkg, methodName, templateFilePath, relishTemplateText, obj, thread)
     return
 }	
 
 /*
 templateFilePath may be the empty string (indicating an inline template). If not it is used to make error messages more specific.
+This method's implementation grabs a mutex, so that the method's code executes as an exclusive critical section 
+(i.e. only one execution at a time.) This is so that the responseProcessingThread can be assigned consistently so that 
+relish method execution within template processing knows which interpreter thread to execute the function in.
 */
-func processTemplateResponse(w http.ResponseWriter, r *http.Request, methodName string, templateFilePath string, relishTemplateText string, obj RObject) (err error) {
+func processTemplateResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, methodName string, templateFilePath string, relishTemplateText string, obj RObject, thread *interp.Thread) (err error) {
+
+    responseProcessingMutex.Lock()
+    defer responseProcessingMutex.Unlock()
+    responseProcessingThread = thread
+    responseProcessingPackage = pkg
 
     goTemplateText := goTemplate(relishTemplateText)
     Logln(WEB2_,goTemplateText)
@@ -1080,6 +1097,16 @@ func NonEmpty(obj RObject) RObject {
 }
 
 /*
+{{if eq .thing .otherThing}}
+
+func Eq(obj RObject, obj2 RObject) bool {
+	objs := []RObject{obj, obj2}
+
+	return obj
+}
+*/
+
+/*
 {{range iterable .}}
 */
 func Iterable(obj RObject) (iterable interface{}, err error) {
@@ -1091,13 +1118,62 @@ func Iterable(obj RObject) (iterable interface{}, err error) {
     return coll.Iterable()
 }
 
-
-
+/*
+Helper function for InvokeRelishMultiMethod below.
+Convert an arbitrary go primitive literal value to the equivalent primitive RObject value,
+or if the argument is already an RObject, just pass it through.
+*/
+func toRelishObject(a interface{}) RObject {
+	var robj RObject
+	var ok bool
+	robj,ok = a.(RObject)
+	if ! ok {
+		switch a.(type) {
+		case string:
+			robj = String(a.(string))
+		case int:
+			robj = Int(a.(int))
+		case float64:
+			robj = Float(a.(float64))
+		case bool:
+			robj = Bool(a.(bool))
+		case rune:
+			robj = String(string(a.(rune)))			
+		default: 
+		    robj = String("DATA TYPE CONVERSION ERROR CONVERTING LITERAL TO RELISH VALUE!")
+		}
+	}
+	return robj;
+}
 
 /*
 */
-func InvokeRelishMultiMethod(funcName string, args ...interface{}) (val RObject, err error) {
-   return String("RELISH FUNC CALLS NOT IMPLEMENTED YET!"),nil
+func InvokeRelishMultiMethod(methodName string, args ...interface{}) (val RObject, err error) {
+	
+   context := responseProcessingThread.EvalContext
+   pkg := responseProcessingPackage
+
+   var argObjects []RObject 
+
+   for _,arg := range args {
+	  relishArg := toRelishObject(arg)
+	  argObjects = append(argObjects, relishArg)
+   }
+
+
+   // Which package to look for method by name from?
+   // TODO We should also be able to explicitly specify a package in the prefix of the method name in the template
+
+   multiMethod,multiMethodFound := pkg.MultiMethods[methodName] 
+   if ! multiMethodFound {
+	  return String(fmt.Sprintf("ERROR: relish built-in function '%s' not found!",methodName)),nil
+   }
+
+   // var multiMethod *RMultiMethod = nil // temporary
+
+   obj := context.EvalMultiMethodCall(multiMethod, argObjects)
+	
+   return obj,nil
 }
 
 func goTemplate(relishTemplateText string) string {
@@ -1192,7 +1268,8 @@ func goTemplateAction(b []byte, relishAction string) string {
     buf.WriteString(relishAction[copyStart:])
 
     // Do the final round of substitution processing, this time wrapping relish function calls
-/*
+
+// Was commented out from here down
     relishAction = buf.String()
 
     b = b[0:0]
@@ -1200,13 +1277,13 @@ func goTemplateAction(b []byte, relishAction string) string {
 
     copyStart = 0
 
-    matches = re3.FindAllStringSubmatchIndex(relishAction,-1)  // funcName
+    matches = re4.FindAllStringSubmatchIndex(relishAction,-1)  // funcName
     for _,match := range matches {
         funcNameStart := match[2]
         funcNameEnd := match[3]  
         funcName := relishAction[funcNameStart:funcNameEnd]
         switch funcName {
-           case "get","nonempty","iterable","and","call","html","index","js","len","not","or","print","printf","println","urlquery":
+           case "if","with","else","end","range","get","nonempty","iterable","and","call","html","index","js","len","not","or","print","printf","println","urlquery","template","true","false","nil":
               buf.WriteString(relishAction[copyStart:funcNameEnd])
            default:
 	          buf.WriteString(relishAction[copyStart:funcNameStart])
@@ -1218,7 +1295,7 @@ func goTemplateAction(b []byte, relishAction string) string {
         copyStart = funcNameEnd
     }  
     buf.WriteString(relishAction[copyStart:])
-*/
+// was commented out down to here
 
 
 	return buf.String()	

@@ -191,8 +191,13 @@ func (t *Thread) PopBase() {
 	defer UnM(t, TraceM(t, INTERP_TR3, "PopBase"))
 	obj := t.PopN(t.Pos - t.Base + 1) // 9 - 7 + 1 = 3
 	t.Base = int(obj.(Int32))
-	t.ExecutingMethod = t.Stack[t.Base+1].(*RMethod)
-	t.ExecutingPackage = t.ExecutingMethod.Pkg
+	if t.Base == -2 {
+		t.ExecutingMethod = nil
+		t.ExecutingPackage = nil
+	} else {		
+	    t.ExecutingMethod = t.Stack[t.Base+1].(*RMethod)
+	    t.ExecutingPackage = t.ExecutingMethod.Pkg
+    }
 	LogM(t, INTERP3_, "---Base = %d\n", t.Base)
 }
 
