@@ -240,9 +240,9 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
 
       	 if paramName == key {
             valStr := keywordArgStringValues.Get(key)   
-            if valStr == "" {
-            	panic(fmt.Sprintf("How is it that the value of argument '%s' is the empty string? Shouldn't be able to happen.", key))
-            }
+//            if valStr == "" {
+//            	panic(fmt.Sprintf("How is it that the value of argument '%s' is the empty string? Shouldn't be able to happen.", key))
+//            }
 
             // Convert string arg to an RObject, checking for type conversion errors
             err = i.setMethodArg(args, paramTypes, ix, key, valStr) 
@@ -277,9 +277,9 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
 	  for _,key := range extraArgKeys {
 	     	
           valStr := keywordArgStringValues.Get(key)   
-          if valStr == "" {
-          	panic(fmt.Sprintf("How is it that the value of argument '%s' is the empty string? Shouldn't be able to happen.", key))
-          }	
+//          if valStr == "" {
+//          	panic(fmt.Sprintf("How is it that the value of argument '%s' is the empty string? Shouldn't be able to happen.", key))
+//          }	
 	
 		  var obj RObject
           obj, err = i.variadicArg(keywordsValType, valStr)  
@@ -1322,11 +1322,37 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 	
 	  qExpr := t.Pop()	
 	
+	  query := ""
+	  queryArgs := []RObject{}
+	  isList := false
 	  qS,isString := qExpr.(String)
-	  if ! isString {
-	     rterr.Stop1(t, listConstruction, "Query expression used in list construction must evaluate to a String.")	
+	  if isString {
+	     query = string(qS)		
+	  } else {
+		 if qExpr.IsCollection() {
+			coll := qExpr.(RCollection)
+			if coll.IsList() {
+				isList = true
+				list := coll.(List)
+				v := list.Vector()
+				objList := []RObject(*v)
+				if len(objList) < 1 {
+	               isList = false
+	            } else {				
+				   qS,isString = objList[0].(String)
+			   	   if ! isString {
+				  	  isList = false
+			  	   } else {
+	                  query = string(qS)					      
+				      queryArgs = objList[1:]
+				   }
+				}	
+			} 
+		}
+		if ! (isString || isList) {   
+	      rterr.Stop1(t, listConstruction, "Query expression used in list construction must be a String or a list starting with a String.")	
+	    }
 	  }
-	  query := string(qS)
 	  radius := 1
 	  if strings.HasPrefix(query, "lazy: ") {
 		 query = query[6:]
@@ -1344,7 +1370,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
       }	
@@ -1426,6 +1452,8 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 	
 	  qExpr := t.Pop()	
 	
+	  queryArgs := []RObject{}	
+	
 	  qS,isString := qExpr.(String)
 	  if ! isString {
 	     rterr.Stop1(t, setConstruction, "Query expression used in set construction must evaluate to a String.")	
@@ -1448,7 +1476,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, queryArgs, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
       }	
@@ -1649,7 +1677,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 			var err error
 			obj, err = i.rt.NewObject(id.Name)
 			if err != nil {
-				panic(err)
+				rterr.Stop1(t, fun, err)
 			}
 			t.Push(obj)
 			

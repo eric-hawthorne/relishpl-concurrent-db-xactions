@@ -12,9 +12,62 @@ import (
 	. "relish/dbg"
 )
 
+type StatementGroup struct {
+	Statements []*SqlStatement
+}
+
+type SqlStatement struct {
+	Statement string
+	Args []interface{}
+}
+
+/*
+Return a new empty statement group.
+*/
+func Stmts() (group *StatementGroup) {
+	group = &StatementGroup{}
+	return
+}
+
+/*
+Return a new statement group with a single sql statement in it.
+*/
+func Stmt(statement string) (group *StatementGroup) {
+	group = &StatementGroup{}
+	group.Add(statement)
+	return
+}
+
+/*
+Add a statement to a statement group.
+*/
+func (sg *StatementGroup) Add(statement string) {
+   sg.Statements = append(sg.Statements, &SqlStatement{Statement: statement})
+}
+
+/*
+Add an argument to the last-added statement in the statement group.
+Must have at least one statement first before calling this.
+*/
+func (sg *StatementGroup) Arg(val interface{}) {
+   stmt := sg.Statements[len(sg.Statements)-1]
+   stmt.Args = append(stmt.Args, val)
+}
+
+
+
+func (sg *StatementGroup) Args(args []interface{}) {
+   stmt := sg.Statements[len(sg.Statements)-1]
+   stmt.Args = args
+}
+
+
+
+
 type DB interface {
 	EnsureTypeTable(typ *RType) (err error)
-	QueueStatements(statementGroup string)
+	QueueStatements(statementGroup *StatementGroup)
+	QueueStatement(statement string)	
 	PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
 	PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
 	PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
@@ -39,7 +92,7 @@ type DB interface {
 	mayContainProxies will be true if the collection was fetched lazily from db.
 	*/
 	
-    FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) 
+    FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) 
 
     /*
     Close the connection to the database.
@@ -248,9 +301,16 @@ func (dbt * DBThread) EnsureTypeTable(typ *RType) (err error) {
    return 
 }
 
-func (dbt * DBThread) QueueStatements(statementGroup string) {
+func (dbt * DBThread) QueueStatements(statementGroup *StatementGroup) {
    dbt.UseDB()
    dbt.db.QueueStatements(statementGroup)
+   dbt.ReleaseDB()
+   return
+}
+
+func (dbt * DBThread) QueueStatement(statement string) {
+   dbt.UseDB()
+   dbt.db.QueueStatement(statement)
    dbt.ReleaseDB()
    return
 }
@@ -353,9 +413,9 @@ the matching objects from the the database.
 e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 */
 	
-func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
+func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
    dbt.UseDB()
-   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, radius, objs)
+   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, queryArgs, radius, objs)
    dbt.ReleaseDB()	
    return
 }

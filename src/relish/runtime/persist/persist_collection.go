@@ -38,8 +38,6 @@ import (
 */
 func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertIndex int) (err error) {
 
-	var stmt string
-
 	table := db.TableNameIfy(attr.ShortName())
 
 	if attr.Part.Type.IsPrimitive {
@@ -55,25 +53,25 @@ func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObje
 
 		switch attr.Part.CollectionType {
 		case "set": // id0,id1
-			stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?   
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
+          
 
 		case "list": // id0, id1, ord1
-			stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), insertIndex) // Ensure DBID?  	
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), insertIndex))	
 			//	     case "map": // id0, id1, ord1
 
 			//	     case "stringmap": // id0,id1,key1
 
 		case "sortedlist", "sortedset": //, "sortedmap": // id0, id1, ord1
-			stmt = fmt.Sprintf("UPDATE %s SET ord1 = ord1 + 1 WHERE id0=%v AND ord1 >= %v;INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), insertIndex, table, obj.DBID(), val.DBID(), insertIndex) // Ensure DBID?
-			//	     case "sortedstringmap":	// id0,id1,key1
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 + 1 WHERE id0=%v AND ord1 >= %v",table, obj.DBID(), insertIndex))
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), insertIndex)) 
+			//	     case "sortedstringmap":	// id0,id1,key1		
 		}
 
 		// stmt = fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v",table,obj.DBID(),val.DBID())   // Ensure DBID?                                       
 
 	}
-	db.QueueStatements(stmt)
 	return
-
 }
 
 /*
@@ -82,8 +80,7 @@ func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObje
 
    TODO create a map of prepared statements and look up the statement to use.
 */
-func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {
-	var stmt string
+func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {     
 
 	table := db.TableNameIfy(attr.ShortName())
 
@@ -97,12 +94,12 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 		//	  fmt.Printf("removedIndex %v",removedIndex)
 
 		if removedIndex == -1 {
-			stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v", table, obj.DBID(), val.DBID())
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v", table, obj.DBID(), val.DBID()))
 		} else {
-			stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v;UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v", table, obj.DBID(), val.DBID(), removedIndex, table, obj.DBID(), removedIndex)
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, obj.DBID(), val.DBID(), removedIndex))
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, obj.DBID(), removedIndex))
 		}
 	}
-	db.QueueStatements(stmt)
 	return
 
 }
@@ -114,10 +111,8 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
    TODO create a map of prepared statements and look up the statement to use.
 */
 func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
-	var stmt string
 
 	table := db.TableNameIfy(attr.ShortName())
-
 
 	if attr.Part.Type.IsPrimitive {
 
@@ -125,13 +120,12 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 
 	} else { // Non-Primitive part type
 
-		stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, obj.DBID())
+		db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, obj.DBID()))
 		if attr.Inverse != nil {
 		   inverseTable := db.TableNameIfy(attr.Inverse.ShortName())		
-		   stmt += fmt.Sprintf("; DELETE FROM %s WHERE id1=%v", inverseTable, obj.DBID())	
+		   db.QueueStatement(fmt.Sprintf("; DELETE FROM %s WHERE id1=%v", inverseTable, obj.DBID()))
 		}	
 	}
-	db.QueueStatements(stmt)
 	return
 
 }

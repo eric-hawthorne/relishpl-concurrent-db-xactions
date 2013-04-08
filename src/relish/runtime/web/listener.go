@@ -233,6 +233,7 @@ var funcMap template.FuncMap = template.FuncMap{
     // "eq": Eq,
     "iterable": Iterable,	
     "fun": InvokeRelishMultiMethod,
+    "htm": HtmlPassThru,
 }
 
 func SetWebPackageSrcDirPath(path string) {
@@ -1118,6 +1119,14 @@ func Iterable(obj RObject) (iterable interface{}, err error) {
     return coll.Iterable()
 }
 
+func HtmlPassThru(obj RObject) template.HTML {
+	if obj == nil {
+	   return template.HTML("")
+	}
+	s := obj.String()
+	return template.HTML(s)
+}
+
 /*
 Helper function for InvokeRelishMultiMethod below.
 Convert an arbitrary go primitive literal value to the equivalent primitive RObject value,
@@ -1283,7 +1292,7 @@ func goTemplateAction(b []byte, relishAction string) string {
         funcNameEnd := match[3]  
         funcName := relishAction[funcNameStart:funcNameEnd]
         switch funcName {
-           case "if","with","else","end","range","get","nonempty","iterable","and","call","html","index","js","len","not","or","print","printf","println","urlquery","template","true","false","nil":
+           case "if","with","else","end","range","get","nonempty","iterable","and","call","html","htm","index","js","len","not","or","print","printf","println","urlquery","template","true","false","nil":
               buf.WriteString(relishAction[copyStart:funcNameEnd])
            default:
 	          buf.WriteString(relishAction[copyStart:funcNameStart])

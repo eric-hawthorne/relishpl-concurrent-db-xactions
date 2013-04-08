@@ -425,7 +425,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
     for theNewType := range types {
        typeName := theNewType.Name
        typeDeclaration := allTypeDecls[typeName]
-       sourceFilename := typeDeclFile[typeName]
+       sourceFilename := typeDeclFile[typeName] + ".rel"
 
 	   for _,attrDecl := range typeDeclaration.Attributes {
 		  var minCard int32 = 1

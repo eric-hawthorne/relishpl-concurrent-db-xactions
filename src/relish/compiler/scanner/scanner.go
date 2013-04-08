@@ -94,6 +94,10 @@ The string that was being parsed when the scanner's Fail method was last called.
 */
 func (S *Scanner) FailedOnString() string {
 
+    if S.failStartOffset == S.failEndOffset {
+	   return ""
+	}
+	
     r := rune(S.src[S.failStartOffset])
 
     if IsAsciiLetter(r) || IsAsciiDigit(r) {

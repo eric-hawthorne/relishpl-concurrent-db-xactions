@@ -1226,6 +1226,12 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObje
 func createTypeTuple(mObjects []RObject) *RTypeTuple {
 	tt := &RTypeTuple{Types: make([]*RType, len(mObjects))}
 	for i, obj := range mObjects {
+		if obj == nil {
+			fmt.Println("len mObjects = ",len(mObjects),"i =",i )			
+	        for _, ob := range mObjects {
+			   fmt.Println(ob)		       
+		    }			
+		}
 		tt.Types[i] = obj.Type()
 	}
 	return tt

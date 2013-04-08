@@ -1249,7 +1249,12 @@ func (s *ImportSpec) Pos() token.Pos {
 func (s *RelishImportSpec) Pos() token.Pos { return token.NoPos }
 
 func (s *ValueSpec) Pos() token.Pos { return s.Names[0].Pos() }
-func (s *TypeSpec) Pos() token.Pos  { return s.Name.Pos() }
+func (s *TypeSpec) Pos() token.Pos  { 
+	if s.CollectionSpec != nil {
+	   return s.CollectionSpec.Pos()
+	}
+	return s.Name.Pos() 
+}
 func (s *AritySpec) Pos() token.Pos { return s.RangeStart }
 
 func (s *ImportSpec) End() token.Pos { return s.Path.End() }

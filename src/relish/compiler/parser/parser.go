@@ -151,7 +151,7 @@ There has been a probable cause (of a syntax error) recorded, and it is for a pr
 parsing failure was finally detected.
 */
 func (p *parser) haveProbableCause(failurePos token.Pos) bool {
-	fmt.Println("failurePos",failurePos,"p.probableCausePos",p.probableCausePos)
+	// fmt.Println("failurePos",failurePos,"p.probableCausePos",p.probableCausePos)
 	return p.probableErrorCause != "" && failurePos <= p.probableCausePos + 3
 }
 
@@ -3083,7 +3083,7 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
 	
 	            p.required(p.parseOneLineMethodCall(&mcs,true) || p.parseOneLineListConstruction(&lcs,true) || p.parseOneLineMapOrSetConstruction(&mpcs,&scs,true), "a subroutine call or constructor invocation") 
 		
-		        p.required(p.Match1(')'),")")
+		        p.required(p.Match1(')'),"closing bracket )")
 		
 		        // translate
 	            if mcs != nil {
@@ -4123,7 +4123,7 @@ func (p *parser) parseOneLineListConstruction(stmt **ast.ListConstruction, isIns
         p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
                    "zero or more list-element expressions on the same line as [, followed by closing square-bracket ]")
 
-        p.required(p.Match1(']'), "closing square-bracket ]")   
+        p.required(p.Match1(']'), "a closing square-bracket ], or a space followed by another list-element expression")   
 //        end = p.Pos()            
     } else { 
 	     return false // Did not match a list-specifying square-bracket
@@ -4246,7 +4246,7 @@ func (p *parser) parseIndentedListConstruction(stmt **ast.ListConstruction) bool
 	        } else {
 	           p.required(p.parseMultipleOneLineExpressions(&elementExprs, false) || p.parseSingleOneLineExpression(&elementExprs, false),
 	                   "zero or more list-element expressions, followed by closing square-bracket ]")  
-	           p.required(p.Match1(']'), "closing square-bracket ]")              
+	           p.required(p.Match1(']'), "a closing square-bracket ], or a space followed by another list-element expression")              
 	        }
 	    }
 //        end = p.Pos()            
@@ -4397,7 +4397,7 @@ func (p *parser) parseOneLineMapOrSetConstruction(mapStmt **ast.MapConstruction,
 		           "zero or more list-element expressions on the same line as {, followed by closing squiggly-bracket }")
 */
 
-        p.required(p.Match1('}'), "closing squiggly-bracket ]")   
+        p.required(p.Match1('}'), "a closing squiggly-bracket }, or a space followed by another mapping or element expression")   
 //        end = p.Pos()            
     } else { 
 	     return false // Did not match a map-or-set-specifying squiggly-bracket
@@ -4555,7 +4555,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
 	  				                      p.parseSingleOneLineExpression(&elementExprs, false))
 	  				}
 	  			  if mapEntriesFound || setEntriesFound {
-	  		          p.required(p.Match1('}'), "closing squiggly-bracket }")  
+	  		          p.required(p.Match1('}'), "a closing squiggly-bracket }, or a space followed by another mapping or element expression")  
 	  				}
 	  	    }
 
@@ -6219,6 +6219,7 @@ func (p *parser) required(elementFound bool, whatIsExpected string) bool {
 		if p.haveProbableCause(p.FailedPos()) {
            p.error(p.FailedPos(),p.getProbableCause())
 		} else {
+		   // fmt.Println("Have a FailedPos and FailedOnString!!!")	
     	   p.error(p.FailedPos(),fmt.Sprintf("Expecting %s.\nFound: %s", whatIsExpected, fs))
         }
     } else {

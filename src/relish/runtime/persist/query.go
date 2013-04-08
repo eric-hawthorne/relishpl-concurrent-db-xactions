@@ -23,8 +23,10 @@ var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9
 
 
 /*
+queryArgs are values to be substituted by the SQL engine into ? parameters in the where clause.
+There may be zero or more of these. The number must match the number of ?s.
 */
-func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
+func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius))
 	
 	var sqlQuery string
@@ -43,7 +45,7 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, radius int, 
 	
 	checkCache := true
 	errSuffix := ""
-	err = db.fetchMultiple(sqlQuery, idsOnly, radius, numPrimitiveAttrColumns, errSuffix, checkCache, objs) 
+	err = db.fetchMultiple(sqlQuery, queryArgs, idsOnly, radius, numPrimitiveAttrColumns, errSuffix, checkCache, objs) 
 	return
 }
 

@@ -170,7 +170,7 @@ func (db *SqliteDB)	RecordPackageName(name string, shortName string) {
 
 	stmt := fmt.Sprintf("INSERT INTO RPackage(name,shortName) VALUES('%s','%s')", name, shortName)    
 
-	db.QueueStatements(stmt)
+	db.QueueStatement(stmt)
 	return	
 }
 

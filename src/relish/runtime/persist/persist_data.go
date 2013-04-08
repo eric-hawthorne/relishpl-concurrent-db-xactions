@@ -41,8 +41,6 @@ const TIME_LAYOUT = "2006-01-02 15:04:05.000"
 */
 func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
 
-	var stmt string
-
 	if attr.Part.Type.IsPrimitive {
 
 		table := db.TableNameIfy(attr.WholeType.ShortName())
@@ -53,9 +51,17 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			t := time.Time(val.(RTime))
 			timeString := t.UTC().Format(TIME_LAYOUT)
 			locationName := t.Location().String()
-			stmt = fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()) 					
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()))				
 		} else {
-			stmt = fmt.Sprintf("UPDATE %s SET %s=%s WHERE id=%v", table, attr.Part.Name, db.primitiveAttrValSQL(val), obj.DBID())
+			valStr,args := db.primitiveAttrValSQL(val)
+			stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s=? WHERE id=?", table, attr.Part.Name))
+			if valStr == "?" {
+			   stmt.Args(args) 
+			} else {
+			   stmt.Arg(valStr)
+			}	
+			stmt.Arg(obj.DBID())
+	        db.QueueStatements(stmt)			
 		}
 	} else { // non-primitive value type
 
@@ -70,12 +76,11 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 
 			// TODO create a map of prepared statements and look up the statement to use.
 
-			stmt = fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v", table, val.DBID(), obj.DBID()) // Ensure DBID?                                       
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v", table, val.DBID(), obj.DBID()))                                    
 		} else {
-			stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?   
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
 		}
 	}
-	db.QueueStatements(stmt)
 	return
 
 }
@@ -85,9 +90,7 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 Return a string representation of the value, suitable for use as the argument in a sql "SET attrname=%s"
 Works for String, Int, Int32, Float, Bool, Uint, Uint32
 */
-func (db *SqliteDB) primitiveAttrValSQL(val RObject) string {
-
-	var s string
+func (db *SqliteDB) primitiveAttrValSQL(val RObject) (s string, args []interface{}) {
 
 	switch val.(type) {
 	case Int:
@@ -99,7 +102,9 @@ func (db *SqliteDB) primitiveAttrValSQL(val RObject) string {
 	case Uint32:
 		s = strconv.FormatUint(uint64(uint32(val.(Uint32))), 10)		    											
 	case String:
-		s = "'" + SqlStringValueEscape(string(val.(String))) + "'"
+//		s = "'" + SqlStringValueEscape(string(val.(String))) + "'"		
+		s = "?"
+		args = append(args, SqlStringValueEscape(string(val.(String))))
 	case Float:
 		s = strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)				
 	case Bool:
@@ -112,7 +117,7 @@ func (db *SqliteDB) primitiveAttrValSQL(val RObject) string {
 	default:
 		panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
 	}
-	return s
+	return 
 }
 
 
@@ -155,7 +160,7 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
 
 		stmt = fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, obj.DBID()) // Ensure DBID?                                       
 	}
-	db.QueueStatements(stmt)
+	db.QueueStatement(stmt)
 	return
 
 }
@@ -204,8 +209,6 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 	objTyp := obj.Type()
 
-	var stmt string
-
 	for _, attr := range objTyp.Attributes {
 
         Logln(PERSIST2_,attr)
@@ -230,15 +233,16 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 							return
 						}
 						if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
-							stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,%s)", table, obj.DBID(), val.DBID(), key) // Ensure DBID?   
+							stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, obj.DBID(), val.DBID())) 
+			                stmt.Arg(SqlStringValueEscape(string(key.(String))))
+							db.QueueStatements(stmt)
 						} else {
 							// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
 							// !!!!!!!!!!!!!!!!!!!!!!!!
 							// !!!! NOT DONE YET !!!!!!
 							// !!!!!!!!!!!!!!!!!!!!!!!!
-							stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), key.DBID()) // Ensure DBID?   					 
+							db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), key.DBID())) 					 
 						}
-						db.QueueStatements(stmt)
 					}
 				} else {
 					i := 0
@@ -248,11 +252,10 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 							return
 						}
 						if collection.IsOrdered() {
-							stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), i) // Ensure DBID?  
+							db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), i))
 						} else { // unordered set 
-							stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?  		
+							db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()))		
 						}
-						db.QueueStatements(stmt)
 						i++
 					}
 				}
@@ -262,8 +265,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				if err != nil {
 					return
 				}
-				stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?   
-				db.QueueStatements(stmt)
+				db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
 			}
 		} else if attr.Part.CollectionType != "" { // a collection of primitive-type objects
 			// TODO
@@ -294,16 +296,17 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 							if err != nil {
 								return
 							}
-							if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
-								stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,%s)", table, obj.DBID(), val.DBID(), key) // Ensure DBID?   
+							if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {								
+						        stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, obj.DBID(), val.DBID())) 
+				                stmt.Arg(SqlStringValueEscape(string(key.(String))))
+								db.QueueStatements(stmt)									
 							} else {
 								// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
 								// !!!!!!!!!!!!!!!!!!!!!!!!
 								// !!!! NOT DONE YET !!!!!!
 								// !!!!!!!!!!!!!!!!!!!!!!!!
-								stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), key.DBID()) // Ensure DBID?   					 
+								db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), key.DBID())) 					 
 							}
-							db.QueueStatements(stmt)
 						}
 					} else {
 						i := 0
@@ -313,11 +316,10 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 								return
 							}
 							if collection.IsOrdered() {
-								stmt = fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), i) // Ensure DBID?  
+								db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val.DBID(), i))
 							} else { // unordered set 
-								stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?  		
+								db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()))		
 							}
-							db.QueueStatements(stmt)
 							i++
 						}
 					}
@@ -327,8 +329,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					if err != nil {
 						return
 					}
-					stmt = fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID()) // Ensure DBID?   
-					db.QueueStatements(stmt)
+					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
 				}
 			} else if attr.Part.CollectionType != "" { // a collection of primitive-type objects
 				// TODO
@@ -448,24 +449,28 @@ func (db *SqliteDB) exists(id int64) (found bool, err error) {
 func (db *SqliteDB) NameObject(obj RObject, name string) {
 	id := obj.DBID()
 	name = SqlStringValueEscape(name)
-	stmt := fmt.Sprintf("INSERT INTO RName(name,id) VALUES('%s',%v);", name, id)
+	stmt := Stmt("INSERT INTO RName(name,id) VALUES(?,?);")
+	stmt.Arg(name)
+	stmt.Arg(id)
 	db.QueueStatements(stmt)
 }
+
 
 /*
 Returns true if an object has been named in the database with the argument name.
 */
 func (db *SqliteDB) ObjectNameExists(name string) (found bool, err error) {
 	name = SqlStringValueEscape(name)	
-	stmt := fmt.Sprintf("SELECT count(*) FROM RName where name='%s'", name)
-	selectStmt, err := db.conn.Prepare(stmt)
+	stmt := "SELECT count(*) FROM RName where name=?"
+	selectStmt, err := db.Prepare(stmt)
 	if err != nil {
 		return
 	}
 
-	defer selectStmt.Finalize()
+    // This is a well used prepared statement so does not need to be destroyed with Finalize.
+	// defer selectStmt.Finalize()
 
-	err = selectStmt.Exec()
+	err = selectStmt.Exec(name)
 	if err != nil {
 		return
 	}
@@ -691,7 +696,7 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 
    TODO THIS METHOD NEEDS TO FLUSH THE SQL STATEMENT QUEUE BEFORE IT RUNS THE SELECT QUERY!!!!!!!
 */
-func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPrimitiveAttrs int, errSuffix string, checkCache bool, objs *[]RObject) (err error) {
+func (db *SqliteDB) fetchMultiple(query string, queryArgObjs []RObject, idsOnly bool, radius int, numPrimitiveAttrs int, errSuffix string, checkCache bool, objs *[]RObject) (err error) {
 
 	Logln(PERSIST_, query)
 
@@ -701,8 +706,16 @@ func (db *SqliteDB) fetchMultiple(query string, idsOnly bool, radius int, numPri
 	}
 
 	defer selectStmt.Finalize()
+	
+	var queryArgs []interface{}
+	if len(queryArgObjs) > 0 {
+		queryArgs = make([]interface{},len(queryArgObjs))
+		for i,arg := range queryArgObjs {
+			queryArgs[i] = arg
+		}
+	}
 
-	err = selectStmt.Exec()
+	err = selectStmt.Exec(queryArgs...)  // Exec(args...)
 	if err != nil {
 		return
 	}
@@ -1243,11 +1256,18 @@ func convertAttrValTwoFields(valByteSlice []byte, valByteSlice2 []byte, attr *At
 */
 func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) {
 
-	stmt := fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName())
+    var stmtStr string
+    var args []interface{}
 
-	stmt += db.instanceInsertStatement(obj.Type(), obj)
+	stmt := Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName()))
+
+	stmtStr,args = db.instanceInsertStatement(obj.Type(), obj)
+	stmt.Add(stmtStr)
+	stmt.Args(args)
 	for _, typ := range obj.Type().Up {
-		stmt += db.instanceInsertStatement(typ, obj)
+		stmtStr,args = db.instanceInsertStatement(typ, obj)
+		stmt.Add(stmtStr)
+		stmt.Args(args)		
 	}
 
 	db.QueueStatements(stmt)
@@ -1260,21 +1280,20 @@ func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) {
 
    Note: Must begin with ";"
 */
-func (db *SqliteDB) instanceInsertStatement(t *RType, obj RObject) string {
+func (db *SqliteDB) instanceInsertStatement(t *RType, obj RObject) (string,[]interface{}) {
 
 	table := db.TableNameIfy(t.ShortName())
-	primitiveAttrVals := db.primitiveAttrValsSQL(t, obj)
+	primitiveAttrVals,args := db.primitiveAttrValsSQL(t, obj)
 	s := fmt.Sprintf("INSERT INTO %s VALUES(%v%s);", table, obj.DBID(), primitiveAttrVals)
-	return s
+	return s, args
 }
 
 /*
 Return a comma separated string representation of the values (for the argument object) of 
 the primitive=valued attributes defined in the type.
 */
-func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
+func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args []interface{}) {
 
-	var s string
 	for _, attr := range t.Attributes {
 		if attr.Part.Type.IsPrimitive {
 			val, found := RT.AttrVal(obj, attr)
@@ -1295,7 +1314,9 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 					locationName := t.Location().String()
 					s += "'" + timeString + "','" + locationName + "'"															
 				case String:
-					s += "'" + SqlStringValueEscape(string(val.(String))) + "'"
+					// s += "'" + SqlStringValueEscape(string(val.(String))) + "'"
+					s += "?"
+					args = append(args, SqlStringValueEscape(string(val.(String))))
 				case Float:
 					s += strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)
 					
@@ -1326,10 +1347,21 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) string {
 			}
 		}
 	}
-	return s
+	return 
 
 }
 
+func SqlStringValueEscape(s string) string {
+	s = strconv.Quote(s)	
+    // Use QuoteToASCII(s) instead???
+	
+	s = strings.Replace(s, `\"`, `"`, -1)
+//	s = strings.Replace(s, "'", "''", -1)
+	s = s[1:len(s)-1] // Strip surrounding double-quotes
+	return s
+}
+
+/* Old version, prior to passing args to sqlite3 exec
 func SqlStringValueEscape(s string) string {
 	s = strconv.Quote(s)	
     // Use QuoteToASCII(s) instead???
@@ -1339,6 +1371,7 @@ func SqlStringValueEscape(s string) string {
 	s = s[1:len(s)-1] // Strip surrounding double-quotes
 	return s
 }
+*/
 
 func SqlStringValueUnescape(s string) string {
 
