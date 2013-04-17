@@ -489,6 +489,43 @@ func (db *SqliteDB) ObjectNameExists(name string) (found bool, err error) {
 }
 
 /*
+TODO Better error reporting
+*/
+func (db *SqliteDB)  Delete(obj RObject) (err error) {
+
+    if ! obj.IsStoredLocally() {
+    	return
+    }
+
+    id := obj.DBID()
+
+	stmts := Stmt("DELETE FROM RObject WHERE id=?;")
+	stmts.Arg(id)
+	stmts.Add("DELETE FROM RName WHERE id=?;")
+	stmts.Arg(id)	
+
+
+	objTyp := obj.Type()
+
+	typeTable := db.TableNameIfy(objTyp.ShortName())
+	stmts.Add(fmt.Sprintf("DELETE FROM %s WHERE id=?;",typeTable))	
+	stmts.Arg(id)	
+	for _, typ := range objTyp.Up {
+		typeTable = db.TableNameIfy(typ.ShortName())
+	    stmts.Add(fmt.Sprintf("DELETE FROM %s WHERE id=?;",typeTable))
+	    stmts.Arg(id)
+	}
+
+	db.QueueStatements(stmts)
+
+	obj.ClearStoredLocally()
+
+    RT.Uncache(obj)
+
+	return
+}
+
+/*
    Given the local dbid of an object, retrieve and return the object stored in the database.
    If the object is a unit (structure), the radius determines how many related objects in the tree are also fetched.
    0 means fetch object only. 1 means referred-to objects, 2 means referred-to by referred to etc.

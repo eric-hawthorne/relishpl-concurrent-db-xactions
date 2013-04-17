@@ -77,6 +77,18 @@ type DB interface {
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)
 	NameObject(obj RObject, name string)
+  /*
+  Deletes the object from the database as well as its canonical object name entry if any.
+  
+  Also removes the object from in-memory cache.
+  TODO: Consider multiple in-memory caches when we have them!!
+
+  Does NOT delete attribute / relation/ collection association table entries that may exist
+  for the object in the database.
+
+  Is a safe no-op for objects that are not stored locally.
+  */
+  Delete(obj RObject) (err error)
 	RecordPackageName(name string, shortName string)
 	FetchByName(name string, radius int) (obj RObject, err error)
 	Fetch(id int64, radius int) (obj RObject, err error)
@@ -377,6 +389,15 @@ func (dbt * DBThread) NameObject(obj RObject, name string) {
    dbt.ReleaseDB() 
    return  
 }
+
+
+func (dbt * DBThread)  Delete(obj RObject) (err error) {
+   dbt.UseDB()
+   err = dbt.db.Delete(obj)
+   dbt.ReleaseDB() 
+   return  
+}
+
 
 func (dbt * DBThread) RecordPackageName(name string, shortName string) {
    dbt.UseDB()

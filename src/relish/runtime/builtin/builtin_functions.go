@@ -1010,6 +1010,16 @@ func InitBuiltinFunctions() {
 	}
 	existsMethod.PrimitiveCode = builtinExists
 
+    // delete object from the local database and the in-memory cache. Mark object as not stored locally.
+    // NOTE!! Does not clean up attribute/relation/collection association tables in the database.
+    // So disassociate associations first, then delete!
+    //
+	deleteMethod, err := RT.CreateMethod("",nil,"delete", []string{"obj"}, []string{"NonPrimitive"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	deleteMethod.PrimitiveCode = builtinDelete	
+
     // err = begin  // Begins a db transaction. On success returns an empty string.
     //
 	beginMethod, err := RT.CreateMethod("",nil,"begin", []string{}, []string{}, []string{"String"}, false, 0, false)
@@ -2861,7 +2871,18 @@ func builtinExists(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+func builtinDelete(th InterpreterThread, objects []RObject) []RObject {
 
+	relish.EnsureDatabase()
+	obj := objects[0]
+
+	err := th.DB().Delete(obj) 
+	if err != nil {
+		panic(err)
+	}
+
+	return nil
+}
 
 
 

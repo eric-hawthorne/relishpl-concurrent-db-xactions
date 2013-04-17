@@ -57,6 +57,13 @@ testModel
    print basic2.b
 
 
+   basic3 = Basic
+   basic3.b = true
+   dub basic3 "BASIC 3"
+   delete basic3
+   if exists "BASIC 3"
+      print "Did not delete! DAMN, Bungled another one!"
+
 
    car1 = vehicles.Car
    car1.lat = 49.243
