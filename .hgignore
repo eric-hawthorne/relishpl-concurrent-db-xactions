@@ -13,6 +13,9 @@ syntax: glob
 # Go code libraries
 *.a
 
+# go profiler output files
+*.prof
+
 # mercurial safety-save files
 *.orig
 
