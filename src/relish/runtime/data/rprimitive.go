@@ -3495,8 +3495,12 @@ Bits
 */
 
 
-
-
+/*
+Note: Maybe we need a bool flag as to whether the slice is the original one (and thus can be persisted)
+or is a slice of a slice and cannot be persisted.
+If so, need it to be a struct like the Bits type.
+TODO This needs more thought.
+*/
 type Bytes []byte
 
 /*

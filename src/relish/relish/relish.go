@@ -43,7 +43,7 @@ import (
 //		"relish/compiler/ast"	
 //		"relish/compiler/parser"
 		"relish/compiler/generator"
-		"relish/runtime/builtin"
+		"relish/runtime/native_methods/builtin"
 		"relish/runtime/web"	  
 		"relish/dbg"
 		"relish/global_loader"

@@ -23,6 +23,7 @@ import (
     "relish/compiler/parser"
     "relish/compiler/token"
 	"relish/compiler/generator"
+    "relish/runtime/native_methods"
 	"relish"
     "archive/zip"	
     . "relish/dbg"
@@ -734,7 +735,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
        gen.GenerateCode()
     }
 
-
+    native_methods.WrapNativeMethods(packageIdentifier)  // Check if package has native methods, if so, make RMethod wrappers.
+    
     ldr.LoadedPackages[packageIdentifier] = version
 
     delete(ldr.PackagesBeingLoaded,packageIdentifier)
