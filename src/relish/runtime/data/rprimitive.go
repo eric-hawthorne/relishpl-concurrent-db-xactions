@@ -294,12 +294,13 @@ func (t *RType) Zero() RObject {
 	case BitsType:
 		
 		z = &Bits{   make([]byte,0)  ,    0}	
-		
-	 case FileType: 
-	    z = &GoWrapper{nil,t}	
 			
     default:
-    	z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
+	    if t.IsNative {
+	       z = &GoWrapper{nil,t}		
+		} else {
+    	   z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
+        }
     }   
     return z
 }

@@ -1,0 +1,30 @@
+origin   relish.pl2012
+artifact relish_lib
+package  files
+
+""" 
+ files.rel
+
+ Implements file i/o. A straightforward wrap of Go's os.File.
+ This package includes Go native methods, defined in 
+ relish/runtime/native_methods/standard_lib/files_methods/files.go
+"""
+
+
+import 
+   io
+
+
+File <: io.Reader
+"""
+ A Reader has data content (or a data stream) which can be sequentially read.
+ Capable of transferring its data into a Bytes buffer, consuming and transferring 
+ the data in chunks via a sequence of calls to the read method of the Reader.
+"""
+
+
+// NATIVE METHODS
+//
+// read r File buf Bytes > n Int err String
+
+

@@ -19,6 +19,7 @@ import (
 	. "relish/defs"	
 	// "relish/rterr"
 	"sort"
+	"relish/runtime/native_types"
 )
 
 ///////////////////////////////////////////////////////////////////////////
@@ -37,6 +38,7 @@ type RType struct {
 	Name                    string
 	shortName               string
 	IsPrimitive             bool
+	IsNative                bool  // instances are of type GoWrapper and have a reference to a Go object.
 	Parents                 []*RType
 	Children                []*RType
 	Up                      []*RType                  // chain of supertypes in dispatch order. (Python-esque?) 
@@ -269,6 +271,7 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 	typ := &RType{Name: name,
 		shortName: shortName,
 		IsPrimitive: isPrimitive,
+		IsNative: native_types.NativeType[name],
 		Parents:     parents,
 		Children:    make([]*RType, 0, 5),
 		Up:          upChain,

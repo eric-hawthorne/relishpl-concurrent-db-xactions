@@ -10,6 +10,7 @@ package  all
 """
 
 import
+   io
    console
    arithmetic
    string
@@ -39,6 +40,7 @@ testAll
 """
    console.testInput
    email.testEmail
+   io.testIo
    arithmetic.testArithmeticAndLogic
    string.testStrings
    time.testTime

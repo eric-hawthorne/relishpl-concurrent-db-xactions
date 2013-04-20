@@ -39,7 +39,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "Bit" : true,
 "Bool" : true,
 "Text" : true,
-"CodePoint" : true,
+"CodePoint" : true,  // TODO - Change to Rune
 "Real" : true,
 "Float" : true,
 "Float32" : true,
@@ -66,7 +66,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "RWMutex" : true,
 "Bytes": true,
 "Bits": true,
-"CodePoints": true,
+"CodePoints": true,  // TODO - Change to Runes
 }
 
 

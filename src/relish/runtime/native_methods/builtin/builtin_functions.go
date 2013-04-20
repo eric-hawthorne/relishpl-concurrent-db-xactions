@@ -4299,25 +4299,4 @@ func builtinInitBoolFromInteger(th InterpreterThread, objects []RObject) []RObje
     return []RObject{Bool(false),String(fmt.Sprintf("Invalid Integer value %d for conversion to Bool (0,1 accepted)",val))}    
 }
 
-// file err = File mode filePath
-func builtinInitFile(th InterpreterThread, objects []RObject) []RObject {
-   
-    fileWrapper := objects[0].(*GoWrapper)
 
-    // mode := string(objects[1].(String))
-
-    filePath := string(objects[2].(String))
-
-    var errStr string    
-
-    // Accept a read/write etc mode parameter
-//    switch mode 
-    file,err := os.Open(filePath) // For read access.
-
-	if err != nil {
-		errStr = err.Error()
-	} else {
-	   fileWrapper.GoObj = file
-    }
-	return []RObject{fileWrapper,String(errStr)}
-}

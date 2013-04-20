@@ -35,9 +35,20 @@ func InitFilesMethods() {
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
 
+// read r File buf Bytes > n Int err String
+//
 func read(th InterpreterThread, objects []RObject) []RObject {
-    // TODO
-	return nil
+	
+	wrapper := objects[0].(*GoWrapper)
+	buf := objects[1].(*Bytes)
+	b := ([]byte)(*buf)
+	file := wrapper.GoObj.(*os.File)
+	n, err := file.Read(b)
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{Int(n),String(errStr)}
 }
 
 
@@ -60,7 +71,7 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
 
     var errStr string    
 
-    // Accept a read/write etc mode parameter
+// Accept a read/write etc mode parameter
 //    switch mode 
     file,err := os.Open(filePath) // For read access.
 
