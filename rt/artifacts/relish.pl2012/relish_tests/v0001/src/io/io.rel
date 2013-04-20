@@ -1,0 +1,37 @@
+origin   relish.pl2012
+artifact relish_tests
+package  io
+
+""" 
+ io.rel
+
+ Test input/output types and methods, such as file i/o operations.
+"""
+
+import
+   relish.pl2012/relish_lib/pkg/files
+
+
+main
+"""
+ Main program.
+"""
+   testIo
+
+
+testIo
+"""
+ Currently tests file i/o. TODO Extend later to other kinds of i/o streams.
+"""
+   file = files.File "testIo.txt"
+   buf = Bytes 300
+   n err = read file buf
+   if err
+      print err
+   else
+      print "I read" n "bytes." 
+      print "------------"
+      s = String buf
+      s1 = slice s 0 n
+      print s1
+      print "------------"
