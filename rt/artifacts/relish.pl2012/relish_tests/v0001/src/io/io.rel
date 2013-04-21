@@ -27,7 +27,7 @@ testIo
 """
  Currently tests file i/o. TODO Extend later to other kinds of i/o streams.
 """
-   file err = files.File "r" "testIo.txt"
+   file err = files.File "testIo.txt"
    if err
       print err
    else

@@ -98,7 +98,6 @@ testArithmeticAndLogic
  All "operators" on any type in relish are just ordinary method calls, with the exception
  of assignment, collection-add/remove, and channel send/receive which are infix operators.
 """
-
    cp = circleProperty 9.0 
                        "a"
    print cp
