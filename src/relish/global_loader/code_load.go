@@ -833,7 +833,8 @@ func (ldr *Loader) ensureImportsAreLoaded(fileNode *ast.File) (err error) {
 	imports := fileNode.RelishImports  // package specifications
 	for _,importedPackageSpec := range imports {
 		if importedPackageSpec.OriginAndArtifactName == "relish" {
-			continue
+			continue  // special case for the subset of standard lib packages which only contain Go native methods and
+			          // have no relish package to load.
 		}
 		importedArtifactVersion := ldr.ArtifactVersion(importedPackageSpec.OriginAndArtifactName)	
 		

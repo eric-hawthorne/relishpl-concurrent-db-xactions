@@ -1698,7 +1698,7 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 			if found {
 			   t.Push(multiMethod)	
 			   hasInitFunc = true	
-			}
+			} 
 			args = call.Args			
 				
 		case token.CLOSURE:	

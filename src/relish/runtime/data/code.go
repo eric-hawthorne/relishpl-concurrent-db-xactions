@@ -547,6 +547,13 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 
     // Set the package into which the method is to be added.
     // If it is the default inbuilt functions package and does not exist, create it.
+    // Note, the default inbuilt functions package, "relish.pl2012/core/inbuilt", is
+    // the package which inbuilt methods, which do not need to have any package imported for them
+    // to be visible in code, are added to.
+    // packages whose full path starts with "relish/pkg" are packages which hold
+    // only native methods and have no real relish artifact or package loaded. So these packages
+    // need to be created here.
+    // 
 	pkg := rt.Packages[packageName]
 	if pkg == nil {
 		if packageName == "relish.pl2012/core/inbuilt"  {

@@ -10,7 +10,7 @@ package  all
 """
 
 import
-   io
+   relish.pl2012/relish_tests/pkg/io
    console
    arithmetic
    string

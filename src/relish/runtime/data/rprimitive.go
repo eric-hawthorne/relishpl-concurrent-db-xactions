@@ -185,7 +185,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	RWMutexType, _ = rt.CreateType("RWMutex", "", []string{})	
 
-	FileType,_ = rt.CreateType("relish.pl2012/lib/core/pkg/io/File", "", []string{"Any"})
+//	FileType,_ = rt.CreateType("relish.pl2012/lib/core/pkg/io/File", "", []string{"Any"})
 
     // Primitive collection types
 

@@ -635,6 +635,9 @@ func (g *Generator) generateMethods() {
 		   //
 	  	   // TODO   OOPS Which package are we executing when looking for web handler methods?????
 	
+	       // TODO TODO Do we really need to prepend package name to init... method names?
+	       // This implies we cannot add constructors of type package1.Type1 in package2
+	
 		   if ((methodName == "main") || 
 		       (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z' && !BuiltinTypeName[methodName[4:]]) || 
 		       (g.isWebDialogHandlerMethod(fileNameRoot))) {

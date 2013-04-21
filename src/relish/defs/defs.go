@@ -6,7 +6,8 @@
 
 package defs
 
-// Lookup table of relish standard library package pathnames.
+/*
+// Lookup table of sstandard library package pathnames.
 
 var StandardLibPackagePath map[string]bool = map[string]bool {
 	"strings" : true,
@@ -15,9 +16,22 @@ var StandardLibPackagePath map[string]bool = map[string]bool {
 	"csv" : true,	
 	"json" : true,		
 }
+*/
 
+// Lookup table of the origin and artifact of each relish standard library package pathname.
+// In theory, the standard library can thus be split into several different artifacts such
+// as a core standard library and various extension (but still considered standard) libraries.
+// Also, the special value "relish" is returned for standard library packages which 
+// consist of only a set of inbuilt methods, so they need no actual relish artifact loaded.
+//
 var StandardLibPackageArtifact map[string]string = map[string]string {
-	"testrelishpkg" : "relish.pl2012/lib/test1",		
+	"strings" : "relish",
+	"datetime" : "relish",
+	"http" : "relish",
+	"csv" : "relish",	
+	"json" : "relish",	
+	"io" : "relish.pl2012/relish_lib",		
+	"files" : "relish.pl2012/relish_lib",		
 }
 
 

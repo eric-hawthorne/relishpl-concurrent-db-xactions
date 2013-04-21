@@ -15,13 +15,13 @@ import (
 
 func InitFilesMethods() {
 
-	readMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"relish.pl2012/relish/package/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
+	readMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	readMethod.PrimitiveCode = read
 
-	fileInitMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"initFile", []string{"mode","filePath"}, []string{"String","String"},  []string{"relish.pl2012/relish/package/files/File","String"}, false, 0, false)
+	fileInitMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","mode","filePath"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -40,8 +40,8 @@ func InitFilesMethods() {
 func read(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
-	buf := objects[1].(*Bytes)
-	b := ([]byte)(*buf)
+	buf := objects[1].(Bytes)
+	b := ([]byte)(buf)
 	file := wrapper.GoObj.(*os.File)
 	n, err := file.Read(b)
 	errStr := ""

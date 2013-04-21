@@ -23,6 +23,7 @@ var NativeType = map [string] bool {
 	// DO NOT MODIFY THIS LIST OF MAP ENTRIES !!
 	"relish.pl2012/relish_lib/pkg/files/File" : true,
 	
+		
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!
 	// Add extensions types which need a GoWrapper as the instance here. 
 }
