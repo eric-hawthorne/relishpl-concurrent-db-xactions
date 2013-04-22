@@ -18,7 +18,7 @@ import
 File <: io.Reader io.Writer io.Closer
 """
  A File represents an open file descriptor.
- A file, descrived at the logical level, is a named, readable and/or writable/appendable sequence of bytes 
+ A file, described at the logical level, is a named, readable and/or writable/appendable sequence of bytes 
  stored in persistent storage on the computer.
 """
 
@@ -30,3 +30,50 @@ File <: io.Reader io.Writer io.Closer
 // write f File val Any > n Int err String
 //
 // close f File > err String
+//
+// readAllText 
+//    f File 
+//    addMissingLastLinefeed Bool = true
+// > 
+//    fileContent String err String
+// """
+//  Reads all text lines in the file, concatenating them into a single string in which each line
+// is terminated by a "\n". 
+//  If the last line of the file had no line-ending character(s) at its end, the behaviour depends
+//  on the "addMissingLastLinefeed" argument. If false, the last line in the result string
+//  also has no linefeed "\n" at its end.
+//  If addMissingLastLinefeed is true or not supplied, the last line in the result string gets 
+//  a "\n" appended, so that lines can be processed in a uniform manner.
+// 
+//  Note that if the file has MSWindows-style line end markers (CRLF i.e. "\r\n") these are replaced
+//  in the output string by a single "\n" at end of each line.
+// 
+//  An empty file causes the fileContent result to be the empty string.
+// """
+//
+// readAllBinary f File > fileContent String err String
+// """
+//  Reads the entire file contents into the fileContent String.
+//  All bytes in the file are put in the String as-is, with no line-end processing.
+//  You can use this method on text files too, if you like, but you won't get any
+//  normalizing of line-ending characters. You get the exact file bytes as returned by
+//  low-level file read functions.
+// """
+//
+// writeAllText
+//    f File
+//    text String  // A string expected to use "\n" as line-end characters.
+//    lineEndType String = "\n"  // Default is Unix/Linux/OSX text file line-ends. Use "\r\n" for MSWindows line-ends.
+// >
+//    err String
+//
+//
+// writeAllBinary
+//    f File
+//    content Any  // If String or Bytes, written as is. Else a primitive relish String conversion is applied first.
+// >
+//    err String
+// """
+// Writes the Bytes or String as is to the file. (Or converts other relish types to String first).
+// """
+//
