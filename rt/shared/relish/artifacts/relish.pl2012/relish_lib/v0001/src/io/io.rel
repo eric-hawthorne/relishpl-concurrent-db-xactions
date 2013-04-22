@@ -44,3 +44,28 @@ read r Reader buf Bytes > n Int err String
    n = 0
    err = "No read method defined for the type of Reader supplied."
 
+
+Writer
+"""
+ A Writer can have bytes written to it.
+"""
+
+
+write w Writer buf Bytes > n Int err String
+"""
+ Writes (len buf) bytes from buf to the underlying data stream. 
+ It returns the number of bytes written from buf (0 <= n <= len buf) and any error encountered that caused 
+ the write to stop early. write must return a non-empty error if it returns n < len buf.
+"""
+
+
+Closer
+"""
+ A Closer can have its I/O stream closed.
+"""
+
+
+close c Closer > err String
+"""
+ Closes the stream, rendering it unusable for I/O. It returns an error, if any.
+"""

@@ -42,3 +42,26 @@ testIo
          s1 = slice s 0 n
          print s1
          print "------------"
+      close file
+
+   file err = files.File "testIo2.txt" "w"
+   n err = write file "Gangnam Style!"
+   if err
+      print err
+   else
+      close file
+      file2 err = files.File "testIo2.txt"
+      if err
+         print err      
+      else
+         n err = read file2 buf
+         if err
+            print err
+         else
+            print "I read" n "bytes." 
+            print "------------"
+            s = String buf
+            s1 = slice s 0 n
+            print s1
+            print "------------"
+         close file2   

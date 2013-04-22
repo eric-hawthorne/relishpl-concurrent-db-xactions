@@ -15,16 +15,18 @@ import
    io
 
 
-File <: io.Reader
+File <: io.Reader io.Writer io.Closer
 """
- A Reader has data content (or a data stream) which can be sequentially read.
- Capable of transferring its data into a Bytes buffer, consuming and transferring 
- the data in chunks via a sequence of calls to the read method of the Reader.
+ A File represents an open file descriptor.
+ A file, descrived at the logical level, is a named, readable and/or writable/appendable sequence of bytes 
+ stored in persistent storage on the computer.
 """
 
 
 // NATIVE METHODS
 //
-// read r File buf Bytes > n Int err String
-
-
+// read f File buf Bytes > n Int err String
+//
+// write f File val Any > n Int err String
+//
+// close f File > err String

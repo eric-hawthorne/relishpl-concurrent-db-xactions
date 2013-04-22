@@ -10,16 +10,35 @@ package files_methods
 import (
 	. "relish/runtime/data"
 	"os"
+	"fmt"
 )
 
 
 func InitFilesMethods() {
 
+    // buf = Bytes 1000
+    // n err = read file buf
 	readMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	readMethod.PrimitiveCode = read
+	
+	// n err = write file val
+	writeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"write", []string{"file","val"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Any"}, []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	writeMethod.PrimitiveCode = write	
+
+    // err = close file
+	closeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"close", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	closeMethod.PrimitiveCode = close
+
+
 
 	fileInitMethod1, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
@@ -47,7 +66,7 @@ func InitFilesMethods() {
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
 
-// read r File buf Bytes > n Int err String
+// read f File buf Bytes > n Int err String
 //
 func read(th InterpreterThread, objects []RObject) []RObject {
 	
@@ -64,6 +83,42 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+// write f File buf Bytes > n Int err String
+// write f File val Any > n Int err String
+// If not Bytes, converts to String
+//
+func write(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	var b []byte
+	buf,isBytes := objects[1].(Bytes)
+	if isBytes {
+		b = ([]byte)(buf)
+	} else {
+		b = ([]byte)(string(objects[1].String()))
+	}
+	
+	file := wrapper.GoObj.(*os.File)
+	n, err := file.Write(b)
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{Int(n),String(errStr)}
+}
+
+// Close closes the File, rendering it unusable for I/O. It returns an error, if any.
+func close(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	file := wrapper.GoObj.(*os.File)
+	err := file.Close()
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
 
 
 
@@ -84,7 +139,7 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 //        "nw+" - read write, creates, File must not exist
 //
 // perm = "rwxrwxrwx"
-//        "rw_rw____"
+//        "rw-rw----"
 //        "777"
 //        "660"
 //
@@ -130,90 +185,95 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
 	
 	}
     var perm os.FileMode
-    var permUser, permGroup, permOther byte
+    var permUser, permGroup, permOther uint32
     if permStr != "0" {
 	   n := len(permStr)
        if n == 4 || n == 3 {
 	      if n == 4 {
 	         permStr = permStr[1:]
 	      }
-          permUser = permStr[0] - '0'	     
-          permGroup = permStr[1] - '0'
-          permOther = permStr[2] - '0'
+          permUser = uint32(permStr[0] - '0')	     
+          permGroup = uint32(permStr[1] - '0')
+          permOther = uint32(permStr[2] - '0')
           if permUser < 0 || permUser > 7 ||  permGroup < 0 || permGroup > 7 ||  permOther < 0 || permOther > 7 {
 	         errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`
 	      } else {
-		     perm = os.FileMode((64 * permUser) + (8 * permGroup) + permOther)
+             var p uint32 = (64 * permUser) + (8 * permGroup) + permOther		
+		     perm = os.FileMode(p)
+		     fmt.Println(permUser, permGroup, permOther)
+		     fmt.Println(p)
+		     fmt.Println(perm)
 		  }
-	   } else if n == 9 {   // "rw_______" style
+	   } else if n == 9 {   // "rw-------" style
 		  permStrUser := permStr[0:3]
 		  switch permStrUser {
-	      case "___":
+	      case "---":
 		     permUser = 0
-		  case "__x":
+		  case "--x":
 			 permUser = 1
-		  case "_w_":
+		  case "-w-":
 			 permUser = 2
-	      case "_wx":
+	      case "-wx":
 		     permUser = 3
-		  case "r__":
+		  case "r--":
 			 permUser = 4
-		  case "r_x":
+		  case "r-x":
 			 permUser = 5
-	      case "rw_":
+	      case "rw-":
 		     permUser = 6
 	      case "rwx":
 		     permUser = 7	
 		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`					
+		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
 		  }	
 		  permStrGroup := permStr[3:6]
 		  switch permStrGroup {
-	      case "___":
+	      case "---":
 		     permGroup = 0
-		  case "__x":
+		  case "--x":
 			 permGroup = 1
-		  case "_w_":
+		  case "-w-":
 			 permGroup = 2
-	      case "_wx":
+	      case "-wx":
 		     permGroup = 3
-		  case "r__":
+		  case "r--":
 			 permGroup = 4
-		  case "r_x":
+		  case "r-x":
 			 permGroup = 5
-	      case "rw_":
+	      case "rw-":
 		     permGroup = 6
 	      case "rwx":
 		     permGroup = 7	
 		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`					
+		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
 		  }		
 		  permStrOther := permStr[6:]
 		  switch permStrOther {
-	      case "___":
+	      case "---":
 		     permOther = 0
-		  case "__x":
+		  case "--x":
 			 permOther = 1
-		  case "_w_":
+		  case "-w-":
 			 permOther = 2
-	      case "_wx":
+	      case "-wx":
 		     permOther = 3
-		  case "r__":
+		  case "r--":
 			 permOther = 4
-		  case "r_x":
+		  case "r-x":
 			 permOther = 5
-	      case "rw_":
+	      case "rw-":
 		     permOther = 6
 	      case "rwx":
 		     permOther = 7	
 		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`					
+		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
 		  }
 		  if errStr == "" {
-		     perm = os.FileMode((64 * permUser) + (8 * permGroup) + permOther)			
+             var p uint32 = (64 * permUser) + (8 * permGroup) + permOther	
+		     perm = os.FileMode(p)						
 		  }		
 	   } else {
-		  errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`
+		  errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`
 	   }
     }
     if errStr == "" {
