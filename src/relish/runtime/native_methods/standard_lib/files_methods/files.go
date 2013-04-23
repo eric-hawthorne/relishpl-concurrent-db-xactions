@@ -11,6 +11,7 @@ import (
 	. "relish/runtime/data"
 	"os"
 	"fmt"
+	"bufio"
 )
 
 
@@ -81,6 +82,52 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 	}
 	return []RObject{Int(n),String(errStr)}
 }
+
+
+// readAllText f File buf Bytes > n Int err String
+//
+func readAllText(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	buf := objects[1].(Bytes)
+	b := ([]byte)(buf)
+	file := wrapper.GoObj.(*os.File)
+	br := bufio.NewReader(file)
+	
+	var err error 
+	var content, line []byte  
+	for {
+	   line, err = br.ReadBytes('\n')
+	   n := len(line)
+	   if n > 1 && line[n-2] == '\r' {
+		  line[n-2] = '\n'
+		  line = line[:n-1]
+	   }
+	   content = append(content, line...)
+	   if err != nil {
+		  if err == io.EOF {
+			 err = nil
+		  }
+		  break
+	   }
+    }
+	errStr := ""
+    if err == nil {
+       if len(content) > 0 && addLinefeed && content[len(content)-1] != '\n' {
+	      content = content.append('\n')
+	   }	
+	} else {
+	   errStr = err.Error()
+	}
+	return []RObject{String(string(content)),String(errStr)}
+}
+
+
+
+
+func (b *Reader) ReadBytes(delim byte) (line []byte, err error) {
+
+
 
 
 // write f File buf Bytes > n Int err String
