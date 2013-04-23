@@ -33,16 +33,16 @@ File <: io.Reader io.Writer io.Closer
 //
 // readAllText 
 //    f File 
-//    addMissingLastLinefeed Bool = true
+//    addMissingLinefeed Bool = false
 // > 
 //    fileContent String err String
 // """
 //  Reads all text lines in the file, concatenating them into a single string in which each line
 // is terminated by a "\n". 
 //  If the last line of the file had no line-ending character(s) at its end, the behaviour depends
-//  on the "addMissingLastLinefeed" argument. If false, the last line in the result string
+//  on the "addMissingLinefeed" argument. If false (the default) , the last line in the result string
 //  also has no linefeed "\n" at its end.
-//  If addMissingLastLinefeed is true or not supplied, the last line in the result string gets 
+//  If addMissingLinefeed is true, the last line in the result string gets 
 //  a "\n" appended, so that lines can be processed in a uniform manner.
 // 
 //  Note that if the file has MSWindows-style line end markers (CRLF i.e. "\r\n") these are replaced
@@ -60,20 +60,4 @@ File <: io.Reader io.Writer io.Closer
 //  low-level file read functions.
 // """
 //
-// writeAllText
-//    f File
-//    text String  // A string expected to use "\n" as line-end characters.
-//    lineEndType String = "\n"  // Default is Unix/Linux/OSX text file line-ends. Use "\r\n" for MSWindows line-ends.
-// >
-//    err String
-//
-//
-// writeAllBinary
-//    f File
-//    content Any  // If String or Bytes, written as is. Else a primitive relish String conversion is applied first.
-// >
-//    err String
-// """
-// Writes the Bytes or String as is to the file. (Or converts other relish types to String first).
-// """
-//
+

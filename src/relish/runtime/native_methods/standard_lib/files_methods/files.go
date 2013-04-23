@@ -11,6 +11,7 @@ import (
 	. "relish/runtime/data"
 	"os"
 	"fmt"
+	"io"
 	"bufio"
 )
 
@@ -24,7 +25,37 @@ func InitFilesMethods() {
 		panic(err)
 	}
 	readMethod.PrimitiveCode = read
+
+	// readAllText 
+	//    f File 
+	//    addMissingLinefeed Bool = false
+	// > 
+	//    fileContent String err String
+	//
+	readAllTextMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	readAllTextMethod.PrimitiveCode = readAllText
+
+	readAllTextMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Bool"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	readAllTextMethod2.PrimitiveCode = readAllText
 	
+	// readAllBinary
+	//    f File 
+	// > 
+	//    fileContent String err String
+	//
+	readAllBinaryMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllBinary", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	readAllBinaryMethod.PrimitiveCode = readAllBinary
+
+
 	// n err = write file val
 	writeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"write", []string{"file","val"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Any"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
@@ -84,14 +115,23 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
-// readAllText f File buf Bytes > n Int err String
+
+// readAllText 
+//    f File 
+//    addMissingLinefeed Bool = false
+// > 
+//    fileContent String err String
 //
 func readAllText(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
-	buf := objects[1].(Bytes)
-	b := ([]byte)(buf)
 	file := wrapper.GoObj.(*os.File)
+    addMissingLinefeed := false
+    if len(objects) == 2 {
+    	addMissingLinefeed = bool(objects[1].(Bool))
+    }
+
+
 	br := bufio.NewReader(file)
 	
 	var err error 
@@ -113,8 +153,8 @@ func readAllText(th InterpreterThread, objects []RObject) []RObject {
     }
 	errStr := ""
     if err == nil {
-       if len(content) > 0 && addLinefeed && content[len(content)-1] != '\n' {
-	      content = content.append('\n')
+       if len(content) > 0 && addMissingLinefeed && content[len(content)-1] != '\n' {
+	      content = append(content,'\n')
 	   }	
 	} else {
 	   errStr = err.Error()
@@ -123,9 +163,36 @@ func readAllText(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+// readAllBinary
+//    f File 
+// > 
+//    fileContent String err String
+//
+func readAllBinary(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	file := wrapper.GoObj.(*os.File)	
+	var buf []byte = make([]byte,8192)
+	var content []byte
+	var err error 	
+	for {
+	   n, err := file.Read(buf)
+	   b := buf[:n]
+	   content = append(content, b...)
+	   if err != nil {
+		  if err == io.EOF {
+			 err = nil
+		  }
+		  break
+	   }
+    }
+	errStr := ""
+    if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(string(content)),String(errStr)}
+}
 
-
-func (b *Reader) ReadBytes(delim byte) (line []byte, err error) {
 
 
 
@@ -153,6 +220,45 @@ func write(th InterpreterThread, objects []RObject) []RObject {
 	}
 	return []RObject{Int(n),String(errStr)}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Close closes the File, rendering it unusable for I/O. It returns an error, if any.
 func close(th InterpreterThread, objects []RObject) []RObject {
