@@ -60,4 +60,26 @@ File <: io.Reader io.Writer io.Closer
 //  low-level file read functions.
 // """
 //
-
+//
+// sync f File > err String
+// """
+//  Commits the current contents of the file to stable storage.
+//  Typically, this means flushing the file system's in-memory copy
+//  of recently written data to disk.
+// """
+//
+//
+// remove path String > err String
+// """
+//  Removes the named file or directory.
+// """
+//
+// removeAll path String > err String  
+// """
+//  Removes the named file or directory and all sub directories and contained files recursively.
+// """
+//
+// rename oldName String newName String > err String
+// """
+//  Renames the file or directory.
+// """

@@ -71,6 +71,78 @@ func InitFilesMethods() {
 	closeMethod.PrimitiveCode = close
 
 
+	// sync f File > err String
+	// """
+	//  Commits the current contents of the file to stable storage.
+	//  Typically, this means flushing the file system's in-memory copy
+	//  of recently written data to disk.
+	// 
+    //  err = sync file
+    // """
+	syncMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"sync", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	syncMethod.PrimitiveCode = sync	
+
+	//
+	//
+	// remove path String > err String
+	// """
+	//  Removes the named file or directory.
+	//
+	//  err = remove path
+	// """
+	//
+	removeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"remove", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	removeMethod.PrimitiveCode = remove		
+
+
+	// removeAll path String > err String  
+	// """
+	//  Removes the named file or directory and all sub directories and contained files recursively.
+	//
+	//  err = removeAll path	
+	// """
+	//
+	removeAllMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"removeAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	removeAllMethod.PrimitiveCode = removeAll		
+
+	// rename oldName String newName String > err String
+	// """
+	//  Renames the file or directory.
+	//
+	//  err = rename oldName newName	
+	// """
+	//
+	renameMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"rename", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	renameMethod.PrimitiveCode = rename		
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	fileInitMethod1, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
@@ -222,8 +294,73 @@ func write(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+// sync f File > err String
+//
+func sync(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	file := wrapper.GoObj.(*os.File)
+	err := file.Sync()
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
 
 
+// remove path String > err String
+// """
+//  Removes the named file or directory.
+// """
+//
+func remove(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
+
+	err := os.Remove(path)
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+
+// removeAll path String > err String  
+// """
+//  Removes the named file or directory and all sub directories and contained files recursively.
+// """
+//
+func removeAll(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
+
+	err := os.RemoveAll(path)
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+
+// rename oldName String newName String > err String
+// """
+//  Renames the file or directory.
+//  Valid os filesystem pathnames (relative or absolute) to file/directory are expected as the names.
+// """
+func rename(th InterpreterThread, objects []RObject) []RObject {
+	
+    path1 := string(objects[0].(String))
+    path2 := string(objects[1].(String))
+	err := os.Rename(path1, path2)
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
 
 
 

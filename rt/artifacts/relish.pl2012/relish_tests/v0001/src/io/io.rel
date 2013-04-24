@@ -50,21 +50,29 @@ testIo
       print err
    else
       close file
-      file2 err = files.File "testIo2.txt"
+      err = rename "testIo2.txt" "testIo3.txt"
       if err
-         print err      
-      else
-         n err = read file2 buf
+         print err
+      else   
+         file3 err = files.File "testIo3.txt"
          if err
-            print err
+            print err      
          else
-            print "I read" n "bytes." 
-            print "------------"
-            s = String buf
-            s1 = slice s 0 n
-            print s1
-            print "------------"
-         close file2   
+            n err = read file3 buf
+            if err
+               print err
+            else
+               print "I read" n "bytes." 
+               print "------------"
+               s = String buf
+               s1 = slice s 0 n
+               print s1
+               print "------------"
+            close file3   
+
+   err = remove "testIo3.txt"
+   if err
+      print err
 
    file err = files.File "testIo.txt"
    if err
