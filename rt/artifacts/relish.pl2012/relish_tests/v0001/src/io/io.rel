@@ -79,3 +79,17 @@ testIo
          print content
          print "------------"
       close file         
+
+   file err = files.File "testIo.txt"
+   if err
+      print err
+   else
+      buf = Bytes 300
+      content err = readAllBinary file
+      if err
+         print err
+      else
+         print "------------"
+         print content
+         print "------------"
+      close file          
