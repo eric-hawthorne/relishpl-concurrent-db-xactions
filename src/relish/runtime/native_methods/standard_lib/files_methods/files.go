@@ -10,7 +10,6 @@ package files_methods
 import (
 	. "relish/runtime/data"
 	"os"
-	"fmt"
 	"io"
 	"bufio"
 )
@@ -156,9 +155,48 @@ func InitFilesMethods() {
 
 
 
+	// path = "mydirectory"
+	// permissions = "rwxrw_r__"  // or permissions = "764"
+	//
+	// err = mkdirAll path [permissions]
+	//
+	mkdirMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mkdirMethod.PrimitiveCode = mkdir		
+
+	mkdirMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mkdirMethod2.PrimitiveCode = mkdir				
+
+
+	// path = "mydirectory"
+	// permissions = "rwxrw_r__"  // or permissions = "764"
+	//
+	// err = mkdirAll path [permissions]
+	//	
+	mkdirAllMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mkdirAllMethod.PrimitiveCode = mkdirAll		
+
+	mkdirAllMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mkdirAllMethod2.PrimitiveCode = mkdirAll		
 
 
 
+	tempDirMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"tempDir", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	tempDirMethod.PrimitiveCode = tempDir
 
 
 
@@ -447,9 +485,6 @@ func lstatPrimitive(th InterpreterThread, objects []RObject) []RObject {
 
 
 
-
-
-
 // Close closes the File, rendering it unusable for I/O. It returns an error, if any.
 func close(th InterpreterThread, objects []RObject) []RObject {
 	
@@ -463,6 +498,67 @@ func close(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{String(errStr)}
 }
 
+// path = "mydirectory"
+// permissions = "rwxrw_r__"  // or permissions = "764"
+//
+// err = mkdir path [permissions]
+//
+func mkdir(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
+
+    permStr := "766"
+    if len(objects) > 1 {
+       permStr = string(objects[1].(String))    
+    }
+
+    perm, errStr := getFilePermissions(permStr)
+    var err error
+    if errStr == "" {
+	   err = os.Mkdir(path, perm)
+    }
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+
+// path = "mydirectory"
+// permissions = "rwxrw_r__"  // or permissions = "764"
+//
+// err = mkdirAll path [permissions]
+//
+func mkdirAll(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
+
+    permStr := "766"
+    if len(objects) > 1 {
+       permStr = string(objects[1].(String))    
+    }
+
+    perm, errStr := getFilePermissions(permStr)
+    var err error
+    if errStr == "" {
+	   err = os.MkdirAll(path, perm)
+    }
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+
+
+// tempDirPath = files.tempDir
+//
+func tempDir(th InterpreterThread, objects []RObject) []RObject {
+	
+	path := os.TempDir()
+	
+	return []RObject{String(path)}
+}
 
 
 
@@ -525,9 +621,39 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
 		  flag = os.O_WRONLY | os.O_CREATE | os.O_EXCL			
 	   case "nw+":
 		  flag = os.O_RDWR | os.O_CREATE | os.O_EXCL			
-	
+	   default:
+	   	  errStr = `File mode if supplied must be one of "r","w","a","r+","w+","a+","nw","nw+".`
 	}
+
     var perm os.FileMode
+
+    if errStr == "" {
+       perm, errStr = getFilePermissions(permStr)
+    }
+
+    if errStr == "" {
+	    file,err := os.OpenFile(filePath, flag, perm) 
+
+		if err != nil {
+			errStr = err.Error()
+		} else {
+		   fileWrapper.GoObj = file
+	    }
+    }
+	return []RObject{fileWrapper,String(errStr)}
+}
+
+
+
+/*
+Helper function.
+Given the argument permissions string, which can be in a format like "666" "0666" or "rwxrw_r__",
+Return the corresponding FileMode value with the appropriate permission bits set.
+See Go os.FileMode specification.
+Returns a non-empty errStr error message if the input is invalidly formatted.
+Note. the input permStr value "0" is allowed and results in a perm with no permission bits set.
+*/
+func getFilePermissions(permStr string) (perm os.FileMode, errStr string) {
     var permUser, permGroup, permOther uint32
     if permStr != "0" {
 	   n := len(permStr)
@@ -543,9 +669,9 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
 	      } else {
              var p uint32 = (64 * permUser) + (8 * permGroup) + permOther		
 		     perm = os.FileMode(p)
-		     fmt.Println(permUser, permGroup, permOther)
-		     fmt.Println(p)
-		     fmt.Println(perm)
+		     //fmt.Println(permUser, permGroup, permOther)
+		     //fmt.Println(p)
+		     //fmt.Println(perm)
 		  }
 	   } else if n == 9 {   // "rw-------" style
 		  permStrUser := permStr[0:3]
@@ -619,15 +745,5 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
 		  errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`
 	   }
     }
-    if errStr == "" {
-	    file,err := os.OpenFile(filePath, flag, perm) 
-
-		if err != nil {
-			errStr = err.Error()
-		} else {
-		   fileWrapper.GoObj = file
-	    }
-    }
-	return []RObject{fileWrapper,String(errStr)}
+    return
 }
-

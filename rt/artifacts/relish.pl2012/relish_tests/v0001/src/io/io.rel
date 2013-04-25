@@ -121,3 +121,16 @@ testIo
          print content
          print "------------"
       close file          
+   tmp = files.tempDir
+   myTempDirPath = cat tmp "/myTestDirectory/andSubdir"
+   err = mkdirAll myTempDirPath
+   if err
+      print err
+   else
+      myTempDirPath = cat tmp "/myTestDirectory"
+      err = removeAll myTempDirPath
+      if err
+         print err
+      else
+         print "Removed directory " myTempDirPath "and subdirectory." 
+
