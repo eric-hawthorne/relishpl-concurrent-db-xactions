@@ -131,8 +131,28 @@ func InitFilesMethods() {
 
 
 
+	// name size mode modTime isDir fileExists err =
+	//    statPrimitive path
+	//
+	statPrimitiveMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"statPrimitive", 
+		                                        []string{"path"}, []string{"String"}, 
+	                                            []string{"String","Int","Uint32","Time","Bool","Bool","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	statPrimitiveMethod.PrimitiveCode = statPrimitive			
 
 
+	// name size mode modTime isDir fileExists err =
+	//    lstatPrimitive path
+	//
+	lstatPrimitiveMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"lstatPrimitive", 
+		                                        []string{"path"}, []string{"String"}, 
+	                                            []string{"String","Int","Uint32","Time","Bool","Bool","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	lstatPrimitiveMethod.PrimitiveCode = lstatPrimitive	
 
 
 
@@ -364,33 +384,66 @@ func rename(th InterpreterThread, objects []RObject) []RObject {
 
 
 
+// name size mode modTime isDir fileExists err =
+//    statPrimitive path
+//
+func statPrimitive(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
+
+	fi, err := os.Stat(path)
+	errStr := ""
+	var name String
+	var size Int
+	var mode Uint32
+	var modTime RTime
+	var isDir Bool
+	var fileExists Bool
+	if err == nil {
+		fileExists = true
+		name = String(fi.Name())
+		size = Int(fi.Size())
+		mode = Uint32(uint32(fi.Mode()))
+        modTime = RTime(fi.ModTime()) 
+		isDir = Bool(fi.IsDir())
+	} else if os.IsNotExist(err) {
+       fileExists = false
+	} else { // Some other "can't stat" error - report it out
+	   errStr = err.Error()
+	}
+	return []RObject{name,size,mode,modTime,isDir,fileExists,String(errStr)}
+}      
 
 
+// name size mode modTime isDir fileExists err =
+//    lstatPrimitive path
+//
+func lstatPrimitive(th InterpreterThread, objects []RObject) []RObject {
+	
+    path := string(objects[0].(String))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	fi, err := os.Lstat(path)
+	errStr := ""
+	var name String
+	var size Int
+	var mode Uint32
+	var modTime RTime
+	var isDir Bool
+	var fileExists Bool
+	if err == nil {
+		fileExists = true
+		name = String(fi.Name())
+		size = Int(fi.Size())
+		mode = Uint32(uint32(fi.Mode()))
+        modTime = RTime(fi.ModTime()) 
+		isDir = Bool(fi.IsDir())
+	} else if os.IsNotExist(err) {
+       fileExists = false
+	} else { // Some other "can't stat" error - report it out
+	   errStr = err.Error()
+	}
+	return []RObject{name,size,mode,modTime,isDir,fileExists,String(errStr)}
+}      
 
 
 

@@ -246,7 +246,7 @@ func (t *RType) Zero() RObject {
     case UintType:
     	z = Uint(0)
     case Uint32Type:
-        z = Uint(0)	
+        z = Uint32(0)	
 /*
     case Uint16Type:
     	z = Uint16(0)

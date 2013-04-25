@@ -70,9 +70,29 @@ testIo
                print "------------"
             close file3   
 
+
+   path = "testIo3.txt"
+   fileInfo fileExists err = stat path
+   if err
+      print "Can't stat file" path ":" err
+   elif fileExists
+      print path "last modified at" fileInfo.modTime
+   else  
+      print path "does not exist."
+
+
    err = remove "testIo3.txt"
    if err
       print err
+
+   path = "testIo3.txt"
+   fileInfo fileExists err = stat path
+   if err
+      print "Can't stat file" path ":" err
+   elif fileExists
+      print path "last modified at" fileInfo.modTime
+   else  
+      print path "does not exist."      
 
    file err = files.File "testIo.txt"
    if err

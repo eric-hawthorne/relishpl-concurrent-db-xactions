@@ -83,3 +83,62 @@ File <: io.Reader io.Writer io.Closer
 // """
 //  Renames the file or directory.
 // """
+//
+
+
+
+FileInfo
+"""
+ A FileInfo describes a File and is returned by stat and lstat methods.
+"""
+   name String  // base name of the file
+   size Int  // length in bytes for regular files; system-dependent for others
+   mode Uint32  // file mode bits - see Go os package documentation of FileMode type.
+   modTime Time  // modification time.
+   isDir Bool  // true if the file is a directory
+
+
+stat path String > fi FileInfo fileExists Bool err String
+"""
+ stat returns a FileInfo describing the named file. 
+ Or if the file/directory/link does not exist, the fileExists return value will be false
+ Or if there is any other failure in the attempt to stat, a non-empty err is
+ returned as the third argument. 
+ Usage:
+
+  path = "myfile.txt"
+  fileInfo fileExists err = stat path
+  if err
+     print "Can't stat file" path ":" err
+  elif fileExists
+     print path "last modified at" fileInfo.modTime
+  else  
+     print path "does not exist."
+"""
+   name size mode modTime isDir fileExists err =
+      statPrimitive path
+   if and fileExists
+          not err
+      fi = FileInfo
+      fi.name = name
+      fi.size = size
+      fi.mode = mode
+      fi.modTime = modTime
+      fi.isDir = isDir       
+
+
+lstat path String > fi FileInfo fileExists Bool err String
+"""
+ Like stat but does not follow symbolic links. Returns info about the link itself if the name refers
+ to a symbolic link.
+"""
+   name size mode modTime isDir fileExists err =
+      lstatPrimitive path
+   if and fileExists
+          not err
+      fi = FileInfo
+      fi.name = name
+      fi.size = size
+      fi.mode = mode
+      fi.modTime = modTime
+      fi.isDir = isDir   
