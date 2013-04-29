@@ -178,6 +178,7 @@ func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
 	if obj.IsStoredLocally() {
 		return
 	}
+	
 	obj.SetStoredLocally() // Not necessarily true yet !!!!!! Failure to persist could happen after this. Can I move it down?
 	if obj.HasUUID() {
 		err = db.persistRemoteObject(obj)

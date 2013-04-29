@@ -1,0 +1,74 @@
+origin   relish.pl2012
+artifact relish_tests
+package  init_and_removal 
+
+""" 
+ init_and_removal.rel
+
+ Test initialization of attribute values of objects, before and after persistence, and also,
+ test removal of relation assocations between objects, and database deletion of objects.
+
+ Requirements and Design
+ -----------------------
+ Desirable properties of this behaviour in the language:
+
+
+"""
+
+
+import
+   strings
+
+
+Alpha
+"""
+ A datatype for testing initialization of values, removal of relation associations, etc.
+"""
+   bool ?Bool
+   betaAttr ?Beta
+
+
+Beta
+"""
+ A datatype for testing initialization of values, removal of relation associations, etc.
+"""
+   int ?Int
+   string ?String
+   float ?Float
+
+
+Alpha 0 1 -- 1 Beta
+
+
+main
+"""
+ Main program.
+"""
+   testInitAndRemoval
+
+
+testInitAndRemoval
+"""
+ Tests how attribute values are initialized, before and after persistence.
+"""
+   a1 = Alpha
+   b1 = Beta
+
+   a1.betaAttr = nil
+
+   print "Before persistence"
+   print "a1.bool" a1.bool
+   print "a1.betaAttr" a1.betaAttr
+   print "b1.int" b1.int
+   print "b1.string" (cat "\"" b1.string "\"")
+   print "b1.float" b1.float
+
+   print "b1.alpha" b1.alpha
+   a1.beta = b1
+   print "a1.beta" a1.beta
+   print "b1.alpha" b1.alpha
+
+   b1.alpha = nil
+
+   print "b1.alpha" b1.alpha
+   print "a1.beta" a1.beta

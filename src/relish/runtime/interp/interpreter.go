@@ -812,7 +812,7 @@ func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
 		}
 		val = attr.Part.Type.Zero()
 
-        // Now obsolete, until we start implementing mandatory attribute types. i.e. if not b Car? then it expects a car,
+        // Now obsolete, until we start implementing mandatory attribute types. i.e. if not b ?Car then it expects a car,
         // and should complain if there is a nil.
 		// rterr.Stopf("Object %v has no value for attribute %s", obj, selector.Sel.Name)
 	}		
@@ -2596,7 +2596,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 						err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") {
+							if strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") {
 								rterr.Stop1(t,selector, err)
 							} 
 							panic(err)

@@ -342,28 +342,53 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject
 }
 
 /*
-Typechecked assignment. Never used in inverse.
+Optionally typechecked assignment. Never used in inverse.
 */
 func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
+
+    if obj == NIL {
+		err = fmt.Errorf("nil cannot have a value assigned to '%v' attribute.", attr.Part.Name)
+		return		
+    }
+
+    if val == NIL {
+       err = rt.UnsetAttr(th, obj, attr, isInverse, true)
+       return
+    }
 
 	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
 		return
 	}
+	
 	attrVals, found := rt.attributes[attr]
+	
+	var oldVal RObject
+	 
 	if found {
-		_, found = attrVals[obj]
+		oldVal, found = attrVals[obj]
 	} else {
 		attrVals = make(map[RObject]RObject)
 		rt.attributes[attr] = attrVals
 	} 
+
+
 	attrVals[obj] = val
 	if obj.IsStoredLocally() {
 		th.DB().PersistSetAttr(obj, attr, val, found)
 	}
 
 	if ! isInverse && attr.Inverse != nil {
-		err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
+	   if oldVal != NIL {
+		   // Remove (one entry for) obj from oldVal's inverse attr. 
+		   err = rt.RemoveAttrGeneral(th,oldVal,attr.Inverse,obj,true,true)
+		   if err != nil {
+			  return
+		   }
+	   }	
+	   if val != NIL {
+	   	  err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
+	   }
 	}	
 	return
 }
@@ -385,6 +410,14 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
 		return
 	}
+	
+	if obj == NIL {
+		err = fmt.Errorf("nil cannot have a value added to '%v' attribute.", attr.Part.Name)
+		return		
+	}
+	
+	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
+	// if val == NIL, reject the addition.	
 
 	objColl, err := rt.EnsureMultiValuedAttributeCollection(obj, attr)
 	if err != nil {
@@ -747,7 +780,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
            }
            
 
-           if ! isInverse && attr.Inverse != nil {
+           if ! isInverse && attr.Inverse != nil && val != NIL {
 	           err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
            }
         }	

@@ -444,7 +444,11 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           var orderFuncOrAttrName string = ""
           var isAscending bool 
 
-          if attrDecl.Type.CollectionSpec != nil {
+          if attrDecl.Type.CollectionSpec == nil {
+	          if attrDecl.Type.NilAllowed {
+		         minCard = 0
+		      }
+	      } else {
               switch attrDecl.Type.CollectionSpec.Kind {
 	             case token.SET:
 			        if attrDecl.Type.CollectionSpec.IsSorting {
@@ -471,7 +475,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
 			           collectionType = "map"			
 		            }				
 	           }	
-          }
+          } 
 
 
 /*	type CollectionTypeSpec struct {
