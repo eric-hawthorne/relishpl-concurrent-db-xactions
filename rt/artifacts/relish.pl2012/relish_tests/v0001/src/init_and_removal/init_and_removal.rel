@@ -44,7 +44,7 @@ main
 """
  Main program.
 """
-   testInitAndRemoval
+   testir
 
 
 testInitAndRemoval
@@ -72,3 +72,48 @@ testInitAndRemoval
 
    print "b1.alpha" b1.alpha
    print "a1.beta" a1.beta
+
+
+testir
+"""
+ If it finds "ALPHA1" in the database, runs testir2, else runs testir1 which puts "ALPHA1" in the database.
+"""
+   if exists "ALPHA1"
+      testir2
+   else
+      testir1
+
+
+testir1
+"""
+ Tests before persistence.
+"""
+   a1 = Alpha
+   b1 = Beta
+
+   print "Before persistence"
+   print "b1.alpha" b1.alpha
+   // print "a1.beta" a1.beta   
+   a1.beta = b1
+   print "b1.alpha" b1.alpha   
+   print "a1.beta" a1.beta
+
+   dub a1 "ALPHA1"
+
+
+testir2
+"""
+ Tests after fetching persisted objects and relation.
+"""
+   a1 = summon "ALPHA1"
+   print "After fetched"
+   // print "a1.beta" a1.beta
+   // b1 = a1.beta
+   // print "b1.alpha" b1.alpha      
+
+   a1.beta = nil
+
+   print "After removal after fetching"
+   print "a1.beta" a1.beta
+   b1 = a1.beta   
+   print "b1.alpha" b1.alpha

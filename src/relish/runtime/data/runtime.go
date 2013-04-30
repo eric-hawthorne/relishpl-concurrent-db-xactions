@@ -372,6 +372,13 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 		rt.attributes[attr] = attrVals
 	} 
 
+    // Also have to do this in UnsetAttr !!!
+	if ! found {
+		if obj.IsStoredLocally() && attr.IsRelation() {
+			oldVal, found = rt.AttrVal(obj, attr)
+		}
+	}
+
 
 	attrVals[obj] = val
 	if obj.IsStoredLocally() {
@@ -379,7 +386,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	}
 
 	if ! isInverse && attr.Inverse != nil {
-	   if oldVal != NIL {
+	   if oldVal != nil && oldVal != NIL {
 		   // Remove (one entry for) obj from oldVal's inverse attr. 
 		   err = rt.RemoveAttrGeneral(th,oldVal,attr.Inverse,obj,true,true)
 		   if err != nil {
@@ -769,22 +776,38 @@ If removePersistent, removes the attribute association from the database if it w
 */
 func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, isInverse bool, removePersistent bool) (err error) {
 
-	attrVals, found := rt.attributes[attr]
-	if found {
-		val, found := attrVals[obj]
-		if found {
-		   delete(attrVals,obj)
-	
-           if removePersistent && obj.IsStoredLocally() {
-   	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
-           }
-           
+    if attr.Part.Type.IsPrimitive {
+       err = fmt.Errorf("Cannot assign primitive-valued attribute '%v.%v %v' a value of nil", obj.Type(), attr.Part.Name, attr.Part.Type)
+       return
+    }
 
-           if ! isInverse && attr.Inverse != nil && val != NIL {
-	           err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
-           }
-        }	
+	attrVals, found := rt.attributes[attr]
+    var val RObject
+
+	if found {
+		val, found = attrVals[obj]
+    }
+
+	if ! found {
+		if obj.IsStoredLocally() {
+			val, found = rt.AttrVal(obj, attr)
+			attrVals = rt.attributes[attr]
+		}
 	}
+
+	if found {
+	   delete(attrVals,obj)
+
+       if removePersistent && obj.IsStoredLocally() {
+	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
+       }
+       
+
+       if ! isInverse && attr.Inverse != nil && val != NIL {
+           err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
+       }
+    }	
+	
     return
 }
 
