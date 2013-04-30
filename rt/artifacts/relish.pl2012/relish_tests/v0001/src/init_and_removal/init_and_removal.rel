@@ -91,6 +91,7 @@ testir1
    a1 = Alpha
    b1 = Beta
 
+
    print "Before persistence"
    print "b1.alpha" b1.alpha
    // print "a1.beta" a1.beta   
@@ -106,14 +107,25 @@ testir2
  Tests after fetching persisted objects and relation.
 """
    a1 = summon "ALPHA1"
+
+   b3 = Beta
+
    print "After fetched"
    // print "a1.beta" a1.beta
    // b1 = a1.beta
    // print "b1.alpha" b1.alpha      
 
-   a1.beta = nil
+   // a1.beta = nil
 
    print "After removal after fetching"
+   // print "a1.beta" a1.beta
+   // b1 = a1.beta   
+   // print "b1.alpha" b1.alpha
+
+
+   a1.beta = b3
+
+   print "After readdition after fetching and removal"
    print "a1.beta" a1.beta
    b1 = a1.beta   
    print "b1.alpha" b1.alpha
