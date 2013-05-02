@@ -425,7 +425,11 @@ func (s *rset) Add(obj RObject, context MethodEvaluationContext) (added bool, ne
 
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
-	}
+	} else {
+	   th := context.InterpThread()		
+       s.deproxify(th)	
+    }
+
 	added = !s.m[obj]
 	s.m[obj] = true
 	newLen = len(s.m)
@@ -436,13 +440,19 @@ func (s *rset) AddSimple(obj RObject) (newLen int) {
 
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
-	}
+	} 
 	s.m[obj] = true
 	newLen = len(s.m)
 	return
 }
 
 func (s *rset) Remove(obj RObject) (removed bool, removedIndex int) {
+
+    if s.m == nil {
+    	return
+    } 
+
+    s.deproxify(nil)	
 
 	removed = s.m[obj]
 	delete(s.m, obj) // delete(s.m,obj)
@@ -585,7 +595,10 @@ func (c *rset) Contains(th InterpreterThread, obj RObject) (found bool) {
 	if c.m == nil {
 		found = false
 		return
-	}
+	} else {	
+       c.deproxify(th)	
+    }
+
 	_,found = c.m[obj]
 	return
 }
@@ -690,7 +703,11 @@ func (s *rsortedset) Add(obj RObject, context MethodEvaluationContext) (added bo
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
 		s.v = new(RVector)
-	}
+	} else {	
+	   th := context.InterpThread()				
+       s.deproxify(th)	
+    }	
+
 	_, found := s.m[obj]
 	if !found {
 		added = true
@@ -712,7 +729,7 @@ func (s *rsortedset) AddSimple(obj RObject) (newLen int) {
 	if s.m == nil {
 		s.m = make(map[RObject]bool)
 		s.v = new(RVector)
-	}
+	} 
 
 	s.m[obj] = true
 	s.v.Push(obj)
@@ -901,7 +918,10 @@ func (c *rsortedset) Contains(th InterpreterThread, obj RObject) (found bool) {
 	if c.m == nil {
 		found = false
 		return
-	}
+	} else {				
+       c.deproxify(th)	
+    }	
+
 	_,found = c.m[obj]
 	return
 }
@@ -912,7 +932,9 @@ func (s *rsortedset) Remove(obj RObject) (removed bool, removedIndex int) {
 
 	if s.v == nil {
 		removedIndex = -1
-	} else {
+	} else {			
+        s.deproxify(nil)	
+
 		delete(s.m, obj) // delete (s.m,obj)	
 		removedIndex = s.Index(obj, 0)
 		if removedIndex >= 0 {
@@ -1149,6 +1171,9 @@ func (c *rlist) Slice(th InterpreterThread, start int, end int) (slice List) {
 	sliceVec := vec.Slice(start,end)
 	sl := slice.(*rlist)
 	sl.v = sliceVec
+
+	sl.SetMayContainProxies(c.MayContainProxies())
+
 	return	
 }	
 
@@ -1273,12 +1298,13 @@ func (s *rlist)	Insert(i int, val RObject) (newLen int) {
 /*
 Set the element at index i to be the specified value.
 Note: It is illegal to call this on a IsSorting() == true list. Not enforced. Watch out!
+
+TODO: Note that the current use of this e.g. Interpreter.go 2662 is not persisting the set operation.
 */
 func (s *rlist) Set(i int, val RObject) {	
    if s.v == nil {
       rterr.Stopf("Error in list-element set: index %d is out of range.",i)
    }   
-   
    s.v.Set(i, val)
 }
 
@@ -1300,7 +1326,7 @@ func (s *rlist) AsSlice(th InterpreterThread) []RObject {
 func (s *rlist) Contains(th InterpreterThread, obj RObject) bool {
 	if s.v == nil {
 		return false
-	}
+	} 
 	for _,element := range s.AsSlice(th) {
        if obj == element {
        	   return true
@@ -1331,6 +1357,7 @@ func (s *rlist) Add(obj RObject, context MethodEvaluationContext) (added bool, n
 	if s.IsSorting() && ! s.IsSortingDeferred() {
 		RT.SetEvalContext(s, context)
 		defer RT.UnsetEvalContext(s)
+		s.deproxify(context.InterpThread())
 		sort.Sort(s)
 	}
 	added = true
@@ -1542,6 +1569,7 @@ func (s *rlist) Remove(obj RObject) (removed bool, removedIndex int) {
 	if s.v == nil {
 		removedIndex = -1
 	} else {
+		s.deproxify(nil)
 		removedIndex = s.Index(obj, 0)
 		if removedIndex >= 0 {
 			s.v.Delete(removedIndex)
