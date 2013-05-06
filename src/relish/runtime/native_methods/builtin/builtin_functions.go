@@ -2787,13 +2787,17 @@ dub NonPrimitive String
 dub car1 "FEC 092"
 
 Gives the object a name in the local object-persistence database.
-This confers persistence on the object.
+This confers persistence on the object if it is not already persistent.
 
 Maybe should return the DBID eventually. Does not right now. TODO
 
-Q: Is it an error to dub the same object more than once? Even if same name? Maybe yes because
-it indicates that the programmer did not know the object was already persistent.
+NOTE: Currently, it is an error to dub the same object with a name that already is in use
+in the database, which implies it is an error to attempt to dub the object a second time
+with the same name.
 
+However, currently, it is legal to give an object multiple names.
+
+Q: Should that become illegal?
 */
 func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
@@ -2801,9 +2805,10 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 	obj := objects[0]
 	name := objects[1].String()
 
-	if obj.IsStoredLocally() {
-		rterr.Stopf("Object %v is already persistent. Cannot re-dub (re-persist) as '%s'.", obj, name)
-	}
+    // Now ok to dub an already persistent object.
+	// if obj.IsStoredLocally() {
+	// 	rterr.Stopf("Object %v is already persistent. Cannot re-dub (re-persist) as '%s'.", obj, name)
+	// }
 
 	// Ensure that the name is not already used for a persistent object in this database.
 
