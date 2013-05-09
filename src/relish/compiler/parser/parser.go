@@ -1874,7 +1874,10 @@ func (p *parser) parseMethodName(allowImported bool, methodName **ast.Ident) boo
        name = p.importPackageAliasExpansions[packageAlias.Name] + "/" + name	
    } else if foundTypeName && ! BuiltinTypeName[name] {	  
        name = p.packagePath + name	     
+   } else if strings.HasPrefix(name,"init") && len(name) > 5 && 'A' <= name[4] && name[4] <= 'Z' && !BuiltinTypeName[name[4:]] {
+       name = p.packagePath + name	
    }
+
 
    *methodName = &ast.Ident{pos, name, nil, kind, -1}
    return true

@@ -20,6 +20,7 @@ object
 import (
 	"fmt" 
     "strings"
+    "sort"
 )
 
 ///////////////////////////////////////////////////////////////////////////
@@ -63,6 +64,23 @@ func (p *RPackage) LocalPackagePath() string {
 	return p.Name[strings.Index(p.Name,"/pkg/")+5:]	
 }
 
+
+/*
+Debugging function. Prints the names of multimethods visible from the package.
+*/
+func (p *RPackage) ListMethods() {
+	fmt.Println("------------")	
+	fmt.Println("Multimethods visible in package", p.Name)
+	fmt.Println("------------")
+	var methodNames []string
+	for methodName := range p.MultiMethods {
+		methodNames = append(methodNames, methodName)
+	}
+	sort.Strings(methodNames)
+	for _,methodName := range methodNames {
+		fmt.Println(methodName)
+	}
+}
 
 /*
 THIS IS OBSOLETE COMMENT

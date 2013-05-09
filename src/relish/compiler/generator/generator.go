@@ -61,6 +61,7 @@ func (g *Generator) GenerateCode() {
    g.configureAttributeSortings(attributeOrderings)
    g.ensureAttributeAndRelationTables(types)
    g.Interp.DeregisterThread(g.th)
+   // g.pkg.ListMethods() // Debugging - temporary
 }
 
 
@@ -643,7 +644,9 @@ func (g *Generator) generateMethods() {
 	       // This implies we cannot add constructors of type package1.Type1 in package2
 	
 		   if ((methodName == "main") || 
-		       (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z' && !BuiltinTypeName[methodName[4:]]) || 
+/* Now done at parser.go: 1877
+		       (strings.HasPrefix(methodName,"init") && len(methodName) > 5 && 'A' <= methodName[4] && methodName[4] <= 'Z' && !BuiltinTypeName[methodName[4:]]) ||
+		       */ 
 		       (g.isWebDialogHandlerMethod(fileNameRoot))) {
 		      methodName = g.packagePath + methodName	
 		   }
