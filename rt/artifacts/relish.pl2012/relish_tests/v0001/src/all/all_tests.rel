@@ -1,0 +1,52 @@
+origin   relish.pl2012
+artifact relish_tests
+package  all 
+
+""" 
+ all_tests.rel
+
+ Run all of the relish language tests in the relish_tests artifact.
+ Usage: relish relish.pl2012/relish_tests all   or   relish -web 8080 relish.pl2012/relish_tests all
+"""
+
+import
+   relish.pl2012/relish_tests/pkg/io
+   console
+   arithmetic
+   string
+   time
+   collections
+   multimethods
+   concurrency
+   email
+   closures 
+   http_client
+   transcoders
+
+
+main
+"""
+ Main program.
+"""
+   testAll
+
+
+testAll
+"""
+ Run all of the tests.
+ Note that this stops and prompts for user input at one point.
+ Note that this continues running at the end, in the concurrency test.
+ Note that testModel is implied by testCollections
+"""
+   console.testInput
+   email.testEmail
+   io.testIo
+   arithmetic.testArithmeticAndLogic
+   string.testStrings
+   time.testTime
+   multimethods.testMultimethods
+   collections.testCollections
+   closures.testClosures
+   http_client.testHttp
+   transcoders.testCsv
+   concurrency.testConcurrency

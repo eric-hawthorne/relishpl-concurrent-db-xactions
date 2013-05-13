@@ -1,0 +1,58 @@
+origin   examples.relish.pl2012
+artifact simple_programs
+package  types
+
+"""
+ banking.rel
+
+ Programmer-Defined Data Types, Constructors, illustrated in a simple
+ bank account example. Data Types are like classes in object-oriented
+ languages.
+"""
+
+
+BankAccount
+"""
+ A simple bank account data-type.
+ Has one attribute; its balance.
+"""
+   balance Float
+
+
+initBankAccount acc BankAccount initialBalance Float > BankAccount
+"""
+ Constructor method for a bank account. Gives it an initial balance.
+"""
+   acc.balance = initialBalance
+   => acc
+
+
+deposit acc BankAccount amount Float
+"""
+ Deposit an amount of money in the bank account.
+"""
+   acc.balance = plus acc.balance amount
+
+
+withdraw acc BankAccount amount Float
+"""
+ Withdraw an amount of money from the bank account.
+"""
+   acc.balance = minus acc.balance amount
+
+
+overdrawn acc BankAccount > Bool
+"""
+ Return true if the bank account has a negative balance.
+ Return false otherwise.
+"""
+   => lt acc.balance 0.0
+
+
+main
+"""
+ Create, modify and check a bank account.
+"""
+   myAccount = BankAccount 15.0
+   withdraw myAccount 5.0
+   print myAccount.balance

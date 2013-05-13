@@ -1,0 +1,130 @@
+origin   relish.pl2012
+artifact relish_tests
+package  string
+
+""" 
+ strings.rel
+
+ Test the String datatype and String methods.
+"""
+
+import
+   strings
+
+
+main
+"""
+ Main program.
+"""
+   testStrings
+
+
+testStrings
+"""
+ Test the String data type and methods that operate on Strings.
+"""
+   a = """
+This is the very first
+multi-line string in relish!!
+"""
+
+   print a
+
+   b = fill """
+This is the #%s
+multi-line %s string in relish!!
+"""
+            2
+            "substitutable"
+
+   print b
+
+   print "Length 18-byte string =" (len "Well how big am I?")
+   s1 = "How now brown cow?"   
+   s2 = "bro"
+   s3 = "世界Hello"
+   s4 = "one"
+   s5 = "two"
+   s6 = "three"
+   count = [s4 s5 s6]String
+   print join count ","
+   print join count
+   v1 = nil
+   assortment = ["one" 2 3.0 "four" v1 false]Any
+   print join assortment "|"
+
+   assortment[1] = "Two"
+   print join assortment "|"
+
+   print first s1 2
+   print first s1 30
+   print last s1 4
+   print last s1 30
+   print replace s1 "ow" "ew"
+   print replace s1 "ow" "ew" 1   
+   print hasPrefix s1 s2
+   print hasPrefix s1 "How"
+   print hasSuffix s1 "cow"
+   print hasSuffix s1 "cow?"
+   print cat s1 s2 " " "The End"
+   print index s1 s2
+   print lastIndex s1 "ow"
+   print slice s1 4 7
+   print slice s1 0 (neg 1)
+   print slice s1 1 (neg 5)  
+   print slice s1 8
+   print first s3 1
+   print first s3 2
+   print first s3 3
+   print len s3
+   print numCodePoints s3
+   print index s3 "世界"
+   print index s3 "界"
+
+   print lower "HELL NO!"
+   print upper "Yahoo!"
+   print title "not on my watch!"
+   print cat ">" (trimSpace "  some important stuff   ") "<"
+
+   print base64Hash s3
+
+   print hexHash s3
+
+   // Type-Casting constructors
+
+   print String 45.6
+   print String lt 3 4
+   i err = Int "45"
+   if err
+      print err
+   else
+      print i   
+   i err = Int "-45"
+   if err
+      print err
+   else
+      print i        
+   flt err = Float "45.659"
+   if err
+      print err
+   else
+      print flt   
+   b err = Bool "Y"
+   if err
+      print err
+   else
+      print b
+
+      b err = Bool 1
+   if err
+      print err
+   else
+      print b   
+
+
+   s = "I am going to be transmogrified.\nAre you?"
+   print s
+   b = Bytes s
+   dbg b
+   print String b
+

@@ -1,0 +1,8 @@
+origin: relish.pl2012
+artifact: relish_lib
+current version: 1
+release date: 2013/04/20  
+standard tags: example tag, second example tag
+more tags:
+
+relish programming language standard library.

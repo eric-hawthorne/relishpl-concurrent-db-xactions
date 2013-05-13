@@ -1,0 +1,33 @@
+origin   relish.pl2012
+artifact relish_website
+package  web 
+
+""" 
+ dialog.rel
+
+ Web dialog handling methods.
+"""
+
+
+index > String String
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+   => "HTML FILE"
+      "index.html"
+
+
+icon > String String
+"""
+ Serves the favicon.ico request.
+"""
+   => "IMAGE FILE"
+      "relish_logo4_icon.png"
+
+
+default > String String
+"""
+ Handles all url paths on this server and port which are not otherwise handled.
+"""
+   => "HTML"
+      "<html><body><center><br/><br/><h3>Oops. Nothing here.</h3></center></body></html>"     

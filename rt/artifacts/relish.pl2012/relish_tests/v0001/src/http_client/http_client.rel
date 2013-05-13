@@ -1,0 +1,83 @@
+origin   relish.pl2012
+artifact relish_tests
+package  http_client
+
+""" 
+ http_client.rel
+
+ Test http client methods httpGet and httpPost
+ TODO: Implement an httpPut.
+"""
+
+import
+   http
+   strings
+
+
+main
+"""
+ Main program.
+"""
+   testHttp
+
+
+testHttp
+"""
+ Tests requesting web pages with HTTP GET and posting to a form action page using HTTP POST.
+"""
+
+   content err = httpGet "http://google.com/robots.txt"
+   print "===== http://google.com/robots.txt ======================="
+   print "Content:"
+   print content
+   print "Err:"
+   print err
+
+   content err = httpGet "https://google.com/robots.txt"
+   print "===== https://google.com/robots.txt ======================"
+   print "Content:"
+   print content
+   print "Err:"
+   print err   
+
+   content err = httpGet "http://echidna.org/"
+   print "===== http://echidna.org/ ================================"
+   print "Content:"
+   print content
+   print "Err:"
+   print err
+
+   content err = httpGet "http://relish.pl"
+   print "===== http://relish.pl ==================================="
+   print "Content:"
+   print content
+   print "Err:"
+   print err
+
+   keysVals = {
+                 "firstName" => "Charlie"
+                 "lastName"  => "Brown"
+                 "friend"    => ["Alice" "Bob"]
+              }String > Any
+
+   content err = httpPost "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi" keysVals
+   print "===== POST http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi ====="
+   for key val in keysVals
+      print fill "%s=%s" key val
+   print "Content:"
+   print content
+   print "Err:"
+   print err   
+
+   csvFileContents = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+   content err = httpPost "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi" "text/csv" csvFileContents
+   print "===== POST text/csv to http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi ====="
+   print "Content:"
+   print content
+   print "Err:"
+   print err  

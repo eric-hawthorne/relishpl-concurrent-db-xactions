@@ -1,0 +1,97 @@
+origin   relish.pl2012
+artifact relish_tests
+package  model/machines/vehicles
+
+""" 
+ vehicles.rel
+
+ Types for various kinds of vehicles
+"""
+
+import
+   relish.pl2012/relish_test_support/things/pkg/physical_objects as phys 
+   model/people
+   model/machines/engines
+ 
+
+ManufacturedObject
+"""
+ Any object that was manufactured.
+"""
+
+
+Vehicle <: phys.Conveyer phys.SelfLocomotive
+"""
+ A self-propelled object which conveys motion on one or more other objects.
+"""
+
+
+Automobile <: Vehicle ManufacturedObject
+"""
+ A vehicle which travels on roads on rubber wheels.
+"""
+   vin String
+
+
+Wheel <: phys.MovementCapableObject ManufacturedObject
+"""
+ The wheels on the bus go round and round.
+"""
+   num Int
+
+
+
+
+
+Car <: Automobile
+"""
+ A relatively small passenger-carrying automobile, typically capable of conveying 2 to 5 passengers.
+ Car 0 1 -- N Wheel 
+"""
+   engine engines.Engine
+   wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
+
+
+addEngine car Car horsepower Int weightKg Float
+"""
+ Installs an engine in the car.
+"""
+   engine = engines.Engine
+   engine.horsepower = horsepower
+   engine.weightKg = weightKg
+   car.engine = engine
+
+
+PickupTruck <: Automobile
+"""
+ A small truck.
+"""
+   bedLength Float
+
+
+Automobile 0 1 vehicleDriven -- driver 0 1 people.Person
+"""
+ An automobile may have a driver, who can only drive one automobile at a time.
+"""
+
+
+Automobile 0 1 vehicleRiddenIn -- passengers 0 N {<lastName} people.Person
+"""
+ An automobile may have a number of passengers, 
+ who can only be a passenger in one automobile at a time.
+"""
+
+
+Automobile 0 1 vehicleHungOnTo -- tailgaters 0 N [] people.Person
+
+
+numOccupants a Automobile > Int
+"""
+ Returns the number of occupants of the automobile.
+"""
+   if a.driver
+      => plus 1
+              len a.passengers
+   else
+      => len a.passengers
+

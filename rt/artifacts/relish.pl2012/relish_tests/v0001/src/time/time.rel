@@ -1,0 +1,65 @@
+origin   relish.pl2012
+artifact relish_tests
+package  time
+
+""" 
+ time.rel
+
+ Test the Time datatype and Time methods.
+"""
+
+import
+   model/people
+   datetime
+
+
+main
+"""
+ Main program.
+"""
+   testTime
+
+   
+testTime
+"""
+ Test tm.Time data type and methods.
+"""
+   person1 = people.Person
+   person1.firstName = "Alice"
+   person1.lastName = "Wong"
+   person1.dateOfBirth err = Time "1990-02-13 22:13:45 America/Los_Angeles"   
+   if err
+      print err
+
+   print person1.dateOfBirth
+   t2 = 
+      plus 
+         person1.dateOfBirth 
+         plus (hours 50) (minutes 30)     
+   t3 = plus person1.dateOfBirth (duration 50 30)
+   t4 = addDate person1.dateOfBirth 1 0 2      
+   print t2
+   print t3
+   print t4
+   print minus t3 t2
+   print minus t3 (hours 50)    
+   print now "Local"
+   now1 = now "UTC" 
+   print format now1 "Jan 2 06 15:04 MST"  
+   sleep seconds 3
+   ns = since now1 
+   print secondsEquivalentOf ns
+   h m s ns = timeParts ns
+   print h m s ns
+   print date t2
+   print clock t2
+   print year t2       
+   print month t2
+   print weekday t2
+   print day t2 
+   print hour t2
+   print minute t2
+   print second t2
+   print nanosecond t2
+   print zone t2
+   print format t2 "2006/01/02 3:04pm -0700 MST"      

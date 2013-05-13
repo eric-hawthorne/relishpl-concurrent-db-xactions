@@ -1,0 +1,8 @@
+origin: skunkworks.everybitcounts.net2006
+artifact: relish_test_suite
+current version: 1
+release date: 2012/08/27
+standard tags: example tag, second example tag
+more tags:
+
+A test suite for the relish programming language.

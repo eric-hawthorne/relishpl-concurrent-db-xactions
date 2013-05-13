@@ -1,0 +1,136 @@
+origin   relish.pl2012
+artifact relish_tests
+package  io
+
+""" 
+ io.rel
+
+ Test input/output types and methods, such as file i/o operations.
+
+ import
+    relish.pl2012/relish_lib/pkg/files
+"""
+
+import
+   files
+   strings
+
+
+main
+"""
+ Main program.
+"""
+   testIo
+
+
+testIo
+"""
+ Currently tests file i/o. TODO Extend later to other kinds of i/o streams.
+"""
+   file err = files.File "testIo.txt"
+   if err
+      print err
+   else
+      buf = Bytes 150
+      n err = read file buf
+      if err
+         print err
+      else
+         print "I read" n "bytes." 
+         print "------------"
+         s = String buf
+         s1 = slice s 0 n
+         print s1
+         print "------------"
+      close file
+
+   file err = files.File "testIo2.txt" "w"
+   n err = write file "Gangnam Style!"
+   if err
+      print err
+   else
+      close file
+      err = rename "testIo2.txt" "testIo3.txt"
+      if err
+         print err
+      else   
+         file3 err = files.File "testIo3.txt"
+         if err
+            print err      
+         else
+            n err = read file3 buf
+            if err
+               print err
+            else
+               print "I read" n "bytes." 
+               print "------------"
+               s = String buf
+               s1 = slice s 0 n
+               print s1
+               print "------------"
+            close file3   
+
+
+   path = "testIo3.txt"
+   fileInfo fileExists err = stat path
+   if err
+      print "Can't stat file" path ":" err
+   elif fileExists
+      print path "last modified at" fileInfo.modTime
+   else  
+      print path "does not exist."
+
+
+   err = remove "testIo3.txt"
+   if err
+      print err
+
+   path = "testIo3.txt"
+   fileInfo fileExists err = stat path
+   if err
+      print "Can't stat file" path ":" err
+   elif fileExists
+      print path "last modified at" fileInfo.modTime
+   else  
+      print path "does not exist."      
+
+   file err = files.File "testIo.txt"
+   if err
+      print err
+   else
+      buf = Bytes 300
+      content err = readAllText file
+      if err
+         print err
+      else
+         print "------------"
+         print content
+         print "------------"
+      close file         
+
+   file err = files.File "testIo.txt"
+   if err
+      print err
+   else
+      buf = Bytes 300
+      content err = readAllBinary file
+      if err
+         print err
+      else
+         print "------------"
+         print content
+         print "------------"
+      close file          
+   tmp = files.tempDir
+   myTempDirPath = cat tmp "/myTestDirectory/andSubdir"
+   err = mkdirAll myTempDirPath
+   if err
+      print err
+   else
+      myTempDirPath = cat tmp "/myTestDirectory"
+      err = removeAll myTempDirPath
+      if err
+         print err
+      else
+         print "Removed directory " myTempDirPath "and subdirectory." 
+

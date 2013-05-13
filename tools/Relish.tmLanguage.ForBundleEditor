@@ -1,0 +1,89 @@
+{	scopeName = 'source.relish';
+	fileTypes = ( 'rel' );
+	patterns = (
+		{	name = 'comment.block.relish';
+			begin = '^""" *$';
+			end = '^""" *$';
+		},
+		{	name = 'comment.double-slash.relish';
+			match = '(//).*$\n?';
+		},
+		{	match = '\b(origin|artifact|package)\b(.*)';
+			captures = {
+				1 = { name = 'keyword.relish'; };
+				2 = { name = 'support.other.relish'; };
+			};
+		},
+		{	begin = '\b(import)\b';
+			end = '(^\W*$)';
+			beginCaptures = { 1 = { name = 'keyword.relish'; }; };
+			patterns = (
+				{	match = '[a-z1-9/_]*( (as) [a-z1-9]*){0,1}';
+					captures = { 2 = { name = 'keyword.relish'; }; };
+				},
+			);
+		},
+		{	name = 'keyword.control.relish';
+			match = '\b(if|elif|else|while|for|break|continue|of|as|go|func|in)\b';
+		},
+		{	name = 'constant.other.relish';
+			match = '\b([A-Z]|[A-Z][A-Z0-9_]*[A-Z0-9])\b';
+		},
+		{	name = 'storage.type.function.relish';
+			match = '[a-z][a-z0-9]*([A-Z][a-z]+[a-z0-9]*)*';
+		},
+		{	include = '#string'; },
+		{	include = '#multiline_string'; },
+		{	include = '#numeric'; },
+		{	include = '#datatype'; },
+	);
+	repository = {
+		bracket = {
+			begin = '(\()';
+			end = '(\))';
+			beginCaptures = { 1 = { name = 'punctuation.separator.relish'; }; };
+			endCaptures = { 1 = { name = 'punctuation.separator.relish'; }; };
+			patterns = ( { include = '$self'; } );
+		};
+		datatype = {
+			patterns = (
+				{	name = 'entity.name.function.relish';
+					match = '[A-Z][a-z][A-Za-z0-9]*';
+				},
+			);
+		};
+		multiline_string = {
+			begin = '[^"]+(""" *$)';
+			end = '(""" *$)';
+			beginCaptures = { 1 = { name = 'string.quoted.triple.relish'; }; };
+			endCaptures = { 1 = { name = 'string.quoted.triple.relish'; }; };
+			patterns = (
+				{	name = 'string.quoted.triple.relish';
+					match = '.';
+				},
+			);
+		};
+		numeric = {
+			patterns = (
+				{	match = '\b((0(x|X)[0-9a-fA-F]*)|(([0-9]+\.?[0-9]*)|(\.[0-9]+))((e|E)(\+|-)?[0-9]+)?)\b';
+					captures = { 1 = { name = 'constant.numeric.relish'; }; };
+				},
+				{	name = 'punctuation.separator.relish';
+					match = '[=\+\<\>\*\$/\.&\|:|//|//|]';
+				},
+			);
+		};
+		string = {
+			begin = '(")';
+			end = '(")';
+			beginCaptures = { 1 = { name = 'string.quoted.double.relish'; }; };
+			endCaptures = { 1 = { name = 'string.quoted.double.relish'; }; };
+			patterns = (
+				{	include = '#string'; },
+				{	name = 'string.quoted.double.relish';
+					match = '.';
+				},
+			);
+		};
+	};
+}

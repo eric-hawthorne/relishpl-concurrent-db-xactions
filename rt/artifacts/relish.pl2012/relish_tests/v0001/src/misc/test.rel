@@ -1,0 +1,94 @@
+origin   relish.pl2012
+artifact relish_tests
+package  misc
+
+""" 
+ test.rel
+
+ Test whatever miscellaneous thing appears to be failing.
+ Note: This test is not included in the "all" test.
+"""
+
+import
+   strings
+
+
+main
+"""
+ Main program.
+"""
+   testMisc
+   t1 = TestType
+   t1.attr = "Abracadabra!"
+   s = String t1
+   print s
+
+
+TestType
+"""
+ A type.
+"""
+   attr String
+
+
+initString s String t TestType > String
+"""
+ Custom string method.
+"""
+   => t.attr
+
+
+returnsThreeResults > String String String
+"""
+ A function that returns 3 values.
+"""
+   => "Thing 1" "Thing 2" nil
+   
+
+expectsThreeArgs a1 String a2 String a3 ?Int > String
+"""
+ A function that rexpects 3 args and prints them.
+"""
+   print a1 a2 a3
+   if lt a1 a2
+      => a1
+
+   => a2
+
+
+testMisc
+"""
+ Test random badness.
+"""
+  
+   count = [
+              3
+              4
+           ]
+   a b c = returnsThreeResults
+   for n in count
+
+      // Foo
+
+      for i j = 1 1   
+          lt (minus j i) 10  
+          i j = plus i 1
+                times i 3
+         print i
+         if lt a b
+            print a
+            print b
+            print c
+            print expectsThreeArgs
+                     a 
+                     b            
+                     c
+
+         // 
+
+         else
+            print "otherwise"
+         
+      // Hallelujah!          
+   
+   // This is a trailing line comment         

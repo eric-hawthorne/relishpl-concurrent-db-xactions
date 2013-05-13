@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# rmdb
+#
+# Removes the default db1.db database for a relish local artifact.
+#
+# e.g.
+#
+# rmdb relish.pl2012/relish_tests
+#
+# See also the clean script.
+
+# 
+# IMPORTANT
+#
+# If you have not set the RELISH_HOME environment variable and don't want to,
+# then edit the following two variable value to match where your relish source distribution working directory is 
+#
+DEFAULT_RELISH_HOME=~/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
+
+# Use the environment variable preferentially, but if not set, use the default above.
+RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}
+
+if [ -d $RELISH_HOME/rt ] # It is a source distribution  
+then
+   DATADIR=$RELISH_HOME/rt/data
+else
+   DATADIR=$RELISH_HOME/data
+fi
+
+if [ $# -eq 1 ]  
+then
+	ARTIFACT=$1
+	if [ -f $DATADIR/$ARTIFACT/db1.db ] # database exists
+	then
+		rm -fr $DATADIR/$ARTIFACT/db1.db 
+		echo "Removed $DATADIR/$ARTIFACT/db1.db" 
+	else
+		echo "$DATADIR/$ARTIFACT/db1.db NOT FOUND! Do you have RELISH_HOME set correctly?" 
+	fi
+else
+	echo "usage: rmdb origin/artifact    e.g.  rmdb relishpl2012/relish_tests" 
+fi
+
