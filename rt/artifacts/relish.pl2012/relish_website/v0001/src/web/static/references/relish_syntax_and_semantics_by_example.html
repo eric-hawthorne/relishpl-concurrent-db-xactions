@@ -501,6 +501,20 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
   The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
   Only strings containing a (negative or non-negative) Integer literal can be converted to Int in this manner.
 </p>
+<code><pre>
+   f = 192.657
+   n err = Int f
+   print n  // prints 192
+
+   f = -15.3
+   n err = Int f
+   print n  // prints -15  
+</pre></code>
+<p>
+  When converting a floating-point number to an integer, the fraction is discarded (truncation towards zero).
+  The err is always the empty String for this conversion. It is present only because methods of the same name 
+  and accepting at least one argument must have the same number of return values.  
+</p>
 
 <h4>Type casting to obtain a Float value</h4>
 <code><pre>
@@ -509,6 +523,15 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
 <p>
   The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
   Only strings containing a (negative or non-negative) Float literal can be converted to Float in this manner.
+</p>
+<code><pre>
+   i = 192
+   f err = Float i
+   print f  // prints 192.0
+</pre></code>
+<p>
+  The err is always the empty String for this conversion. It is present only because methods of the same name 
+  and accepting at least one argument must have the same number of return values.
 </p>
 
 <h4>Type casting to obtain a Bool value</h4>
@@ -1688,6 +1711,17 @@ eq a Any b Any > Bool
  Converts between numeric types if necessary before testing for numeric equality, 
  and converts a number to its string representation to compare with a string.
  If applied to two structured objects, returns true if they are 
+ reference-equal (same memory location.) 
+"""
+
+
+neq a Any b Any > Bool
+"""
+ Logical inverse of eq: returns whether two values are unequal in value.
+ Currently, applies to Numeric,String,Bool,Time, and structured object types.
+ Converts between numeric types if necessary before testing for numeric equality, 
+ and converts a number to its string representation to compare with a string.
+ If applied to two structured objects, returns false if they are 
  reference-equal (same memory location.)
 """
 

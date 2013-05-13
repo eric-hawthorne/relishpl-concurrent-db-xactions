@@ -1746,13 +1746,27 @@ replace s String old String new String n Int > String
 		panic(err)
 	}
 	intInitMethod.PrimitiveCode = builtinInitInt	
+
+	intInitMethod2, err := RT.CreateMethod("",nil,"initInt", []string{"i","f"}, []string{"Int","Float"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod2.PrimitiveCode = builtinInitIntFromFloat	
 	
 	
-	floatInitMethod, err := RT.CreateMethod("",nil,"initFloat", []string{"i","s"}, []string{"Float","String"},  []string{"Float","String"}, false, 0, false)
+	floatInitMethod, err := RT.CreateMethod("",nil,"initFloat", []string{"f","s"}, []string{"Float","String"},  []string{"Float","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	floatInitMethod.PrimitiveCode = builtinInitFloat	
+
+
+	floatInitMethod2, err := RT.CreateMethod("",nil,"initFloat", []string{"f","i"}, []string{"Float","Int"},  []string{"Float","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	floatInitMethod2.PrimitiveCode = builtinInitFloatFromInt	
+
 	
 	
 	boolInitMethod, err := RT.CreateMethod("",nil,"initBool", []string{"b","s"}, []string{"Bool","String"},  []string{"Bool","String"}, false, 0, false)
@@ -4241,8 +4255,24 @@ func builtinInitInt(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{Int(v64),String(errStr)}
 }
 
+
+
 /*
-    initFloat i Int s String > j Int err String
+    initInt i Int f Float> j Int err String
+*/
+func builtinInitIntFromFloat(th InterpreterThread, objects []RObject) []RObject {
+    val := float64(objects[1].(Float))
+
+    // ignore the first Int argument
+    var errStr string
+    i := int64(val)
+	return []RObject{Int(i),String(errStr)}
+}
+
+
+
+/*
+    initFloat f Float s String > g Float err String
 */
 func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
     valStr := string(objects[1].(String))
@@ -4254,6 +4284,19 @@ func builtinInitFloat(th InterpreterThread, objects []RObject) []RObject {
 	   errStr = err.Error()
     }
 	return []RObject{Float(v64),String(errStr)}
+}
+
+
+/*
+    initFloat f Float i Int s String > g Float err String
+*/
+func builtinInitFloatFromInt(th InterpreterThread, objects []RObject) []RObject {
+    val := int64(objects[1].(Int))
+
+    // ignore the first Float argument
+    var errStr string
+    f := float64(val)
+	return []RObject{Float(f),String(errStr)}
 }
 
 
