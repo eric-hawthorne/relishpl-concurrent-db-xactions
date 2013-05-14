@@ -41,6 +41,7 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []
     sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, idsOnly) 	
     if err != nil {
 	      err = fmt.Errorf("Query syntax error:\n%v\n while translating selection criteria:\n\"%s\"",err, oqlSelectionCriteria)
+	      return
     }	
 	
 	checkCache := true
@@ -88,6 +89,7 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 	    "null": true,
 	    "desc": true,
 	    "asc": true,
+	    "like": true,
 	    "order": true,
 	    "by": true,
     }
@@ -114,7 +116,12 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
     }
 
     // replace references to attributes (columns) with table-alias prefixed versions
-
+    // 
+    // TODO This is going to replace attribute names that occur inside literal single-quoted strings
+    // and that is INCORRECT!!!
+    // WILL HAVE TO CREATE A SUBSTITUTION MAP WITH THINGS LIKE @@@@2@@@@ in the quoted strings, then replace
+    // them with the real values at the last minute. 
+    //
     for attrName, aliasedAttrName := range aliasedAttrNames {
 	   oqlWhereCriteria = strings.Replace(oqlWhereCriteria, attrName, aliasedAttrName, -1)
     }

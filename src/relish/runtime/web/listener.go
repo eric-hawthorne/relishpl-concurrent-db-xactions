@@ -1067,6 +1067,7 @@ func ListenAndServe(portNumber int) {
    TODO This should also handle unary function calls on the object.
 */
 func AttrVal(attrName string, obj RObject) (val RObject, err error) {
+	fmt.Println("Getting value of attrName",attrName)
     if obj.IsCollection() && (obj.(RCollection)).IsMap() {
         theMap := obj.(Map)
 	    if theMap.KeyType() != StringType  {
@@ -1091,7 +1092,7 @@ Should be appended at the end of a pipeline in an if or with.
 {{with p | nonempty}} 
 */
 func NonEmpty(obj RObject) RObject {
-	if obj.IsZero() {
+	if obj == nil || obj.IsZero() {
 		return nil
 	}
 	return obj
