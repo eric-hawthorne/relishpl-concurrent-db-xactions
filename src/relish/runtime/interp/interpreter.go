@@ -2847,7 +2847,7 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 	} else {
 		returnFrom = true
 
-		if t.ExecutingMethod.NumReturnArgs != n {          
+		if  t.ExecutingMethod.NumReturnArgs != n && ! t.ExecutingMethod.ReturnArgsNamed {          
 		   rterr.Stopf1(t,stmt,"Method is declared to return %d values. Returning %d values.", t.ExecutingMethod.NumReturnArgs,n)
 		}
 

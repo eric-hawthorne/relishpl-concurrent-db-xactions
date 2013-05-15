@@ -377,6 +377,33 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	eqObjMethod.PrimitiveCode = builtinEqObj
+	
+	
+	
+	neqMethod, err := RT.CreateMethod("",nil,"neq", []string{"p1", "p2"}, []string{"RelishPrimitive", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	neqMethod.PrimitiveCode = builtinNeq
+	
+	neq1Method, err := RT.CreateMethod("",nil,"neq", []string{"p1", "p2"}, []string{"Any", "RelishPrimitive"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	neq1Method.PrimitiveCode = builtinNeqNo
+	
+	neq2Method, err := RT.CreateMethod("",nil,"neq", []string{"p1", "p2"}, []string{"RelishPrimitive", "Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	neq2Method.PrimitiveCode = builtinNeqNo	
+	
+	neqObjMethod, err := RT.CreateMethod("",nil,"neq", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	neqObjMethod.PrimitiveCode = builtinNeqObj	
+	
 			
 
 	ltNumMethod, err := RT.CreateMethod("",nil,"lt", []string{"p1", "p2"}, []string{"Numeric", "Numeric"}, []string{"Bool"}, false, 0, false)
@@ -1019,6 +1046,13 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	deleteMethod.PrimitiveCode = builtinDelete	
+	
+	
+	renameObjectMethod, err := RT.CreateMethod("",nil,"renameObject", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	renameObjectMethod.PrimitiveCode = renameObject	
 
     // err = begin  // Begins a db transaction. On success returns an empty string.
     //
@@ -1935,6 +1969,113 @@ func builtinEqObj(th InterpreterThread, objects []RObject) []RObject {
 
 
 
+
+/*
+Equality operator.
+TODO !!!
+Really have to study which kinds of equality we want to support and with which function names,
+by studying other languages. LISP, Java, Go, Python etc.
+*/
+func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	var val RObject
+	switch obj1.(type) {
+	case Bool:
+		switch obj2.(type) {
+		case Bool:
+			val = Bool(obj1.(Bool) != obj2.(Bool))	
+		default:
+			val = Bool(true)			
+		}			
+	case Int:
+		switch obj2.(type) {
+		case Int:
+			val = Bool(obj1.(Int) != obj2.(Int))
+		case Int32:
+			val = Bool(int64(obj1.(Int)) != int64(obj2.(Int32)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) != float64(obj1.(Int)))			
+		case String:
+			val = Bool(string(obj2.(String)) != strconv.FormatInt(int64(obj1.(Int)), 10))
+		default:
+			val = Bool(true)
+		}
+	case Int32:
+		switch obj2.(type) {
+		case Int32:
+			val = Bool(obj1.(Int32) != obj2.(Int32))
+		case Int:
+			val = Bool(int64(obj1.(Int32)) != int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) != float64(obj1.(Int32)))			
+		case String:
+			val = Bool(string(obj2.(String)) != strconv.Itoa(int(obj1.(Int32))))
+		default:
+			val = Bool(true)
+		}
+	case Float:
+		switch obj2.(type) {
+		case Int32:
+			val = Bool(float64(obj1.(Float)) != float64(obj2.(Int32)))		
+		case Int:
+			val = Bool(float64(obj1.(Float)) != float64(obj2.(Int)))	
+		case Float:
+			val = Bool(float64(obj2.(Float)) != float64(obj1.(Float)))			
+		case String:
+			val = Bool(string(obj2.(String)) != strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64)) 
+		default:
+			val = Bool(true)	
+		}	
+	case String:
+		switch obj2.(type) {
+		case String:
+			val = Bool(string(obj1.(String)) != string(obj2.(String)))
+		case Int:
+			val = Bool(string(obj1.(String)) != strconv.FormatInt(int64(obj2.(Int)), 10))
+		case Int32:
+			val = Bool(string(obj1.(String)) != strconv.Itoa(int(obj2.(Int32))))
+		case Float:
+			val = Bool(string(obj1.(String)) != strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 		
+		default:
+			val = Bool(true)
+		}
+	case RTime:
+		switch obj2.(type) {
+		case RTime:
+			val = Bool( ! time.Time(obj1.(RTime)).Equal(time.Time(obj2.(RTime))))				
+//		case String:
+// Add a Parse of an ISO8601 time string, and allow String, RTime combination as well
+		default:
+			val = Bool(true)	
+		}	
+		
+	}
+	return []RObject{val}
+}
+
+/*
+A primitive is not eq to a non-primitive.
+*/
+func builtinNeqNo(th InterpreterThread, objects []RObject) []RObject {	
+	return []RObject{Bool(true)}
+}
+
+/*
+Non-primitives evaluate to eq if their RObject interfaces are == in Go.
+This is probably not what we want eventually.
+*/
+func builtinNeqObj(th InterpreterThread, objects []RObject) []RObject {
+	obj1 := objects[0]
+	obj2 := objects[1]
+	val := Bool(obj1 != obj2)
+	return []RObject{val}
+}
+
+
+
+
+
 /*
 Less-than operator for numeric types.
 TODO !!!
@@ -2846,6 +2987,43 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
 	return nil
 }
+
+
+func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
+
+	relish.EnsureDatabase()
+	oldName := objects[0].String()
+	newName := objects[1].String()
+
+    var errStr string
+
+	// Ensure that the name is not already used for a persistent object in this database.
+
+	found, err := th.DB().ObjectNameExists(oldName)
+	if err != nil {
+		panic(err)
+	} else if ! found {
+		errStr = fmt.Sprintf("'%s' is not the name of an object. rename cancelled.", oldName)
+	}
+	
+	if errStr != "" {
+		found, err = th.DB().ObjectNameExists(NewName)
+		if err != nil {
+			panic(err)
+		} else if found {
+			errStr = fmt.Sprintf("The proposed new object name '%s' is already in use. rename cancelled.", newName)
+		}	
+    }
+    
+    if errStr == "" {
+	   // Now we have to rename the object in the database. 
+
+	   th.DB().RenameObject(oldName, newName)
+    }
+
+	return []RObject{String(errStr)}
+}
+
 
 /*
 summon String > NonPrimitive
