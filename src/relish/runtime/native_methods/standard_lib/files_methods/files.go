@@ -113,14 +113,14 @@ func InitFilesMethods() {
 	}
 	removeAllMethod.PrimitiveCode = removeAll		
 
-	// rename oldName String newName String > err String
+	// move oldName String newName String > err String
 	// """
-	//  Renames the file or directory.
+	//  Renames (moves) the file or directory.
 	//
-	//  err = rename oldName newName	
+	//  err = move oldName newName	
 	// """
 	//
-	renameMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"rename", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	renameMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"move", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}

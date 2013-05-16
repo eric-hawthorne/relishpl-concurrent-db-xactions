@@ -457,6 +457,16 @@ func (db *SqliteDB) NameObject(obj RObject, name string) {
 }
 
 
+
+func (db *SqliteDB) RenameObject(oldName string, newName string) {
+	oldName = SqlStringValueEscape(oldName)
+	newName = SqlStringValueEscape(newName)	
+	stmt := Stmt("UPDATE RName set name=? WHERE name=?;")
+	stmt.Arg(newName)
+	stmt.Arg(oldName)
+	db.QueueStatements(stmt)
+}
+
 /*
 Returns true if an object has been named in the database with the argument name.
 */

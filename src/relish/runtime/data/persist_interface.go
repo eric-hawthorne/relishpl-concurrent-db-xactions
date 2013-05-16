@@ -77,6 +77,8 @@ type DB interface {
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)
 	NameObject(obj RObject, name string)
+	RenameObject(oldName string, newName string)	
+	
   /*
   Deletes the object from the database as well as its canonical object name entry if any.
   
@@ -386,6 +388,13 @@ func (dbt * DBThread) ObjectNameExists(name string) (found bool, err error) {
 func (dbt * DBThread) NameObject(obj RObject, name string) {
    dbt.UseDB()
    dbt.db.NameObject(obj, name)
+   dbt.ReleaseDB() 
+   return  
+}
+
+func (dbt * DBThread) RenameObject(oldName string, newName string) {
+   dbt.UseDB()
+   dbt.db.RenameObject(oldName, newName)
    dbt.ReleaseDB() 
    return  
 }
