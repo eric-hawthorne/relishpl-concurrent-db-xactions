@@ -50,7 +50,7 @@ testIo
       print err
    else
       close file
-      err = rename "testIo2.txt" "testIo3.txt"
+      err = move "testIo2.txt" "testIo3.txt"
       if err
          print err
       else   

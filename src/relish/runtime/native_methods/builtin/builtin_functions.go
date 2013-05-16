@@ -1048,11 +1048,11 @@ func InitBuiltinFunctions() {
 	deleteMethod.PrimitiveCode = builtinDelete	
 	
 	
-	renameObjectMethod, err := RT.CreateMethod("",nil,"renameObject", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	renameObjectMethod, err := RT.CreateMethod("",nil,"rename", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	renameObjectMethod.PrimitiveCode = renameObject	
+	renameObjectMethod.PrimitiveCode = builtinRenameObject	
 
     // err = begin  // Begins a db transaction. On success returns an empty string.
     //
@@ -3007,7 +3007,7 @@ func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
 	}
 	
 	if errStr != "" {
-		found, err = th.DB().ObjectNameExists(NewName)
+		found, err = th.DB().ObjectNameExists(newName)
 		if err != nil {
 			panic(err)
 		} else if found {
