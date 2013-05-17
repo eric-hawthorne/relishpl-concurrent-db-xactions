@@ -674,6 +674,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
         default:
 		   rterr.Stop1(t,idxExpr,"Index value must be an Integer")
 		}
+		defer indexErrHandle(t, idxExpr)
         val = coll.At(t, ix)
 
         if val == nil {
@@ -710,6 +711,12 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
    }
 }
 
+func indexErrHandle(t *Thread, idxExpr *ast.IndexExpr) {
+      r := recover()	
+      if r != nil {
+          rterr.Stopf1(t,idxExpr,r.(string))
+      }	
+}	
 
 /*
    someExpr[lowIndexExpr:highIndexExpr]
