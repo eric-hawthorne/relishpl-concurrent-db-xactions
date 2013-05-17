@@ -739,6 +739,7 @@ func (s *rsortedset) AddSimple(obj RObject) (newLen int) {
 
 func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 
+    defer vectorAtErrHandle(i, s.v)
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
 		var err error
@@ -751,6 +752,17 @@ func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 	}
 	return obj
 }
+
+
+func vectorAtErrHandle(i int, v *RVector) {
+      r := recover()	
+      if r != nil {
+          panic(fmt.Sprintf("Error: index [%d] is out of range. Sorted set length is %d.",i,v.Len()))
+      }	
+}	
+
+
+
 
 /*
 {<} Widget            Sorted set using natural order of Widgets (which must be defined)
@@ -1377,6 +1389,7 @@ func (s *rlist) AddSimple(obj RObject) (newLen int) {
 
 func (s *rlist) At(th InterpreterThread, i int) RObject {
 
+    defer vectorAtErrHandle(i, s.v)
 	obj := s.v.At(i).(RObject)
 	if obj.IsProxy() {
 		var err error
