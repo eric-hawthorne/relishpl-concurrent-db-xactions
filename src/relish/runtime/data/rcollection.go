@@ -1050,6 +1050,9 @@ func (c *rsortedset) deproxify(th InterpreterThread) {
 						panic(fmt.Sprintf("Error fetching sorted set element: %s", err))
 					}
 					(*(c.v))[i] = robj
+
+  			        c.m[robj] = true
+			        delete(c.m, proxy) 				
 				}
 			}
 		}
