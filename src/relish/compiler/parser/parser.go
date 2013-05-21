@@ -897,7 +897,9 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
      if arity1Spec.MaxCard != 1 {
         if strings.HasSuffix(end1Name,"s") {
            end1Name += "es"
-        } else {
+        } else if endsInYafterConsonant(end1Name) {
+	       end1Name = end1Name[:len(end1Name)-1] + "ies"
+	    } else {
            end1Name += "s"
         }
      }
@@ -911,6 +913,8 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
      if arity2Spec.MaxCard != 1 {
         if strings.HasSuffix(end2Name,"s") {
            end2Name += "es"
+        } else if endsInYafterConsonant(end2Name) {
+	       end2Name = end2Name[:len(end2Name)-1] + "ies"
         } else {
            end2Name += "s"
         }
@@ -976,6 +980,22 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
     return true
 
 }	
+
+func endsInYafterConsonant(s string) bool {
+	if ! strings.HasSuffix(s,"y") {
+		return false
+	}
+	n := len(s) - 2
+	if n < 0 {
+		return false
+	}
+	c := s[n]
+	if c == 'a' || c == 'e' || c == 'o' || c == 'u' {
+		return false
+	}
+	return true
+}
+
 
 /*
    List empty literal []

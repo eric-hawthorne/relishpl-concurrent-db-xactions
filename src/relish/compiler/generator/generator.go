@@ -83,6 +83,8 @@ func (g *Generator) generatePackage() {
 	g.pkg = data.RT.CreatePackage(g.packageName, false)  // This should init MMMap from core/builtin package   
 	
 	g.updatePackageDependenciesAndMultiMethodMap()
+	
+	g.th.ExecutingPackage = g.pkg
 }
 
 /*
