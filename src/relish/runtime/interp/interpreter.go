@@ -2569,6 +2569,9 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				// (from which type) to use. TODO TODO TODO. In this usage, in lhs of an assignment,
 				// it has to be an attribute or it's an error.
 				//
+				if assignee == nil {					
+					rterr.Stop1(t,selector,fmt.Sprintf("%s is unassigned. Can't evaluate %s.%s", selector.X, selector.X, selector.Sel.Name))									
+				}
 				attr, found := assignee.Type().GetAttribute(selector.Sel.Name)
 				if !found {
 					rterr.Stop1(t,selector,fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
@@ -2634,6 +2637,14 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				 
 				idx := t.Pop()       // the index or map key			     
 				assignee := t.Pop()       // the robject whose attribute is being assigned to. OrderedCollection or Map
+
+
+			    if assignee == nil {					
+				   rterr.Stop1(t,indexExpr,fmt.Sprintf("%s is unassigned. Can't evaluate %s[%s]", indexExpr.X, indexExpr.X, indexExpr.Index))									
+			    }
+			    if idx == nil {					
+				   rterr.Stop1(t,indexExpr,fmt.Sprintf("%s is unassigned. Can't evaluate %s[%s]", indexExpr.Index, indexExpr.X, indexExpr.Index))									
+			    }			
 
 				collection,isCollection := assignee.(RCollection)
 				if ! isCollection {

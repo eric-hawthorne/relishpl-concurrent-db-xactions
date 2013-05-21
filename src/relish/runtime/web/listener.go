@@ -1067,7 +1067,7 @@ func ListenAndServe(portNumber int) {
    TODO This should also handle unary function calls on the object.
 */
 func AttrVal(attrName string, obj RObject) (val RObject, err error) {
-	fmt.Println("Getting value of attrName",attrName)
+	// fmt.Println("Getting value of attrName",attrName)
     if obj.IsCollection() && (obj.(RCollection)).IsMap() {
         theMap := obj.(Map)
 	    if theMap.KeyType() != StringType  {
