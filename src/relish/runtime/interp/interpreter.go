@@ -1934,7 +1934,10 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 		   	  break
 		   	  // iter = coll.(Nil).Iter(t)  // unnecessary
 		   default:
-			 collection := coll.(RCollection)
+			 collection, isCollection := coll.(RCollection)
+			 if ! isCollection {
+				rterr.Stopf1(t, stmt, "Attempt to iterate over an object which is not a list, set, or map.")	
+			 }		 
 		     iter = collection.Iter(t)	   	
 		}
 		iters = append(iters, iter)
