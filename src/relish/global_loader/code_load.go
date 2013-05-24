@@ -723,6 +723,13 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
                                                                 // argument so that we can flag the RPackage object as local or shared.
 //         gen.GenerateCode()	
 
+
+           if packageIdentifier != fileNode.Name.Name {
+              err = fmt.Errorf("\nThe origin, artifact, or package metadata at top of source code file\n'%s'\ndoes not match the package directory path where the file resides.\n",sourceFilePath)  
+              return   
+           }
+
+
 	       if parseNeeded {
 		      Log(ALWAYS_,"Compiled %s\n", sourceFilePath)		
 		   } 

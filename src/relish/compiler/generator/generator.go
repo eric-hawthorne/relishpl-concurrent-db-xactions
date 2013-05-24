@@ -75,7 +75,7 @@ func (g *Generator) generatePackage() {
     relish.EnsureDatabase() 
     // creates and/or creates a connection to the running artifact's database.
     // Amongst other things, initializes from db the maps between package names and shortnames in the runtime.
-	
+
     g.pkg = data.RT.Packages[g.packageName]
     if g.pkg != nil {
     	rterr.Stopf("Package %s has already been loaded. Error to load it again.",g.packageName)
