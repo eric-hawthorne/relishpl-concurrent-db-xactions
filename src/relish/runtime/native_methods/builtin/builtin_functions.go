@@ -1598,6 +1598,13 @@ replace s String old String new String n Int > String
 	resumeSortingMethod.PrimitiveCode = builtinResumeSorting	
 
 
+	// asList coll Collection of T > List of T	
+	//
+	asListMethod, err := RT.CreateMethod("",nil,"asList", []string{"c"}, []string{"Collection"},  []string{"List"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	asListMethod.PrimitiveCode = builtinAsList
 
 
 /*
@@ -3281,8 +3288,25 @@ func builtinResumeSorting(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{}
 }
 
+/*
+Copy the elements of the collection to form a list with the same element type constraint as
+the collection.
+*/
+func builtinAsList(th InterpreterThread, objects []RObject) []RObject {
+	coll := objects[0].(RCollection)
+
+    list, err := RT.Newrlist(coll.ElementType(),0,-1,nil,nil)
+	if err != nil {
+		panic(err)
+	}
+
+	for obj := range coll.Iter(th) {
+		list.AddSimple(obj)
+	}
 
 
+	return []RObject{list}
+}
 
 
 ///////////////////////////////////////////////////////////////////////

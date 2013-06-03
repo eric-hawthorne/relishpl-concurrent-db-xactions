@@ -414,7 +414,7 @@ func (o *rset) String() string {
 }
 
 func (o *rset) Debug() string {
-	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+	return fmt.Sprintf("%s len:%d\n%s",  (&(o.rcollection)).Debug() , o.Length(), o.String())
 }
 
 func (s *rset) BoolMap() map[RObject]bool {
@@ -691,7 +691,9 @@ func (o *rsortedset) String() string {
 }
 
 func (o *rsortedset) Debug() string {
-	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+	return fmt.Sprintf("%s len:%d\n%s",  (&(o.rcollection)).Debug() , o.Length(), o.String())
+
+
 }
 
 func (s *rsortedset) BoolMap() map[RObject]bool {
@@ -1146,7 +1148,7 @@ func (o *rlist) String() string {
 }
 
 func (o *rlist) Debug() string {
-	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+	return fmt.Sprintf("%s len:%d\n%s",  (&(o.rcollection)).Debug() , o.Length(),o.String())
 }
 
 /*
@@ -1708,7 +1710,7 @@ type rstringmap struct {
 }
 
 func (o *rstringmap) Debug() string {
-	return fmt.Sprintf("%s len:%d",  (&(o.rcollection)).Debug() , o.Length())
+	return fmt.Sprintf("%s len:%d\n%s",  (&(o.rcollection)).Debug() , o.Length(),o.String())
 }
 
 func (o *rstringmap) String() string {

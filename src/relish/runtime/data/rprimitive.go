@@ -4062,6 +4062,9 @@ Used for os.File presently.
 May also be used for other standard library builtin types, but may also be used
 for extension of relish with Go objects in custom builds of relish.
 Only usable for "unitary" as opposed to collection types.
+
+TODO: These are not being garbage collected yet. If they get the marked flag, make
+sure that NewObject sets the marked flag properly on them.
 */
 
 type GoWrapper struct {

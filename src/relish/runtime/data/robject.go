@@ -316,7 +316,8 @@ func (o *robject) IsTransient() bool { return false }
 func (o *robject) String() string {
 	var id string
 	if o.HasUUID() {
-		id = o.UUIDabbrev()
+		//id = o.UUIDabbrev()
+		id = strconv.FormatInt(o.DBID(), 10)
 	} else {
 		id = strconv.FormatUint(o.LocalID(), 10)
 	}
@@ -517,7 +518,14 @@ func DBID(id1 int64, id2 int64, flags int) int64 {
 */
 func (o *robject) RestoreIdsAndFlags(id, id2 int64, flags int) {
 	theUUID := make([]byte, 0, 16)
+
+	wasMarked := o.IsMarked()  // Make sure that marked flag stored in db is ignored.
 	o.flags = byte(flags)
+	if wasMarked {
+		o.SetMarked()
+	} else {
+		o.ClearMarked()
+	}
 
 	if o.IsIdReversed() {
 		id, id2 = id2, id
