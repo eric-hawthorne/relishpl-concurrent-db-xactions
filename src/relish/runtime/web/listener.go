@@ -1227,7 +1227,8 @@ func goTemplateAction(b []byte, relishAction string) string {
         attrStart := match[4]
         attrEnd := match[5]
 
-        fmt.Println(relishAction[exprStart:exprEnd])
+        // Use for debugging translation from relish to go template actions.
+        //fmt.Println(relishAction[exprStart:exprEnd])
 
         buf.WriteString(relishAction[copyStart:exprStart])
 

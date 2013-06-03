@@ -1075,6 +1075,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 //			}
 //		}
 			
+		defer dispatchErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
@@ -1137,8 +1138,15 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 	return
 }
 
-
-
+/*
+TODO Should benchmark with and without the deferred call to this.
+*/
+func dispatchErrHandle(t *Thread, call *ast.MethodCall) {
+      r := recover()	
+      if r != nil {
+          rterr.Stopf1(t,call,"Dispatch error: %v",r)
+      }	
+}	
 
 
 /*
