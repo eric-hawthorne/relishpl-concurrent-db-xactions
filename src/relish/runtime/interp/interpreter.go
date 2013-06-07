@@ -1635,7 +1635,11 @@ func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod,
 
 	method, typeTuple = i.dispatcher.GetMethod(mm, args) // len call.Args is WRONG! Use Type.Param except vararg
 	if method == nil {
-		rterr.Stopf1(t, t.ExecutingMethod.File, "No method '%s' is compatible with %s", mm.Name, typeTuple)
+		if t.ExecutingMethod == nil {
+		   rterr.Stopf("Function call in template: No method '%s' is compatible with %s", mm.Name, typeTuple)			
+		} else {
+		   rterr.Stopf1(t, t.ExecutingMethod.File, "No method '%s' is compatible with %s", mm.Name, typeTuple)
+	   }
 	}
 	LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
 
