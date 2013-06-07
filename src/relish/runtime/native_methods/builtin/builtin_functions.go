@@ -1640,7 +1640,19 @@ replace s String old String new String n Int > String
 
 */
 
-
+    sortMethod, err := RT.CreateMethod("",nil,"sort", []string{"c"}, []string{"Collection"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	sortMethod.PrimitiveCode = builtinSort
+	
+    swapMethod, err := RT.CreateMethod("",nil,"swap", []string{"c","i","j"}, []string{"Collection","Int","Int"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	swapMethod.PrimitiveCode = builtinSwap
+	
+	
     ///////////////////////////////////////////////////////////////////
     // Concurrency functions	
 
@@ -3306,6 +3318,37 @@ func builtinAsList(th InterpreterThread, objects []RObject) []RObject {
 
 
 	return []RObject{list}
+}
+
+
+
+/*
+Sort the sortable collection.
+*/
+func builtinSort(th InterpreterThread, objects []RObject) []RObject {
+	sortable,isSortableMixin := objects[0].(SortableMixin)
+	coll,isCollection := objects[0].(RCollection)	
+    if (! isSortableMixin) || (! isCollection) {
+    	rterr.Stop("Can only apply sort to a an ordered collection or ordered map.")
+    }	
+	RT.SetEvalContext(coll, th.EvaluationContext())
+    defer RT.UnsetEvalContext(coll)
+    sort.Sort(sortable)
+	return []RObject{}	
+}
+
+/*
+Swap the elements at the two indexes.
+*/
+func builtinSwap(th InterpreterThread, objects []RObject) []RObject {
+	sortable,isSortableMixin := objects[0].(SortableMixin)	
+    if (! isSortableMixin) {
+    	rterr.Stop("Can only apply swap to a an ordered collection or ordered map.")
+    }
+    i := int(objects[1].(Int))
+    j := int(objects[2].(Int))    
+    sortable.Swap(i,j)
+	return []RObject{}	
 }
 
 
