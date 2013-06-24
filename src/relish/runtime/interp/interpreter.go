@@ -55,7 +55,7 @@ Currently, when multimethods/methods are generated, "main" ones are prefixed by 
 func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
 	Logln(ANY_, " ")
 	Logln(ANY_, "==============================")
-	Logln(ANY_, "== RELISH Interpreter 0.0.4 ==")
+	Logln(ANY_, "== RELISH Interpreter 0.0.5 ==")
 	Logln(ANY_, "==============================")
 	Logln(GENERATE2_, " ")
 	Logln(GENERATE2_, "----------")
