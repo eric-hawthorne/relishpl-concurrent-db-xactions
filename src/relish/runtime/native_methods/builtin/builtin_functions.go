@@ -1238,6 +1238,58 @@ replace s String old String new String n Int > String
 
 
 
+/*
+urlPathPartEncode s > String
+"""
+  Returns a copy of the string that has been encoded to be a legal part of a URL path.
+"""
+*/
+    urlPathPartEncodeMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"urlPathPartEncode", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	urlPathPartEncodeMethod.PrimitiveCode = builtinUrlPathPartEncode
+
+    urlPathPartEncodeMethod2, err := RT.CreateMethod("relish/pkg/strings",nil,"urlPathPartEncode", []string{"s","encodeDash"}, []string{"String","Bool"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	urlPathPartEncodeMethod2.PrimitiveCode = builtinUrlPathPartEncode
+
+
+
+
+/*
+urlPathPartDecode s > String
+"""
+  Returns a copy of the string which has had url path part encodings decoded. 
+"""
+*/
+    urlPathPartDecodeMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"urlPathPartDecode", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	urlPathPartDecodeMethod.PrimitiveCode = builtinUrlPathPartDecode
+
+    urlPathPartDecodeMethod2, err := RT.CreateMethod("relish/pkg/strings",nil,"urlPathPartDecode", []string{"s","decodeDash"}, []string{"String","Bool"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	urlPathPartDecodeMethod2.PrimitiveCode = builtinUrlPathPartDecode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // join a []String
 // """
 //  Concatenates the elements of a to create a single string. T
@@ -3522,6 +3574,124 @@ func builtinStringReplace(th InterpreterThread, objects []RObject) []RObject {
 	s2 := strings.Replace(s, oldPiece, newPiece, n)
 	return []RObject{String(s2)}
 }
+
+
+func builtinUrlPathPartEncode(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	
+	encodeDash := true
+	if len(objects) == 2 {
+	   	encodeDash = bool(objects[1].(Bool))
+	}
+	
+	var buf bytes.Buffer
+    for _,c := range s {
+	   if c > 255 {
+		  panic("Cannot encode non ISO-LATIN characters in a URL path.")
+	   }
+	   if c > 127 || c < 32 {
+		   buf.WriteString(fmt.Sprintf("%%%02X",c))
+	   } else if encodeDash {
+		   switch c {
+			  case  '$','&','+',',','/',':',';','=','?','@','"','\'','<','>','#','%','{','}','|','\\','^','[',']','`':
+		         buf.WriteString(fmt.Sprintf("%%%02X",c))
+		      case '.':
+			    buf.WriteString("_~*")		
+		      case '-':
+			    buf.WriteString("*~*")						
+		      case ' ':
+			    buf.WriteRune('-')	
+		      default:
+		         buf.WriteRune(c)
+	       }
+	   } else {		
+		   switch c {
+			  case  '$','&','+',',','/',':',';','=','?','@',' ','"','\'','<','>','#','%','{','}','|','\\','^','[',']','`':
+		         buf.WriteString(fmt.Sprintf("%%%02X",c))			
+		      default:
+		         buf.WriteRune(c)
+	       }
+	   }	  
+	}
+	s2 := buf.String()	
+    return []RObject{String(s2)}	
+}
+
+func builtinUrlPathPartDecode(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	decodeDash := true
+	if len(objects) == 2 {
+	   	decodeDash = bool(objects[1].(Bool))
+	}	
+	
+	var buf bytes.Buffer
+	var d0,d1,r rune
+	digitsToCollect := 0
+	charsToSkip := 0
+	n := len(s)	
+    for i,c := range s {
+	   if charsToSkip > 0 {
+		  charsToSkip --
+	   } else if c == '%' {
+		  digitsToCollect = 2
+	   } else if digitsToCollect == 2 {
+	      if c >= '0' && c <= '9' {
+		     d0 = c-'0' 
+		  } else if c >= 'A' && c <= 'F' {
+		     d0 = 10 + c - 'A' 			 
+		  } else if c >= 'a' && c <= 'f' {
+		     d0 = 10 + c - 'a'		     
+          } else {
+	         panic("Bad % escape sequence in URL path part.")
+	      } 
+	   } else if digitsToCollect == 1 {
+	      if c >= '0' && c <= '9' {
+		     d1 = c-'0' 
+		  } else if c >= 'A' && c <= 'F' {
+		     d1 = 10 + c - 'A' 			 
+		  } else if c >= 'a' && c <= 'f' {
+		     d1 = 10 + c - 'a'		     
+          } else {
+	         panic("Bad % escape sequence in URL path part.")
+	      }
+	      r =  16 * d0 + d1
+	      buf.WriteRune(r)
+	   } else if decodeDash {
+            if c == '-' {
+               buf.WriteRune(' ')
+            } else if c == '*' {
+		       if i < n - 2 && s[i+1] == '~' && s[i+2] == '*' {
+	              buf.WriteRune('-')
+	              charsToSkip = 2			      
+			   } else {
+				  buf.WriteRune('*')
+			   }
+		    } else if c == '_' {
+		       if i < n - 2 && s[i+1] == '~' && s[i+2] == '*' {
+	              buf.WriteRune('.')
+	              charsToSkip = 2			      
+			   } else {
+				  buf.WriteRune('*')
+			   }
+			}					   
+	   } else {	
+	      buf.WriteRune(c)		
+	   }
+	}
+	s2 := buf.String()	
+	
+    return []RObject{String(s2)}	
+}
+
+
+
+
+
+
+
+
+
+
 
 
 /*
