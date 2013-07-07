@@ -73,6 +73,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#title">title</a><br/>   
   <a href="#trimSpace" class="alt">trimSpace</a><br/>
   <a href="#upper">upper</a><br/>
+  <a href="#urlPathPartEncode" class="alt">urlPathPartEncode</a><br/>
+  <a href="#urlPathPartDecode">urlPathPartDecode</a><br/>
 </div>  
 <div id="content_manual">
 <a name="Summary"><h3>Summary</h3></a>
@@ -138,6 +140,12 @@ As well as the methods in the strings package, listed below, relish also provide
 </tr>
 <tr>
 	<td><a href="#upper">upper</a></td><td> - a copy of the string s with all Unicode letters mapped to their upper case</td>
+</tr>
+<tr>
+	<td><a href="#upper">urlPathPartEncode</a></td><td> - a copy of the string s encoded to be part of a url path</td>
+</tr>
+<tr>
+	<td><a href="#upper">urlPathPartDecode</a></td><td> - a string that is the decoding of an urlPathPartEncode'd string</td>
 </tr>
 </table>	
 </center>
@@ -282,7 +290,7 @@ join a []Any sep String > String
 
 <a name="lower">lower s String > String</a>
 """
-  Returns a copy of the string s with all Unicode letters mapped to their lower case.
+ Returns a copy of the string s with all Unicode letters mapped to their lower case.
 """
 
 
@@ -334,10 +342,59 @@ slice s String start Int > String
 
 <a name="upper">upper s String > String</a>
 """
-  Returns a copy of the string s with all Unicode letters mapped to their upper case.
+ Returns a copy of the string s with all Unicode letters mapped to their upper case.
 """
 
 
+<a name="urlPathPartEncode">urlPathPartEncode
+   s String 
+   encodeDash Bool = true 
+> 
+   String</a>
+"""
+ Returns a copy of the string s with the following characters mapped to %XX where XX is the hexadecimal value
+ of the character's code point.
+
+ Characters that will be escaped (encoded):
+
+  '$','&amp;','+',',','/',':',';','=','?','@','"','\'','&lt;','>','#','%','{','}','|','\\','^','[',']','`'
+
+  codepoint &lt; 32 (decimal), codepoint > 127 (decimal)
+
+ Only works for characters whose code point is in the range 0..255 (decimal) that is 0..FF (hexadecimal).
+ Specifically does not work for unicode characters with code point > 255. These characters are always invalid 
+ in the path part of a URL.
+
+ If encodeDash is true (the default), then spaces ' ' in the input string will be encoded as '-', whereas
+ an actual '-' will be encoded as "*~*" and '.' will be encoded as "_~*"
+This makes nice looking url path parts if the problem would just have
+ been spaces. If encodeDash is false, spaces ' ' are encoded as %20 and '-' and '.' are not encoded.
+"""
+
+
+<a name="urlPathPartDecode">urlPathPartDecode
+   s String 
+   decodeDash Bool = true 
+> 
+   String</a>
+"""
+ Returns a copy of the string s with each %XX escape sequence (where XX is the hexadecimal value
+ of a character's code point) converted back into the original character.
+
+ If decodeDash is true (the default), then '-' in the string will be decoded to spaces ' '
+ and '*~*' in the string decoded to '-'
+ and '_~*' in the string decoded to '.'
+ If decodeDash is false, '-' will be left as is and no other decodings will be done.
+
+ Note: If a URL path has been decomposed by the relish web request handling infrastructure into 
+ individual argument values (or a list of argument values), those argument values will already
+ have been PARTIALLY decoded, in that the %XX escape sequences will have been decoded, but '-'
+ will have been left intact. So further processing will be required. E.g. to get a fully decoded
+ string value, one would do the following to one of these argument values:
+
+ s = urlPathPartDecode urlPathPartEncode argValue false
+  
+"""
 
 
 
