@@ -3673,7 +3673,9 @@ func builtinUrlPathPartDecode(th InterpreterThread, objects []RObject) []RObject
 			   } else {
 				  buf.WriteRune('*')
 			   }
-			}					   
+			} else {	
+	           buf.WriteRune(c)
+	        }								   
 	   } else {	
 	      buf.WriteRune(c)		
 	   }
