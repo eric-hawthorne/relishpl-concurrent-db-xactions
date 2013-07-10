@@ -9,6 +9,7 @@ package native_methods
 
 import (
 	"relish/runtime/native_methods/standard_lib/files_methods"
+   "relish/runtime/native_methods/extensions/protocols/modbus_methods"
 )
 
 /*
@@ -25,6 +26,7 @@ with the corresponding wrapper-creating function.
 */
 var nativeMethodPackageMap = map [string] func() {
 	"relish.pl2012/relish_lib/pkg/files" : files_methods.InitFilesMethods,
+   "gait.bcit.ca2012/protocols/pkg/modbus" : modbus_methods.InitModbusMethods,   
 }
 
 

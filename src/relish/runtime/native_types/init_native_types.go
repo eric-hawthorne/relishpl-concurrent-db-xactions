@@ -26,4 +26,6 @@ var NativeType = map [string] bool {
 		
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!
 	// Add extensions types which need a GoWrapper as the instance here. 
+
+    "gait.bcit.ca2012/protocols/pkg/modbus/ModbusTcp" : true,
 }
