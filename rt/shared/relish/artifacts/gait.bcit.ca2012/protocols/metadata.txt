@@ -1,0 +1,8 @@
+origin: gait.bcit.ca2012
+artifact: protocols
+current version: 1
+release date: 2013/07/10  
+standard tags: example tag, second example tag
+more tags:
+
+Implementations of various communication protocols. First implemented one is Modbus.
