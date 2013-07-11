@@ -515,6 +515,25 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
   The err is always the empty String for this conversion. It is present only because methods of the same name 
   and accepting at least one argument must have the same number of return values.  
 </p>
+<p>
+  The following additional conversion constructors are defined between integer types:
+</p>
+<code><pre>
+   i = 3654  // The literal creates a value of type Int
+   j err = Int32 i
+   k err = Uint i
+   m err = Uint32 i
+   i2 err = Int j
+   i3 err = Int k
+   i4 err = Int m
+</pre></code>
+<p>
+  Note that the error will never be set (never be non "") in these particular converters.
+  In integer-to-integer conversions, Signed values are infinitely sign-extended then the
+  value truncated to the size of the target type. Unsigned values are 0-extended.
+  Overflows (from converting a value that will not fit in the target type's number of bits) 
+  do not cause an error, so there is no warning of them. The truncated value is returned.
+</p>
 
 <h4>Type casting to obtain a Float value</h4>
 <code><pre>
