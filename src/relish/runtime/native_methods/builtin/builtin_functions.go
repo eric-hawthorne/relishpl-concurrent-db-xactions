@@ -1857,7 +1857,65 @@ urlPathPartDecode s > String
 		panic(err)
 	}
 	intInitMethod2.PrimitiveCode = builtinInitIntFromFloat	
+
+	intInitMethod3, err := RT.CreateMethod("",nil,"initInt", []string{"i","v"}, []string{"Int","Int32"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod3.PrimitiveCode = builtinInitIntFromInt32	
+
+	intInitMethod4, err := RT.CreateMethod("",nil,"initInt", []string{"i","v"}, []string{"Int","Uint"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod4.PrimitiveCode = builtinInitIntFromUint	
+
+	intInitMethod5, err := RT.CreateMethod("",nil,"initInt", []string{"i","v"}, []string{"Int","Uint32"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod5.PrimitiveCode = builtinInitIntFromUint32		
+
 	
+
+	int32InitMethod, err := RT.CreateMethod("",nil,"initInt32", []string{"i","s"}, []string{"Int32","String"},  []string{"Int32","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	int32InitMethod.PrimitiveCode = builtinInitInt32
+
+	int32InitMethod2, err := RT.CreateMethod("",nil,"initInt32", []string{"i","v"}, []string{"Int32","Int"},  []string{"Int32","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	int32InitMethod2.PrimitiveCode = builtinInitInt32FromInt
+
+
+	uintInitMethod, err := RT.CreateMethod("",nil,"initUint", []string{"i","s"}, []string{"Uint","String"},  []string{"Uint","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uintInitMethod.PrimitiveCode = builtinInitUint		
+
+	uintInitMethod2, err := RT.CreateMethod("",nil,"initUint", []string{"i","v"}, []string{"Uint","Int"},  []string{"Uint","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uintInitMethod2.PrimitiveCode = builtinInitUintFromInt
+
+
+	uint32InitMethod, err := RT.CreateMethod("",nil,"initUint32", []string{"i","s"}, []string{"Uint32","String"},  []string{"Uint32","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uint32InitMethod.PrimitiveCode = builtinInitUint32
+
+	uint32InitMethod2, err := RT.CreateMethod("",nil,"initUint32", []string{"i","v"}, []string{"Uint32","Int"},  []string{"Uint32","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uint32InitMethod2.PrimitiveCode = builtinInitUint32FromInt
+
 	
 	floatInitMethod, err := RT.CreateMethod("",nil,"initFloat", []string{"f","s"}, []string{"Float","String"},  []string{"Float","String"}, false, 0, false)
 	if err != nil {
@@ -4685,6 +4743,152 @@ func builtinInitIntFromFloat(th InterpreterThread, objects []RObject) []RObject 
     i := int64(val)
 	return []RObject{Int(i),String(errStr)}
 }
+
+/*
+    initInt i Int v Int32 > j Int err String
+*/
+func builtinInitIntFromInt32(th InterpreterThread, objects []RObject) []RObject {
+    val := int32(objects[1].(Int32))
+
+    // ignore the first Int argument
+    var errStr string
+    i := int64(val)
+	return []RObject{Int(i),String(errStr)}
+}
+
+/*
+    initInt i Int v Uint > j Int err String
+*/
+func builtinInitIntFromUint(th InterpreterThread, objects []RObject) []RObject {
+    val := uint(objects[1].(Uint))
+
+    // ignore the first Int argument
+    var errStr string
+    i := int64(val)
+	return []RObject{Int(i),String(errStr)}
+}
+
+/*
+    initInt i Int v Uint32 > j Int err String
+*/
+func builtinInitIntFromUint32(th InterpreterThread, objects []RObject) []RObject {
+    val := uint32(objects[1].(Uint32))
+
+    // ignore the first Int argument
+    var errStr string
+    i := int64(val)
+	return []RObject{Int(i),String(errStr)}
+}
+
+
+
+/*
+    initInt32 i Int32 s String > j Int32 err String
+*/
+func builtinInitInt32(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseInt(valStr, 0, 32)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Int32(int32(v64)),String(errStr)}
+}
+
+/*
+    initInt32 i Int32 v Int > j Int32 err String
+*/
+func builtinInitInt32FromInt(th InterpreterThread, objects []RObject) []RObject {
+    v := int(objects[1].(Int))
+
+    // ignore the first Int32 argument
+    var errStr string
+
+	return []RObject{Int32(int32(v)),String(errStr)}
+}
+
+
+
+
+/*
+    initUint i Uint s String > j Uint err String
+*/
+func builtinInitUint(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseUint(valStr, 0, 64)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Uint(v64),String(errStr)}
+}
+
+/*
+    initUint i Uint v Int > j Uint err String
+*/
+func builtinInitUintFromInt(th InterpreterThread, objects []RObject) []RObject {
+    v := int(objects[1].(Int))
+
+    // ignore the first Uint argument
+    var errStr string
+
+	return []RObject{Uint(uint(v)),String(errStr)}
+}
+
+
+
+/*
+    initUint32 i Uint32 s String > j Uint32 err String
+*/
+func builtinInitUint32(th InterpreterThread, objects []RObject) []RObject {
+    valStr := string(objects[1].(String))
+
+    // ignore the first Int argument
+    var errStr string
+    v64, err := strconv.ParseUint(valStr, 0, 32)  
+    if err != nil {
+	   errStr = err.Error()
+    }
+	return []RObject{Uint32(uint32(v64)),String(errStr)}
+}
+
+
+/*
+    initUint32 i Uint32 v Int > j Uint32 err String
+*/
+func builtinInitUint32FromInt(th InterpreterThread, objects []RObject) []RObject {
+    v := int(objects[1].(Int))
+
+    // ignore the first Uint argument
+    var errStr string
+
+	return []RObject{Uint32(uint32(v)),String(errStr)}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
