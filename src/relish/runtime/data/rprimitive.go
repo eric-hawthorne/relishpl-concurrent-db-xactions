@@ -108,6 +108,12 @@ var SetOfIntType *RType
 var ListOfUintType *RType
 var SetOfUintType *RType
 
+var ListOfInt32Type *RType
+var SetOfInt32Type *RType
+
+var ListOfUint32Type *RType
+var SetOfUint32Type *RType
+
 
 // Slice Types
 var SliceType *RType
@@ -204,8 +210,14 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 	ListOfIntType, _ = rt.GetListType(IntType)
 	SetOfIntType, _  = rt.GetSetType(IntType)	
 
+	ListOfInt32Type, _ = rt.GetListType(Int32Type)
+	SetOfInt32Type, _  = rt.GetSetType(Int32Type)		
+
 	ListOfUintType, _ = rt.GetListType(UintType)
 	SetOfUintType, _  = rt.GetSetType(UintType)		
+
+	ListOfUint32Type, _ = rt.GetListType(Uint32Type)
+	SetOfUint32Type, _  = rt.GetSetType(Uint32Type)		
 
     // Slice types
 
