@@ -4760,7 +4760,7 @@ func builtinInitIntFromInt32(th InterpreterThread, objects []RObject) []RObject 
     initInt i Int v Uint > j Int err String
 */
 func builtinInitIntFromUint(th InterpreterThread, objects []RObject) []RObject {
-    val := uint(objects[1].(Uint))
+    val := uint64(objects[1].(Uint))
 
     // ignore the first Int argument
     var errStr string
@@ -4801,7 +4801,7 @@ func builtinInitInt32(th InterpreterThread, objects []RObject) []RObject {
     initInt32 i Int32 v Int > j Int32 err String
 */
 func builtinInitInt32FromInt(th InterpreterThread, objects []RObject) []RObject {
-    v := int(objects[1].(Int))
+    v := int64(objects[1].(Int))
 
     // ignore the first Int32 argument
     var errStr string
@@ -4831,12 +4831,12 @@ func builtinInitUint(th InterpreterThread, objects []RObject) []RObject {
     initUint i Uint v Int > j Uint err String
 */
 func builtinInitUintFromInt(th InterpreterThread, objects []RObject) []RObject {
-    v := int(objects[1].(Int))
+    v := int64(objects[1].(Int))
 
     // ignore the first Uint argument
     var errStr string
 
-	return []RObject{Uint(uint(v)),String(errStr)}
+	return []RObject{Uint(uint64(v)),String(errStr)}
 }
 
 
@@ -4861,7 +4861,7 @@ func builtinInitUint32(th InterpreterThread, objects []RObject) []RObject {
     initUint32 i Uint32 v Int > j Uint32 err String
 */
 func builtinInitUint32FromInt(th InterpreterThread, objects []RObject) []RObject {
-    v := int(objects[1].(Int))
+    v := int64(objects[1].(Int))
 
     // ignore the first Uint argument
     var errStr string
