@@ -1593,6 +1593,52 @@ urlPathPartDecode s > String
 	}
 	stringHexHashMethod.PrimitiveCode = builtinStringHashSha256Hex			
 	
+	
+	
+	// at s String i Int > Byte
+	//
+	stringAtMethod, err := RT.CreateMethod("",nil,"at", []string{"s","i"}, []string{"String","Int"}, []string{"Byte"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringAtMethod.PrimitiveCode = builtinStringAt		
+	
+	
+	
+    ///////////////////////////////////////////////////////////////////
+    // Bytes functions
+	
+    // length of a byte-slice
+    //
+    // in bytes
+	bytesLenMethod, err := RT.CreateMethod("",nil,"len", []string{"b"}, []string{"Bytes"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesLenMethod.PrimitiveCode = builtinBytesLen	
+	
+	// at bytes Bytes i Int > Byte
+	//
+	bytesAtMethod, err := RT.CreateMethod("",nil,"at", []string{"bytes","i"}, []string{"Bytes","Int"}, []string{"Byte"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesAtMethod.PrimitiveCode = builtinBytesAt		
+	
+
+	// set bytes Bytes i Int b Byte
+	// set bytes Bytes i Int b Int	
+	// set bytes Bytes i Int b Int32
+	// set bytes Bytes i Int b Uint
+	// set bytes Bytes i Int b Uint32
+	//	
+	bytesSetMethod, err := RT.CreateMethod("",nil,"set", []string{"bytes","i","b"}, []string{"Bytes","Int","Integer"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesSetMethod.PrimitiveCode = builtinBytesSet
+		
+	
     ///////////////////////////////////////////////////////////////////
     // Collection functions	
 	
@@ -1876,6 +1922,25 @@ urlPathPartDecode s > String
 	}
 	intInitMethod5.PrimitiveCode = builtinInitIntFromUint32		
 
+	intInitMethod6, err := RT.CreateMethod("",nil,"initInt", []string{"i","v"}, []string{"Int","Byte"},  []string{"Int","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intInitMethod6.PrimitiveCode = builtinInitIntFromByte
+	
+	
+	uintInitMethod6, err := RT.CreateMethod("",nil,"initUint", []string{"i","v"}, []string{"Uint","Byte"},  []string{"Uint","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uintInitMethod6.PrimitiveCode = builtinInitUintFromByte	
+	
+	uint32InitMethod6, err := RT.CreateMethod("",nil,"initUint32", []string{"i","v"}, []string{"Uint32","Byte"},  []string{"Uint32","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uint32InitMethod6.PrimitiveCode = builtinInitUint32FromByte	
+	
 	
 
 	int32InitMethod, err := RT.CreateMethod("",nil,"initInt32", []string{"i","s"}, []string{"Int32","String"},  []string{"Int32","String"}, false, 0, false)
@@ -1915,6 +1980,27 @@ urlPathPartDecode s > String
 		panic(err)
 	}
 	uint32InitMethod2.PrimitiveCode = builtinInitUint32FromInt
+	
+	
+	
+	byteInitMethod, err := RT.CreateMethod("",nil,"initByte", []string{"i","v"}, []string{"Byte","Int"},  []string{"Byte","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	byteInitMethod.PrimitiveCode = builtinInitByteFromInt	
+
+	byteInitMethod2, err := RT.CreateMethod("",nil,"initByte", []string{"i","v"}, []string{"Byte","Uint"},  []string{"Byte","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	byteInitMethod2.PrimitiveCode = builtinInitByteFromUint
+	
+	byteInitMethod3, err := RT.CreateMethod("",nil,"initByte", []string{"i","v"}, []string{"Byte","Uint32"},  []string{"Byte","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	byteInitMethod3.PrimitiveCode = builtinInitByteFromUint32
+			
 
 	
 	floatInitMethod, err := RT.CreateMethod("",nil,"initFloat", []string{"f","s"}, []string{"Float","String"},  []string{"Float","String"}, false, 0, false)
@@ -4007,6 +4093,113 @@ func builtinStringHashSha256Hex(th InterpreterThread, objects []RObject) []RObje
 }
 
 /*
+at s String i Int > Byte
+"""
+ Return the Byte at the specified index in the String.
+"""
+*/ 
+func builtinStringAt(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	i := int(int64(objects[1].(Int)))	
+	
+    defer stringAtErrHandle(i, s)	
+	b := s[i]
+  
+    return []RObject{Byte(b)}	
+}
+
+
+func stringAtErrHandle(i int, s string) {
+      r := recover()	
+      if r != nil {
+          panic(fmt.Sprintf("Error: index [%d] is out of range. String length is %d.",i,len(s)))
+          // rterr.Stopf("Error: index [%d] is out of range. String length is %d.",i,len(s))
+      }	
+}
+
+/////////////////////////////////////////////////////////////// 
+// Bytes functions
+
+// length in bytes
+
+func builtinBytesLen(th InterpreterThread, objects []RObject) []RObject {
+	obj := objects[0].(Bytes)
+    b := []byte(obj)
+	var val RObject
+	val = Int(int64(len(b)))
+	return []RObject{val}
+}
+
+
+/*
+at bytes Bytes i Int > Byte
+"""
+ Return the Byte at the specified index.
+"""
+*/ 
+func builtinBytesAt(th InterpreterThread, objects []RObject) []RObject {
+	s := []byte(objects[0].(Bytes))
+	i := int(int64(objects[1].(Int)))	
+	
+    defer bytesAtErrHandle(i, s)	
+	b := s[i]
+  
+    return []RObject{Byte(b)}	
+}
+
+
+/*
+set bytes Bytes i Int b Byte
+
+set bytes Bytes i Int b Int
+
+set bytes Bytes i Int b Int32
+
+set bytes Bytes i Int b Uint
+
+set bytes Bytes i Int b Uint32
+"""
+ Set the Byte at the specified index to the value b.
+"""
+*/
+func builtinBytesSet(th InterpreterThread, objects []RObject) []RObject {
+	s := []byte(objects[0].(Bytes))
+	i := int(int64(objects[1].(Int)))	
+    var val byte
+    switch(objects[2].(type)) {
+       case Byte:
+          val = byte(objects[2].(Byte))	
+       case Int:
+          val = byte(int64(objects[2].(Int)))      	
+       case Uint:
+          val = byte(uint64(objects[2].(Uint)))     	
+       case Int32:
+       	  val = byte(int32(objects[2].(Int32)))
+       case Uint32:
+          val = byte(uint32(objects[2].(Uint32)))
+       // TODO Add smaller Integer types	
+    }	
+	
+    defer bytesAtErrHandle(i, s)	
+	s[i] = val
+  
+    return []RObject{}	
+}
+
+
+
+func bytesAtErrHandle(i int, bts []byte) {
+      r := recover()	
+      if r != nil {
+          panic(fmt.Sprintf("Error: index [%d] is out of range. Bytes length is %d.",i,len(bts)))
+          // rterr.Stopf("Error: index [%d] is out of range. Bytes length is %d.",i,len(bts))
+      }	
+}
+
+/////////////////////////////////////////////////////////////// 
+// 
+
+/*
 
 
 sendEmail 
@@ -4780,6 +4973,18 @@ func builtinInitIntFromUint32(th InterpreterThread, objects []RObject) []RObject
 	return []RObject{Int(i),String(errStr)}
 }
 
+/*
+    initInt i Int v Byte > j Int err String
+*/
+func builtinInitIntFromByte(th InterpreterThread, objects []RObject) []RObject {
+    val := byte(objects[1].(Byte))
+
+    // ignore the first Int argument
+    var errStr string
+    i := int64(val)
+	return []RObject{Int(i),String(errStr)}
+}
+
 
 
 /*
@@ -4818,7 +5023,7 @@ func builtinInitInt32FromInt(th InterpreterThread, objects []RObject) []RObject 
 func builtinInitUint(th InterpreterThread, objects []RObject) []RObject {
     valStr := string(objects[1].(String))
 
-    // ignore the first Int argument
+    // ignore the first Uint argument
     var errStr string
     v64, err := strconv.ParseUint(valStr, 0, 64)  
     if err != nil {
@@ -4839,6 +5044,18 @@ func builtinInitUintFromInt(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{Uint(uint64(v)),String(errStr)}
 }
 
+/*
+    initUint i Int v Byte > j Uint err String
+*/
+func builtinInitUintFromByte(th InterpreterThread, objects []RObject) []RObject {
+    val := byte(objects[1].(Byte))
+
+    // ignore the first Int argument
+    var errStr string
+    i := uint64(val)
+	return []RObject{Uint(i),String(errStr)}
+}
+
 
 
 /*
@@ -4847,7 +5064,7 @@ func builtinInitUintFromInt(th InterpreterThread, objects []RObject) []RObject {
 func builtinInitUint32(th InterpreterThread, objects []RObject) []RObject {
     valStr := string(objects[1].(String))
 
-    // ignore the first Int argument
+    // ignore the first Uint32 argument
     var errStr string
     v64, err := strconv.ParseUint(valStr, 0, 32)  
     if err != nil {
@@ -4863,17 +5080,66 @@ func builtinInitUint32(th InterpreterThread, objects []RObject) []RObject {
 func builtinInitUint32FromInt(th InterpreterThread, objects []RObject) []RObject {
     v := int64(objects[1].(Int))
 
-    // ignore the first Uint argument
+    // ignore the first Uint32 argument
     var errStr string
 
 	return []RObject{Uint32(uint32(v)),String(errStr)}
+}
+
+/*
+    initUint32 i Int v Byte > j Uint err String
+*/
+func builtinInitUint32FromByte(th InterpreterThread, objects []RObject) []RObject {
+    val := byte(objects[1].(Byte))
+
+    // ignore the first Int argument
+    var errStr string
+    i := uint32(val)
+	return []RObject{Uint32(i),String(errStr)}
+}	
+
+
+/*
+    initByte i Byte v Int > j Byte err String
+*/
+func builtinInitByteFromInt(th InterpreterThread, objects []RObject) []RObject {
+    v := int64(objects[1].(Int))
+
+    // ignore the first Byte argument
+    var errStr string
+
+	return []RObject{Byte(byte(v)),String(errStr)}
+}
+
+/*
+    initByte i Byte v Uint > j Byte err String
+*/
+func builtinInitByteFromUint(th InterpreterThread, objects []RObject) []RObject {
+    v := uint64(objects[1].(Uint))
+
+    // ignore the first Byte argument
+    var errStr string
+
+	return []RObject{Byte(byte(v)),String(errStr)}
+}
+
+/*
+    initByte i Byte v Uint32 > j Byte err String
+*/
+func builtinInitByteFromUint32(th InterpreterThread, objects []RObject) []RObject {
+    v := uint32(objects[1].(Uint32))
+
+    // ignore the first Byte argument
+    var errStr string
+
+	return []RObject{Byte(byte(v)),String(errStr)}
 }
 
 
 
 
 
-
+	
 
 
 

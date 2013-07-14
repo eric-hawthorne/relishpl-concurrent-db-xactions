@@ -262,8 +262,10 @@ func (t *RType) Zero() RObject {
 /*
     case Uint16Type:
     	z = Uint16(0)
+*/
     case ByteType:
     	z = Byte(0)    	
+/*
     case BitType:
     	z = Bit(0)
 */
