@@ -275,8 +275,8 @@ Int16 &lt;: Integer                 16-bit signed integer
 Int8 &lt;: Integer                  8-bit signed integer</span>
 Uint &lt;: Integer                  64-bit unsigned integer
 Uint32 &lt;: Integer                32-bit unsigned integer<span class="future">
-Uint16 &lt;: Integer                16-bit unsigned integer
-Byte &lt;: Integer                  8-bit unsigned integer
+Uint16 &lt;: Integer                16-bit unsigned integer</span>
+Byte &lt;: Integer                  8-bit unsigned integer<span class="future">
 Bit &lt;: Integer                   1-bit unsigned integer</span>
 Bool &lt;: RelishPrimitive          Boolean logical type (true,false)
 Real &lt;: Numeric                  Abstract supertype of all floating-point numeric types
@@ -288,7 +288,9 @@ Complex32 &lt;: ComplexNumber       Complex number consisting of two 32-bit Floa
 
 Text &lt;: RelishPrimitive          Abstract supertype of all text data types
 CodePoint &lt;: Text                A 32-bit unsigned integer representing a Unicode codepoint</span>	 
-String &lt;: Text                   immutable byte-array representing UTF-8 encoded CodePoints.<span class="future">			
+String &lt;: Text                   immutable byte-array representing UTF-8 encoded CodePoints
+Slice &lt;: RelishPrimitive         Abstract supertype of all array-slice types	
+Bytes &lt;: Slice                   byte-array<span class="future">			
 Callable &lt;: RelishPrimitive      Abstract supertype of all function types
 MultiMethod &lt;: Callable          A set of methods in a namespace that share the same name
 Method &lt;: Callable               An executable function implementation
@@ -520,12 +522,22 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
 </p>
 <code><pre>
    i = 3654  // The literal creates a value of type Int
+
    j err = Int32 i
    k err = Uint i
    m err = Uint32 i
+
    i2 err = Int j
    i3 err = Int k
    i4 err = Int m
+
+   b err = Byte i
+   b2 err = Byte k
+   b3 err = Byte m
+
+   k2 err = Uint b
+   m2 err = Uint32 b
+   i5 err = Int b
 </pre></code>
 <p>
   Note that the error will never be set (never be non "") in these particular converters.
@@ -2151,12 +2163,45 @@ len s String > Int
 """	
 
 
+at s Strings i Int > Byte
+"""
+ Return the byte-value at index i in the String. 0 &lt;= i &lt; len s
+"""
+
+
 debug val Any > string
 """
  If val is a primitive value, returns the standard String representation of it, 
  If a structured object, returns a string representation of innards/implementation-details of the object 
  for debugging purposes, including its uuid and dbid if applicable, and its memory address.
  If a collection, also returns the length (number of elements) currently in the collection.
+"""
+
+
+
+
+// Bytes methods
+	
+len bytes Bytes > Int
+"""
+ Returns the number of bytes in the byte-slice.
+"""	
+
+
+at bytes Bytes i Int > Byte
+"""
+ Return the byte-value at index i in the byte-slice. 0 &lt;= i &lt; len bytes
+"""
+
+
+set bytes Bytes i Int b Byte
+set bytes Bytes i Int b Int	
+set bytes Bytes i Int b Int32
+set bytes Bytes i Int b Uint
+set bytes Bytes i Int b Uint32
+"""
+ Set the byte-value at index i in the byte-slice. 0 &lt;= i &lt; len bytes
+ First converts the last argument to Byte using truncation to least significant byte if necessary.
 """
 
 </pre></code>	
