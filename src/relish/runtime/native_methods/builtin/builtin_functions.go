@@ -1637,6 +1637,27 @@ urlPathPartDecode s > String
 		panic(err)
 	}
 	bytesSetMethod.PrimitiveCode = builtinBytesSet
+
+
+    // sub-array or slice
+/*
+	slice b Bytes start Int > Bytes
+*/
+    bytesSlice2Method, err := RT.CreateMethod("",nil,"slice", []string{"s", "start"}, []string{"Bytes", "Int"}, []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesSlice2Method.PrimitiveCode = builtinBytesSlice	
+	
+/*
+	slice b Bytes start Int end Int > String
+*/	
+    bytesSlice3Method, err := RT.CreateMethod("",nil,"slice", []string{"s", "start", "end"}, []string{"Bytes", "Int", "Int"}, []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	bytesSlice3Method.PrimitiveCode = builtinBytesSlice	
+
 		
 	
     ///////////////////////////////////////////////////////////////////
@@ -4195,6 +4216,28 @@ func bytesAtErrHandle(i int, bts []byte) {
           // rterr.Stopf("Error: index [%d] is out of range. Bytes length is %d.",i,len(bts))
       }	
 }
+
+
+/*
+Counts in bytes.
+NOTE!! that byte slices are not currently persistable, so
+this method creates a Bytes that re-uses the memory of the argument Bytes.
+*/
+func builtinBytesSlice(th InterpreterThread, objects []RObject) []RObject {
+	s := []byte(objects[0].(Bytes))
+	start := int(objects[1].(Int))
+	length := len(s)
+	end := length
+	if len(objects) == 3 {
+		end = int(objects[2].(Int))
+		if end < 0 {
+			end = length + end
+		}
+	}
+	substr := s[start:end]
+    return []RObject{Bytes(substr)}
+}
+
 
 /////////////////////////////////////////////////////////////// 
 // 
