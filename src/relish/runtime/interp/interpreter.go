@@ -1165,7 +1165,12 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod, file rterr.CodeFileLoc
 	t.ExecutingMethod = method       // Shortcut for dispatch efficiency
 	t.ExecutingPackage = method.Pkg  // Shortcut for dispatch efficiency
 
-    nArgs := t.Pos - t.Base - 3
+    nArgs := t.Pos - t.Base - 2
+
+    // t.Dump()
+    // fmt.Println("len(t.Stack)",len(t.Stack))
+    // fmt.Println("nArgs",nArgs)
+    // fmt.Println("t.Pos", t.Pos)
 
     evaluatedArgs := t.TopN(nArgs) 
 
