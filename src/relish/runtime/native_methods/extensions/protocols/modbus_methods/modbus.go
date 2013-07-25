@@ -34,7 +34,7 @@ func InitModbusMethods() {
    //    values []Uint32 // should be []Uint16
    // >
    //    pdu Bytes
-   writeMultipleRegistersMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"writeMultipleRegisters", []string{"modbus","addr","values"}, []string{"gait.bcit.ca2012/protocols/pkg/modbus/Modbus","Uint32","List_of_Uint32"}, []string{"Bytes"}, false, 0, false)
+   writeMultipleRegistersMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"writeMultipleRegisters", []string{"modbus","addr","values"}, []string{"gait.bcit.ca2012/protocols/pkg/modbus/Modbus","Uint32","List_of_Uint"}, []string{"Bytes"}, false, 0, false)
    if err != nil {
       panic(err)
    }
@@ -62,6 +62,53 @@ func InitModbusMethods() {
       panic(err)
    }
    diagnosticMethod.PrimitiveCode = diagnostic
+
+   // query
+   //    mb Modbus
+   //    command Bytes
+   // >
+   //    response Bytes
+   //    err String  
+   queryMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"query", []string{"mb","command"}, []string{"gait.bcit.ca2012/protocols/pkg/modbus/Modbus","Bytes"}, []string{"Bytes","String"}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   queryMethod.PrimitiveCode = query
+
+
+   //--------------------------------------------------------------
+   // Encoding Methods
+
+   // toWord
+   //    num Int32
+   // >
+   //    upper Byte
+   //    lower Byte
+   toWordMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"toWord", []string{"num"}, []string{"Int32"}, []string{"Bytes","Byte"}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   toWordMethod.PrimitiveCode = toWord
+
+   // toInt
+   //    arr Bytes
+   // >
+   //    num Int32
+   toIntMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"toInt", []string{"arr"}, []string{"Bytes"}, []string{"Int32"}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   toIntMethod.PrimitiveCode = toInt
+
+   // toInt
+   //    arr Bytes
+   // >
+   //    num Int32
+   toInt2301Method, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"toInt2301", []string{"arr"}, []string{"Bytes"}, []string{"Int32"}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   toInt2301Method.PrimitiveCode = toInt2301
 
 
    //--------------------------------------------------------------
@@ -203,6 +250,67 @@ func diagnostic(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+// query
+//    mb Modbus
+//    command Bytes
+// >
+//    response Bytes
+//    err String
+func query(th InterpreterThread, objects []RObject) []RObject {
+   
+   wrapper := objects[0].(*GoWrapper)
+   command := objects[1].(Bytes)
+   c := ([]byte)(command)
+   mb := wrapper.GoObj.(modbus.Modbus)
+   response, err := modbus.Query(mb, c) //modbus package function, not a function of a modbus object
+   errStr := ""
+   if err != nil {
+      errStr = err.Error()
+   }   
+   return []RObject{Bytes(response),String(errStr)}
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Encoding functions
+
+
+// toWord
+//    num Int32
+// >
+//    upper Byte
+//    lower Byte
+func toWord(th InterpreterThread, objects []RObject) []RObject {
+   
+   num := int32(objects[0].(Int32))
+   upper, lower := modbus.ToWord(num)
+   return []RObject{Byte(upper),Byte(lower)}
+}
+
+// toInt
+//    arr Bytes
+// >
+//    num Int32
+func toInt(th InterpreterThread, objects []RObject) []RObject {
+   
+   arr := objects[0].(Bytes)
+   a := ([]byte)(arr)
+   num := modbus.ToInt(a)
+   return []RObject{Int32(num)}
+}
+
+// toInt2301
+//    arr Bytes
+// >
+//    num Int32
+func toInt2301(th InterpreterThread, objects []RObject) []RObject {
+   
+   arr := objects[0].(Bytes)
+   a := ([]byte)(arr)
+   num := modbus.ToInt_2301(a)
+   return []RObject{Int32(num)}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // ModbusTcp functions
 
@@ -291,7 +399,7 @@ func initModbusTcp(th InterpreterThread, objects []RObject) []RObject {
 
    addressMode := string(objects[1].(String))   
    queryTimeout := uint64(objects[2].(Uint))    
-   queryRetries := uint32(objects[3].(Uint32))    
+   queryRetries := uint32(objects[3].(Uint32))
 
    modbusTcp := modbus.MakeModbusTCP( addressMode, queryTimeout, queryRetries )
 
