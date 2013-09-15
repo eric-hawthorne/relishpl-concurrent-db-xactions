@@ -143,7 +143,7 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 
 	
 	// TODO %4d or whatever v0014
-	url = fmt.Sprintf("%s/relish/artifacts/%s/v%s.zip",hostUrl,originAndArtifactPath,version)
+	url = fmt.Sprintf("%s/relish/artifacts/%s/v%04d.zip",hostUrl,originAndArtifactPath,version)
 	
 	resp, err := http.Get(url)
 	if err != nil {

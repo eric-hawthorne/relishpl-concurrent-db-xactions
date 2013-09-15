@@ -54,7 +54,7 @@ func (d *dispatcher) GetMethod(mm *RMultiMethod, args []RObject) (*RMethod,*RTyp
    return method,typeTuple
 }
 
-
+	
 
 /*
 Special, degenerate case when we know there is only a single method implementation associated with the multimethod.
