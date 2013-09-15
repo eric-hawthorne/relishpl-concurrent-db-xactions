@@ -307,11 +307,23 @@ func main() {
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
 
+	sourcCodeShareDir := ""
+	if sharePort != 0 {
+	    // sourceCodeShareDir hould be the "relish/shared" 
+	    // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
+		sourceCodeShareDir = relishRoot + "/shared"
+	}
+	
 	if webListeningPort != 0 {
 	   if webListeningPort < 1024 && webListeningPort != 80 && webListeningPort != 443 {
 			fmt.Println("Error: The web listening port must be 80, 443, or > 1023")
 			return		
-	   }	
+	   }
+	
+       if sharePort != webListeningPort && sharePort != 0 && sharePort < 1024 && sharePort != 80 && sharePort != 443 {
+	  	  fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+		  return		
+       }		
 	
        err = loader.LoadWebPackages(originAndArtifact, version, runningArtifactMustBeFromShared)	
 	   if err != nil {
@@ -325,7 +337,27 @@ func main() {
 	
 	   go g.Interp.RunMain(fullUnversionedPackagePath)
 	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
-	   web.ListenAndServe(webListeningPort)
+	  
+	   if sharePort == webListeningPort {
+	      web.ListenAndServe(webListeningPort, sourceCodeShareDir)
+	   } else {
+          if sharePort != 0 {
+	         web.ListenAndServeSourceCode(sharePort, sourceCodeShareDir) 
+	      }			
+	      web.ListenAndServe(webListeningPort, "")	
+	   }
+	
+	} else if sharePort != 0 {
+	   if sharePort < 1024 && sharePort != 80 && sharePort != 443 {
+			fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+			return		
+	   }		
+	
+	   go g.Interp.RunMain(fullUnversionedPackagePath)	
+
+       web.ListenAndServeSourceCode(sharePort, sourceCodeShareDir) 	
+
+	
 	} else {
 	   g.Interp.RunMain(fullUnversionedPackagePath)
 	}

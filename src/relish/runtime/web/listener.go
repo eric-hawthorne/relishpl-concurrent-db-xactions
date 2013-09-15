@@ -1053,9 +1053,28 @@ func underscoresToCamelCase(s string) string {
 	return cs
 }
 
-func ListenAndServe(portNumber int) {
+/*
+  Starts up relish web app serving on the specified port.
+  If sourceCodeShareDir is not "" it should be the "relish/shared" 
+  or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory. 
+  In that case, also serves source code from the shared directory tree.
+*/
+func ListenAndServe(portNumber int, sourceCodeShareDir string) {
+	if sourceCodeShareDir != "" {
+		http.Handle("/relish", http.FileServer(http.Dir(sourceCodeShareDir + "/relish")))
+	}
     http.HandleFunc("/", handler)
     http.ListenAndServe(fmt.Sprintf(":%d",portNumber), nil)
+}
+
+/*
+  Starts up relish shared source code serving on the specified port.
+  sourceCodeShareDir should be the "relish/shared" 
+  or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory. 
+  It is specifying the root directory of the shared source code tree.
+*/
+func ListenAndServeSourceCode(portNumber int, sourceCodeShareDir string) {
+    http.ListenAndServe(fmt.Sprintf(":%d",portNumber), http.FileServer(http.Dir(sourceCodeShareDir)))
 }
 
 
