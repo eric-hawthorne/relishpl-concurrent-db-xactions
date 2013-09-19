@@ -31,6 +31,31 @@ which chooses the current version as specified in some/artifact/path/metadata.tx
   true authoritative current version of the artifact. 
 
 
+Command line options:
+
+-log 1|2    The logging level: 1 (some debugging info), 2 more. Very minimal logging of key runtime events if not supplied.
+
+-web <port#>  The http listening port - if not supplied, does not listen for http requests
+
+
+
+-db <dbname>  The database name. A SQLITE database file called <dbname>.db will be created/used in artifact data directory.
+              Defaults to db1   i.e. db1.db	
+
+-cpuprofile <filepath>.prof  Write cpu profile to file. Then use go tool pprof /opt/devel/relish/bin/relish somerun.prof 
+
+
+-publish origin/artifact [version#]    Copies to shared/relish/artifacts directory tree   - served if sharing
+
+-makecurrent origin/artifact version#
+
+-share <port#> Serve source code (contents of the shared directory) on the specified port. Port should be 80
+               or failing that 8421, or, if behind apache2 modproxy, any other port is fine but apache2 should
+               present it as port 80 or port 8421. It is ok for the share port to be the same as the web port.
+
+
+
+
 */
 package main
 
@@ -47,6 +72,7 @@ import (
 		"relish/runtime/web"	  
 		"relish/dbg"
 		"relish/global_loader"
+		"relish/global_publisher"		
 		"regexp"
 		"strconv"
 		"runtime/pprof"
@@ -59,10 +85,12 @@ var reVersionedPackage *regexp.Regexp = regexp.MustCompile("/v([0-9]{4})/pkg/")
 func main() {
     var loggingLevel int
     var webListeningPort int
+    var shareListeningPort int  // port on which source code will be shared by http    
     var sharedCodeOnly bool  // do not use local artifacts - only those in shared directory.
     var runningArtifactMustBeFromShared bool
     var dbName string 
     var cpuprofile string
+    var publish bool
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
@@ -73,14 +101,18 @@ func main() {
  
     flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 
+	flag.IntVar(&shareListeningPort, "share", 0, "The code sharing http listening port - if not supplied, does not listen for source code sharing http requests")	    
 
+    flag.BoolVar(&publish, "publish", false, "artifactpath version - copy specified version of artifact to shared/relish/artifacts")
 
 
 
     flag.Parse()
 
 
-    pathParts := flag.Args() // full path to package, or originAndArtifact and path to package
+    pathParts := flag.Args() // full path to package, or originAndArtifact and path to package 
+                             // (or originAndArtifact and version number if -publish)
+
 
     if cpuprofile != "" {
         f, err := os.Create(cpuprofile)
@@ -94,7 +126,11 @@ func main() {
 
    	dbg.InitLogging(int32(loggingLevel))
 	//relish.InitRuntime("relish.db")
-    builtin.InitBuiltinFunctions()	
+    
+    if ! publish {
+    	builtin.InitBuiltinFunctions()	
+	}
+
 	var g *generator.Generator
 	
 	var relishRoot string  // This actually has to be the root of the runtime environment
@@ -133,7 +169,7 @@ func main() {
 	   }
     }    
 
-	if relishRoot != "" {   
+	if relishRoot != "" && ! publish {   
        match := reVersionedPackage.FindStringSubmatchIndex(workingDirectory)
        if match != nil {
 	      versionStr := workingDirectory[match[2]:match[3]]
@@ -190,10 +226,6 @@ func main() {
 		        fmt.Printf("RELISH_HOME directory '%s' does not exist\n")
 		        return	
 	         }	
-
-
-
-
 				
 	    } else { // RELISH_HOME not defined. Try standard locations.
 			var relishRoots []string
@@ -236,6 +268,28 @@ func main() {
 		return		
 	}
 	
+
+    if publish {
+       if len(pathParts) < 2 {
+          fmt.Println("Usage (example): relish -publish somorigin.com2013/artifact_name 103")
+          return
+       }
+	   originAndArtifact = pathParts[0]
+	   versionStr := pathParts[1]
+	      
+       v64, err := strconv.ParseInt(versionStr, 0, 32)  
+	   if err != nil {
+		  fmt.Println(err)
+          return  
+       }
+	   version := int(v64)	
+
+       global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
+
+       return
+    }
+
+
 	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db")
 	
 	
@@ -307,8 +361,8 @@ func main() {
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
 
-	sourcCodeShareDir := ""
-	if sharePort != 0 {
+	sourceCodeShareDir := ""
+	if shareListeningPort != 0 {
 	    // sourceCodeShareDir hould be the "relish/shared" 
 	    // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
 		sourceCodeShareDir = relishRoot + "/shared"
@@ -320,7 +374,7 @@ func main() {
 			return		
 	   }
 	
-       if sharePort != webListeningPort && sharePort != 0 && sharePort < 1024 && sharePort != 80 && sharePort != 443 {
+       if shareListeningPort != webListeningPort && shareListeningPort != 0 && shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
 	  	  fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
 		  return		
        }		
@@ -338,24 +392,24 @@ func main() {
 	   go g.Interp.RunMain(fullUnversionedPackagePath)
 	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
 	  
-	   if sharePort == webListeningPort {
+	   if shareListeningPort == webListeningPort {
 	      web.ListenAndServe(webListeningPort, sourceCodeShareDir)
 	   } else {
-          if sharePort != 0 {
-	         web.ListenAndServeSourceCode(sharePort, sourceCodeShareDir) 
+          if shareListeningPort != 0 {
+	         web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
 	      }			
 	      web.ListenAndServe(webListeningPort, "")	
 	   }
 	
-	} else if sharePort != 0 {
-	   if sharePort < 1024 && sharePort != 80 && sharePort != 443 {
+	} else if shareListeningPort != 0 {
+	   if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
 			fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
 			return		
 	   }		
 	
 	   go g.Interp.RunMain(fullUnversionedPackagePath)	
 
-       web.ListenAndServeSourceCode(sharePort, sourceCodeShareDir) 	
+       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 	
 
 	
 	} else {

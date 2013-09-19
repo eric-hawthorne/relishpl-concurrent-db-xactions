@@ -1576,7 +1576,7 @@ urlPathPartDecode s > String
 	
 	
 	/*
-	    returns a String - the base64-encoded sha25 hash of the input argument String.
+	    returns a String - the base64-encoded sha256 hash of the input argument String.
 	*/
 	stringBase64HashMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"base64Hash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
@@ -1585,7 +1585,7 @@ urlPathPartDecode s > String
 	stringBase64HashMethod.PrimitiveCode = builtinStringHashSha256Base64		
 
 	/*
-	    returns a String - the hexadecimal-encoded sha25 hash of the input argument String.
+	    returns a String - the hexadecimal-encoded sha256 hash of the input argument String.
 	*/
 	stringHexHashMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"hexHash", []string{"s"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {

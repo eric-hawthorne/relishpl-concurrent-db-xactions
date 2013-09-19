@@ -14,846 +14,472 @@ import (
     "io"
 	"bytes"
     "strings"
-    "strconv"
+//    "strconv"
     "os"
 //	. "relish/runtime/data"
-    "relish/compiler/ast"
-    "relish/compiler/parser"
-    "relish/compiler/token"
-	"relish/compiler/generator"
-	"relish"
+//    "relish/compiler/ast"
+//    "relish/compiler/parser"
+//    "relish/compiler/token"
+//	"relish/compiler/generator"
+//	"relish"
     "archive/zip"	
-    . "relish/dbg"
+//    . "relish/dbg"
+
+    "crypto/sha256"
+    "encoding/base64"    
 )
 
-
-func ZipDir(directoryPath string, zipFilePath string) {
-	
-}
-
-
-
-
-
-type Loader struct {
-	RelishRuntimeLocation string
-	LoadedArtifacts map [string]int  // map from originAndArtifactPath to loaded version number	
-    LoadedArtifactKnownToBeLocal map[string]bool // was/is being loaded from local artfcts repo
-    LoadedArtifactKnownToBeShared map[string]bool // was/is being loaded from shared artfcts repo 
-
-
-	LoadedPackages map [string]int  // map from originAndArtifactPath/pkg/packagePath to loaded version number
-	PackagesBeingLoaded map [string]bool  // map from originAndArtifactPath/pkg/packagePath to whether it is in the middle of loading	
-	PackageLocalId map [string] string // map from originAndArtifactPath/pkg/packagePath to local id (short name) of package
-	LocalIdPackage map [string] string // map from local id (short name) of package to package full path.
-    SharedCodeOnly bool // if true, do not consider the local artifacts dir tree to find any code, only shared/relish/artifacts
-    DatabaseName string // name, not full path, of SQLITE database file.
-}
-
-//
-// Note: Need in each relish database a Packages table with fields id and name.
-// Need to load this at program initialization time.
-//
-
 /*
-Construct and return an artifact loader.
-Params:
-   relishRuntimeLocation = the directory which is the root of the relish runtime directories; i.e.
-   the root of where relish code artifacts can be expected to reside on the computer. Path must end in relish or in relish/rt
-   e.g. /opt/relish or /opt/relish/rt
+Remove the existing shared copy of the version of the artifact (in a failsafe manner).
+Copy source code for the version of the package to the shared sourcecode tree.
+Create a zip file of the version of the artifact. 
+Wrap that with another zip file which will eventually contain a certificate 
+of the origin's public key, and a signature of (the SHA256 hash of) the inner zip file contents.
+Name the outer zip file by an unambiguous name corresponding to the version of the artifact from the origin.
+Check to see if there is a metadata file in the shared directory for the artifact.
+If no metadata file in shared, add it. Metadata file name should again be fully qualified unambiguous name,
+to ensure findability by Google search. Or the content should contain a standard findable title like
+"Relish Artifact Metadata".
+Note that the metadata.txt file should eventually also include,
+below its meaningful text content, a certificate of the origin's public key, and a signature of (the SHA256 hash of)
+the meaningful content.
+Should copy local artifact version directory tree that was published to create the next version to continue work on.
+
+Note about signed code plans
+============================
+The plan is to have every copy of relish include the public key of shared.relish.pl.
+This key can be directly compared manually at any time with the public key published at the site shared.relish.pl.
+
+Each code-origin owner who wants to officially publish relish code should register their origin at shared.relish.pl
+and should receive back both 
+1) a certificate (signed by shared.relish.pl and verifiable with shared.relish.pl's public key)
+   where such certificate attests to the association between another public key and the origin name.
+2) The actual origin public key
+3) A corresponding private key.
+
+The origin owner should keep their private key secret but install it in a standard place
+within their relish development environment so that their relish instance can use it to sign code.
+
+The origin owner should also keep their certificate of their public key installed at a standard place
+in their relish development environment, so they can include that cert in signed-code outer zip files.
+The certified public key should actually be published at a standard place in the canonical server
+for the origin, and also at shared.relish.pl. This is so that such a key can periodically be verified
+as being a currently valid one.
+
+Note: If the private key is stolen, someone else can produce code signed as coming from your origin,
+so maybe the same password used to sign up to register your origin should serve as a decryption key
+for a symmetrically encrypted version of the private key. So you would be prompted to enter the password
+when publishing (and signing) some code.
+
+If not using encrypted private key, then if it is discovered that the key has been stolen (e.g. some code
+fraudulently claiming to be from the origin is discovered), then a solution would be to apply for a 
+new public key for the origin, and re-publish all legitimate code signed by the new key.
+
+Periodically, a imported-code-using instance of relish should re-verify (at the canonical server or shared.relish.pl)
+that the public key that is signing each of their imported artifacts is still the valid public key for the origin.
+
+Perhaps shared.relish.pl can contain a timestamp of when the most recent re-keying incident happened,
+and relish instances can periodically check that to see if re-verification of origin public-keys, and
+possible redownloading of re-signed code artifacts is necessary. 
+
 */
-func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string) *Loader {
+func PublishSourceCode(relishRoot string, originAndArtifact string, version int) {
+   localArtifactPath := relishRoot + "/artifacts/" + originAndArtifact + "/"
+   sharedArtifactPath := relishRoot + "/shared/relish/artifacts/" + originAndArtifact + "/"
 
-	ldr := &Loader{relishRuntimeLocation,make(map[string]int),make(map[string]bool),make(map[string]bool),make(map[string]int),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
-	return ldr
-}
+   // Check if metadata.txt file exists in shared. If not, create it by copying local metadata.txt file
 
+   sharedMetadataPath := sharedArtifactPath + "metadata.txt"
+   _,err := os.Stat(sharedMetadataPath)    
+   if err != nil {
+        if os.IsNotExist(err) {
 
+           err = os.MkdirAll(sharedArtifactPath,0777)       
+           if err != nil {
+              fmt.Printf("Error making shared artifact directory %s: %s\n", sharedArtifactPath,err)
+              return 
+           }  
 
-func (ldr *Loader) LoadWebPackages (originAndArtifactPath string, version int, mustBeFromShared bool) (err error) {
-
-    err = ldr.loadPackageTree(originAndArtifactPath, version, "web", mustBeFromShared)
-    return
-}
-
-/*
-Load the specified package and, recursively, all packages found in sub directories of the package src directory.
-Currently used only to pre-load the web dialog handler packages.
-*/
-func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (err error) {
-
-    _, err = ldr.LoadPackage(originAndArtifactPath, version, packagePath, mustBeFromShared)
-    if err != nil {
-	    return
-    }
-    // Now load web subdir packages.
-
-    if version == 0 {
-	   version = ldr.LoadedArtifacts[originAndArtifactPath]
-    }
-
-    versionStr := fmt.Sprintf("/v%04d",version)
-    artifactVersionDir := ldr.artifactDirPath(originAndArtifactPath) + versionStr
-
-    packageSourcePath := artifactVersionDir + "/src/" + packagePath 
-
-    // Read the filenames of sub directories in the /src/... package directory
-
-    sourceDirFile, err := os.Open(packageSourcePath) 
-    if err != nil {
-      return
-    }
-    defer sourceDirFile.Close()
-
-    filenames,err := sourceDirFile.Readdirnames(-1) 
-    if err != nil {
-	   return
-    }
-
-    parentPackagePath := packagePath
-	for _,filename := range filenames {
-	
-	    if ! strings.Contains(filename,".") { // discard relish source files and other rubbish in the dir.
-		
-	       // TODO add in here the on-demand compilation as found in relish.go
-	       // Doing it NOW!!
-	       subDirFilePath := packageSourcePath + "/" + filename	
-
-	       subDirFileInfo,statErr := os.Stat(subDirFilePath)	
-	       if statErr != nil {
-	           if ! os.IsNotExist(statErr) {
-			   	  err = fmt.Errorf("Can't stat relish source directory or file '%s': %v\n", subDirFilePath, statErr)
-			  	  return		       
-	           }
-	       } else if subDirFileInfo.IsDir() {
-	
-               packagePath = parentPackagePath + "/" + filename
-                  err = ldr.loadPackageTree (originAndArtifactPath , version, packagePath, mustBeFromShared)	
-		       if err != nil {
-			      return
-		       }	 
+           localMetadataPath := localArtifactPath + "metadata.txt"
+           var content []byte
+           content, err = ioutil.ReadFile(localMetadataPath)
+           if err != nil {
+             return
            }
-       }
-    }
-    return
-}
-
-/*
-Given the full path name of a loaded package, return the filesystem path of the directory
-which contains the source code files and subdir package directories.
-*/
-func (ldr *Loader) PackageSrcDirPath(fullPackagePath string) string {
-	version := ldr.LoadedPackages[fullPackagePath]
-	
-	pkgPos := strings.Index(fullPackagePath,"/pkg/")
-	originAndArtifactPath := fullPackagePath[:pkgPos]
-	packagePath := fullPackagePath[pkgPos + 5:]
-	
-    versionStr := fmt.Sprintf("/v%04d",version)
-    artifactVersionDir := ldr.artifactDirPath(originAndArtifactPath) + versionStr	
-    packageSrcPath := artifactVersionDir + "/src/" + packagePath
-	return packageSrcPath
-}
-
-/*
-Given an originAndArtifactPath path segment, return the full filesystem path to the artifact directory
-that the artifact was loaded from (either local private artifacts dir or shared artifacts dir).
-Requires that at least one package from the artifact has been started to be loaded before this is called.
-*/
-func (ldr *Loader) artifactDirPath(originAndArtifactPath string) string {
-    var artifactsRepoPathSegment string
-    if ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] { // was loaded from local artfcts repo
-       artifactsRepoPathSegment = "/artifacts/"
-    } else {
-       artifactsRepoPathSegment = "/shared/relish/artifacts/"
-    }
- 
-
-    return ldr.RelishRuntimeLocation + artifactsRepoPathSegment + originAndArtifactPath
-}
-
-/*
-Return the database file path to use for this artifact in this run of relish interpreter.
-If the artifact was loaded from local (private) artifact dir tree, 
-a path like /opt/relish/rt/data/origin/artifact/<databaseName>.db will be used.
-otherwise if the artifact was loaded from shared artifact dir tree,
-a path like /opt/relish/rt/data_for_shared/origin/artifact/<databaseName>.db will be used.
-*/
-func (ldr *Loader) databaseDirPath(originAndArtifact string) string {
-    var dataPathSegment string
-    if ldr.LoadedArtifactKnownToBeLocal[originAndArtifact] { // was loaded from local artfcts repo
-       dataPathSegment = "/data/"
-    } else {
-       dataPathSegment = "/data_for_shared/"
-    }
-    return ldr.RelishRuntimeLocation + dataPathSegment + originAndArtifact 
-}
-
-
-var parserDebugMode uint = parser.DeclarationErrors
-
-
-
-
-
-
-/*
-Functions which load relish abstract syntax trees (intermediate code) into memory.
-
-These functions rely on mandatory code locating conventions in relish.
-*/
-
-/*
-Loads the code from the specified package into the runtime.
-
-Recurses to load packages which the argument package depends on.
-
-TODO artifact version preferences are NOT being handled correctly yet.
-What should happen is that all artifacts whose versions "ARE" recursively preferred should have their version preferences
-consulted and respected first (closer to top of load-tree has preference priority) and then and only then should
-a single no-version-preferred artifact be loaded by asking what its latest version is, then re-visit if that constrains other
-formerly no-version-preferred ones, then load newly preferred versions, then load the next no-version-preferred artifact.
-Currently, an artifact version may be loaded in a no-version-preferred way, because the current load-tree descent path does
-not prefer a version, but it could be that a subsequently loaded artifact somewhere else in the load-tree COULD express
-a preference for a different version of the artifact, but its preference is consulted too late, after the artifact is already loaded.  
-
-Handles searching first in a local (private) artifacts repository (directory tree) then a shared artifacts repository,
-but only if a directive is not in effect to load from shared only, and only if another package from 
-the same artifact has not already been loaded, because in that case, the local (private) or shared decision has already
-been made and must apply to subsequent packages loaded from the same artifact.
-
-TODO MD5 sum integrity checks
-*/
-func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (gen *generator.Generator, err error) {
-
-	if Logging(PARSE_) {
-	   parserDebugMode |= parser.Trace
-	}
-
-    // First, see if the package is already loaded. If so, return 
-
-    packageIdentifier := originAndArtifactPath + "/pkg/" + packagePath   
-
-    beingLoaded := ldr.PackagesBeingLoaded[packageIdentifier]
-    if beingLoaded {
-	   err = fmt.Errorf("Package dependency loop. Package '%s' is also present in the tree of packages it imports.",packageIdentifier)	
-	   return	
-    }
-
-    loadedVersion,found := ldr.LoadedPackages[packageIdentifier]
-    if found {
-	   if loadedVersion != version && version != 0 {
-	       err = fmt.Errorf("Can't load version %d of '%s' since version %d is already loaded into runtime.",version,packageIdentifier,loadedVersion)	
-	   }
-	   return
-    }
-
-
-    localArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/artifacts/" + originAndArtifactPath + "/metadata.txt"	
-	
-    sharedArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
-    
-    // Current version of artifact according to shared artifact metadata found in this relish directory tree.
-    sharedCurrentVersion := 0
-
-
-    ldr.PackagesBeingLoaded[packageIdentifier] = true
-
-    Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
-
-    mustBeFromShared = mustBeFromShared || ldr.SharedCodeOnly  // Set whether will consider local code for this package.
-    var mustBeFromLocal bool                 // We may end up constrained to load from local artifact.
-
-
-    // Package is not loaded. But see if any other packages from the same artifact are loaded.
-    // If so, make sure they don't have an incompatible version.
-
-    var artifactAlreadyLoaded bool  // if true, at least one package from the currently-being-loaded artifact has already been loade.
-                                    // This means the needed version of the artifact and the artifacts it depends on have already
-                                    // been loaded from built.txt into LoadedArtifacts map.
-
-    var artifactKnownToBeLocal bool  // if artifact is loaded or being loaded, is it loaded from local 
-    var artifactKnownToBeShared bool // if artifact is loaded or being loaded, is it loaded from shared
-
-    loadedVersion,artifactAlreadyLoaded = ldr.LoadedArtifacts[originAndArtifactPath]
-    if artifactAlreadyLoaded {
-	   if loadedVersion != version && version != 0 {
-	       err = fmt.Errorf("Can't load package '%s' from version %d of '%s'. Another package from version %d of the artifact is already loaded into runtime.",packagePath,version,originAndArtifactPath,loadedVersion)	
-	       return
-	   }
-
-       artifactKnownToBeLocal = ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] 
-       artifactKnownToBeShared = ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]    
-       mustBeFromShared = mustBeFromShared || artifactKnownToBeShared  // Set whether will consider local code for this package.         
-
-       Log(LOAD2_,"%s %s mustBeFromShared=%v\n",originAndArtifactPath,packagePath,mustBeFromShared)
-       if artifactKnownToBeLocal {
-	       if mustBeFromShared {
-	       	   // This should never happen I think. Check anyway.
-		       err = fmt.Errorf("Can't load package '%s' from shared artifact '%s'. Another package from the local copy of the artifact is already loaded into runtime.",packagePath,originAndArtifactPath)	
-		       return       	
-	       } else {
-	       	   mustBeFromLocal = true
-	       } 
-	   }
-    }
-
-    // Now try to load the package from local file system. 
-
-    // If allowed, need to try twice, trying to read from
-    // local artifacts dir tree, then if not found from shared artifacts dir tree.
-
-    //// If no version has been specified, but some version of the artifact exists in local disk,
-    //// the first thing to do is to read the metadata.txt of the local artifact, and set the version number desired
-    //// to the current version as specified by the local artifact copy. Note this could be out of date, but we need a
-    //// different command to go check if there is a later version of the artifact out there and download it. 
-
-    //// If we can find a metadata.txt file for the artifact locally, set the version with it.
-
-
-    if version == 0 {
-
-        if ! mustBeFromShared {
-		
-            version, err = ldr.readMetadataFile(localArtifactMetadataFilePath) 	
-		    if err != nil {
-			   return
-		    }
-		}
-
-        if version == 0 {
-
-        	if mustBeFromLocal {
-        	   // We already loaded a package from the local artifact, but somehow the local artifact is no longer there on filesystem.	
-	       	   // This should never happen if everything is being loaded at once at beginning of run. Check anyway.
-		       err = fmt.Errorf("Can't load package '%s' from local artifact '%s'. Local artifact not found.",packagePath,originAndArtifactPath)	
-		       return               		
-        	}
-
-            version, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath) 	
-		    if err != nil {
-			   return
-		    }		
-			sharedCurrentVersion = version				
-		}
-	}
-
-
-
-
-    // stat the artifact version dir to see if the version of the artifact exists in the filesystem.
-    //
-    // try local then shared artifacts dir trees as allowed by constraints so far
-
-    artifactVersionDirFound := false
-    var artifactVersionDir string
-
-
-    if version > 0 {
-	    versionStr := fmt.Sprintf("/v%04d",version)
-
-        if ! mustBeFromShared {
-
-            // try local artifacts dir tree
-		    artifactVersionDir = ldr.RelishRuntimeLocation + "/artifacts/" + originAndArtifactPath + versionStr
-
-		    _,statErr := os.Stat(artifactVersionDir)
-		    if statErr != nil {
-		        if ! os.IsNotExist(statErr) {
-					err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
-					return		       
-		        }
-
-
-		    } else {
-		        artifactVersionDirFound = true
-		        mustBeFromLocal = true  // locked to local (private) artifact now
-		    }
-	    }
-
-	    if ! artifactVersionDirFound {
-
-           // this version not found in local artifacts dir tree
-	       // try shared artifacts dir tree 
-	       artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + versionStr
-
-	       _,statErr := os.Stat(artifactVersionDir)
-	       if statErr != nil {
-	           if ! os.IsNotExist(statErr) {
-			   	   err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
-				   return		       
-	           }
-	        } else {
-	            artifactVersionDirFound = true
-	            mustBeFromShared = true  // locked to shared artifact now
-	        }
-	    }
+           err = ioutil.WriteFile(sharedMetadataPath, content, 0666)
+           if err != nil {
+              return
+           }              
+        } else {    
+           fmt.Printf("Can't stat  '%s' : %v\n", sharedArtifactPath + "metadata.txt", err)
+           return              
+        }
     } 
+
+   // Note. This does not update the shared metadata.txt file from the local if the shared metadata.txt
+   // file already existed.
+
+   //
+
+   versionPath := fmt.Sprintf("v%04d",version)
+
+   sharedArtifactVersionPath := sharedArtifactPath + versionPath 
+
+   _,err = os.Stat(sharedArtifactVersionPath)    
+   foundVersionShared := false
+   if err != nil {
+        if ! os.IsNotExist(err) {
+           fmt.Printf("Can't stat directory '%s' : %v\n", sharedArtifactVersionPath, err)
+           return              
+        }
+    } else {
+       foundVersionShared = true
+    } 
+    if foundVersionShared {
+        fmt.Printf("%s already exists. Cannot republish the same version.\n",sharedArtifactVersionPath)
+        return 
+    }
+
+    localSrcDirPath := localArtifactPath + versionPath + "/src"  
+    srcDirPath := sharedArtifactVersionPath + "/src"
+
+    // mkdir the version of the shared directory
+
+    err = os.MkdirAll(sharedArtifactVersionPath,0777)
+
+    if err != nil {
+        fmt.Printf("Error making shared artifact version directory %s: %s\n", sharedArtifactVersionPath,err)
+        return 
+    }  
+
+    // Copy source code directory tree to "shared/relish/artifacts" tree root.
+
+    err = copySrcDirTree(localSrcDirPath, srcDirPath)
+    if err != nil {
+        fmt.Printf("Error copying local src dir to create %s: %s\n", srcDirPath,err)
+        return 
+    }   
+    // TBD
+
+    // Zip the source !
+
+
+    srcZipFilePath := sharedArtifactVersionPath + "/src.zip"
+    err = zipSrcDirTree(srcDirPath,srcZipFilePath)
+    if err != nil {
+        fmt.Printf("Error zipping %s: %s\n", srcDirPath,err)
+        return 
+    }
     
 
-    if ! artifactVersionDirFound {
+    // Now have to sign it and put into an outer zip file.
 
-        // TODO Need this path in order to install or update the artifact metadata file from remote, if there is none locally
-        // or if the remote one is more recent.
-        //
-	    // artifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
+    // Real ones TBD - must read from some standard directory in the distribution
+    originPrivateKey := "some dark secret kept private to the origin development server"
+    originPublicKeyCertificate := "This signature and shared.relish.pl public key certifies that xxxxxx is the signed-code-verifying public key for relish code origin x.com2013."
 
-	    // Have not found the artifact version locally. Fetch it from the Internet.
-
-	    // Note: We will always be fetching into the shared artifacts directory tree.
-	    // If programmer wants to copy an artifact version into the local artifacts directory tree to develop/modify it,
-	    // they must currently do that copy separately manually.
-
-	    var zipFileContents []byte
-
-	    hostURL := ldr.DefaultCodeHost(originAndArtifactPath)
-	
-        // Note: The correct order to do things is to load the metadata.txt file from the default host
-        // (if possible) then to search for secondary hosts to get the version zip file, selecting
-        // one AT RANDOM, 
-        // then if all of those (some number of) mirrors fail, get it from the default host
-        // Also, use port 80 then 8088.	
-	
-	    if sharedCurrentVersion == 0 {
-		   sharedCurrentVersion, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath)
-	    }
-	
-        // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
-        // we should download and cache the metadata.txt file from the remote repository.
-        // 
-        // Then, if we do not have a specified version yet, we should set version # from that,
-	
-	    var currentVersion int
-	    // Read remote metadata file. Store it locally if its current version is >= this tree's shared artifact metadata current version.
-	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedArtifactMetadataFilePath) 	
-	    if err != nil {
-		   return   // TODO We are demanding that the metadata be found at the default host.
-		            // Maybe need to backup from that.
-		}
-		if version == 0 {
-			version = currentVersion
-		}
-		
-	    zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
-	    if err != nil {
-		    var hostURLs []string
-		    hostURLs,err = ldr.FindSecondaryCodeHosts(originAndArtifactPath, hostURL)
-		    if err != nil {
-			   return 
-		    }
-		    for _,hostURL = range hostURLs {
-		        zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
-		        if err == nil {
-			       break
-			    }     
-			    // consider logging the missed fetch and or developing a bad reputation for the host.
-		    }
-	    }
-
-	    if zipFileContents == nil {
-		   err = fmt.Errorf("Search of Internet did not find relish software artifact '%s'",originAndArtifactPath)
-		   return
-	    }
-
-       // TODO Unzip the artifact into the proper local directory tree
+    versionStr := fmt.Sprintf("%d",version) // Temporary. Moving to semver.org version conventions.
+    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,versionStr)
+    if err != nil {
+        fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
+        return 
+    } 
+}
 
 
+func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
    
-////////////////////////////////////////////////////////////////////////
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = os.Open(fromSrcDirPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
 
-	   // TODO Unzip the artifact into the proper local directory tree
+   err = os.Mkdir(toSrcDirPath,0777)
 
-	    // TODO TODO Really don't know the artifact version here in some case, (in case there was nothing
-	    // not even a metadata.txt file locally, and no version was specified on command line) so
-	    // we don't have the correct path for artifactVersionDir known yet in that case !!!
-	    // WE DO KNOW IT HAS TO BE A SHARED ARTIFACTS DIR PATH however.
-
-
-
-
-	   //os.MkdirAll(name string, perm FileMode) error
-	   var perm os.FileMode = 0777
-	   err = os.MkdirAll(artifactVersionDir, perm)
-	   if err != nil {
-	      return
-	   }
-
-	   // Open a zip archive for reading.
-	
-	   // Note: Assuming the zip file starts with src/ pkg/ doc/ etc not with v0002/
-
-	   byteSliceReader := bytes.NewReader(zipFileContents) 
-
-       var r *zip.Reader
-	   r, err = zip.NewReader(byteSliceReader, int64(len(zipFileContents)))
-	   if err != nil {
-	      return
-	   }
-
-
-	   // Iterate through the files in the archive,
-	   // copying their contents.
-	   for _, f := range r.File {
-	
-	      fileInfo := f.FileHeader.FileInfo()  
-	      if strings.Index(fileInfo.Name(),"__MACOSX") == 0 {
-		     continue
-	      }
-	      if fileInfo.IsDir() {  
-		      Log(LOAD2_,"Directory %s:\n", f.Name)	
-		      err = os.MkdirAll(artifactVersionDir + "/" + f.Name,perm)
-	          if err != nil {
-	             return
-	          }	
-		  } else {
-		      Log(LOAD2_,"Copying file %s:\n", f.Name)
-		      var rc io.ReadCloser
-		      rc, err = f.Open()
-		      if err != nil {
-		         return
-		      }
-
-              var outFile *os.File
-	          outFile, err = os.Create(artifactVersionDir + "/" + f.Name)  
-	          if err != nil {
-	            return
-	          }
-          
-		      _, err = io.Copy(outFile, rc)
-		      if err != nil {
-		         return
-		      }
-		      rc.Close()
-		      outFile.Close()
-		      Logln(LOAD2_)
-	      }
-	   }
-	}
-		
-    if ! artifactAlreadyLoaded { // Read built.txt from the artifact version directory
-        builtFilePath := artifactVersionDir + "/built.txt"
-	    var builtFileContents []byte
-
-		_,statErr := os.Stat(builtFilePath)
-
-		if statErr == nil {
-
-			builtFileContents, err = ioutil.ReadFile(builtFilePath)	
-			if err != nil {
-				return
-			}
-			
-	        artifactsVersionsStrs := strings.Fields(string(builtFileContents))
-	        n := len(artifactsVersionsStrs)
-	        for i := 0; i < n; i += 2 {
-		       artifactPath := artifactsVersionsStrs[i] 
-		       artifactVersionStr := artifactsVersionsStrs[i+1] 
-		       var v64 int64
-		       v64, err = strconv.ParseInt(artifactVersionStr, 0, 32)  
-			   if err != nil {
-				   return
-			   }
-			   artifactVersion := int(v64)	
-			   alreadyDesiredVersion,versionFound := ldr.LoadedArtifacts[artifactPath]	
-			   if versionFound {
-				   if artifactVersion != alreadyDesiredVersion {
-				      // Should be logging this, not printing it to stdout
-				      Log(ALWAYS_,"Using v%d of %s. %s (v%d) may prefer v%d of %s.\n",alreadyDesiredVersion, artifactPath, originAndArtifactPath, version, artifactVersion, artifactPath)
-			       }
-			   } else {
-			      ldr.LoadedArtifacts[artifactPath] = artifactVersion	
-			   }
-	        }		
-
-        } else if ! os.IsNotExist(statErr) {
-			err = fmt.Errorf("Can't stat '%s': %v\n", builtFilePath, statErr)
-			return		       
-	    }        
-	}	
-
-////////////////////////////////////////////////////////////////////////
-
-	// TODO
-	// Load all the code files in the package of the artifact. 
-	// compile files if necessary?
-	//
-	// record the version of the artifact and package in the loader's registry of loaded packages and artifacts.
-
-    packageSourcePath := artifactVersionDir + "/src/" + packagePath 
-    packageCompiledPath := artifactVersionDir + "/pkg/" + packagePath 
-
-    // Read the filenames of source files etc. in the /src/... package directory
-
-
-    sourceDirFile, err := os.Open(packageSourcePath) 
-    if err != nil {
-      return
-    }
-    defer sourceDirFile.Close()
-
-    filenames,err := sourceDirFile.Readdirnames(-1) 
-    if err != nil {
-	   return
-    }
-
-
-
-    // Create /pkg/ dir tree if does not exist already
-    _,statErr := os.Stat(packageCompiledPath)
-     if statErr != nil {
-         if ! os.IsNotExist(statErr) {
-			 err = fmt.Errorf("Can't stat relish intermediate-code directory '%s': %v\n", packageCompiledPath, statErr)
-			 return		       
-         } 
-	     var perm os.FileMode = 0777
-	     err = os.MkdirAll(packageCompiledPath, perm)
-	     if err != nil {
-	        return
-         }
-     }
-
-
-
-    ldr.LoadedArtifacts[originAndArtifactPath] = version
-
-	ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath] = strings.Contains(artifactVersionDir,"/shared/relish/artifacts/")   
-    Log(LOAD2_,"ldr.LoadedArtifactKnownToBeShared[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath])
-    Logln(LOAD_,"artifactVersionDir="+artifactVersionDir)
-
-
-    ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] = ! ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]	
-
-    
-    if relish.DatabaseURI() == "" {
-       dbDirPath := ldr.databaseDirPath(originAndArtifactPath) 
-
-	   var perm os.FileMode = 0777
-	   err = os.MkdirAll(dbDirPath, perm)
-	   if err != nil {
-	      return
-	   }
-
-       dbFilePath := dbDirPath + "/" + ldr.DatabaseName
-       relish.SetDatabaseURI(dbFilePath)   // TODO NOT TRUE AT ALL YET 
-                                           // This can be overridden with a statement in the program, as long as a persistence op has not been used first.
-    }
-
-    // Collect a map of file nodes to the root of the filename. We will be passing this to the generator to generate runtime
-    // code for the whole package all at once.
-    //
-    astFileNodes := make(map[*ast.File]string)    
-
-    for _,filename := range filenames {
-		var sourceFound bool
-		var pickledFound bool	
-	    if strings.HasSuffix(filename,".rel") { // consider only the relish source files in the dir.
-		// This is actually quite controversial, since it means that source code MUST be present
-		// or we won't bother looking for the compiled file to load.
-		// This is a somewhat political opinionated decision. Will have to be seriously mulled if not pondered.
-			
-           // TODO add in here the on-demand compilation as found in relish.go
-           // Doing it NOW!!
-	       sourceFilePath := packageSourcePath + "/" + filename	
-	
-	       fileNameRoot := filename[:len(filename)-4]
-	
-           pickleFilePath := packageCompiledPath + "/" + fileNameRoot + ".rlc"
-
-
-
-           sourceFileInfo,statErr := os.Stat(sourceFilePath)	
-           if statErr != nil {
-	           if ! os.IsNotExist(statErr) {
-			   	  err = fmt.Errorf("Can't stat relish source file '%s': %v\n", sourceFilePath, statErr)
-			  	  return		       
-	           }
-           } else {
-              sourceFound = true
+   for _, fileInfo := range filesInDir {
+        fromItemPath := fromSrcDirPath + "/" + fileInfo.Name()
+        toItemPath := toSrcDirPath + "/" + fileInfo.Name()    
+        if fileInfo.IsDir() {
+           err = copySrcDirTree(fromItemPath, toItemPath)
+           if err != nil {
+              return
            }
-
-           pickleFileInfo,statErr := os.Stat(pickleFilePath)
-           if statErr != nil {
-	           if ! os.IsNotExist(statErr) {
-				 err = fmt.Errorf("Can't stat relish intermediate-code file '%s': %v\n", pickleFilePath, statErr)
-				 return		       
-	           } 
-           } else {
-              pickledFound = true
+        } else { // plain old file to be copied.
+           if strings.HasSuffix(fileInfo.Name(), ".rel") {
+              var content []byte
+              content, err = ioutil.ReadFile(fromItemPath)
+              if err != nil {
+                 return
+              }
+              err = ioutil.WriteFile(toItemPath, content, 0666)
+              if err != nil {
+                 return
+              }              
            }
-
-           var parseNeeded bool
-           if sourceFound {
-	          if pickledFound {
-		         if sourceFileInfo.ModTime().After(pickleFileInfo.ModTime()) {
-			        parseNeeded = true
-		         }
-	          } else {
-		         parseNeeded = true
-	          }
-           } else if ! pickledFound {
-			  err = fmt.Errorf("Error: Found neither relish source file '%s' nor intermediate-code file '%s'.\n", sourceFilePath, pickleFilePath)
-			  return	
-           }
-
-           var fileNode *ast.File
-           if parseNeeded {	
-              var fset = token.NewFileSet()	
-		  	  fileNode, err = parser.ParseFile(fset, sourceFilePath, nil, parserDebugMode)
-			  if err != nil {
-				 err = fmt.Errorf("Error parsing file '%s': %v\n", sourceFilePath, err)
-				 return
-			  }
-
-	          err = ast.Pickle(fileNode, pickleFilePath) 	
-			  if err != nil {
-				 err = fmt.Errorf("Error pickling file '%s': %v\n", sourceFilePath, err)
-				 return
-			  }
-		   } else { // read the pickled (intermediate-code) file
-
-	          fileNode, err = ast.Unpickle(pickleFilePath) 	
-			  if err != nil {
-				 err = fmt.Errorf("Error unpickling file '%s': %v\n", pickleFilePath, err)
-				 return
-			  }					
-		   }
-
-		
-		   err = ldr.ensureImportsAreLoaded(fileNode)
-	       if err != nil {
-	          return
-	       }		
-		
-		   astFileNodes[fileNode] = fileNameRoot
-//         gen = generator.NewGenerator(fileNode, fileNameRoot) // TODO NOW add a isLocal =ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath]
-                                                                // argument so that we can flag the RPackage object as local or shared.
-//         gen.GenerateCode()	
-
-	       if parseNeeded {
-		      Log(ALWAYS_,"Compiled %s\n", sourceFilePath)		
-		   } 
-		
-	    } // end of if it is a code file.
-    } // end of loop over each file in the package.
-
-    if len(astFileNodes) > 0 {
-       gen = generator.NewGenerator(astFileNodes)
-       gen.GenerateCode()
+        }
     }
-
-
-    ldr.LoadedPackages[packageIdentifier] = version
-
-    delete(ldr.PackagesBeingLoaded,packageIdentifier)
-
-    Log(ALWAYS_,"Loaded %s\n", packageCompiledPath)	
-    
-   return
-}
-  	
-/*
-If a file at the specified path exists, reads the current version info from it.
-If file does not exist, returned version is 0 with no error.
-If not a properly formatted metadata file, returns an error.
-*/
-func (ldr *Loader) readMetadataFile(path string) (currentVersion int, err error) {
-
-	_,statErr := os.Stat(path)
-	if statErr != nil {
-	    if ! os.IsNotExist(statErr) {
-			err = fmt.Errorf("Can't stat '%s': %v\n", path, statErr)
-			return		       
-	    }
-
-	    // did not find the metadata.txt file in the local (private) artifact dir tree
-	    //
-	    // so there is no local (private) artifact
-
-	} else { // found the metadata.txt file in the local (private) artifact dir tree
- 
-	    var body []byte
-		body, err = ioutil.ReadFile(path)	
-		if err != nil {
-			return
-		}
-        currentVersion, err = readCurrentVersion(body, path) 			
-	}
-	return
-}
-
-func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersion int, err error) {
-    match := re.FindSubmatchIndex(metadata)
-    if match == nil {
-       err = fmt.Errorf("%s file must have a line like current version: 14", metadataFilePath)
-       return
-    }
-    versionNumStart := match[2]
-    versionNumEnd := match[3]	
-
-    s := string(metadata[versionNumStart:versionNumEnd])
-
-    var v64 int64
-    v64, err = strconv.ParseInt(s, 0, 32)  
-    if err != nil {
-	   return
-    }
-    currentVersion = int(v64)	
     return
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 /*
-Returns the URL of the default host that should host the artifact.
+  Given a zip file of the source code directory tree, 
+  1. Computes the SHA256 hash of the source code zip file contents, then signs the hash using
+  the private key of the origin.
+  2. Adds 
+     a. the certificate of the origin's public key (including that public key), and
+     b. the signature of the source zip file (which can be verified with that public key)
+     c. the source zip file
+     to an outer (wrapper) zip file that it is creating.
+  3. Writes the wrapper zip file as e.g. a.b.com2013--my_artifact_name--1.0.3.zip to the 
+     shared artifact's root directory.
+
+  NOTE: STEPS 1 and 2. a. b. are TBD !!!! Just re-zips the src.zip file presently.   
 */
-func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) (hostURL string) {
-	hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
-	return hostURL
+func signZippedSrc(srcZipPath string, originPrivateKey string, originPublicKeyCertificate string, sharedArtifactPath string, originAndArtifact string, version string) (err error) {
+   originAndArtifactFilenamePart := strings.Replace(originAndArtifact, "/","--",-1)
+   wrapperFilename := originAndArtifactFilenamePart + "--" + version + ".zip"
+   wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
+ 
+    var srcZipContents []byte
+    srcZipContents, err = ioutil.ReadFile(srcZipPath) 
+    if err != nil {
+        return
+    }
+
+    hasher := sha256.New()
+    hasher.Write(srcZipContents)
+    sha := hasher.Sum(nil)
+    b64 := base64.URLEncoding.EncodeToString(sha) 
+
+    signature := b64 // Temporary - not actually creating a signature here yet
+    // signature = sign(sha, originPrivateKey)
+
+
+    var buf *bytes.Buffer 
+    buf, err = signZippedSrc1(srcZipPath, originPublicKeyCertificate, signature)
+
+
+    var file *os.File
+    file, err = os.Create(wrapperFilePath)
+    if err != nil {
+        return
+    }
+
+    _, err = buf.WriteTo(file)
+    if err != nil {
+        return
+    }
+    err = file.Close();   
+
+    return
 }
-	
-	
+
 /*
-Finds hosts that host the artifact.
-Returns an empty list if there are no such hosts.
-Returns an error if the search service cannot be reached or does not return a valid result page.
-TODO
+   Helper. 
 */
-func (ldr *Loader) FindSecondaryCodeHosts (originAndArtifactPath string, primaryHostURL string) (hostURLs []string, err error) {
-	return hostURLs, nil
-}
+func signZippedSrc1(srcZipPath string, originPublicKeyCertificate string, signature string) (buf *bytes.Buffer, err error) {
+
+   buf = new(bytes.Buffer)
+
+   // Create a new zip archive.
+   w := zip.NewWriter(buf)
+
+   err = signZippedSrc2(w, srcZipPath, originPublicKeyCertificate, signature)
+   if err != nil {
+      return
+   }    
+
+   err = w.Close()
+
+   return
+}   
+
+/*
+   Helper. Write the wrapper zip file using the zip.Writer.
+   
+Are the cert and the signature actually []byte arguments????
+*/
+func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate string, signature string) (err error) {
+
+   var zw io.Writer
+   zw, err = w.Create("src.zip")
+   if err != nil {
+      return
+   }   
+
+   var f *os.File
+   f,err = os.Open(srcZipPath)
+   if err != nil {
+      return
+   }            
+   _, err = io.Copy(zw, f)
+   err = f.Close()   
+   if err != nil {
+      return
+   }      
+
+   zw, err = w.Create("certifiedOriginPublicKey.txt")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(originPublicKeyCertificate))
+   if err != nil {
+      return
+   }
+
+   zw, err = w.Create("signatureOfSrcZip.txt")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(signature))
+   if err != nil {
+      return
+   }   
+
+   return
+}   
+
+
+
 
 
 /*
-Return the version of the artifact that is to be loaded. Can return 0 (no preference)
-*/	
-func (ldr *Loader) ArtifactVersion(originAndArtifactName string) int {
-	return ldr.LoadedArtifacts[originAndArtifactName]
-}	
+Zips the specified directory tree of relish source code files into the specified zip file.
+*/
+func zipSrcDirTree(directoryPath string, zipFilePath string) (err error) {
 
-	
-/*
-Check the imports list of the relish intermediate-code file and load the packages if not already loaded.
-Requires consultation of the current package's artifact's built.txt information on which version of each other artifact must be loaded.
-*/	
-func (ldr *Loader) ensureImportsAreLoaded(fileNode *ast.File) (err error) {
-	imports := fileNode.RelishImports  // package specifications
-	for _,importedPackageSpec := range imports {
-		if importedPackageSpec.OriginAndArtifactName == "relish" {
-			continue
-		}
-		importedArtifactVersion := ldr.ArtifactVersion(importedPackageSpec.OriginAndArtifactName)	
-		
-		_,err = ldr.LoadPackage(importedPackageSpec.OriginAndArtifactName,
-			                  importedArtifactVersion,
-		                      importedPackageSpec.PackageName, 
-		                      false)		
-        if err != nil {
-	       if importedArtifactVersion == 0 {
-		      Log(ALWAYS_,"Error loading package %s from current version of %s:  %v\n", importedPackageSpec.PackageName,importedPackageSpec.OriginAndArtifactName, err)		
-		   } else {
-		      Log(ALWAYS_,"Error loading package %s from version %d of %s:  %v\n", importedPackageSpec.PackageName,importedArtifactVersion,importedPackageSpec.OriginAndArtifactName, err)		
-	       }
-		   break	
-       }			
-	} 
-	return
+    var buf *bytes.Buffer 
+    buf, err = zipSrcDirTree1(directoryPath)
+
+    var file *os.File
+	file, err = os.Create(zipFilePath)
+    if err != nil {
+        return
+    }
+
+    _, err = buf.WriteTo(file)
+    if err != nil {
+        return
+    }
+    err = file.Close();
+
+    return
 }
+
+/*
+   Helper. Zip the contents of a directory tree into the byte buffer, which is returned.
+   
+   Filters so it only includes .rel files
+
+   Note: this will not work if there are symbolic links in the src directory tree.
+   (because Readdir does not follow links.)
+*/
+func zipSrcDirTree1(directoryPath string) (buf *bytes.Buffer, err error) {
+
+   var rootDirFileInfo os.FileInfo
+   rootDirFileInfo, err = os.Stat(directoryPath)
+   if err != nil {
+       return
+   }
+   if ! rootDirFileInfo.IsDir() {
+      err = fmt.Errorf("%s is not a directory.", directoryPath)
+      return
+   }
+
+   buf = new(bytes.Buffer)
+
+   // Create a new zip archive.
+   w := zip.NewWriter(buf)
+
+   err = zipSrcDirTree2(w, directoryPath, rootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/src"  "src"
+   if err != nil {
+      return
+   }    
+
+   err = w.Close()
+
+   return
+}   
+
+/*
+   Helper. Recursively zip the contents of a directory tree using the zip.Writer.
+   
+   Filters so it only includes .rel files
+
+   Note: this will not work if there are symbolic links in the src directory tree.
+   (because Readdir does not follow links.)
+*/
+func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string) (err error) {
+
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = os.Open(directoryPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
+
+   for _, fileInfo := range filesInDir {
+        if fileInfo.IsDir() {
+           subItemPath := directoryPath + "/" + fileInfo.Name()    
+           subItemRelativePath := relativeDirName + "/" + fileInfo.Name()               
+           err = zipSrcDirTree2(w, subItemPath, subItemRelativePath)
+           if err != nil {
+              return
+           }
+        } else { // plain old file to be added.
+           if strings.HasSuffix(fileInfo.Name(), ".rel") {
+              subItemPath := directoryPath + "/" + fileInfo.Name()    
+              subItemRelativePath := relativeDirName + "/" + fileInfo.Name()   
+
+              var fh *zip.FileHeader
+              fh, err = zip.FileInfoHeader(fileInfo)
+              if err != nil {
+                 return
+              }                
+              fh.Name = subItemRelativePath
+
+              var zw io.Writer
+              zw, err = w.CreateHeader( fh )
+              if err != nil {
+                 return
+              }    
+              var f *os.File
+              f,err = os.Open(subItemPath)
+              if err != nil {
+                 return
+              }
+            
+              _, err = io.Copy(zw, f)
+              err = f.Close()   
+              if err != nil {
+                 return
+              }      
+           }
+        }
+    }
+
+    return
+}   
+
+
+
+
