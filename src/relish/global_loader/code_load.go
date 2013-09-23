@@ -33,7 +33,8 @@ type Loader struct {
 	RelishRuntimeLocation string
 	LoadedArtifacts map [string]int  // map from originAndArtifactPath to loaded version number	
     LoadedArtifactKnownToBeLocal map[string]bool // was/is being loaded from local artfcts repo
-    LoadedArtifactKnownToBeShared map[string]bool // was/is being loaded from shared artfcts repo 
+    LoadedArtifactKnownToBePublished map[string]bool // was/is being loaded from shared artfcts repo 
+    LoadedArtifactKnownToBeReplica map[string]bool // was/is imported and was/is being loaded from shared replicas repo 
 
 
 	LoadedPackages map [string]int  // map from originAndArtifactPath/pkg/packagePath to loaded version number
@@ -58,7 +59,7 @@ Params:
 */
 func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string) *Loader {
 
-	ldr := &Loader{relishRuntimeLocation,make(map[string]int),make(map[string]bool),make(map[string]bool),make(map[string]int),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
+	ldr := &Loader{relishRuntimeLocation,make(map[string]int),make(map[string]bool),make(map[string]bool),make(map[string]bool),make(map[string]int),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
 	return ldr
 }
 
@@ -158,7 +159,9 @@ func (ldr *Loader) artifactDirPath(originAndArtifactPath string) string {
     var artifactsRepoPathSegment string
     if ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] { // was loaded from local artfcts repo
        artifactsRepoPathSegment = "/artifacts/"
-    } else {
+    } else if ldr.LoadedArtifactKnownToBeReplica[originAndArtifactPath] {
+       artifactsRepoPathSegment = "/shared/relish/replicas/"	
+	} else {
        artifactsRepoPathSegment = "/shared/relish/artifacts/"
     }
  
@@ -216,7 +219,9 @@ but only if a directive is not in effect to load from shared only, and only if a
 the same artifact has not already been loaded, because in that case, the local (private) or shared decision has already
 been made and must apply to subsequent packages loaded from the same artifact.
 
-TODO MD5 sum integrity checks
+If not found locally, tries to load from the Internet (at several standard locations).
+
+TODO signed-code integrity checks
 */
 func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (gen *generator.Generator, err error) {
 
@@ -247,6 +252,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	
     sharedArtifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
     
+    sharedReplicaMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + "/metadata.txt"	
+
     // Current version of artifact according to shared artifact metadata found in this relish directory tree.
     sharedCurrentVersion := 0
 
@@ -267,7 +274,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
                                     // been loaded from built.txt into LoadedArtifacts map.
 
     var artifactKnownToBeLocal bool  // if artifact is loaded or being loaded, is it loaded from local 
-    var artifactKnownToBeShared bool // if artifact is loaded or being loaded, is it loaded from shared
+    var artifactKnownToBePublished bool // if artifact is loaded or being loaded, is it loaded from shared
+    var artifactKnownToBeReplica bool // if artifact is loaded or being loaded, is it downloaded and loaded from shared/replicas
 
     loadedVersion,artifactAlreadyLoaded = ldr.LoadedArtifacts[originAndArtifactPath]
     if artifactAlreadyLoaded {
@@ -277,8 +285,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	   }
 
        artifactKnownToBeLocal = ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] 
-       artifactKnownToBeShared = ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]    
-       mustBeFromShared = mustBeFromShared || artifactKnownToBeShared  // Set whether will consider local code for this package.         
+       artifactKnownToBePublished = ldr.LoadedArtifactKnownToBePublished[originAndArtifactPath]    
+       artifactKnownToBeReplica = ldr.LoadedArtifactKnownToBeReplica[originAndArtifactPath]  
+       mustBeFromShared = mustBeFromShared || artifactKnownToBePublished || artifactKnownToBeReplica // Set whether will consider local code for this package.         
 
        Log(LOAD2_,"%s %s mustBeFromShared=%v\n",originAndArtifactPath,packagePath,mustBeFromShared)
        if artifactKnownToBeLocal {
@@ -328,6 +337,17 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		    if err != nil {
 			   return
 		    }		
+		    if version == 0 {
+	            version, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath) 	
+			    if err != nil {
+				   return
+			    }	
+			    if version > 0 {
+				   artifactKnownToBeReplica = true
+				}		
+			} else {
+				artifactKnownToBePublished = true
+			}
 			sharedCurrentVersion = version				
 		}
 	}
@@ -337,7 +357,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     // stat the artifact version dir to see if the version of the artifact exists in the filesystem.
     //
-    // try local then shared artifacts dir trees as allowed by constraints so far
+    // try local then shared artifacts and replicas dir trees as allowed by constraints so far
 
     artifactVersionDirFound := false
     var artifactVersionDir string
@@ -357,18 +377,17 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 					err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
 					return		       
 		        }
-
-
 		    } else {
 		        artifactVersionDirFound = true
 		        mustBeFromLocal = true  // locked to local (private) artifact now
+		        artifactKnownToBeLocal = true
 		    }
 	    }
 
 	    if ! artifactVersionDirFound {
 
            // this version not found in local artifacts dir tree
-	       // try shared artifacts dir tree 
+	       // try published shared artifacts dir tree 
 	       artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + versionStr
 
 	       _,statErr := os.Stat(artifactVersionDir)
@@ -380,19 +399,44 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	        } else {
 	            artifactVersionDirFound = true
 	            mustBeFromShared = true  // locked to shared artifact now
+	            artifactKnownToBePublished = true
 	        }
 	    }
+	
+	    if ! artifactVersionDirFound {
+
+           // this version not found in local artifacts dir tree or published shared artifacts dir tree
+	       // try downloaded shared replicas dir tree 
+	       artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + versionStr
+
+	       _,statErr := os.Stat(artifactVersionDir)
+	       if statErr != nil {
+	           if ! os.IsNotExist(statErr) {
+			   	   err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
+				   return		       
+	           }
+	        } else {
+	            artifactVersionDirFound = true
+	            mustBeFromShared = true  // locked to shared artifact now
+	            artifactKnownToBeReplica = true
+	        }
+	    }	
+	
     } 
     
 
     if ! artifactVersionDirFound {
 
+	    // Have not found the artifact version locally. Fetch it from the Internet.
+	
+	
+	
         // TODO Need this path in order to install or update the artifact metadata file from remote, if there is none locally
         // or if the remote one is more recent.
         //
 	    // artifactMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"	
 
-	    // Have not found the artifact version locally. Fetch it from the Internet.
+
 
 	    // Note: We will always be fetching into the shared artifacts directory tree.
 	    // If programmer wants to copy an artifact version into the local artifacts directory tree to develop/modify it,
@@ -402,14 +446,14 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
 	    hostURL := ldr.DefaultCodeHost(originAndArtifactPath)
 	
-        // Note: The correct order to do things is to load the metadata.txt file from the default host
+        // Note: TODO The correct order to do things is to load the metadata.txt file from the default host
         // (if possible) then to search for secondary hosts to get the version zip file, selecting
         // one AT RANDOM, 
         // then if all of those (some number of) mirrors fail, get it from the default host
-        // Also, use port 80 then 8088.	
+        // Also, use port 80 then 8421.	
 	
 	    if sharedCurrentVersion == 0 {
-		   sharedCurrentVersion, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath)
+		   sharedCurrentVersion, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath)
 	    }
 	
         // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
@@ -419,14 +463,22 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	
 	    var currentVersion int
 	    // Read remote metadata file. Store it locally if its current version is >= this tree's shared artifact metadata current version.
-	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedArtifactMetadataFilePath) 	
-	    if err != nil {
-		   return   // TODO We are demanding that the metadata be found at the default host.
-		            // Maybe need to backup from that.
+	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+	    if err != nil {	
+		   hostURL += ":8421"
+	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+
+	       if err != nil {		
+		      return   // TODO We are demanding that the metadata be found at the default host.
+		               // Maybe need to backup from that.
+		               // Yes. We probably should look at shared.relish.pl
+		   }
 		}
 		if version == 0 {
 			version = currentVersion
 		}
+		
+		
 		
 	    zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
 	    if err != nil {
@@ -440,7 +492,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		        if err == nil {
 			       break
 			    }     
-			    // consider logging the missed fetch and or developing a bad reputation for the host.
+			    // TODO consider logging the missed fetch and or developing a bad reputation for the host.
 		    }
 	    }
 
@@ -448,6 +500,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		   err = fmt.Errorf("Search of Internet did not find relish software artifact '%s'",originAndArtifactPath)
 		   return
 	    }
+	
+	    artifactKnownToBeReplica = true
 
        // TODO Unzip the artifact into the proper local directory tree
 
@@ -460,10 +514,10 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	    // TODO TODO Really don't know the artifact version here in some case, (in case there was nothing
 	    // not even a metadata.txt file locally, and no version was specified on command line) so
 	    // we don't have the correct path for artifactVersionDir known yet in that case !!!
-	    // WE DO KNOW IT HAS TO BE A SHARED ARTIFACTS DIR PATH however.
+	    // WE DO KNOW IT HAS TO BE A SHARED REPLICASE DIR PATH however.
 
-
-
+	   versionStr := fmt.Sprintf("/v%04d",version)
+	   artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + versionStr
 
 	   //os.MkdirAll(name string, perm FileMode) error
 	   var perm os.FileMode = 0777
@@ -476,10 +530,45 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	
 	   // Note: Assuming the zip file starts with src/ pkg/ doc/ etc not with v0002/
 
-	   byteSliceReader := bytes.NewReader(zipFileContents) 
+	   wrapperByteSliceReader := bytes.NewReader(zipFileContents) 
+
+       var rWrapper *zip.Reader
+	   rWrapper, err = zip.NewReader(wrapperByteSliceReader, int64(len(zipFileContents)))
+	   if err != nil {
+	      return
+	   }
+
+       var srcZipFileContents []byte
+
+	   // Iterate through the files in the wrapper archive,
+	   // looking for the src.zip file
+	   for _, fWrapper := range rWrapper.File {
+
+	      fileInfo := fWrapper.FileHeader.FileInfo()  
+	      if strings.Index(fileInfo.Name(),"src.zip") == 0 {
+	
+	
+	         var zippedFileReader io.ReadCloser
+	         zippedFileReader, err = fWrapper.Open()
+             if err != nil {
+               return
+             }	
+	         srcZipFileContents, err = ioutil.ReadAll(zippedFileReader)
+	         if err != nil {
+	            return
+	         }	
+	         err = zippedFileReader.Close()
+             if err != nil {
+                return
+             }	
+	         break
+	      }
+	   }
+
+	   byteSliceReader := bytes.NewReader(srcZipFileContents) 
 
        var r *zip.Reader
-	   r, err = zip.NewReader(byteSliceReader, int64(len(zipFileContents)))
+	   r, err = zip.NewReader(byteSliceReader, int64(len(srcZipFileContents)))
 	   if err != nil {
 	      return
 	   }
@@ -522,6 +611,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		      Logln(LOAD2_)
 	      }
 	   }
+	
+       Log(ALWAYS_,"Downloaded %s (v%04d) from %s\n", originAndArtifactPath, version, hostURL)		
+	
 	}
 		
     if ! artifactAlreadyLoaded { // Read built.txt from the artifact version directory
@@ -578,14 +670,15 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     // Read the filenames of source files etc. in the /src/... package directory
 
-
-    sourceDirFile, err := os.Open(packageSourcePath) 
+    var sourceDirFile *os.File
+    sourceDirFile, err = os.Open(packageSourcePath) 
     if err != nil {
       return
     }
     defer sourceDirFile.Close()
 
-    filenames,err := sourceDirFile.Readdirnames(-1) 
+    var filenames []string
+    filenames,err = sourceDirFile.Readdirnames(-1) 
     if err != nil {
 	   return
     }
@@ -610,12 +703,15 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     ldr.LoadedArtifacts[originAndArtifactPath] = version
 
-	ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath] = strings.Contains(artifactVersionDir,"/shared/relish/artifacts/")   
-    Log(LOAD2_,"ldr.LoadedArtifactKnownToBeShared[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath])
+	ldr.LoadedArtifactKnownToBePublished[originAndArtifactPath] = strings.Contains(artifactVersionDir,"/shared/relish/artifacts/") 
+	ldr.LoadedArtifactKnownToBeReplica[originAndArtifactPath] = artifactKnownToBeReplica 	
+	  
+    Log(LOAD2_,"ldr.LoadedArtifactKnownToBePublished[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBePublished[originAndArtifactPath])
+    Log(LOAD2_,"ldr.LoadedArtifactKnownToBeReplica[%s]=%v\n",originAndArtifactPath,ldr.LoadedArtifactKnownToBeReplica[originAndArtifactPath])
     Logln(LOAD_,"artifactVersionDir="+artifactVersionDir)
 
 
-    ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] = ! ldr.LoadedArtifactKnownToBeShared[originAndArtifactPath]	
+    ldr.LoadedArtifactKnownToBeLocal[originAndArtifactPath] = ! (ldr.LoadedArtifactKnownToBePublished[originAndArtifactPath] || artifactKnownToBeReplica)	
 
     
     if relish.DatabaseURI() == "" {
@@ -808,7 +904,9 @@ func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersio
 Returns the URL of the default host that should host the artifact.
 */
 func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) (hostURL string) {
-	hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
+	hostURL = "http://localhost"
+	// Temporary comment out for initial testing
+	// hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
 	return hostURL
 }
 	

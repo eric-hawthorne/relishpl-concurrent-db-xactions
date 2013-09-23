@@ -178,7 +178,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version int)
     originPrivateKey := "some dark secret kept private to the origin development server"
     originPublicKeyCertificate := "This signature and shared.relish.pl public key certifies that xxxxxx is the signed-code-verifying public key for relish code origin x.com2013."
 
-    versionStr := fmt.Sprintf("%d",version) // Temporary. Moving to semver.org version conventions.
+    versionStr := fmt.Sprintf("04%d",version) // Temporary. Moving to semver.org version conventions.
     err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,versionStr)
     if err != nil {
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
@@ -254,7 +254,7 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
 */
 func signZippedSrc(srcZipPath string, originPrivateKey string, originPublicKeyCertificate string, sharedArtifactPath string, originAndArtifact string, version string) (err error) {
    originAndArtifactFilenamePart := strings.Replace(originAndArtifact, "/","--",-1)
-   wrapperFilename := originAndArtifactFilenamePart + "--" + version + ".zip"
+   wrapperFilename := originAndArtifactFilenamePart + "---" + version + ".zip"
    wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
  
     var srcZipContents []byte
