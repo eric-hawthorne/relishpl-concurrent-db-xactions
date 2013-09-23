@@ -13,7 +13,7 @@ import (
 	"io/ioutil"
     "regexp"
 //	"bytes"
-//    "strings"
+   "strings"
     "os"
 //	. "relish/runtime/data"
 )
@@ -141,9 +141,22 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
     // and the metadata.txt file should replace the existing local one if the fetched one is newer. <- how determine if newer?
 
 
+    slashPos := strings.Index(originAndArtifactPath, "/")
+    originDomain := originAndArtifactPath[0:slashPos-4]
+    hostDomain := hostUrl[7:]
+    var dir string
+    if originDomain == hostDomain {
+	   dir = "artifacts"
+	} else {
+	   dir = "replicas"
+	}
+   	
+    zipFileName := strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip")
+
+	url = fmt.Sprintf("%s/relish/%s/%s/%s",hostUrl,dir,originAndArtifactPath,zipFileName)
 	
 	// TODO %4d or whatever v0014
-	url = fmt.Sprintf("%s/relish/artifacts/%s/v%04d.zip",hostUrl,originAndArtifactPath,version)
+	// url = fmt.Sprintf("%s/relish/artifacts/%s/v%04d.zip",hostUrl,originAndArtifactPath,version)
 	
 	resp, err := http.Get(url)
 	if err != nil {
@@ -158,11 +171,20 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 
 
 /*
-Fetches and installs in 11111
+Fetches and installs in shared/relish/replicas directory.
 */
 func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existingSharedCurrentVersion int, sharedArtifactMetadataFilePath string)  (currentVersion int, err error) {
 
-   	url := hostUrl + "/relish/artifacts/" + originAndArtifactPath + "/metadata.txt"
+    slashPos := strings.Index(originAndArtifactPath, "/")
+    originDomain := originAndArtifactPath[0:slashPos-4]
+    hostDomain := hostUrl[7:]
+    var dir string
+    if originDomain == hostDomain {
+	   dir = "artifacts"
+	} else {
+	   dir = "replicas"
+	}
+   	url := hostUrl + "/relish/" + dir + "/" + originAndArtifactPath + "/metadata.txt"
     
     var resp *http.Response
     var body []byte
@@ -188,10 +210,8 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existin
 
         // Write body to local shared metadata.txt file
 
-        metadataFilePath := "/metadata.txt"
-
         var perm os.FileMode = 0777
-        err = ioutil.WriteFile(metadataFilePath, body, perm)
+        err = ioutil.WriteFile(sharedArtifactMetadataFilePath, body, perm)
 	    if err != nil {
 		   return 
 	    }	
