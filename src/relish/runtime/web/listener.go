@@ -709,7 +709,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
              err = fmt.Errorf("%s MEDIA response has too many return values. Should be 'MEDIA' then a mimetype then a content string", methodName) 
              return               
         }		
-        fmt.Fprintln(w, mediaContent)
+        fmt.Fprint(w, mediaContent)
 	
 			
 	  case "MEDIA FILE":
