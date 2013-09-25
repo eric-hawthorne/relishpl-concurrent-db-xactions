@@ -596,6 +596,15 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		         return
 		      }
 
+              slashPos := strings.LastIndex(f.Name,"/")
+              if slashPos != -1 {
+                 dirPath := f.Name[:slashPos]
+                 err = os.MkdirAll(artifactVersionDir + "/" + dirPath,perm)
+                 if err != nil {
+                    return
+                 } 
+              }
+
               var outFile *os.File
 	          outFile, err = os.Create(artifactVersionDir + "/" + f.Name)  
 	          if err != nil {

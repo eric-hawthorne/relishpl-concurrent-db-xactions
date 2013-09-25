@@ -145,13 +145,13 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
     originDomain := originAndArtifactPath[0:slashPos-4]
     hostDomain := hostUrl[7:]
     var dir string
-    if originDomain == hostDomain {
+    if originDomain == hostDomain || strings.HasPrefix(hostDomain,"localhost") {
 	   dir = "artifacts"
 	} else {
 	   dir = "replicas"
 	}
    	
-    zipFileName := strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip")
+    zipFileName := strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip",version)
 
 	url = fmt.Sprintf("%s/relish/%s/%s/%s",hostUrl,dir,originAndArtifactPath,zipFileName)
 	
@@ -179,7 +179,7 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existin
     originDomain := originAndArtifactPath[0:slashPos-4]
     hostDomain := hostUrl[7:]
     var dir string
-    if originDomain == hostDomain {
+    if originDomain == hostDomain || strings.HasPrefix(hostDomain,"localhost") {
 	   dir = "artifacts"
 	} else {
 	   dir = "replicas"
@@ -208,9 +208,19 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existin
     if remoteCurrentVersion >= existingSharedCurrentVersion {
         currentVersion = remoteCurrentVersion
 
+        // Create local directory for replica artifact, if necessary
+ 
+        var perm os.FileMode = 0777
+
+        artifactReplicaDir := sharedArtifactMetadataFilePath[:len(sharedArtifactMetadataFilePath)-len("/metadata.txt")]
+
+        err = os.MkdirAll(artifactReplicaDir, perm)
+        if err != nil {
+           return
+        }
+
         // Write body to local shared metadata.txt file
 
-        var perm os.FileMode = 0777
         err = ioutil.WriteFile(sharedArtifactMetadataFilePath, body, perm)
 	    if err != nil {
 		   return 
