@@ -1,8 +1,0 @@
-origin: relish.pl2012
-artifact: things
-current version: 1
-release date: 2012/07/27
-standard tags: example tag, second example tag
-more tags:
-
-Physical objects.
