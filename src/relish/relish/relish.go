@@ -284,8 +284,10 @@ func main() {
        }
 	   version := int(v64)	
 
-       global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
-
+       err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
+	   if err != nil {
+		  fmt.Println(err)
+       }
        return
     }
 

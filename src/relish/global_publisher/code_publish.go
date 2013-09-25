@@ -83,14 +83,14 @@ and relish instances can periodically check that to see if re-verification of or
 possible redownloading of re-signed code artifacts is necessary. 
 
 */
-func PublishSourceCode(relishRoot string, originAndArtifact string, version int) {
+func PublishSourceCode(relishRoot string, originAndArtifact string, version int) (err error) {
    localArtifactPath := relishRoot + "/artifacts/" + originAndArtifact + "/"
    sharedArtifactPath := relishRoot + "/shared/relish/artifacts/" + originAndArtifact + "/"
 
    // Check if metadata.txt file exists in shared. If not, create it by copying local metadata.txt file
 
    sharedMetadataPath := sharedArtifactPath + "metadata.txt"
-   _,err := os.Stat(sharedMetadataPath)    
+   _,err = os.Stat(sharedMetadataPath)    
    if err != nil {
         if os.IsNotExist(err) {
 
@@ -178,12 +178,13 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version int)
     originPrivateKey := "some dark secret kept private to the origin development server"
     originPublicKeyCertificate := "This signature and shared.relish.pl public key certifies that xxxxxx is the signed-code-verifying public key for relish code origin x.com2013."
 
-    versionStr := fmt.Sprintf("04%d",version) // Temporary. Moving to semver.org version conventions.
+    versionStr := fmt.Sprintf("%04d",version) // Temporary. Moving to semver.org version conventions.
     err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,versionStr)
     if err != nil {
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
         return 
     } 
+    return
 }
 
 
