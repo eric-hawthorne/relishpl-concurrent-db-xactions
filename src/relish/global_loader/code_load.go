@@ -479,8 +479,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		}
 		
 		
-		
-	    zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
+		var zipFileName string
+
+	    zipFileContents, zipFileName, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
 	    if err != nil {
 		    var hostURLs []string
 		    hostURLs,err = ldr.FindSecondaryCodeHosts(originAndArtifactPath, hostURL)
@@ -488,7 +489,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 			   return 
 		    }
 		    for _,hostURL = range hostURLs {
-		        zipFileContents, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
+		        zipFileContents, zipFileName, err = fetchArtifactZipFile(hostURL, originAndArtifactPath, version) 
 		        if err == nil {
 			       break
 			    }     
@@ -525,6 +526,12 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	   if err != nil {
 	      return
 	   }
+
+       zipFilePath := ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + "/" + zipFileName
+       err = ioutil.WriteFile(zipFilePath, zipFileContents, perm)
+       if err != nil {
+          return
+       }
 
 	   // Open a zip archive for reading.
 	
