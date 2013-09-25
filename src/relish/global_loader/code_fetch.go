@@ -126,18 +126,21 @@ yet.anotherorigin.com2012/artifact_name 4-7
 */
 
 // 
-var re *regexp.Regexp = regexp.MustCompile(`current version: ([0-9]*)`)
+var reMetadataDate *regexp.Regexp = regexp.MustCompile(`relish artifact metadata: (2[0-2][0-9][0-9]/[0-9][0-9]/[0-9][0-9])`)
+var reCurrentVersion *regexp.Regexp = regexp.MustCompile(`current version: ([0-9]+\.[0-9]+\.[0-9]+)`)
+
+
 
 /*
    Params:
    - hostUrl: http://code.example.com
    - originAndArtifactPath: some.origin.org2012/some/artifact/name
-   - version: the version to fetch. If version is zero, fetches the current version.
+   - version: the version to fetch. If version is "", fetches the current version.
 */
-func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version int) (fileContents []byte, zipFileName string, err error) {
+func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version string) (fileContents []byte, zipFileName string, err error) {
     var url string
 
-    // TODO The metadata.txt file fetch should happen every time, even if version # is supplied.
+    // TODO The metadata.txt file fetch should happen every time, even if version # is supplied,
     // and the metadata.txt file should replace the existing local one if the fetched one is newer. <- how determine if newer?
 
 
@@ -151,12 +154,9 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 	   dir = "replicas"
 	}
    	
-  zipFileName = strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip",version)
+  zipFileName = strings.Replace(originAndArtifactPath,"/","--",-1) + "---" + version + ".zip"
 
 	url = fmt.Sprintf("%s/relish/%s/%s/%s",hostUrl,dir,originAndArtifactPath,zipFileName)
-	
-	// TODO %4d or whatever v0014
-	// url = fmt.Sprintf("%s/relish/artifacts/%s/v%04d.zip",hostUrl,originAndArtifactPath,version)
 	
 	resp, err := http.Get(url)
 	if err != nil {
@@ -171,9 +171,9 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 
 
 /*
-Fetches and installs in shared/relish/replicas directory.
+Fetches and, if newer, installs metadata.txt file in shared/relish/replicas directory.
 */
-func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existingSharedCurrentVersion int, sharedArtifactMetadataFilePath string)  (currentVersion int, err error) {
+func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, localMetadataDate string, existingSharedCurrentVersion string, sharedArtifactMetadataFilePath string)  (currentVersion string, err error) {
 
     slashPos := strings.Index(originAndArtifactPath, "/")
     originDomain := originAndArtifactPath[0:slashPos-4]
@@ -199,13 +199,14 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, existin
 		return
 	}	
 
-    var remoteCurrentVersion int
-    remoteCurrentVersion, err = readCurrentVersion(body, url)
+    var remoteCurrentVersion string
+    var remoteMetadataDate string
+    remoteCurrentVersion, remoteMetadataDate, err = readCurrentVersion(body, url)
 	if err != nil {
 		return
 	}
 
-    if remoteCurrentVersion >= existingSharedCurrentVersion {
+    if remoteMetadataDate > localMetadataDate {
         currentVersion = remoteCurrentVersion
 
         // Create local directory for replica artifact, if necessary

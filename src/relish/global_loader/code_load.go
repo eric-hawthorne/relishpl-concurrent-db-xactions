@@ -16,7 +16,7 @@ import (
     "io"
 	"bytes"
     "strings"
-    "strconv"
+//    "strconv"
     "os"
 //	. "relish/runtime/data"
     "relish/compiler/ast"
@@ -31,13 +31,13 @@ import (
 
 type Loader struct {
 	RelishRuntimeLocation string
-	LoadedArtifacts map [string]int  // map from originAndArtifactPath to loaded version number	
+	LoadedArtifacts map [string]string  // map from originAndArtifactPath to loaded version number
     LoadedArtifactKnownToBeLocal map[string]bool // was/is being loaded from local artfcts repo
     LoadedArtifactKnownToBePublished map[string]bool // was/is being loaded from shared artfcts repo 
     LoadedArtifactKnownToBeReplica map[string]bool // was/is imported and was/is being loaded from shared replicas repo 
 
 
-	LoadedPackages map [string]int  // map from originAndArtifactPath/pkg/packagePath to loaded version number
+	LoadedPackages map [string]string  // map from originAndArtifactPath/pkg/packagePath to loaded version number
 	PackagesBeingLoaded map [string]bool  // map from originAndArtifactPath/pkg/packagePath to whether it is in the middle of loading	
 	PackageLocalId map [string] string // map from originAndArtifactPath/pkg/packagePath to local id (short name) of package
 	LocalIdPackage map [string] string // map from local id (short name) of package to package full path.
@@ -59,13 +59,16 @@ Params:
 */
 func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string) *Loader {
 
-	ldr := &Loader{relishRuntimeLocation,make(map[string]int),make(map[string]bool),make(map[string]bool),make(map[string]bool),make(map[string]int),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
+	ldr := &Loader{relishRuntimeLocation,make(map[string]string),make(map[string]bool),make(map[string]bool),make(map[string]bool),make(map[string]string),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
 	return ldr
 }
 
 
-
-func (ldr *Loader) LoadWebPackages (originAndArtifactPath string, version int, mustBeFromShared bool) (err error) {
+/*
+If serving a webapp, the relish packages in the web package directory tree of the running artifact must all be loaded
+into the runtime. 
+*/
+func (ldr *Loader) LoadWebPackages (originAndArtifactPath string, version string, mustBeFromShared bool) (err error) {
 
     err = ldr.loadPackageTree(originAndArtifactPath, version, "web", mustBeFromShared)
     return
@@ -74,8 +77,9 @@ func (ldr *Loader) LoadWebPackages (originAndArtifactPath string, version int, m
 /*
 Load the specified package and, recursively, all packages found in sub directories of the package src directory.
 Currently used only to pre-load the web dialog handler packages.
+version may be "" which means use the current version of the artifact.
 */
-func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (err error) {
+func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version string, packagePath string, mustBeFromShared bool) (err error) {
 
     _, err = ldr.LoadPackage(originAndArtifactPath, version, packagePath, mustBeFromShared)
     if err != nil {
@@ -83,12 +87,11 @@ func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version int, p
     }
     // Now load web subdir packages.
 
-    if version == 0 {
+    if version == "" {
 	   version = ldr.LoadedArtifacts[originAndArtifactPath]
     }
 
-    versionStr := fmt.Sprintf("/v%04d",version)
-    artifactVersionDir := ldr.artifactDirPath(originAndArtifactPath) + versionStr
+    artifactVersionDir := ldr.artifactDirPath(originAndArtifactPath) + "/v" + version
 
     packageSourcePath := artifactVersionDir + "/src/" + packagePath 
 
@@ -223,7 +226,7 @@ If not found locally, tries to load from the Internet (at several standard locat
 
 TODO signed-code integrity checks
 */
-func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packagePath string, mustBeFromShared bool) (gen *generator.Generator, err error) {
+func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, packagePath string, mustBeFromShared bool) (gen *generator.Generator, err error) {
 
 	if Logging(PARSE_) {
 	   parserDebugMode |= parser.Trace
@@ -241,8 +244,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     loadedVersion,found := ldr.LoadedPackages[packageIdentifier]
     if found {
-	   if loadedVersion != version && version != 0 {
-	       err = fmt.Errorf("Can't load version %d of '%s' since version %d is already loaded into runtime.",version,packageIdentifier,loadedVersion)	
+	   if loadedVersion != version && version != "" {
+	       err = fmt.Errorf("Can't load version %s of '%s' since version %s is already loaded into runtime.",version,packageIdentifier,loadedVersion)	
 	   }
 	   return
     }
@@ -255,8 +258,10 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
     sharedReplicaMetadataFilePath := ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + "/metadata.txt"	
 
     // Current version of artifact according to shared artifact metadata found in this relish directory tree.
-    sharedCurrentVersion := 0
+    sharedCurrentVersion := ""
 
+    // Date of the artifact metadata that is being relied on for the package load.
+    metadataDate := ""
 
     ldr.PackagesBeingLoaded[packageIdentifier] = true
 
@@ -279,8 +284,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 
     loadedVersion,artifactAlreadyLoaded = ldr.LoadedArtifacts[originAndArtifactPath]
     if artifactAlreadyLoaded {
-	   if loadedVersion != version && version != 0 {
-	       err = fmt.Errorf("Can't load package '%s' from version %d of '%s'. Another package from version %d of the artifact is already loaded into runtime.",packagePath,version,originAndArtifactPath,loadedVersion)	
+	   if loadedVersion != version && version != "" {
+	       err = fmt.Errorf("Can't load package '%s' from version %s of '%s'. Another package from version %s of the artifact is already loaded into runtime.",packagePath,version,originAndArtifactPath,loadedVersion)	
 	       return
 	   }
 
@@ -314,17 +319,17 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
     //// If we can find a metadata.txt file for the artifact locally, set the version with it.
 
 
-    if version == 0 {
+    if version == "" {
 
         if ! mustBeFromShared {
 		
-            version, err = ldr.readMetadataFile(localArtifactMetadataFilePath) 	
+            version, metadataDate, err = ldr.readMetadataFile(localArtifactMetadataFilePath) 	
 		    if err != nil {
 			   return
 		    }
 		}
 
-        if version == 0 {
+        if version == "" {
 
         	if mustBeFromLocal {
         	   // We already loaded a package from the local artifact, but somehow the local artifact is no longer there on filesystem.	
@@ -333,16 +338,16 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		       return               		
         	}
 
-            version, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath) 	
+            version, metadataDate, err = ldr.readMetadataFile(sharedArtifactMetadataFilePath) 	
 		    if err != nil {
 			   return
 		    }		
-		    if version == 0 {
-	            version, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath) 	
+		    if version == "" {
+	            version, metadataDate, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath) 	
 			    if err != nil {
 				   return
 			    }	
-			    if version > 0 {
+			    if version != "" {
 				   artifactKnownToBeReplica = true
 				}		
 			} else {
@@ -363,8 +368,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
     var artifactVersionDir string
 
 
-    if version > 0 {
-	    versionStr := fmt.Sprintf("/v%04d",version)
+    if version != "" {
+	    versionStr := "/v" + version
 
         if ! mustBeFromShared {
 
@@ -452,8 +457,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
         // then if all of those (some number of) mirrors fail, get it from the default host
         // Also, use port 80 then 8421.	
 	
-	    if sharedCurrentVersion == 0 {
-		   sharedCurrentVersion, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath)
+	    if sharedCurrentVersion == "" {
+		   sharedCurrentVersion,metadataDate, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath)
 	    }
 	
         // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
@@ -461,12 +466,12 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
         // 
         // Then, if we do not have a specified version yet, we should set version # from that,
 	
-	    var currentVersion int
+	    var currentVersion string
 	    // Read remote metadata file. Store it locally if its current version is >= this tree's shared artifact metadata current version.
-	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
 	    if err != nil {	
 		   hostURL += ":8421"
-	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
 
 	       if err != nil {		
 		      return   // TODO We are demanding that the metadata be found at the default host.
@@ -474,10 +479,11 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 		               // Yes. We probably should look at shared.relish.pl
 		   }
 		}
-		if version == 0 {
+		if version == "" {
 			version = currentVersion
 		}
 		
+        // Version must now be a proper version number string, not ""
 		
 		var zipFileName string
 
@@ -517,7 +523,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	    // we don't have the correct path for artifactVersionDir known yet in that case !!!
 	    // WE DO KNOW IT HAS TO BE A SHARED REPLICASE DIR PATH however.
 
-	   versionStr := fmt.Sprintf("/v%04d",version)
+	   versionStr := "/v" +version
 	   artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + versionStr
 
 	   //os.MkdirAll(name string, perm FileMode) error
@@ -628,7 +634,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	      }
 	   }
 	
-       Log(ALWAYS_,"Downloaded %s (v%04d) from %s\n", originAndArtifactPath, version, hostURL)		
+       Log(ALWAYS_,"Downloaded %s (v%s) from %s\n", originAndArtifactPath, version, hostURL)		
 	
 	}
 		
@@ -649,20 +655,16 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 	        n := len(artifactsVersionsStrs)
 	        for i := 0; i < n; i += 2 {
 		       artifactPath := artifactsVersionsStrs[i] 
-		       artifactVersionStr := artifactsVersionsStrs[i+1] 
-		       var v64 int64
-		       v64, err = strconv.ParseInt(artifactVersionStr, 0, 32)  
-			   if err != nil {
-				   return
-			   }
-			   artifactVersion := int(v64)	
+		       artifactVersion := artifactsVersionsStrs[i+1] 
+
 			   alreadyDesiredVersion,versionFound := ldr.LoadedArtifacts[artifactPath]	
 			   if versionFound {
 				   if artifactVersion != alreadyDesiredVersion {
-				      // Should be logging this, not printing it to stdout
-				      Log(ALWAYS_,"Using v%d of %s. %s (v%d) may prefer v%d of %s.\n",alreadyDesiredVersion, artifactPath, originAndArtifactPath, version, artifactVersion, artifactPath)
+				      Log(ALWAYS_,"Using v%s of %s. %s (v%s) may prefer v%s of %s.\n",alreadyDesiredVersion, artifactPath, originAndArtifactPath, version, artifactVersion, artifactPath)
 			       }
 			   } else {
+                  // Tell the loader to prefer the version of the other artifact 
+                  // that the being-loaded artifact built.txt file specifies. 
 			      ldr.LoadedArtifacts[artifactPath] = artifactVersion	
 			   }
 	        }		
@@ -670,7 +672,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
         } else if ! os.IsNotExist(statErr) {
 			err = fmt.Errorf("Can't stat '%s': %v\n", builtFilePath, statErr)
 			return		       
-	    }        
+	    }     
+        // else there is no built.txt file. Accept that for now
+        // and subsequently load the current versions of artifacts where no other version is preferred.
 	}	
 
 ////////////////////////////////////////////////////////////////////////
@@ -866,11 +870,11 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version int, packa
 }
   	
 /*
-If a file at the specified path exists, reads the current version info from it.
-If file does not exist, returned version is 0 with no error.
-If not a properly formatted metadata file, returns an error.
+If a file at the specified path exists, reads the current version info, and the metadata date, from it.
+If file does not exist, returned currentVersion is "" as is metadataDate, with no error.
+If file exists but not a properly formatted metadata file, returns an error.
 */
-func (ldr *Loader) readMetadataFile(path string) (currentVersion int, err error) {
+func (ldr *Loader) readMetadataFile(path string) (currentVersion string, metadataDate string, err error) {
 
 	_,statErr := os.Stat(path)
 	if statErr != nil {
@@ -890,28 +894,35 @@ func (ldr *Loader) readMetadataFile(path string) (currentVersion int, err error)
 		if err != nil {
 			return
 		}
-        currentVersion, err = readCurrentVersion(body, path) 			
+        currentVersion, metadataDate, err = readCurrentVersion(body, path) 			
 	}
 	return
 }
 
-func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersion int, err error) {
-    match := re.FindSubmatchIndex(metadata)
+/*
+Read the current version and metadata date information from the contents of an artifact's metadata.txt file
+*/
+func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersion string, metadataDate string, err error) {
+    match := reMetadataDate.FindSubmatchIndex(metadata)
     if match == nil {
-       err = fmt.Errorf("%s file must have a line like current version: 14", metadataFilePath)
+       err = fmt.Errorf("%s file first line must be formatted like this example: relish artifact metadata: 2013/02/19", metadataFilePath)
+       return
+    } 
+
+    dateStart := match[2]
+    dateEnd := match[3]   
+
+    metadataDate = string(metadata[dateStart:dateEnd])    
+
+    match = reCurrentVersion.FindSubmatchIndex(metadata)
+    if match == nil {
+       err = fmt.Errorf("%s file must have a line like: current version: 1.0.23", metadataFilePath)
        return
     }
     versionNumStart := match[2]
     versionNumEnd := match[3]	
 
-    s := string(metadata[versionNumStart:versionNumEnd])
-
-    var v64 int64
-    v64, err = strconv.ParseInt(s, 0, 32)  
-    if err != nil {
-	   return
-    }
-    currentVersion = int(v64)	
+    currentVersion = string(metadata[versionNumStart:versionNumEnd])
     return
 }
 
@@ -939,9 +950,9 @@ func (ldr *Loader) FindSecondaryCodeHosts (originAndArtifactPath string, primary
 
 
 /*
-Return the version of the artifact that is to be loaded. Can return 0 (no preference)
+Return the version of the artifact that is to be loaded. Can return "" (no preference)
 */	
-func (ldr *Loader) ArtifactVersion(originAndArtifactName string) int {
+func (ldr *Loader) ArtifactVersion(originAndArtifactName string) string {
 	return ldr.LoadedArtifacts[originAndArtifactName]
 }	
 
@@ -964,10 +975,10 @@ func (ldr *Loader) ensureImportsAreLoaded(fileNode *ast.File) (err error) {
 		                      importedPackageSpec.PackageName, 
 		                      false)		
         if err != nil {
-	       if importedArtifactVersion == 0 {
+	       if importedArtifactVersion == "" {
 		      Log(ALWAYS_,"Error loading package %s from current version of %s:  %v\n", importedPackageSpec.PackageName,importedPackageSpec.OriginAndArtifactName, err)		
 		   } else {
-		      Log(ALWAYS_,"Error loading package %s from version %d of %s:  %v\n", importedPackageSpec.PackageName,importedArtifactVersion,importedPackageSpec.OriginAndArtifactName, err)		
+		      Log(ALWAYS_,"Error loading package %s from version %s of %s:  %v\n", importedPackageSpec.PackageName,importedArtifactVersion,importedPackageSpec.OriginAndArtifactName, err)		
 	       }
 		   break	
        }			

@@ -74,12 +74,12 @@ import (
 		"relish/global_loader"
 		"relish/global_publisher"		
 		"regexp"
-		"strconv"
+//		"strconv"
 		"runtime/pprof"
 )
 
-var reVersionAtEnd *regexp.Regexp = regexp.MustCompile("/v([0-9]{4})$")
-var reVersionedPackage *regexp.Regexp = regexp.MustCompile("/v([0-9]{4})/pkg/")
+var reVersionAtEnd *regexp.Regexp = regexp.MustCompile("/v([0-9]+\\.[0-9]+\\.[0-9]+)$")
+var reVersionedPackage *regexp.Regexp = regexp.MustCompile("/v([0-9]+\\.[0-9]+\\.[0-9]+)/pkg/")
 
 
 func main() {
@@ -144,7 +144,7 @@ func main() {
 
 
     var originAndArtifact string
-    var version int 
+    var version string
     var packagePath string
 
     relishIndexInWd := strings.Index(workingDirectory,"/rt/artifacts") 
@@ -172,26 +172,15 @@ func main() {
 	if relishRoot != "" && ! publish {   
        match := reVersionedPackage.FindStringSubmatchIndex(workingDirectory)
        if match != nil {
-	      versionStr := workingDirectory[match[2]:match[3]]
-          v64, err := strconv.ParseInt(versionStr, 0, 32)  
-	      if err != nil {
-		     fmt.Println(err)
-		     return 
-	      }
-	      version = int(v64)
+	      version = workingDirectory[match[2]:match[3]]
+          
 	      originAndArtifact = workingDirectory[relishIndexInWd+18:match[0]]
 	      packagePath = workingDirectory[match[3]+1:]	
        } else {
 	       match := reVersionAtEnd.FindStringSubmatch(workingDirectory)
 	       if match != nil {
-		      versionStr := match[1]
-	          v64, err := strconv.ParseInt(versionStr, 0, 32)  
-		      if err != nil {
-			     fmt.Println(err)
-			     return 
-		      }
-		      version = int(v64)		
-	          originAndArtifact = workingDirectory[relishIndexInWd+18:len(workingDirectory)-6]		
+		      version = match[1]	
+	          originAndArtifact = workingDirectory[relishIndexInWd+18:len(workingDirectory)-len(version)-2]		
 		   }
        }
     }
@@ -275,14 +264,7 @@ func main() {
           return
        }
 	   originAndArtifact = pathParts[0]
-	   versionStr := pathParts[1]
-	      
-       v64, err := strconv.ParseInt(versionStr, 0, 32)  
-	   if err != nil {
-		  fmt.Println(err)
-          return  
-       }
-	   version := int(v64)	
+	   version = pathParts[1]
 
        err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
 	   if err != nil {
@@ -301,15 +283,8 @@ func main() {
        if len(pathParts) == 3 {  // originAndArtifact version npackagePath
 	
 		    originAndArtifact = pathParts[0]
-		    versionStr := pathParts[1]
-		    packagePath = pathParts[2]	
-	      
-            v64, err := strconv.ParseInt(versionStr, 0, 32)  
-	        if err != nil {
-		      fmt.Println(err)
-		      return 
-	        }
-	        version = int(v64)		
+		    version = pathParts[1]
+		    packagePath = pathParts[2]		
 	
        } else if len(pathParts) == 2 {  // originAndArtifact packagePath	
 		
@@ -346,13 +321,13 @@ func main() {
        packagePath = packagePath[:len(packagePath)-1]	
     }
 
-    fullPackagePath := fmt.Sprintf("%s/v%04d/pkg/%s",originAndArtifact,version, packagePath)
+    fullPackagePath := fmt.Sprintf("%s/v%s/pkg/%s",originAndArtifact,version, packagePath)
     fullUnversionedPackagePath := fmt.Sprintf("%s/pkg/%s",originAndArtifact, packagePath)
     
     g, err = loader.LoadPackage(originAndArtifact, version, packagePath, runningArtifactMustBeFromShared)
 
     if err != nil {
-	    if version == 0 {
+	    if version == "" {
 		   fmt.Printf("Error loading package %s from current version of %s:  %v\n", packagePath, originAndArtifact, err)		
 		} else {
 		   fmt.Printf("Error loading package %s:  %v\n",fullPackagePath, err)
@@ -383,10 +358,10 @@ func main() {
 	
        err = loader.LoadWebPackages(originAndArtifact, version, runningArtifactMustBeFromShared)	
 	   if err != nil {
-		    if version == 0 {
+		    if version == "" {
 			   fmt.Printf("Error loading web packages from current version of %s:  %v\n", originAndArtifact, err)		
 			} else {
-			   fmt.Printf("Error loading web packages from version %d of %s:  %v\n", version, originAndArtifact, err)
+			   fmt.Printf("Error loading web packages from version %s of %s:  %v\n", version, originAndArtifact, err)
 		    }
 			return	
 	   }

@@ -83,7 +83,7 @@ and relish instances can periodically check that to see if re-verification of or
 possible redownloading of re-signed code artifacts is necessary. 
 
 */
-func PublishSourceCode(relishRoot string, originAndArtifact string, version int) (err error) {
+func PublishSourceCode(relishRoot string, originAndArtifact string, version string) (err error) {
    localArtifactPath := relishRoot + "/artifacts/" + originAndArtifact + "/"
    sharedArtifactPath := relishRoot + "/shared/relish/artifacts/" + originAndArtifact + "/"
 
@@ -121,7 +121,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version int)
 
    //
 
-   versionPath := fmt.Sprintf("v%04d",version)
+   versionPath := "v" + version
 
    sharedArtifactVersionPath := sharedArtifactPath + versionPath 
 
@@ -178,8 +178,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version int)
     originPrivateKey := "some dark secret kept private to the origin development server"
     originPublicKeyCertificate := "This signature and shared.relish.pl public key certifies that xxxxxx is the signed-code-verifying public key for relish code origin x.com2013."
 
-    versionStr := fmt.Sprintf("%04d",version) // Temporary. Moving to semver.org version conventions.
-    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,versionStr)
+    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
     if err != nil {
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
         return 
