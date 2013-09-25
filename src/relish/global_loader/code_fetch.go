@@ -134,7 +134,7 @@ var re *regexp.Regexp = regexp.MustCompile(`current version: ([0-9]*)`)
    - originAndArtifactPath: some.origin.org2012/some/artifact/name
    - version: the version to fetch. If version is zero, fetches the current version.
 */
-func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version int) (fileContents []byte, err error) {
+func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version int) (fileContents []byte, zipFileName string, err error) {
     var url string
 
     // TODO The metadata.txt file fetch should happen every time, even if version # is supplied.
@@ -151,7 +151,7 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 	   dir = "replicas"
 	}
    	
-    zipFileName := strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip",version)
+  zipFileName = strings.Replace(originAndArtifactPath,"/","--",-1) + fmt.Sprintf("---%04d.zip",version)
 
 	url = fmt.Sprintf("%s/relish/%s/%s/%s",hostUrl,dir,originAndArtifactPath,zipFileName)
 	
@@ -160,13 +160,13 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 	
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return nil, zipFileName, err
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)	
 	fmt.Println(len(body))
 	
-	return body,nil
+	return body,zipFileName,nil
 }
 
 
