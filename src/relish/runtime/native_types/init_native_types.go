@@ -21,7 +21,7 @@ var NativeType = map [string] bool {
 	
 	// relish standard library types with Go native instances.
 	// DO NOT MODIFY THIS LIST OF MAP ENTRIES !!
-	"relish.pl2012/relish_lib/pkg/files/File" : true,
+	"shared.relish.pl2012/relish_lib/pkg/files/File" : true,
 	
 		
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!

@@ -1,4 +1,4 @@
-origin   relish.pl2012
+origin   shared.relish.pl2012
 artifact relish_tests
 package  all 
 
@@ -6,11 +6,11 @@ package  all
  all_tests.rel
 
  Run all of the relish language tests in the relish_tests artifact.
- Usage: relish relish.pl2012/relish_tests all   or   relish -web 8080 relish.pl2012/relish_tests all
+ Usage: relish shared.relish.pl2012/relish_tests all   or   relish -web 8080 shared.relish.pl2012/relish_tests all
 """
 
 import
-   relish.pl2012/relish_tests/pkg/io
+   shared.relish.pl2012/relish_tests/pkg/io
    console
    arithmetic
    string

@@ -1,4 +1,4 @@
-origin   relish.pl2012
+origin   shared.relish.pl2012
 artifact relish_tests
 package  model/people
 
@@ -9,7 +9,7 @@ package  model/people
 """
 
 import
-   relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
 
 
 Person <: phys.SelfLocomotive

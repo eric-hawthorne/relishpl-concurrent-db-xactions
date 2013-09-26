@@ -1,4 +1,4 @@
-origin: relish.pl2012
+origin: shared.relish.pl2012
 artifact: relish_test_support/things
 current version: 1
 release date: 2012/07/27

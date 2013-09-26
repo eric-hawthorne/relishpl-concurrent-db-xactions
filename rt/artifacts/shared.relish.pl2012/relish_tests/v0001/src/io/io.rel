@@ -1,4 +1,4 @@
-origin   relish.pl2012
+origin   shared.relish.pl2012
 artifact relish_tests
 package  io
 
@@ -8,7 +8,7 @@ package  io
  Test input/output types and methods, such as file i/o operations.
 
  import
-    relish.pl2012/relish_lib/pkg/files
+    shared.relish.pl2012/relish_lib/pkg/files
 """
 
 import

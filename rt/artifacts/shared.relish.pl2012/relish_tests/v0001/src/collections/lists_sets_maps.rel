@@ -1,4 +1,4 @@
-origin   relish.pl2012
+origin   shared.relish.pl2012
 artifact relish_tests
 package  collections 
 
@@ -13,7 +13,7 @@ import
    model
    model/machines/vehicles
    model/machines/engines
-   relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
    model/people
    strings
    
