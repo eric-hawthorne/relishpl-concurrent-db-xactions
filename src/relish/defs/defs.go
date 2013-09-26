@@ -30,8 +30,8 @@ var StandardLibPackageArtifact map[string]string = map[string]string {
 	"http" : "relish",
 	"csv" : "relish",	
 	"json" : "relish",	
-	"io" : "relish.pl2012/relish_lib",		
-	"files" : "relish.pl2012/relish_lib",		
+	"io" : "shared.relish.pl2012/relish_lib",		
+	"files" : "shared.relish.pl2012/relish_lib",		
 }
 
 

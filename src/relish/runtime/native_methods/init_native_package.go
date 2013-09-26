@@ -25,7 +25,7 @@ with the corresponding wrapper-creating function.
 
 */
 var nativeMethodPackageMap = map [string] func() {
-	"relish.pl2012/relish_lib/pkg/files" : files_methods.InitFilesMethods,
+	"shared.relish.pl2012/relish_lib/pkg/files" : files_methods.InitFilesMethods,
    "gait.bcit.ca2012/protocols/pkg/modbus" : modbus_methods.InitModbusMethods,   
 }
 

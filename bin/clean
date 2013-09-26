@@ -9,11 +9,11 @@
 #
 # You can also clean only a single local artifact by issuing a command like
 # 
-# clean relish.pl2012/relish_tests
+# clean shared.relish.pl2012/relish_tests
 # 
 # which will clean all versions of the artifact.
 #
-# clean relish.pl2012/relish_tests 2
+# clean shared.relish.pl2012/relish_tests 2
 #
 # Cleans only version 2 of the specified artifact.
 #

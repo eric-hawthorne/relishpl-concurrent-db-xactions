@@ -19,7 +19,7 @@ func InitFilesMethods() {
 
     // buf = Bytes 1000
     // n err = read file buf
-	readMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
+	readMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -31,13 +31,13 @@ func InitFilesMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllTextMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	readAllTextMethod.PrimitiveCode = readAllText
 
-	readAllTextMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Bool"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","Bool"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +48,7 @@ func InitFilesMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllBinaryMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"readAllBinary", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	readAllBinaryMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllBinary", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -56,14 +56,14 @@ func InitFilesMethods() {
 
 
 	// n err = write file val
-	writeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"write", []string{"file","val"}, []string{"relish.pl2012/relish_lib/pkg/files/File","Any"}, []string{"Int","String"}, false, 0, false)
+	writeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"write", []string{"file","val"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","Any"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	writeMethod.PrimitiveCode = write	
 
     // err = close file
-	closeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"close", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
+	closeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"close", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +78,7 @@ func InitFilesMethods() {
 	// 
     //  err = sync file
     // """
-	syncMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"sync", []string{"file"}, []string{"relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
+	syncMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"sync", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +93,7 @@ func InitFilesMethods() {
 	//  err = remove path
 	// """
 	//
-	removeMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"remove", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	removeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"remove", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -107,7 +107,7 @@ func InitFilesMethods() {
 	//  err = removeAll path	
 	// """
 	//
-	removeAllMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"removeAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	removeAllMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"removeAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -120,7 +120,7 @@ func InitFilesMethods() {
 	//  err = move oldName newName	
 	// """
 	//
-	renameMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"move", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	renameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"move", []string{"oldName","newName"}, []string{"String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +133,7 @@ func InitFilesMethods() {
 	// name size mode modTime isDir fileExists err =
 	//    statPrimitive path
 	//
-	statPrimitiveMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"statPrimitive", 
+	statPrimitiveMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"statPrimitive", 
 		                                        []string{"path"}, []string{"String"}, 
 	                                            []string{"String","Int","Uint32","Time","Bool","Bool","String"}, false, 0, false)
 	if err != nil {
@@ -145,7 +145,7 @@ func InitFilesMethods() {
 	// name size mode modTime isDir fileExists err =
 	//    lstatPrimitive path
 	//
-	lstatPrimitiveMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"lstatPrimitive", 
+	lstatPrimitiveMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"lstatPrimitive", 
 		                                        []string{"path"}, []string{"String"}, 
 	                                            []string{"String","Int","Uint32","Time","Bool","Bool","String"}, false, 0, false)
 	if err != nil {
@@ -160,13 +160,13 @@ func InitFilesMethods() {
 	//
 	// err = mkdirAll path [permissions]
 	//
-	mkdirMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	mkdirMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	mkdirMethod.PrimitiveCode = mkdir		
 
-	mkdirMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	mkdirMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"mkdir", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -178,13 +178,13 @@ func InitFilesMethods() {
 	//
 	// err = mkdirAll path [permissions]
 	//	
-	mkdirAllMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
+	mkdirAllMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path"}, []string{"String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	mkdirAllMethod.PrimitiveCode = mkdirAll		
 
-	mkdirAllMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	mkdirAllMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"mkdirAll", []string{"path","permissions"}, []string{"String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -192,7 +192,7 @@ func InitFilesMethods() {
 
 
 
-	tempDirMethod, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"tempDir", []string{}, []string{}, []string{"String"}, false, 0, false)
+	tempDirMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"tempDir", []string{}, []string{}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -202,19 +202,19 @@ func InitFilesMethods() {
 
 
 
-	fileInitMethod1, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
+	fileInitMethod1, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	fileInitMethod1.PrimitiveCode = initFile  
 	
-	fileInitMethod2, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
+	fileInitMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	fileInitMethod2.PrimitiveCode = initFile
 	
-	fileInitMethod3, err := RT.CreateMethod("relish.pl2012/relish_lib/pkg/files",nil,"relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode","permission"}, []string{"relish.pl2012/relish_lib/pkg/files/File","String","String","String"},  []string{"relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
+	fileInitMethod3, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode","permission"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String","String","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}

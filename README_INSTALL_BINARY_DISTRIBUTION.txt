@@ -77,32 +77,32 @@ Steps for Linux    (See Apple Mac steps below this subsection)
    create standard subdirectories of /opt/relish to put the program and its data into,
    then will load and run the program.
 
-   relish examples.relish.pl2012/hello_application hello
+   relish shared.relish.pl2012/hello_application hello
 
    After downloading and loading the program, this should print the following to standard output:
 
    Hello World
 
    You can examine the program by looking at what is in the following relish source code file:
-   /opt/relish/shared/relish/artifacts/examples.relish.pl2012/hello_application/v0001/src/hello/main.rel
+   /opt/relish/shared/relish/artifacts/shared.relish.pl2012/hello_application/v0001/src/hello/main.rel
 
 9. If you want to try your hand at modifying the program (after reading about the relish language),
    then first you should create your own unshared local private copy of the program:
 
-   relish -dev examples.relish.pl2012/hello_application
+   relish -dev shared.relish.pl2012/hello_application
 
    This will create your own copy, under /opt/relish/artifacts instead of /opt/relish/shared/relish/artifacts 
 
    Now you can safely edit the file:
 
-   /opt/relish/artifacts/examples.relish.pl2012/hello_application/v0001/src/hello/main.rel
+   /opt/relish/artifacts/shared.relish.pl2012/hello_application/v0001/src/hello/main.rel
 
    and run it with the same command as above, as long as you are not running it from a directory
    which is /opt/relish/shared/relish/artifacts or below, because that would run the shared program and
    you want to run your local private copy that you modified.
    As long as your shell working directory is not somewhere in the shared artifacts tree, then
 
-   relish examples.relish.pl2012/hello_application hello
+   relish shared.relish.pl2012/hello_application hello
 
    will run your local copy of the program.
 
@@ -164,32 +164,32 @@ Steps for Apple Mac
    create standard subdirectories of ~/relish to put the program and its data into,
    then will load and run the program.
 
-   relish examples.relish.pl2012/hello_application hello
+   relish shared.relish.pl2012/hello_application hello
 
    After downloading and loading the program, this should print the following to standard output:
 
    Hello World
 
    You can examine the program by looking at what is in the following relish source code file:
-   ~/relish/shared/relish/artifacts/examples.relish.pl2012/hello_application/v0001/src/hello/main.rel
+   ~/relish/shared/relish/artifacts/shared.relish.pl2012/hello_application/v0001/src/hello/main.rel
 
 8. If you want to try your hand at modifying the program (after reading about the relish language),
    then first you should create your own unshared local private copy of the program:
 
-   relish -dev examples.relish.pl2012/hello_application
+   relish -dev shared.relish.pl2012/hello_application
 
    This will create your own copy, under ~/relish/artifacts instead of ~/relish/shared/relish/artifacts 
 
    Now you can safely edit the file:
 
-   ~/relish/artifacts/examples.relish.pl2012/hello_application/v0001/src/hello/main.rel
+   ~/relish/artifacts/shared.relish.pl2012/hello_application/v0001/src/hello/main.rel
 
    and run it with the same command as above, as long as you are not running it from a directory
    which is ~/relish/shared/relish/artifacts or below, because that would run the shared program and
    you want to run your local private copy that you modified.
    As long as your shell working directory is not somewhere in the shared artifacts tree, then
 
-   relish examples.relish.pl2012/hello_application hello
+   relish shared.relish.pl2012/hello_application hello
 
    will run your local copy of the program.
 

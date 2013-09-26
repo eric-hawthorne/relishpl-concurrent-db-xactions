@@ -1,4 +1,4 @@
-origin   relish.pl2012
+origin   shared.relish.pl2012
 artifact relish_tests
 package  web/bar
 

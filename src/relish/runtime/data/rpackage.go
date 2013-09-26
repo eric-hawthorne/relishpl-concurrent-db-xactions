@@ -106,13 +106,13 @@ THIS IS OBSOLETE COMMENT
 */
 func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPackage {
 
-	typ, typFound := rt.Types["relish.pl2012/core/pkg/relish/lang/Package"]
+	typ, typFound := rt.Types["shared.relish.pl2012/core/pkg/relish/lang/Package"]
 	var err error
 	if !typFound {
 		// Create the reflection type for packages.
 		// Note: The bad thing here is we're not giving the type its package.
 		// TODO Make an actual package here for the type to be in?
-		typ, err = rt.CreateType("relish.pl2012/core/pkg/relish/lang/Package", "lang/Package",[]string{})
+		typ, err = rt.CreateType("shared.relish.pl2012/core/pkg/relish/lang/Package", "lang/Package",[]string{})
 		if err != nil {
 			panic(fmt.Sprintf("Unable to define type 'relish.pl2012/core/pkg/relish/lang/Package' : %s", err))
 		}
