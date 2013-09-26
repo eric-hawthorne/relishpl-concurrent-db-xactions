@@ -125,6 +125,10 @@ yet.anotherorigin.com2012/artifact_name 4.2.0-7.0.0
 
 */
 
+// If true, relish tries to find artifacts served by a localhost webserver 
+// rather than at each origin's standard default web server.
+const TESTING_CODE_FETCH_LOCALLY = true  // Set to false for production operation of relish
+
 // 
 var reMetadataDate *regexp.Regexp = regexp.MustCompile(`relish artifact metadata: (2[0-2][0-9][0-9]/[0-9][0-9]/[0-9][0-9])`)
 var reCurrentVersion *regexp.Regexp = regexp.MustCompile(`current version: ([0-9]+\.[0-9]+\.[0-9]+)`)
@@ -163,8 +167,17 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 		return nil, zipFileName, err
 	}
 	defer resp.Body.Close()
+
+  if resp.StatusCode == 404 {  // HTTP Page/Resource Not Found 
+     err = fmt.Errorf("%s (v%s) not found at servers tried.", originAndArtifactPath, version)
+     return nil, zipFileName, err
+  } else if resp.StatusCode >= 400 {  // Other HTTP error
+     err = fmt.Errorf("%s (v%s) not found or HTTP errors at servers tried.",originAndArtifactPath, version)
+     return nil, zipFileName, err
+  }
+
 	body, err := ioutil.ReadAll(resp.Body)	
-	fmt.Println(len(body))
+	// fmt.Println(len(body))
 	
 	return body,zipFileName,nil
 }
@@ -180,31 +193,40 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, localMe
     hostDomain := hostUrl[7:]
     var dir string
     if originDomain == hostDomain || strings.HasPrefix(hostDomain,"localhost") {
-	   dir = "artifacts"
-	} else {
-	   dir = "replicas"
-	}
-   	url := hostUrl + "/relish/" + dir + "/" + originAndArtifactPath + "/metadata.txt"
-    
-    var resp *http.Response
-    var body []byte
+  	   dir = "artifacts"
+  	} else {
+  	   dir = "replicas"
+  	}
+     	url := hostUrl + "/relish/" + dir + "/" + originAndArtifactPath + "/metadata.txt"
+      
+      var resp *http.Response
+      var body []byte
 
-	resp, err = http.Get(url)
-	if err != nil {
-		return 
-	}
-	defer resp.Body.Close()
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}	
+  	resp, err = http.Get(url)
+  	if err != nil {
+  		return 
+  	}
+  	defer resp.Body.Close()
+
+    if resp.StatusCode == 404 {  // HTTP Page/Resource Not Found 
+       err = fmt.Errorf("%s not found at servers tried.",originAndArtifactPath)
+       return
+    } else if resp.StatusCode >= 400 {  // Other HTTP error
+       err = fmt.Errorf("%s not found or HTTP errors at servers tried.",originAndArtifactPath)
+       return
+    }
+
+  	body, err = ioutil.ReadAll(resp.Body)
+  	if err != nil {
+  		return
+  	}	
 
     var remoteCurrentVersion string
     var remoteMetadataDate string
     remoteCurrentVersion, remoteMetadataDate, err = readCurrentVersion(body, url)
-	if err != nil {
-		return
-	}
+  	if err != nil {
+  		return
+  	}
 
     if remoteMetadataDate > localMetadataDate {
         currentVersion = remoteCurrentVersion

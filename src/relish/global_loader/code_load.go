@@ -449,7 +449,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
 	    var zipFileContents []byte
 
-	    hostURL := ldr.DefaultCodeHost(originAndArtifactPath)
+	    defaultHostURL := ldr.DefaultCodeHost(originAndArtifactPath)
+        hostURL := defaultHostURL
 	
         // Note: TODO The correct order to do things is to load the metadata.txt file from the default host
         // (if possible) then to search for secondary hosts to get the version zip file, selecting
@@ -467,17 +468,32 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
         // Then, if we do not have a specified version yet, we should set version # from that,
 	
 	    var currentVersion string
-	    // Read remote metadata file. Store it locally if its current version is >= this tree's shared artifact metadata current version.
+	    // Read remote metadata file. Store it locally if its date is >= the local shared artifact metadata date.
 	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
 	    if err != nil {	
 		   hostURL += ":8421"
 	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+           if err == nil {
+               defaultHostURL = hostURL  // Append the :8421 port
+           } else {		
+              // Did not find artifact metadata at default standard web server for the origin, at port 80 or 8421.
 
-	       if err != nil {		
-		      return   // TODO We are demanding that the metadata be found at the default host.
-		               // Maybe need to backup from that.
-		               // Yes. We probably should look at shared.relish.pl
-		   }
+              // TODO Should really do a Google search for metadata found anywhere (except shared.relish.pl) now,
+              // so as to limit load and single point of failure on shared.relish.pl.
+              //
+              // Only if trying other replica sites fails should shared.relish.pl be tried.
+
+              // However, for now, we're going straight to trying shared.relish.pl, because Google searching and
+              // signed-metadata verification and signed-code verification aren't implemented yet. 
+
+              hostURL = "http://shared.relish.pl"
+             
+              // Read remote metadata file. Store it locally if its date is >= the local shared artifact metadata date.
+              currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath)  
+              if err != nil {
+                 return  // We really couldn't find and download metadata for this artifact anywhere we looked. Too bad.
+              }
+		   } 
 		}
 		if version == "" {
 			version = currentVersion
@@ -931,9 +947,11 @@ func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersio
 Returns the URL of the default host that should host the artifact.
 */
 func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) (hostURL string) {
-	hostURL = "http://localhost"
-	// Temporary comment out for initial testing
-	// hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
+    if TESTING_CODE_FETCH_LOCALLY {
+	   hostURL = "http://localhost"
+	} else {
+	   hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
+    }
 	return hostURL
 }
 	
