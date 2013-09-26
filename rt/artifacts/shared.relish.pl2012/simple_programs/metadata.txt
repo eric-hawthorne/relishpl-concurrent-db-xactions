@@ -3,7 +3,7 @@ origin: shared.relish.pl2012
 artifact: simple_programs
 current version: 0.1.0
 release date: 2012/11/18
-tags: application,example,tutorial
+tags: application,example,tutorial,relish
 
 A collection of examples of really simple relish programs. These are runnable versions of the programs 
 listed in the Tutorials/relish Simple Programs page ( http://relish.pl/tutorials/relish_simple_programs.html ).

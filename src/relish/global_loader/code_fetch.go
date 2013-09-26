@@ -93,34 +93,34 @@ Standard files conventions
 
 metadata.txt - name, current version, classification, and brief description of the software artifact.
 ---------------------------------
+relish artifact metadata: 2013/09/25
 origin: some.origin.org2012
 artifact: some/artifact/name
-current version: 2
+current version: 1.0.23
 release date: 2012/03/27
-standard tags: example tag, second example tag
-more tags:
+tags: application,game
 
 Start the 500 word or less summary on this line.
 Continue it like this.
 ---------------------------------
 
 
-v0002/built.txt  - metadata listing the version of each dependency which was used in the latest successful test execution of this
-                   version of this artifact's test suite.
+v1.0.23/built.txt  - metadata listing the version of each dependency which was used in the latest successful test execution of this
+                    version of this artifact's test suite.
 
 ---------------------------------
-some.otherorigin.com2011/some/artifact_name 26
-yet.anotherorigin.com2012/artifact_name 7
+some.otherorigin.com2011/some/artifact_name 0.9.26
+yet.anotherorigin.com2012/artifact_name 2.3.1
 ---------------------------------
 
 
-v0002/dependencies.txt  - metadata listing the versions of each dependency which this version of this artifact have been tested against successfully.
+v01.0.23/dependencies.txt  - metadata listing the versions of each dependency which this version of this artifact have been tested against successfully.
                           Note that this does not mean that all combinations of the listed versions of dependency A have been tested 
                           with all listed versions of dependency B. 
 
 ---------------------------------
-some.otherorigin.com2011/some/artifact_name 2-14,17-26
-yet.anotherorigin.com2012/artifact_name 4-7
+some.otherorigin.com2011/some/artifact_name 2.3.1-3.0.14,3.0.17-3.0.26
+yet.anotherorigin.com2012/artifact_name 4.2.0-7.0.0
 ---------------------------------
 
 */

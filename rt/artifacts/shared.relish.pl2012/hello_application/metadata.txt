@@ -1,8 +1,8 @@
 relish artifact metadata: 2013/09/25
 origin: shared.relish.pl2012
 artifact: hello_application
-current version: 0.1.0
+current version: 0.7.0
 release date: 2012/09/25
-tags: application,example,hello world
+tags: application,example,hello world,relish
 
 A program which is fully capable of greeting on a large scale.
