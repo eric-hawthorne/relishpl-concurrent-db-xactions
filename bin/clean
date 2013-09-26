@@ -13,9 +13,9 @@
 # 
 # which will clean all versions of the artifact.
 #
-# clean shared.relish.pl2012/relish_tests 2
+# clean shared.relish.pl2012/relish_tests 1.0.23
 #
-# Cleans only version 2 of the specified artifact.
+# Cleans only version 1.0.23 of the specified artifact.
 #
 #
 # See also the rmdb script.
@@ -57,31 +57,14 @@ then
 elif [ $# -eq 2 ]  
 then
 	ARTIFACT=$1
-        VERSION=$2
-        if [ $VERSION -gt 999 ]
-	then
-		REMOVED=$ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg
-		rm -fr $ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg 
-        	echo "Removed $REMOVED"
-        elif [ $VERSION -gt 99 ]
-	then
-		REMOVED=$ARTIFACTSDIR/$ARTIFACT/v0$VERSION/pkg
-		rm -fr $ARTIFACTSDIR/$ARTIFACT/v0$VERSION/pkg 
-        	echo "Removed $REMOVED"
-        elif [ $VERSION -gt 9 ]
-	then
-		REMOVED=$ARTIFACTSDIR/$ARTIFACT/v00$VERSION/pkg
-		rm -fr $ARTIFACTSDIR/$ARTIFACT/v00$VERSION/pkg 
-        	echo "Removed $REMOVED"
-	else
-		REMOVED=$ARTIFACTSDIR/$ARTIFACT/v000$VERSION/pkg
-		rm -fr $ARTIFACTSDIR/$ARTIFACT/v000$VERSION/pkg 
-        	echo "Removed $REMOVED"
-	fi
+	VERSION=$2
+	REMOVED=$ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg
+	rm -fr $ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg 
+	echo "Removed $REMOVED"
 else
 	echo "usage:" 
 	echo "clean" 
-	echo "clean relispl2012/relish_tests" 
-	echo "clean relispl2012/relish_tests 1" ; exit 0
+	echo "clean shared.relish.pl2012/relish_tests" 
+	echo "clean shared.relish.pl2012/relish_tests 1.0.23" ; exit 0
 fi
 

@@ -39,6 +39,6 @@ then
 		echo "$DATADIR/$ARTIFACT/db1.db NOT FOUND! Do you have RELISH_HOME set correctly?" 
 	fi
 else
-	echo "usage: rmdb origin/artifact    e.g.  rmdb relishpl2012/relish_tests" 
+	echo "usage: rmdb origin/artifact    e.g.  rmdb shared.relish.pl2012/relish_tests" 
 fi
 
