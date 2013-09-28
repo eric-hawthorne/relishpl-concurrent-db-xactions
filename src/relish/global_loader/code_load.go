@@ -29,6 +29,10 @@ import (
     . "relish/dbg"
 )
 
+
+const STANDARD_SOURCE_CODE_SHARING_PORT = "8421"  // relish source code may be shared on port 80 or 8421
+
+
 type Loader struct {
 	RelishRuntimeLocation string
 	LoadedArtifacts map [string]string  // map from originAndArtifactPath to loaded version number
@@ -43,6 +47,10 @@ type Loader struct {
 	LocalIdPackage map [string] string // map from local id (short name) of package to package full path.
     SharedCodeOnly bool // if true, do not consider the local artifacts dir tree to find any code, only shared/relish/artifacts
     DatabaseName string // name, not full path, of SQLITE database file.
+
+    nonSearchedOriginHostUrls map[string][]string  // cached list of urls of hosts where code from an origin may be found
+                                                   // this list comes from configuration files in the rt/xtras directory
+                                                   // and from the standard host-for-origin naming convention.
 }
 
 //
@@ -59,7 +67,10 @@ Params:
 */
 func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string) *Loader {
 
-	ldr := &Loader{relishRuntimeLocation,make(map[string]string),make(map[string]bool),make(map[string]bool),make(map[string]bool),make(map[string]string),make(map[string]bool),make(map[string]string),make(map[string]string), sharedCodeOnly, databaseName}
+	ldr := &Loader{relishRuntimeLocation,make(map[string]string),make(map[string]bool),
+                   make(map[string]bool),make(map[string]bool),make(map[string]string),
+                   make(map[string]bool),make(map[string]string),make(map[string]string), 
+                   sharedCodeOnly, databaseName, make(map[string][]string)}
 	return ldr
 }
 
@@ -449,34 +460,63 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
 	    var zipFileContents []byte
 
-	    defaultHostURL := ldr.DefaultCodeHost(originAndArtifactPath)
-        hostURL := defaultHostURL
-	
+        if sharedCurrentVersion == "" {
+           sharedCurrentVersion,metadataDate, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath)
+        }
+
+        // replaced by stuff below
+        // defaultHostURL := ldr.DefaultCodeHost(originAndArtifactPath)
+        // hostURL := defaultHostURL        
+        //
+        // REVIEW THIS COMMENT 
         // Note: TODO The correct order to do things is to load the metadata.txt file from the default host
         // (if possible) then to search for secondary hosts to get the version zip file, selecting
         // one AT RANDOM, 
         // then if all of those (some number of) mirrors fail, get it from the default host
-        // Also, use port 80 then 8421.	
-	
-	    if sharedCurrentVersion == "" {
-		   sharedCurrentVersion,metadataDate, err = ldr.readMetadataFile(sharedReplicaMetadataFilePath)
-	    }
-	
+        // Also, use port 80 then 8421. 
+
+        hostURLs := ldr.NonSearchedCodeHostURLs(originAndArtifactPath,"")   // NEW
+
         // if we did not have the metadata file on filesystem before, or if remote metadata file is newer,
         // we should download and cache the metadata.txt file from the remote repository.
         // 
         // Then, if we do not have a specified version yet, we should set version # from that,
-	
-	    var currentVersion string
-	    // Read remote metadata file. Store it locally if its date is >= the local shared artifact metadata date.
-	    currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
-	    if err != nil {	
+    
+        var currentVersion string
+
+        var hostURL string
+        for _,hostURL := range hostURLs {
+
+	       // Read remote metadata file. Store it locally if its date is >= the local shared artifact metadata date.
+	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
+	       if err == nil {
+               break
+           } else if currentVersion != "" {
+               return  // Inability to create or write local metadata file. Bad error.
+           }
+        }
+        if currentVersion == "" {
+            // TODO Now try google search 
+        }
+
+        if currentVersion == "" {
+            // TODO Now try shared.relish.pl 
+
+            hostURL = "http://shared.relish.pl"            
+        }
+
+
+
+        if err != nil {	
 		   hostURL += ":8421"
 	       currentVersion, err = fetchArtifactMetadata(hostURL, originAndArtifactPath, metadataDate, sharedCurrentVersion, sharedReplicaMetadataFilePath) 	
            if err == nil {
                defaultHostURL = hostURL  // Append the :8421 port
            } else {		
               // Did not find artifact metadata at default standard web server for the origin, at port 80 or 8421.
+
+              // TODO consult xtras originHosts map (from xtras/relish_code_origins.txt) now.
+              //
 
               // TODO Should really do a Google search for metadata found anywhere (except shared.relish.pl) now,
               // so as to limit load and single point of failure on shared.relish.pl.
@@ -493,6 +533,13 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
               if err != nil {
                  return  // We really couldn't find and download metadata for this artifact anywhere we looked. Too bad.
               }
+
+              // TODO consult xtras repositories list (from xtras/relish_code_repositories.txt) now, before giving up.
+
+
+              hostURLs = ldr.NonSearchedCodeHostURLs (originAndArtifactPath, hostURL)  // NEW
+
+
 		   } 
 		}
 		if version == "" {
@@ -965,6 +1012,95 @@ TODO
 func (ldr *Loader) FindSecondaryCodeHosts (originAndArtifactPath string, primaryHostURL string) (hostURLs []string, err error) {
 	return hostURLs, nil
 }
+
+
+
+/*
+Returns a list of urls of http servers, in order, to check for the presence of the artifact.
+Starts with any staging servers for the code origin (from xtras/relish_code_staging_servers.txt)
+Then comes the default standard host name for the code origin.
+Then comes alternate hosts for the origin (from xtras/relish_code_origins.txt)
+Then comes known replicating hosts of the origin (from xtras/relish_code_replicas.txt)
+Then comes other general relish code repository hosts (from xtras/relish_code_repositories.txt)
+Does not include Google-searched servers.
+Does not include the shared.relish.pl server
+
+If startingHost is present, the returned list of hosts will begin at that host instead of at the beginning
+of the list that would otherwise be returned. This allows hosts that have been unsuccessfully checked for
+metadata.txt files to not be checked for artifact zip files either.
+*/
+func (ldr *Loader) NonSearchedCodeHostURLs (originAndArtifactPath string, startingHost string) (hostURLs []string) {
+
+    origin := ldr.Origin(originAndArtifactPath)
+
+    hostURLs, found := ldr.nonSearchedOriginHostUrls[origin]
+    if ! found {
+        var hosts []string
+        hosts = ldr.nonSearchedCodeHostURLs(origin)
+        if startingHost != "" {
+            for i,host := range hosts {
+                if host == startingHost {
+                    hostURLs = hosts[i:]
+                    ldr.nonSearchedOriginHostUrls[origin] = hostURLs
+                    return
+                }
+            }
+        }
+        hostURLs = hosts
+    }
+    return
+}
+
+/*
+Helper. Constructs a list in a particular order of host urls to search for relish source code from a particular code origin.
+*/
+func (ldr *Loader) nonSearchedCodeHostURLs (origin string) (hostURLs []string) {
+
+    defaultOriginHostURL = "http://" + origin[:len(origin)-4]
+
+    stagingCodeHosts 
+
+
+    hostURLs = ldr.stagingCodeHostURLs(origin)
+    hostURLs = append(hostURLs, defaultOriginHostURL)
+    hostURLs = append(hostURLs, defaultOriginHostURL + ":" + STANDARD_SOURCE_CODE_SHARING_PORT)
+    hostURLs = append(hostURLs, ldr.originCodeHostURLs(origin)...)
+    hostURLs = append(hostURLs, ldr.replicaCodeHostURLs(origin)...)
+    hostURLs = append(hostURLs, ldr.repositoryHostURLs()...)     
+}
+
+// TODO These should be maps and lists in the loader, initialized at startup from the rt/xtras config files.
+
+func (ldr *Loader) stagingCodeHostURLs (origin string) (hostURLs []string) {
+    return l
+}
+
+func (ldr *Loader) originCodeHostURLs (origin string) (hostURLs []string) {
+    return 
+}
+
+func (ldr *Loader) replicaCodeHostURLs (origin string) (hostURLs []string) {
+    return 
+}
+
+func (ldr *Loader) repositoryHostURLs () (hostURLs []string) {
+    return 
+}
+
+
+
+
+
+
+
+/*
+Return the origin part of the originAndArtifact path.
+*/  
+func (ldr *Loader) Origin(originAndArtifactName string) string {
+    return originAndArtifactName[:strings.Index(originAndArtifactName,"/")]
+}   
+
+
 
 
 /*

@@ -260,7 +260,7 @@ func main() {
 
     if publish {
        if len(pathParts) < 2 {
-          fmt.Println("Usage (example): relish -publish somorigin.com2013/artifact_name 103")
+          fmt.Println("Usage (example): relish -publish somorigin.com2013/artifact_name 1.0.23")
           return
        }
 	   originAndArtifact = pathParts[0]
