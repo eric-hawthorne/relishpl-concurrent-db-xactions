@@ -16,6 +16,7 @@ import (
     "io"
 	"bytes"
     "strings"
+    "bufio"
 //    "strconv"
     "os"
 //	. "relish/runtime/data"
@@ -51,6 +52,11 @@ type Loader struct {
     nonSearchedOriginHostUrls map[string][]string  // cached list of urls of hosts where code from an origin may be found
                                                    // this list comes from configuration files in the rt/xtras directory
                                                    // and from the standard host-for-origin naming convention.
+    
+    stagingServerUrls map[string][]string  
+    originUrls map[string][]string  
+    replicaUrls map[string][]string  
+    repositoryUrls []string  
 }
 
 //
@@ -70,9 +76,14 @@ func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName s
 	ldr := &Loader{relishRuntimeLocation,make(map[string]string),make(map[string]bool),
                    make(map[string]bool),make(map[string]bool),make(map[string]string),
                    make(map[string]bool),make(map[string]string),make(map[string]string), 
-                   sharedCodeOnly, databaseName, make(map[string][]string)}
+                   sharedCodeOnly, databaseName, make(map[string][]string),
+                   make(map[string][]string),make(map[string][]string),make(map[string][]string),nil}
+
+    ldr.initCodeLocations()
 	return ldr
 }
+
+
 
 
 /*
@@ -1072,21 +1083,133 @@ func (ldr *Loader) nonSearchedCodeHostURLs (origin string) (hostURLs []string) {
 
 // TODO These should be maps and lists in the loader, initialized at startup from the rt/xtras config files.
 
-func (ldr *Loader) stagingCodeHostURLs (origin string) (hostURLs []string) {
-    return 
+func (ldr *Loader) stagingCodeHostURLs (origin string) []string {
+    return ldr.stagingServerUrls[origin]
 }
 
-func (ldr *Loader) originCodeHostURLs (origin string) (hostURLs []string) {
-    return 
+func (ldr *Loader) originCodeHostURLs (origin string) []string {
+    return ldr.originUrls[origin]
 }
 
-func (ldr *Loader) replicaCodeHostURLs (origin string) (hostURLs []string) {
-    return 
+func (ldr *Loader) replicaCodeHostURLs (origin string) []string {
+    return ldr.replicaUrls[origin]
 }
 
-func (ldr *Loader) repositoryHostURLs () (hostURLs []string) {
-    return 
+func (ldr *Loader) repositoryHostURLs () []string {
+    return ldr.repositoryUrls
 }
+
+
+func (ldr *Loader) initCodeLocations() {
+	xtrasDirPath := ldr.RelishRuntimeLocation + "/xtras/"
+	stagingServersFilePath := xtrasDirPath + "relish_code_staging_servers.txt"
+	originsFilePath := xtrasDirPath + "relish_code_origins.txt"
+	replicasFilePath := xtrasDirPath + "relish_code_replicas.txt"
+	repositoriesFilePath := xtrasDirPath + "relish_code_repositories.txt"			
+
+	f,err := os.Open(stagingServersFilePath)
+	if err != nil {
+	   r := bufio.NewReader(f)
+	   for {
+		  line, err := r.ReadString('\n')
+		  if err != nil {
+			break
+		  }
+		  words := strings.Fields(line)
+		  if len(words) < 2 {
+			 fmt.Println("Error: xtras/relish_code_staging_servers.txt has a line with too few entries on it.")
+		  } else {
+			 origin := words[0]
+			 servers := words[1:]
+			 if ! strings.HasPrefix(origin, "#") {
+				var serverURLs []string
+				for _,server := range servers {
+					serverURLs = append(serverURLs, "http://" + server)
+					if strings.Index(server,":") == -1 {
+					   serverURLs = append(serverURLs, "http://" + server + ":" + STANDARD_SOURCE_CODE_SHARING_PORT)						
+					}
+				} 
+				ldr.stagingServerUrls[origin] = serverURLs
+			 }
+		  }
+	   } 	
+	   f.Close()	 
+    }	
+
+	f,err = os.Open(originsFilePath)
+	if err != nil {
+	   r := bufio.NewReader(f)
+	   for {
+		  line, err := r.ReadString('\n')
+		  if err != nil {
+			break
+		  }
+		  words := strings.Fields(line)
+		  if len(words) < 2 {
+			 fmt.Println("Error: xtras/relish_code_staging_servers.txt has a line with too few entries on it.")
+		  } else {
+			 origin := words[0]
+			 servers := words[1:]
+			 if ! strings.HasPrefix(origin, "#") {
+				var serverURLs []string
+				for _,server := range servers {
+					serverURLs = append(serverURLs, "http://" + server)
+					if strings.Index(server,":") == -1 {
+					   serverURLs = append(serverURLs, "http://" + server + ":" + STANDARD_SOURCE_CODE_SHARING_PORT)						
+					}
+				} 				
+				ldr.originUrls[origin] = serverURLs
+			 }
+		  }
+	   } 	
+	   f.Close()	 
+    }
+
+	f,err = os.Open(replicasFilePath)
+	if err != nil {
+	   r := bufio.NewReader(f)
+	   for {
+		  line, err := r.ReadString('\n')
+		  if err != nil {
+			break
+		  }
+		  words := strings.Fields(line)
+		  if len(words) < 2 {
+			 fmt.Println("Error: xtras/relish_code_staging_servers.txt has a line with too few entries on it.")
+		  } else {
+			 origin := words[0]
+			 servers := words[1:]
+			 if ! strings.HasPrefix(origin, "#") {
+				var serverURLs []string
+				for _,server := range servers {
+					serverURLs = append(serverURLs, "http://" + server)
+					if strings.Index(server,":") == -1 {
+					   serverURLs = append(serverURLs, "http://" + server + ":" + STANDARD_SOURCE_CODE_SHARING_PORT)						
+					}
+				} 					
+				ldr.replicaUrls[origin] = serverURLs
+			 }
+		  }
+	   } 	
+	   f.Close()	 
+    }
+
+    var b []byte
+	b,err = ioutil.ReadFile(repositoriesFilePath)
+	if err != nil {
+		servers := strings.Fields(string(b))
+		var serverURLs []string
+		for _,server := range servers {
+			serverURLs = append(serverURLs, "http://" + server)
+			if strings.Index(server,":") == -1 {
+			   serverURLs = append(serverURLs, "http://" + server + ":" + STANDARD_SOURCE_CODE_SHARING_PORT)						
+			}
+		}
+		ldr.repositoryUrls = serverURLs				 
+    }
+}
+
+
 
 
 
