@@ -53,8 +53,17 @@ Command line options:
                or failing that 8421, or, if behind apache2 modproxy, any other port is fine but apache2 should
                present it as port 80 or port 8421. It is ok for the share port to be the same as the web port.
 
+TODO 
+-renew  [origin...] delete all shared replicas (or just all from the specified origins]
+                    so they will be re-fetched from their originating (or other replica) servers.
 
-
+TODO Further future, speculative:
+Note that maybe there should also be a special relish method which does this, universally, or by origin or originAndArtifact.
+This method could be executed by a web request, if desired and if the web request handler was written, so as to
+allow remote renewal of some or all of the code running in a relish installation.
+We would have to have an unload-and-reload feature in the relish runtime to allow in-situ recompilation and linking
+of stuff. This is complicated, as it would require stopping background "threads" and re-initializing things that
+were initialized at the first startup and load in the runtime. (It's also a bit of a potential security nightmare.)
 
 */
 package main
@@ -104,8 +113,6 @@ func main() {
 	flag.IntVar(&shareListeningPort, "share", 0, "The code sharing http listening port - if not supplied, does not listen for source code sharing http requests")	    
 
     flag.BoolVar(&publish, "publish", false, "artifactpath version - copy specified version of artifact to shared/relish/artifacts")
-
-
 
     flag.Parse()
 
