@@ -183,6 +183,12 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
         return 
     } 
+
+    err = os.Remove(srcZipFilePath)
+    if err != nil {
+       fmt.Printf("Error removing %s: %s\n", srcZipFilePath,err)
+       return 
+    }
     return
 }
 
