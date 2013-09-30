@@ -280,6 +280,36 @@ func main() {
        return
     }
 
+ 
+	sourceCodeShareDir := ""
+    if shareListeningPort != 0 {
+       // sourceCodeShareDir hould be the "relish/shared" 
+       // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
+	   sourceCodeShareDir = relishRoot + "/shared"
+    }
+    onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0)
+
+    if onlyCodeSharing {
+	
+	   if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
+			fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+			return		
+	   }		
+	
+	   // go g.Interp.RunMain(fullUnversionedPackagePath)	
+
+       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
+	}
+
+
+
+
+
+
+
+
+
+
 
 	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db")
 	
@@ -298,7 +328,7 @@ func main() {
 		    originAndArtifact = pathParts[0]
 		    packagePath = pathParts[1]
 		
-	   } else {
+	   } else if shareListeningPort == 0 || webListeningPort != 0 {
 	      fmt.Println("Usage: relish [-log n] [-web 80] originAndArtifact [version] path/to/package")
 	      return
 	   }		
@@ -345,12 +375,6 @@ func main() {
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
 
-	sourceCodeShareDir := ""
-	if shareListeningPort != 0 {
-	    // sourceCodeShareDir hould be the "relish/shared" 
-	    // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
-		sourceCodeShareDir = relishRoot + "/shared"
-	}
 	
 	if webListeningPort != 0 {
 	   if webListeningPort < 1024 && webListeningPort != 80 && webListeningPort != 443 {
@@ -383,19 +407,7 @@ func main() {
 	         web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
 	      }			
 	      web.ListenAndServe(webListeningPort, "")	
-	   }
-	
-	} else if shareListeningPort != 0 {
-	   if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
-			fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
-			return		
-	   }		
-	
-	   go g.Interp.RunMain(fullUnversionedPackagePath)	
-
-       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 	
-
-	
+	   }	
 	} else {
 	   g.Interp.RunMain(fullUnversionedPackagePath)
 	}

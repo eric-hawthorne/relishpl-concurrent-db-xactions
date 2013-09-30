@@ -125,9 +125,6 @@ yet.anotherorigin.com2012/artifact_name 4.2.0-7.0.0
 
 */
 
-// If true, relish tries to find artifacts served by a localhost webserver 
-// rather than at each origin's standard default web server.
-const TESTING_CODE_FETCH_LOCALLY = true  // Set to false for production operation of relish
 
 // 
 var reMetadataDate *regexp.Regexp = regexp.MustCompile(`relish artifact metadata: (2[0-2][0-9][0-9]/[0-9][0-9]/[0-9][0-9])`)

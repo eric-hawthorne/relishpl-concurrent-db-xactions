@@ -1007,13 +1007,8 @@ func readCurrentVersion(metadata []byte, metadataFilePath string) (currentVersio
 /*
 Returns the URL of the default host that should host the artifact.
 */
-func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) (hostURL string) {
-    if TESTING_CODE_FETCH_LOCALLY {
-	   hostURL = "http://localhost"
-	} else {
-	   hostURL = "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
-    }
-	return hostURL
+func (ldr *Loader) DefaultCodeHost (originAndArtifactPath string) string {
+   return "http://" + originAndArtifactPath[:strings.Index(originAndArtifactPath,"/")-4]
 }
 	
 	
@@ -1108,7 +1103,7 @@ func (ldr *Loader) initCodeLocations() {
 	repositoriesFilePath := xtrasDirPath + "relish_code_repositories.txt"			
 
 	f,err := os.Open(stagingServersFilePath)
-	if err != nil {
+	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
 		  line, err := r.ReadString('\n')
@@ -1137,7 +1132,7 @@ func (ldr *Loader) initCodeLocations() {
     }	
 
 	f,err = os.Open(originsFilePath)
-	if err != nil {
+	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
 		  line, err := r.ReadString('\n')
@@ -1166,7 +1161,7 @@ func (ldr *Loader) initCodeLocations() {
     }
 
 	f,err = os.Open(replicasFilePath)
-	if err != nil {
+	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
 		  line, err := r.ReadString('\n')
@@ -1196,7 +1191,7 @@ func (ldr *Loader) initCodeLocations() {
 
     var b []byte
 	b,err = ioutil.ReadFile(repositoriesFilePath)
-	if err != nil {
+	if err == nil {
 		servers := strings.Fields(string(b))
 		var serverURLs []string
 		for _,server := range servers {
