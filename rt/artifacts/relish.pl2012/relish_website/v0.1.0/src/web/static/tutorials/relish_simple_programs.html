@@ -1,0 +1,542 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish simple programs
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Simple Programs</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </div>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </div>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </div>
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Introduction">Introduction</a><br/>	
+	<a href="#Output" class="alt">Output</a><br/>
+	<a href="#InputAssignment">Input,Assignment</a><br/>
+	<a href="#LoopsEnumeration" class="alt">Loops,Enumeration</a><br/>	
+	<a href="#FibonacciMultiAssign">Fibonacci,Multiple-Assignment</a><br/>	
+	<a href="#Methods" class="alt">Methods</a><br/>	
+	<!-- <a href="#ImportRegexp">Import,Regular Expressions</a><br/>	-->	
+	<!-- <a href="#TimeConditionals">Time,Conditionals</a><br/> -->			
+  <a href="#MapsGenerators" >Maps,'for' Generators</a><br/>   
+  <a href="#ConstRawStringsWhile" class="alt">Constants,Multi-line Strings,While Loop</a><br/>
+  <a href="#DataTypesConstructors">Programmer-defined Data Types,Constructors</a><br/>
+</div>  
+<div id="content_manual">
+	<a name="Introduction"><h3>Introduction</h3></a>
+
+			<p>
+			Here is a collection of simple relish&#8482; program examples. 
+			</p>
+			<p>
+				 <span class="future">relish language features or built-in methods or standard library methods that are planned but not yet implemented are shown in text of this colour.</span>
+				</p>				
+				</p>
+			<p>All relish programs must live in a file called some_filename.rel, which must be located in a package directory within a version directory of a relish software artifact directory. To execute an example program below, you would have to place it in a source code file in the right context. You would also have to give each code snippet a source code preamble, because all relish source code files must have some standard header information at the top of the file. Additionally, the snippet of code would have to be placed in a main function to run. 
+			</p>
+				<p>The purpose of these rules is to ensure interoperability of large codebases, and to ensure that code files are findable and self-explanatory.
+			</p>
+			<p>
+				Each of the code examples excerpted below can be found in runnable form within the relish distribution directory structure, in the shared.relish.pl2012/simple_programs software artifact. This can be found in the relish/artifacts/ directory if you have a binary distribution of relish, or in the relish/rt/artifacts/ directory if you have a source distribution of relish. Running instructions: 1. cd to the artifacts directory. 2. Issue command e.g.: relish shared.relish.pl2012/simple_programs fibonacci
+				</p>
+			
+
+<br/>
+<a name="Output"><h3>Output</h3></a>
+<code><pre>
+   print “Hello, 世界”
+</pre></code>
+<br/>
+<a name="InputAssignment"><h3>Input, assignment</h3></a>
+<code><pre>
+   name = input “What is your name?\n”
+   print fill “Hi, %s.” name
+</pre></code>
+<br/>
+<a name="LoopsEnumeration"><h3>For loop, built-in enumeration of elements of a collection</h3></a>
+<code><pre>
+   friends = [“john” “pat” “gary” “michael”]
+   for i name in friends
+      print fill "iteration %s is %s" i name
+</pre></code>
+
+<br/>
+<a name="FibonacciMultiAssign"><h3>Fibonacci, multiple assignment</h3></a>
+<code><pre>
+   parents babies = 1 1 
+   while lt babies 100
+      print fill “This generation has %s babies” babies
+      parents babies = babies 
+                       plus parents babies
+</pre></code>
+<br/>
+<a name="Methods"><h3>Methods</h3></a>
+<code><pre>
+greet name String 
+"""
+ Issue a greeting to the named person.
+"""
+   print “Hello” name
+
+
+main
+"""
+ Be polite.
+"""
+   greet “Jack”
+   greet “Jill”
+</pre></code>
+<br/>
+<!--
+<a name="ImportRegexp"><h3>Import, regular expressions</h3></a>
+<code><pre>
+import re
+
+main
+"""
+ Check phone numbers.
+"""
+   for testString in ["555-1212" "ILL-EGAL"]
+      <span class="future">if re.match "^\d{3}-\d{4}$" testString</span>
+         print testString "is a valid US local phone number"
+      else
+         print testString "rejected""
+</pre></code>
+<br/>
+-->
+<a name="MapsGenerators"><h3>Maps, 'for' Generators</h3>
+<code><pre>
+   prices = {"apple"=>0.40 "banana"=>0.50 "orange"=>0.45}
+   myPurchase = {
+                   "apple"  => 1
+                   "banana" => 6
+                }
+   groceryBill = sum [
+                        for fruit in myPurchase
+                           times prices[! fruit] myPurchase[! fruit]
+                     ]Float
+
+   print fill "I owe the grocer $%s" groceryBill
+
+   roundFruitPrices = {
+                         for fruit price in prices
+                            if not eq fruit "banana"
+                               fruit 
+                               price
+                      }String > Float
+
+   print len roundFruitPrices
+</pre></code>
+
+<!--
+<a name="MapsListComprehensions"><h3>Command line arguments, exception handling</h3></a>
+	#!/usr/bin/env python
+	# This program adds up integers in the command line
+	import sys
+	try:
+	    total = sum(int(arg) for arg in sys.argv[1:])
+	    print 'sum =', total
+	except ValueError:
+	    print 'Please supply integer arguments'
+
+
+	9 lines: Opening files
+	# indent your Python code to put into an email
+	import glob
+	# glob supports Unix style pathname extensions
+	python_files = glob.glob('*.py')
+	for file_name in sorted(python_files):
+	    print '    ------' + file_name
+
+	    with open(file_name) as f:
+	        for line in f:
+	            print '    ' + line.rstrip()
+
+	    print
+-->
+
+<!--
+<a name="TimeConditionals"><h3>Time, conditionals</h3></a>
+<code><pre>
+import time
+
+main
+"""
+ Determine current activity.
+"""
+   activities = {<span class="future">&lt;</span>
+                   8  => "Sleeping"
+                   9  => "Commuting"
+                   17 => "Working"
+                   18 => "Commuting"
+                   20 => "Eating"
+                   22 => "Resting"
+                }
+
+   timeNow = now "Local"
+   hourNow = hour timeNow
+   found = false
+   for activityTime in activities
+      if lt hourNow activityTime
+         found = true
+         print activities[activityTime]
+         break
+   if not found
+      print "Unknown, AFK or sleeping!"
+</pre></code>
+
+-->
+<br/>
+<a name="ConstRawStringsWhile"><h3>Constants, Multi-line strings, while loop</h3></a>
+<code><pre>
+REFRAIN = """
+%s bottles of beer on the wall,
+%s bottles of beer,
+take one down, pass it around,
+%s bottles of beer on the wall!
+"""
+
+main
+"""
+ Sing!
+"""
+   bottlesOfBeer = 99
+   while gt bottlesOfBeer 1
+      print fill REFRAIN bottlesOfBeer bottlesOfBeer (minus bottlesOfBeer 1)
+      bottlesOfBeer = minus bottlesOfBeer 1
+</pre></code>
+
+<br/>
+<a name="DataTypesConstructors"><h3>Programmer-Defined Data Types, Constructors</h3></a>
+<code><pre>
+BankAccount
+"""
+ A simple bank account data-type.
+ Has one attribute; its balance.
+"""
+   balance Float
+
+
+initBankAccount acc BankAccount initialBalance Float > BankAccount
+"""
+ Constructor method for a bank account. Gives it an initial balance.
+"""
+   acc.balance = initialBalance
+   => acc
+
+
+deposit acc BankAccount amount Float
+"""
+ Deposit an amount of money in the bank account.
+"""
+   acc.balance = plus acc.balance amount
+
+
+withdraw acc BankAccount amount Float
+"""
+ Withdraw an amount of money from the bank account.
+"""
+   acc.balance = minus acc.balance amount
+
+
+overdrawn acc BankAccount > Bool
+"""
+ Return true if the bank account has a negative balance.
+ Return false otherwise.
+"""
+   => lt acc.balance 0.0
+
+
+main
+"""
+ Create, modify and check a bank account.
+"""
+   myAccount = BankAccount 15
+   withdraw myAccount 5
+   print myAccount.balance
+</pre></code>
+<br/>
+<!--
+	12 lines: Classes
+	class BankAccount(object):
+	    def __init__(self, initial_balance=0):
+	        self.balance = initial_balance
+	    def deposit(self, amount):
+	        self.balance += amount
+	    def withdraw(self, amount):
+	        self.balance -= amount
+	    def overdrawn(self):
+	        return self.balance < 0
+	my_account = BankAccount(15)
+	my_account.withdraw(5)
+	print my_account.balance
+
+
+	13 lines: Unit testing with unittest
+	import unittest
+	def median(pool):
+	    copy = sorted(pool)
+	    size = len(copy)
+	    if size % 2 == 1:
+	        return copy[(size - 1) / 2]
+	    else:
+	        return (copy[size/2 - 1] + copy[size/2]) / 2
+	class TestMedian(unittest.TestCase):
+	    def testMedian(self):
+	        self.failUnlessEqual(median([2, 9, 9, 7, 9, 2, 4, 5, 8]), 7)
+	if __name__ == '__main__':
+	    unittest.main()
+
+
+	14 lines: Doctest-based testing
+	def median(pool):
+	    '''Statistical median to demonstrate doctest.
+	    >>> median([2, 9, 9, 7, 9, 2, 4, 5, 8])
+	    7
+	    '''
+	    copy = sorted(pool)
+	    size = len(copy)
+	    if size % 2 == 1:
+	        return copy[(size - 1) / 2]
+	    else:
+	        return (copy[size/2 - 1] + copy[size/2]) / 2
+	if __name__ == '__main__':
+	    import doctest
+	    doctest.testmod()
+
+
+	15 lines: itertools
+	from itertools import groupby
+	lines = '''
+	This is the
+	first paragraph.
+
+	This is the second.
+	'''.splitlines()
+	# Use itertools.groupby and bool to return groups of
+	# consecutive lines that either have content or don't.
+	for has_chars, frags in groupby(lines, bool):
+	    if has_chars:
+	        print ' '.join(frags)
+	# PRINTS:
+	# This is the first paragraph.
+	# This is the second.
+
+
+	16 lines: csv module, tuple unpacking, cmp() built-in
+	import csv
+
+	# write stocks data as comma-separated values
+	writer = csv.writer(open('stocks.csv', 'wb', buffering=0))
+	writer.writerows([
+	    ('GOOG', 'Google, Inc.', 505.24, 0.47, 0.09),
+	    ('YHOO', 'Yahoo! Inc.', 27.38, 0.33, 1.22),
+	    ('CNET', 'CNET Networks, Inc.', 8.62, -0.13, -1.49)
+	])
+
+	# read stocks data, print status messages
+	stocks = csv.reader(open('stocks.csv', 'rb'))
+	status_labels = {-1: 'down', 0: 'unchanged', 1: 'up'}
+	for ticker, name, price, change, pct in stocks:
+	    status = status_labels[cmp(float(change), 0.0)]
+	    print '%s is %s (%s%%)' % (name, status, pct)
+
+
+	18 lines: 8-Queens Problem (recursion)
+	BOARD_SIZE = 8
+
+	def under_attack(col, queens):
+	    left = right = col
+
+	    for r, c in reversed(queens):
+	        left, right = left - 1, right + 1
+
+	        if c in (left, col, right):
+	            return True
+	    return False
+
+	def solve(n):
+	    if n == 0:
+	        return [[]]
+
+	    smaller_solutions = solve(n - 1)
+
+	    return [solution+[(n,i+1)]
+	        for i in xrange(BOARD_SIZE)
+	            for solution in smaller_solutions
+	                if not under_attack(i+1, solution)]
+	for answer in solve(BOARD_SIZE):
+	    print answer
+
+
+	20 lines: Prime numbers sieve w/fancy generators
+	import itertools
+
+	def iter_primes():
+	     # an iterator of all numbers between 2 and +infinity
+	     numbers = itertools.count(2)
+
+	     # generate primes forever
+	     while True:
+	         # get the first number from the iterator (always a prime)
+	         prime = numbers.next()
+	         yield prime
+
+	         # this code iteratively builds up a chain of
+	         # filters...slightly tricky, but ponder it a bit
+	         numbers = itertools.ifilter(prime.__rmod__, numbers)
+
+	for p in iter_primes():
+	    if p > 1000:
+	        break
+	    print p
+
+
+	21 lines: XML/HTML parsing (using Python 2.5 or third-party library)
+	dinner_recipe = '''<html><body><table>
+	<tr><th>amt</th><th>unit</th><th>item</th></tr>
+	<tr><td>24</td><td>slices</td><td>baguette</td></tr>
+	<tr><td>2+</td><td>tbsp</td><td>olive oil</td></tr>
+	<tr><td>1</td><td>cup</td><td>tomatoes</td></tr>
+	<tr><td>1</td><td>jar</td><td>pesto</td></tr>
+	</table></body></html>'''
+
+	# In Python 2.5 or from http://effbot.org/zone/element-index.htm
+	import xml.etree.ElementTree as etree
+	tree = etree.fromstring(dinner_recipe)
+
+	# For invalid HTML use http://effbot.org/zone/element-soup.htm
+	# import ElementSoup, StringIO
+	# tree = ElementSoup.parse(StringIO.StringIO(dinner_recipe))
+
+	pantry = set(['olive oil', 'pesto'])
+	for ingredient in tree.getiterator('tr'):
+	    amt, unit, item = ingredient
+	    if item.tag == "td" and item.text not in pantry:
+	        print "%s: %s %s" % (item.text, amt.text, unit.text)
+
+
+	28 lines: 8-Queens Problem (define your own exceptions)
+	BOARD_SIZE = 8
+
+	class BailOut(Exception):
+	    pass
+
+	def validate(queens):
+	    left = right = col = queens[-1]
+	    for r in reversed(queens[:-1]):
+	        left, right = left-1, right+1
+	        if r in (left, col, right):
+	            raise BailOut
+
+	def add_queen(queens):
+	    for i in range(BOARD_SIZE):
+	        test_queens = queens + [i]
+	        try:
+	            validate(test_queens)
+	            if len(test_queens) == BOARD_SIZE:
+	                return test_queens
+	            else:
+	                return add_queen(test_queens)
+	        except BailOut:
+	            pass
+	    raise BailOut
+
+	queens = add_queen([])
+	print queens
+	print "\n".join(". "*q + "Q " + ". "*(BOARD_SIZE-q-1) for q in queens)
+
+
+	33 lines: "Guess the Number" Game (edited) from http://inventwithpython.com
+	import random
+
+	guesses_made = 0
+
+	name = raw_input('Hello! What is your name?\n')
+
+	number = random.randint(1, 20)
+	print 'Well, {0}, I am thinking of a number between 1 and 20.'.format(name)
+
+	while guesses_made < 6:
+
+	    guess = int(raw_input('Take a guess: '))
+
+	    guesses_made += 1
+
+	    if guess < number:
+	        print 'Your guess is too low.'
+
+	    if guess > number:
+	        print 'Your guess is too high.'
+
+	    if guess == number:
+	        break
+
+	if guess == number:
+	    print 'Good job, {0}! You guessed my number in {1} guesses!'.format(name, guesses_made)
+	else:
+	    print 'Nope. The number I was thinking of was {0}'.format(number)
+
+-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+</body>
+</html>

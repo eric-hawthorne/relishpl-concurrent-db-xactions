@@ -1,0 +1,2968 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish by example - relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Syntax and Semantics By Example <span class="h2small">- From the Inside Out</span></h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </div>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </div>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </div>
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Introduction">Introduction</a><br/>	
+	<a href="#Variables">Variables</a><br/>
+	<a href="#ReservedWords">Reserved Words</a><br/>
+	<a href="#Constants">Constants</a><br/>	
+	<a href="#DataTypes">Data Types</a><br/>	
+	<a href="#TypeParameters">Type Parameters</a><br/>	
+	<a href="#InbuiltDataTypes">Inbuilt Data Types</a><br/>			
+  <a href="#LiteralValues">Literal Values</a><br/>   	
+  <a href="#InbuiltTypeCasts">Inbuilt Type Casts</a><br/>    
+  <a href="#ListsSetsMaps">Lists, Sets, and Maps</a><br/>  
+  <a href="#AssignmentStatements">Assignment Statements</a><br/>    
+  <a href="#ConstantDeclarations">Constant Declarations</a><br/>   
+  <a href="#ControlStatements">Control Statements</a><br/>   
+  <a href="#MethodCalls">Method Calls</a><br/>    
+  <a href="#MethodDeclarations">Method Declarations</a><br/> 
+  <a href="#Closures">Closures</a><br/>
+  <a href="#BuiltinMethods">Built-in Methods</a><br/> 
+  <a href="#DataPersistence">Data Persistence</a><br/>   
+  <a href="#DataTypeDeclarations">Data Type Declarations</a><br/>  
+  <a href="#Attributes">Attributes</a><br/>    
+  <a href="#ObjectConstructors">Object Constructors</a><br/>  
+  <a href="#Relations">Relations</a><br/> 
+  <a href="#Concurrency">Concurrency</a><br/> 
+  <a href="#Packages">Packages</a><br/> 
+  <a href="#SoftwareArtifacts">Software Artifacts</a><br/> 
+</div>  
+<div id="content_manual">
+	<a name="Introduction"><h3>Introduction</h3></a>
+
+			<p>
+			This reference manual shows and explains relish&#8482; programming language constructs, starting from the most basic expressions and statements, and proceeding on to control constructs and beyond. Each construct is shown by one or more examples. Text after or interleaved with the examples explains the syntax rules and the semantics of the construct. <span class="future">language features planned but not yet implemented or enforced by the language compiler-interpreter or runtime environment are shown in text of this colour.</span>
+			</p>
+			<p>
+				relish language constructs have simple syntax rules and minimal use of punctuation and brackets of various kinds.  However, the language achieves this simplicity and minimalism of expression by means of a trade-off; programmers must adhere to stricter rules than usual as to how and where each language construct is to be written in the program source text.
+			</p>
+			<p>
+				Because of these strict syntax and code layout rules, it is strongly suggested that you begin creating relish programs, when you are first learning the language, by copy-pasting examples of language constructs from tutorials, example programs, code recipes, or from this manual. 
+				The examples will be formatted and laid out correctly, and you can modify the code to your needs from that starting point, and learn the conventions as you go.
+			</p>
+<br/>
+	<a name="Variables"><h3>Variables</h3></a>		
+    <code>
+    a  b  c  a1  source240v  amount lineWidth  stateOfPlay  line1Length  bitWidth32  
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    a = 2<br/>
+    lineWidth = a
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Variable names are camel-case latin-1 alphanumeric beginning with a lower case letter.
+Digits count as lower case letters in the camel-case rule, except are not allowed as the first character of the name as
+a whole, nor as the first character of any lower case word after an upper case letter. So theWord2 is allowed but theW2 is not.
+The name as a whole cannot end with an upper case letter. Multiple upper case letters together are not permitted.
+Note that underscores are not permitted (since they are an alternative to camel-case word separation.)    	
+    </p>
+<p>
+Some names of this form may not be used as variable names:
+<ul>
+<li>the relish language's reserved words are excluded,</li>
+<li>the name of any method visible in the scope,</li>
+
+<li> the last name-part of any unaliased imported package,</li> 
+<li> the package alias of any aliased imported package,</li> 
+<li><span class="future">a name of a parameter of the containing method is already implicitly defined as a strictly typed variable in the method so may not be re-assigned to a value-type incompatible with the parameter's type specification.</span></li>	
+</ul>
+</p>
+
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+	A variable is a named and re-assignable store for a value of an expression. The variable can be used as an expression, and yields the value that is stored in it at the time it is used as an expression. All variables are local variables inside a <a href="#MethodDeclarations">method</a> body. 
+	Variables are created by their first use in a method body. If the value assigned to a variable is a structured object or a collection, then the assignment is by reference, not by value-copy. Simple primitive values such as Int, Float are assigned by value.
+    </p>
+<p>
+	<span class="future">The type of a variable is not stated explicitly when defining the variable. If you assign to a variable in multiple places inside a method body, the known types of the values assigned in the different places must form a type hierarchy. That is, if values of different known types are
+	assigned in different assignment-occurrences, then at least one of those known types must be a common supertype of all the others. The type of the variable is then taken to be that common supertype of the known types of values assigned to it in the various assignment occurrences in the method. 
+    </span>
+</p>
+<br/>
+	<a name="ReservedWords"><h3>Reserved Words</h3></a>		
+    <code>
+    if elif else while for in as break continue of go func true false nil
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>    
+    <p>
+The reserved words may not be used as variable names, method names, or package name parts or aliases. They are reserved for use to define control constructs and literal values in the language.
+</p>
+<br/>
+	<a name="Constants"><h3>Constants</h3></a>		
+    <code>
+    PI  E  MAX_WIDTH  LIMIT1  DIM1_SIZE 
+    </code><br/><br/>
+    Usage in context:<br/><br/>
+    <code>
+    PI = 3.1415926535<br/>
+    DEFAULT_GREETING = "Hello, World!"
+    </code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Constant names are all-capitalized latin-1 alphanumeric, with single-underscore word separators permitted.
+They must begin with a latin-1 capital letter.
+Note: All single latin-1 capital letters except T denote constants. T,T1,... denote <span class="future">type parameters (See below.)</span> 	
+    </p>
+    <p>
+    Constants must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
+    Constants are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
+    the constant-defining package, and if the constant name has been package-qualified in that use, the constant is visible
+    in the package that imports the constant-defining package. <span class="future">However, if a constant is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    </p>
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+    	A constant can (and must when introduced) be assigned the value of an expression once, and thenceforth refers to that value.
+    	<span class="future">There must be a restriction on the kind of expressions that can be assigned to constants, due to timing of the execution of the constant assignment statements, but what is that restriction?
+    		When in the code load and generation and initialization sequence does the constant expression get evaluated??? Does this need to be changed to move the execution until all the methods etc are properly loaded into the runtime?</span>
+	</p>
+<br/>
+	<a name="DataTypes"><h3>Data Types</h3></a>		
+    <code>
+    Int32  Float  String  ClosedCurve  BuggyWhipStorageRackClip    	
+    </code><br/><br/>
+    Usage in context:<br/>
+<code><pre>
+add a Float b Float &gt; Float
+"""
+ A method that adds two floating-point numbers together and returns the result.
+"""
+</pre></code>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Type names are camel-case latin-1 alphanumeric beginning with an upper case letter.
+All data type names must begin with at least two letters (upper case followed by lowercase.)
+Other details of the name syntax are the same as for variables except for the initial upper case letter for type names.
+Note that underscores are not permitted (since they are an alternative to camel-case word separation.)	
+    </p>
+    <p>
+    Data types must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
+    Type names are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
+    the type-defining package, and if the type name has been package-qualified in that use, the type is visible
+    in the package that imports the type-defining package. <span class="future">However, if a data type is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    </p>
+        <p>
+    	<b>Semantics:</b>
+    </p>
+    <p>
+    	Each data object/value in a relish program has a data type. The data type of an object/value determines which methods can accept the object/value as an argument, and which methods can return the object/value as one of the method's return values.
+	</p>
+	<p>
+		Data types in relish can inherit attributes and method compatibility from other data types. A data type can inherit from more than one direct supertype. That is, relish has multiple inheritance.
+	</p>
+	<p>
+		Data types are of three kinds, primitive value types, structured object types, and collection types.
+	</p>
+	<p>
+		Primitive value types are such types as Int and Bool and <span class="future">CodePoint (unicode character)</span>.
+	</p>
+	<p>
+        Structured object types are like the familiar "object classes" of other languages.
+        A structured object type is defined by specifying a list of attribute specifications to define the attributes of the object.
+        See <a href="#DataTypeDeclarations">data type declarations</a> section for details.        
+
+    <p>
+        Collection types are types such as List of T, Map of T T1, Set of T and have element accessing and iterating syntax support in the language, as well as compact syntax support for adding and deleting elements, if the collection is mutable. 
+		<span class="future">String may be considered an immutable collection type.</span>
+	</p>
+	<p>
+		<span class="future">Generics: - why are generics always "future" :-(  Data type definitions and type specifications may be parameterized; that is, the type may be defined as a wrapper or holder of objects/values of one or more other data types. For example, BinaryTreeNode of T T is a parameterized data type where the type parameter T stands for any other data type. Each parameterized data type definition effectively creates a set of possible data types, and each parameterized data type specification accepts a set of possible datatypes.</span>
+	</p>	
+	<p>
+		In general, in relish, a data type (or class) does not "own" a set of methods.
+		It is more accurate to say that an <b>n-tuple</b> (e.g. an ordered-pair, an ordered triple) of data types in relish owns a set of methods; the n-tuple of types conceptually owns those methods whose parameter signature (of all positional-argument input parameters) is that type tuple.</p>
+		<p>
+		Methods do not have a privileged argument object which is known as the receiver of the method call.
+		Rather, all objects that are (required positional) arguments are the receivers of the method call, and relish's dynamic method dispatch will take account of the actual specific data type of each of the positional argument objects supplied to the call, to decide which method has a parameter type-signature that is the most specifically matching the tuple of argument objects.
+     		</p>
+		<p>A data type (or class) in relish can only be said to own 1) unary methods whose only input parameter is specified to be of that type, <span class="future">and also 2) special attribute-setter methods which set the values of attributes of a structured data object.</span>
+	</p>
+<br/>
+		<a name="TypeParameters"><h3><span class="future">Type Parameters</span></h3></a>		
+	    <code>
+	    <span class="future">T  T1  T2  T3  T4  T5  T6  T7  T8  T9</span>
+	    </code><br/><br/>
+	    <span class="future">Usage in context:<br/></span>
+<code><pre>
+<span class="future">LinkedList of T</span>	   
+</pre></code>
+	    <p>
+	    	<span class="future"><b>Syntax:</b></span>
+	    </p>
+	    <p>
+<span class="future">Relish supports parameterized data types (generics) and
+	only the names above are valid as type parameters in 
+	parameterized type declarations.</span> 	
+	    </p>
+<br/>
+			<a name="InbuiltDataTypes"><h3>Inbuilt Data Types</h3></a>	
+			
+			<p>In the following, Type1 &lt;: Type2 denotes that Type1 is a subtype that inherits behaviour from and extends the definition of the supertype Type2</p>	
+		    <code><pre>
+Any                              (implicit) Abstract supertype of all relish datatypes
+RelishPrimitive &lt;: Any           Abstract supertype of all inbuilt primitive data types in relish
+
+Numeric &lt;: RelishPrimitive       Abstract supertype of all primitive number types
+Integer &lt;: Numeric               Abstract supertype of all integer types
+Int &lt;: Integer                   64-bit signed integer
+Int32 &lt;: Integer                 32-bit signed integer<span class="future">
+Int16 &lt;: Integer                 16-bit signed integer
+Int8 &lt;: Integer                  8-bit signed integer</span>
+Uint &lt;: Integer                  64-bit unsigned integer
+Uint32 &lt;: Integer                32-bit unsigned integer<span class="future">
+Uint16 &lt;: Integer                16-bit unsigned integer</span>
+Byte &lt;: Integer                  8-bit unsigned integer<span class="future">
+Bit &lt;: Integer                   1-bit unsigned integer</span>
+Bool &lt;: RelishPrimitive          Boolean logical type (true,false)
+Real &lt;: Numeric                  Abstract supertype of all floating-point numeric types
+Float &lt;: Real                    64-bit floating-point number<span class="future">
+Float32 &lt;: Real                  32-bit floating-point number
+ComplexNumber &lt;: Numeric         Abstract supertype of all complex numeric types
+Complex &lt;: ComplexNumber         Complex number consisting of two 64-bit Float parts
+Complex32 &lt;: ComplexNumber       Complex number consisting of two 32-bit Float32 parts
+
+Text &lt;: RelishPrimitive          Abstract supertype of all text data types
+CodePoint &lt;: Text                A 32-bit unsigned integer representing a Unicode codepoint</span>	 
+String &lt;: Text                   immutable byte-array representing UTF-8 encoded CodePoints
+Slice &lt;: RelishPrimitive         Abstract supertype of all array-slice types	
+Bytes &lt;: Slice                   byte-array<span class="future">			
+Callable &lt;: RelishPrimitive      Abstract supertype of all function types
+MultiMethod &lt;: Callable          A set of methods in a namespace that share the same name
+Method &lt;: Callable               An executable function implementation
+
+NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive             
+Struct &lt;: Any                    Abstract supertype of programmer-defined structured object types
+Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map</span>
+List of T &lt;: Collection of T     Collection which maintains elements in a sequence
+<span class="future">Set of T &lt;: Collection of T      Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 Map from one data type to another</span> 
+
+InChannel &lt;: Any                 A channel which can be read from
+OutChannel &lt;: Any                A channel which can be written to
+Channel &lt;: InChannel OutChannel  A channel which can be read from and written to
+Mutex &lt;: Any                     A mutual-exclusion lock to serialize access to a resource
+RWMutex &lt;: Any                   A mutual-exclusion lock allowing many readers or one writer
+</pre></code>
+<p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
+		   
+
+
+
+
+
+<br/>
+  <a name="LiteralValues"><h3>Literal Values</h3></a>    
+
+<h4>Integer literals</h4>
+    <code>
+    42<br/>
+0600<br/>
+0xBadFace<br/>
+170141183460469231731687303715884105727<br/>  
+<span class="future">-42<br/>
+-0600<br/>
+-0xBadFace<br/>
+-170141183460469231731687303715884105727<br/></span>
+    </code><br/>
+    Usage in context:<br/><br/>
+    <code>
+    a = 42<br/>
+    color = 0xFFCADD<br/>
+    <span class="future">n = plus -42 260<br/></span>
+    </code>
+    <p>
+An integer literal is a sequence of digits representing an integer constant. An optional prefix sets a non-decimal base: 0 for octal, 0x or 0X for hexadecimal. In hexadecimal literals, letters a-f and A-F represent values 10 through 15. An optional negation prefix - (which if present must come before the non-decimal base prefix) negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0
+    </p>
+
+
+<h4>Floating-point number literals</h4>
+
+<code><pre>
+0.
+0.0
+72.40
+072.40  // == 72.40
+2.71828
+1.e+0
+6.67428e-11
+1E6
+.25
+.12345E+5
+<span class="future">-72.40
+-072.40  // == -72.40
+-2.71828
+-1.e+0
+-6.67428e-11
+-1E6
+-.25
+-.12345E+5</span>
+</pre></code>
+    Usage in context:<br/><br/>
+    <code>
+    PI = 3.14159265357989<br/>
+    r = 6.67428e-2<br/>
+    <span class="future">p = -1.7<br/></span>
+    </code>
+    <p>
+A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, a fractional part, and an exponent part. The integer and fractional part comprise decimal digits; the exponent part is an e or E followed by an optionally signed decimal exponent. One of the integer part or the fractional part may be elided; one of the decimal point or the exponent may be elided.  An optional negation prefix - negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0.
+</p>
+
+<h4>Boolean literals</h4>
+
+<code><pre>
+true  false
+</pre></code>
+Usage in context:<br/>
+<code><pre>
+DEBUG = false
+
+while true
+   doSomethingForever
+</pre></code>
+    <p>
+Boolean literals represent the boolean logic values true and false, which are the only two values of inbuilt data type Bool. 
+false is the zero-value of the Bool type.  
+</p>
+<p>
+NOTE: In relish, the zero-value of any data type is considered false-equivalent in logical tests (as in "<b>if</b>" "<b>while</b>" "<b>for</b>") and is also considered false-equivalent in the Boolean logic operator functions "<b>and</b>" "<b>or</b>" and "<b>not</b>". nil (non-present non-primitive object) is also considered false.
+</p>
+So values that test false or act as false in boolean operator functions are:
+<pre>
+0
+0.
+false
+[]T   // empty list of T
+<span class="future">{}T   // empty set of T
+{}T=>T1 // empty map</span>
+""   // empty string
+<span class="future">nil</span>
+</pre>
+All other values of any data type test non-false, and act non-false in boolean operator functions.
+</p>
+
+
+<h4>String literals</h4>
+
+<code><pre>
+"Hello, world!\n"  
+"\n"
+""
+"日本語"
+"\u65e5本\U00008a9e"
+"\xff\u00FF"
+"\uD800"       // illegal: surrogate half
+"\U00110000"   // illegal: invalid Unicode code point
+
+These examples all represent the same string:
+
+"日本語"                                 // UTF-8 input text
+"\u65e5\u672c\u8a9e"                    // the explicit Unicode code points
+"\U000065e5\U0000672c\U00008a9e"        // the explicit Unicode code points
+"\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e"  // the explicit UTF-8 bytes
+
+A multi-line raw string:
+
+      """ 
+It was a dark and stormy night.
+I had a premonition that I should not keep
+writing this long, overwrought, badly formatted, 
+and turgidly melodramatic story,
+but I couldn't help myself. "Damn!", I said to myself,
+this is the end.
+"""
+</pre></code>
+    Usage in context:<br/>
+<code><pre>
+   firstName = "Jeremiah"
+   aphorism = """
+No matter where you go,
+There you are!
+And notice that where I am
+is starting at the first column
+of the source code file.
+But then notice that indentation resumes after me, as if I
+weren't present in the source file.
+"""
+   lastName = "Jones"
+   truism = """
+Stupid is as
+stupid does.
+"""   
+   age = 9
+
+</pre></code>
+    <p>
+Strings in relish (currently) exhibit and behave much as string values do in Go, because their underlying implementation is a Go string. 
+</p>
+<p>
+A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and multi-line raw String literals.
+</p>
+<p>
+Interpreted String literals are character sequences between double quotes "". The text between the quotes, which may not contain newlines, forms the value of the literal, with backslash escapes interpreted as they are in rune literals (except that \' is illegal and \" is legal), with the same restrictions. The three-digit octal (\nnn) and two-digit hexadecimal (\xnn) escapes represent individual bytes of the resulting string; all other escapes represent the (possibly multi-byte) UTF-8 encoding of individual characters. Thus inside a string literal \377 and \xFF represent a single byte of value 0xFF=255, while ÿ, \u00FF, \U000000FF and \xc3\xbf represent the two bytes 0xc3 0xbf of the UTF-8 encoding of character U+00FF.
+</p>
+<p>
+Multi-line raw String literals are character sequences between triple-doublequote delimiters. 
+Within the delimiters, any character is legal. The value of a raw string literal is the string composed of the uninterpreted (implicitly UTF-8-encoded) characters between the delimiters; in particular, backslashes have no special meaning and the string may contain newlines. Carriage returns inside raw string literals are discarded from the raw string value.
+</p>
+<p>
+Because of the heavily indentation-dependent nature of relish source code, multi-line raw string literals are first introduced
+in their proper indented location, by a single """. 
+The actual raw string value begins at the beginning (file column 0) of the next line. 
+The raw string continues until the next (third) """, which must again occur at the beginning of a line of the source code file.
+So raw strings are always multi-line. Raw string literal values do not include the initial newline character, but do include the last newline character.
+The shortest possible multi-line raw string is 
+<pre>
+   s = """
+"""
+</pre>
+Which is equivalent to the interpreted string literal "\n". 
+</p>
+</p>
+<p>
+One peculiarity of Go strings is that their index operator returns a byte at the ith byte position, whereas the string is fundamentally supposed to be a 
+sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can occupy multiple bytes of the string. Also, disturbingly, the len function of a Go string returns the number of bytes, not the number of unicode codepoints in the string. I don't really like these split-personality
+grudgingly unicode behaviours of Go strings, but relish Strings are stuck with them for now.
+</p>
+
+<br/>
+<a name="InbuiltTypeCasts"><h3>Inbuilt Type Casts</h3></a> 
+
+<h4>Type casting to obtain an Int value</h4>
+<code><pre>
+   n err = Int "9347"
+
+   mStr = "-8"
+   m err = Int mStr
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
+  Only strings containing a (negative or non-negative) Integer literal can be converted to Int in this manner.
+</p>
+<code><pre>
+   f = 192.657
+   n err = Int f
+   print n  // prints 192
+
+   f = -15.3
+   n err = Int f
+   print n  // prints -15  
+</pre></code>
+<p>
+  When converting a floating-point number to an integer, the fraction is discarded (truncation towards zero).
+  The err is always the empty String for this conversion. It is present only because methods of the same name 
+  and accepting at least one argument must have the same number of return values.  
+</p>
+<p>
+  The following additional conversion constructors are defined between integer types:
+</p>
+<code><pre>
+   i = 3654  // The literal creates a value of type Int
+
+   j err = Int32 i
+   k err = Uint i
+   m err = Uint32 i
+
+   i2 err = Int j
+   i3 err = Int k
+   i4 err = Int m
+
+   b err = Byte i
+   b2 err = Byte k
+   b3 err = Byte m
+
+   k2 err = Uint b
+   m2 err = Uint32 b
+   i5 err = Int b
+</pre></code>
+<p>
+  Note that the error will never be set (never be non "") in these particular converters.
+  In integer-to-integer conversions, Signed values are infinitely sign-extended then the
+  value truncated to the size of the target type. Unsigned values are 0-extended.
+  Overflows (from converting a value that will not fit in the target type's number of bits) 
+  do not cause an error, so there is no warning of them. The truncated value is returned.
+</p>
+
+<h4>Type casting to obtain a Float value</h4>
+<code><pre>
+   minusPi err = Float "-3.1415926535"
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.
+  Only strings containing a (negative or non-negative) Float literal can be converted to Float in this manner.
+</p>
+<code><pre>
+   i = 192
+   f err = Float i
+   print f  // prints 192.0
+</pre></code>
+<p>
+  The err is always the empty String for this conversion. It is present only because methods of the same name 
+  and accepting at least one argument must have the same number of return values.
+</p>
+
+<h4>Type casting to obtain a Bool value</h4>
+<code><pre>
+   copacetic err = Bool "T"
+   ok err = Bool 0
+</pre></code>
+<p>
+  The second returned value is empty String if the conversion was valid. Otherwise it is an error message.<br/>
+  The following Strings yield true: "1","T","t","TRUE","true","True","Y","y","YES","yes","Yes"<br/>
+  The following Strings yield false: "0", "F", "f", "FALSE", "false", "False","N","n","NO","no","No"<br/>
+  The following Integer value yields true: 1, whereas the Integer 0 yields false.<br/>
+  All other String or Integer argument values result in a conversion error.<br/>  
+</p>
+
+<h4>Type casting to obtain a String value</h4>
+<code><pre>
+   s = String obj
+   s = String 195
+</pre></code>
+<p>
+   All relish data values / objects / collections are convertable to a String representation in this manner.
+   However, for programmer-defined object types, the default representation of the object is currently just the object's
+   type name and an instance identifier.  
+</p>
+<p>
+  If you wish to define a more specific String representation of objects of a data type that you have defined,
+  create a method of the form:
+</p>
+<code><pre>
+initString s String obj MyType > String
+</pre></code>
+<p>
+  That method (or the method whose "MyType" is closest compatible with your object's type) will be
+  selected and run to perform the conversion, when you call <code><pre>s = String objOfMyTypeOrASubType</pre></code>
+</p>
+
+<h4>Type casting to obtain a Time value</h4>
+<code><pre>
+   t err = Time "2012-09-23T14:23Z"
+
+   // ISO 8601 format as in W3C   (Z means UTC time zone)
+
+   t err = Time "2012-09-23T14:23:00Z"
+
+   t err = Time "2012-09-23T14:23:00.000Z"
+
+   // The last 3 digits are the number of milliseconds, in this format.
+
+
+   t err = Time "2012-09-23 14:23 UTC"
+
+   t err = Time "2012-09-23 14:23:00.000 Local" 
+
+   t err = Time "2012-09-23 14:23:00 America/New_York"
+
+   // Time locations are as in the IANA time zone database, or "Local" or "UTC"
+
+
+   t err = Time "2012-09-23 14:23:00.000" "2006-01-02 15:04:05.999"
+
+   // First String is the time, second String is the format template.
+   // See description of format Constants and Time.Format at http://golang.org/pkg/time/
+   //
+   // In this case above, the last part of the time is in milliseconds
+
+
+   t err = Time 2012 12 30 18 36 29 0 "UTC"
+
+   t err = Time 2012 12 30 18 36 29 437654300 "Local"
+
+   t err = Time 2012 12 30 18 36 29 0 "Asia/Jakarta"
+
+   // In this case, the date and time are assembled from the 
+   // individual year, month, day, hr, min, sec, nanosecond time parts.
+   //
+   // Note: Underlying time resolution of relish in-memory Time values is nanoseconds, 
+   // defaulting to 0 if not specified.
+   // IMPORTANT NOTE: When Time values are persisted in the local database, only milliseconds 
+   // precision is retained, so when Time values are retrieved from local persistence, 
+   // they are only accurate to nearest millisecond with further less significant digits of 
+   // the nanosecond value zeroed.
+
+   t = Time
+
+   // This  assigns a "zero" Time value to t. This value is false-equivalent and no 
+   // date/time pertaining to events in the current or last two millenia will have this 
+   // value.
+</pre></code>
+
+<br/>
+<a name="ListsSetsMaps"><h3>Lists, Sets, and Maps</h3></a>		
+
+<h4>List literals</h4>
+
+<code><pre>
+[]Car  // An empty list whose elements must be a Car or subtype of Car
+
+["First" "Second" "Third"]String
+
+[1 2 45 6]  // A list's element-type constraint can be inferred if the statically known types of elements
+            // in the literal are all the same or related by a single common closest supertype.. 
+
+[
+   "First" 
+   second
+   "Third"
+]String
+
+[
+   1
+   2
+   45
+   6
+]	
+</pre></code><br/>
+Usage in context:
+<code><pre>
+aList = ["Mercury" "Venus"]
+
+anotherList = [
+                 "Mercury"
+                 "Venus"
+                 "Earth"
+                 "Mars"
+              ]
+
+home = Planet "Earth"  // Construct a Planet
+solarSystem = [
+                 Planet "Mercury" 
+                 Planet "Venus" 
+                 home 
+                 Planet "Mars" 
+                 Star "Sol"
+              ]SolarSystemObject
+
+
+aFinalList = 
+   [
+      "What's in it"
+      "For me?"
+      "I don't know!"
+   ]	
+
+
+sales = [19.25 54.99 3.49 9.99 18.99 2.49]
+
+taxedLargeSales = [
+                     for sale in sales
+                        if gt sale 9.99
+                           times sale 1.12      
+                  ]Float
+
+s2 = sales[1:3]  // [54.99 3.49]
+
+s2 = sales[2:]  // [3.49 9.99 18.99 2.49]
+
+s2 = sales[:-2]  // [19.25 54.99 3.49 9.99]
+
+</pre></code><br/>
+
+
+<h4>List element selector expression</h4>
+
+<code><pre>
+b = aList[4]
+
+a = aList[
+            expr
+               like 
+               this
+         ].b
+
+aList[4] = "do it"
+
+aList[
+        expr
+           like 
+           this
+     ] = s
+</pre></code><br/>
+
+<h4>Operators to Append and Remove List Elements</h4>
+
+<code><pre>
+aList += "Mars"
+
+aList -= "Venus"
+</pre></code><br/>
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+List literals are enclosed in square brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of list elements.
+</p>
+<p>
+If expressed on one line, the brackets must immediately surround the list element expressions, with no spaces just inside the brackets.
+If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
+</p>
+<p>
+If expressed on multiple lines, the closing square bracket must fall directly below the opening square bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening square bracket.
+	</p>
+	<p>
+		Instead of listing elements, a multi-line list literal may instead contain a for-range generator expression, as illustrated in the last list literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one expression. The if is also constrained to either contain only another nested if, or one expression in the if-clauses. The expression must yield one value. The expression will be evaluated and become an element of the list. The list being constructed is populated by iterating the 'for' statement and putting the element expression into the list on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine a function of elements of other collections into a list, or to filter another collection to create the list.
+		</p>	
+	<p>
+List element selector expressions are also enclosed in square brackets immediately following the variable/attribute name that refers to the list. They must follow the same horizontal or vertical layout rules as a list construction literal, as described just above.
+	</p>
+	<p>
+		A List element selector expression can be used as an l-value (an assignable storage location) <span class="future">provided the list is mutable.</span>
+	</p>
+	<p>
+		A list slice expression is a list expression followed by square brackets with a colon enclosed. Integer low and high indexes may occur surrounding the colon. If the low index is omitted, it defaults to 0. If the high index is omitted, it defaults to the length of the list. The high index may be a negative integer, in which case it refers to an offset from the end of the list.
+	</p>
+	
+	
+<p>
+	<b>Semantics:</b>
+</p>
+<p>
+Lists are ordered, indexable, typed collections of elements. By default they are mutable, and they grow as needed to accommodate appended elements. They are indexed by an integer index beginning at index 0 for the first element of the list. 
+</p>
+<p>
+The += operator appends the value of its right-side expression on as the last element of the list. The -= operator removes its right-side value from the list if found in the list, otherwise it does nothing and does not complain.
+</p>	
+<p>
+<span class="future">Lists can be specified when constructed to maintain their elements in a sorted order according to a) the natural order of their elements (which depends on the element type), or b) the natural order of a specified attribute of elements, or c) the natural order of a supplied unary function of elements, or d) an order-comparison method that is supplied.</span>
+</p>
+<p>
+	A list slice expression creates and returns a copy of the specified sublist of the list. 
+	Elements are not copied but the list structure itself is. A slice expression with no low or high index specified
+	returns a copy of the entire list.
+</p>
+
+
+<h4>Set literals</h4>
+<code><pre>
+aSet = {"Mercury" "Venus"}
+
+anotherSet = {
+                "Mercury"
+                "Venus"
+                "Earth"
+                "Mars"
+             }
+
+aFinalSet = 
+   {
+      19
+      17
+      36
+   }
+
+
+words = ["balderdash" "rubbish" "lies" "tripe" "spew" "garbage" "balderdash" "lies"]
+
+shortWords = {
+                for word in words 
+                   if lt (len word) 6
+                      cat (title word) "!"      
+            }String 
+</pre></code>
+
+
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+Set literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of set elements.
+</p>
+<p>
+If expressed on one line, the brackets must immediately surround the set element expressions, with no spaces just inside the brackets.
+If on one line, the element expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
+</p>
+<p>
+If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The elements must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket.
+	</p>
+	<p>
+		Instead of listing elements, a multi-line set literal may instead contain a for-range generator expression, as illustrated in the last set literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one expression. The if is also constrained to either contain only another nested if, or one expression in the if-clauses. The expression must yield one value. The expression will be evaluated and become an element of the set. The set being constructed is populated by iterating the 'for' statement and putting the element expression into the set on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine a function of elements of other collections into a set, or to filter another collection to create the set.
+		</p>	
+	<p>
+<span class="future">Sorted-set element selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the sorted set. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.</span>
+	</p>
+	<p>
+		<span class="future">A sorted-set element selector expression cannot be used as an l-value (an assignable storage location).</span>
+	</p>
+<p>
+	<b>Semantics:</b>
+</p>
+<p>
+Sets are typed collections of elements, which can only have each object/value once in the collection. By default they are mutable, and they grow as needed to accommodate added elements. There are sorted sets, where the sorting criterion is specified at construction of the Set, in the same manner as for sorted lists. Sorted sets are indexed by an integer index beginning at index 0 for the first element of the list. They also return their elements in the sort-order when ranged over in a for-range statement. 
+</p>
+<p>
+The += operator adds the value of its right-side expression to the set if it is not already there, and does not complain if it is. The -= operator removes its right-side value from the set if found in the set, otherwise it does nothing and does not complain.
+</p>
+
+
+<h4>Map literals</h4>
+<code><pre>
+aMap = {"Mercury"=>1 "Venus"=>2 "Earth"=>3}
+
+anotherMap = {
+                "Mercury" => 1
+                "Venus"   => 2
+                "Earth"   => 3
+                "Mars"    => 4
+             }
+
+yetAnotherMap = {
+	               "Mercury" => Planet 1
+	               "Venus"   => Planet 2	
+                }String > Planet
+
+stillAnotherMap = {
+                     "Earth" => Planet 3
+                     "Mars"  => Planet 4	
+                  }String 
+                   > 
+                      Planet
+
+anotherPlanetMap = 
+   {
+      "Mercury" => 1
+      "Venus"   => 2
+      "Earth"   => 3
+      "Mars"    => 4
+   }
+
+words = ["up" "left" "back" "white"]
+antonyms = ["down" "right" "front" "black"]
+ 
+opposites = {
+               for w1 w2 
+                  in 
+                     words 
+                     antonyms
+                  if contains w1 "t"
+                     upper w1 
+                     w2
+                  else
+                     w1
+                     upper w2
+            }String > String
+
+</pre></code>
+
+
+<h4>Map element selector expression</h4>
+<code><pre>
+a = aMap["Earth"] 
+
+a = aMap[
+           expr
+              like 
+              this
+        ].b
+
+aMap["Earth"] = 3
+
+aMap[
+       expr
+          like 
+          this
+    ] = s
+</pre></code><br/>
+
+
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+Map literals are enclosed in squiggly brackets, with the closing right bracket possibly immediately followed without space by a type specification which stipulates the required type of keys and values.
+</p>
+<p>
+Map literals are comprised of brackets surrounding a sequence of mapped-pairs. Each mapped pair is a key expression followed by "=>" followed by a value expression.	
+</p>
+<p>
+If expressed on one line, the brackets must immediately surround the mapped-pair expressions, with no spaces just inside the brackets.
+If on one line, the mapped-pair expressions must be separated from each other by one space, and if there would be ambiguity about where an element expression that is a method call ends, the method call must be enclosed in round brackets.
+</p>
+<p>
+If expressed on multiple lines, the closing squiggly bracket must fall directly below the opening squiggly bracket. The mapped-pairs must appear indented one level (3 spaces) from the brackets, with the first element beginning on the source code line following the opening squiggly bracket. Additionally, the mapping arrows must be vertically aligned below each other.
+	</p>
+	<p>
+		Instead of listing mapped pairs, a multi-line map literal may instead contain a for-range generator expression, as illustrated in the last map literal example above. A for-range generator expression is a 'for' statement that ranges over one or more maps/collections. It is different than a regular 'for' statement in that the loop body of the 'for' can only contain an 'if' statement or one or more expressions. The if is also constrained to either contain only another nested if, or one or more expressions in the if-clauses. The expression(s) must yield two values. The first of these will become the key, and the second value will be the value for the key. The map being constructed is populated by iterating the 'for' statement and putting the key and value expression into the map on each iteration, provided the if condition is satisfied in that iteration. These generator expressions can be used to combine other collections into a map, or to filter other collections to create the map.
+		</p>
+	<p>
+Map value selector expressions are enclosed in square brackets immediately following the variable/attribute name that refers to the map. They must follow the same horizontal or vertical layout rules as a list selector expression, as described above.
+	</p>
+	<p>
+	A map value selector expression can be used as an l-value (an assignable storage location), provided the map is mutable.
+	</p>
+<p>
+	<b>Semantics:</b>
+</p>
+<p>
+Maps are sets of keys, with each key mapped to a value. By default they are mutable, and they grow as needed to accommodate added key-value pairs. <span class="future">There are sorted maps, where the key-sorting criterion is specified at construction of the Map, in the same manner as for sorted lists. A sorted map will yield its keys in the sort-order when ranged over in a for-range statement.</span>
+</p>
+
+<br/>
+	<a name="AssignmentStatements"><h3>Assignment Statements</h3></a>		
+    <code><pre>
+a = 9
+
+bigBigVariableName = 
+   "A very very very very very very very very very long value might have to be on the next line, indented."
+
+a b c = d "something" f
+
+a b c = 9432
+        "a string"
+        d 
+
+a b c =
+   d
+   143.65
+   f    
+
+obj1.obj2.obj3.a = 143.65
+
+myList[3].myMap["Joe Bloggs"].a[i] = "3155 Kent Street"
+
+coord[0].lat = 49.5
+
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+An assignment statement consists of one or more assignable left-side-expressions, followed by the assignment operator "=" followed by one or more expressions that (collectively) must produce the <em>same number</em>** of values as the number of assignable left-side expressions. The "=" must be preceded by a single space. If the right-side expressions are on or begin on the same line as the "=", the ""=" must be followed by a single space, which is followed by the beginning of first right-side expression.
+</p>
+<p>
+The left-side expressions must be simple enough to fit on one-line. The second and subsequent left-side expressions, if any, must be separated from their predecessor by a single space. A Left-side expression must be one of:
+<ol>
+	<li>A local variable or method parameter in a method body.</li>
+	<li>An attribute of a structured object.  
+	<li>An indexed position in an ordered collection or a map, specified by <expr>[i] or <expr>[key].
+	<li>A path of expressions separated by the infix "." operator. The first expression must be a local variable, method parameter, or an indexed position in a collection/map-valued variable or parameter.  Each subsequent expression in the path may be the name of a unary function, an attribute, or an attribute-getter-function, or may be an indexed position in the value returned by one of these. 
+</ol>
+</p>
+<p>
+The right-side expressions may appear in several spatial configurations in the source code file.
+<ul>
+<li>The first configuration is in-line on the same line as the left side and the " = ". In this configuration, if there are multiple expressions, they must be simple so it is not ambiguous where one expression ends and the next begins. Each of the multiple expressions on the line must be one of a) a simple literal, b) a variable name, c) an index expression, dot-notation expression, or combination thereof, or d) a method call enclosed in brackets (foo a "b"), where the method call itself has only simple literals, variable names, index expressions, or dot-notation expressions as arguments. </li>
+<li>The second configuration is multiple right side expressions stacked one below the other, starting with the first right-side expression in its normal in-line position one space to the right of the "=" operator. </li>
+<li>The third configuration is one or more right-side expressions stacked one below the other, starting on the line following the left-side expressions and " =". In this case, the right-side expressions must all be indented one indent level from the indent position of the beginning of the assignment statement as a whole. </li>
+</ul>
+</p>
+<p>
+**There is one exception to the rule that the right-side expressions must produce the same number of values as the number of l-expressions. The right-side may consist of a single expression which evaluates to an ordered collection (e.g. a list or ordered set) containing exactly the same number of elements as the number of l-expressions. 
+</p>
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+
+
+
+<p>
+<span class="future">Restrictions apply that limit which assignments are legal, based on type compatibility considerations and on writeability permissions of object attributes and collections. </span>
+</p>
+<p>
+<span class="future"><em>In the following, the term "the statically known type" of an expression refers to the most specific data type that it can be assumed applies to the expression, based on compile-time type information, lexical program structure, and type inference.</em> </span>
+</p>
+<dl>
+<dt>Assigning to a local variable</dt>
+<dd><span class="future">Inside a method body, you can assign a value to a variable. The first encountered assignment implicitly creates the variable. There may be multiple lexical occurrences of assignment to the same variable in the method body. The variable is (implicitly) assigned a type constraint; the (most general) statically known type of the values assigned to it among the different lexical assignment occurrences.
+<br/>
+	There is a type restriction on assignments to the same variable within a method body: There must exist a statically known type among those of the values assigned to the variable which is a supertype of (or the same as) all of the other statically known types of values assigned to the variable in the method body. </span></dd>	
+<dt>Assigning to a parameter of a method</dt>
+<dd><span class="future">Inside a method body, you can assign a new value to a parameter of the method. Method parameters are declared with a data type specification. The value you assign to the parameter must be compatible with (same as or a subtype of) the type specified for the parameter.</span></dd>
+
+<dt>Assigning to an attribute of a structured object</dt>
+<dd><span class="future">You can assign a value to an attribute of an object. Object attributes are declared with a data type specification. The value you assign to the attribute must be compatible with (same as or a subtype of) the type specified for the attribute. 
+<br/>
+<!-- Some attributes are flagged as not writeable, or not writeable in certain contexts. Blah blah blah. -->
+</span></dd>
+
+<dt>Assigning to an indexed position in a collection or map</dt>
+<dd><span class="future">You can assign a value to a position in a mutable ordered collection or a mutable map, or to a position in an ordered multi-valued attribute. Collections, maps, and multi-valued attributes are declared with an element data-type specification. The value you assign to the position in the collection/map/multi-valued attribute must be compatible with (same as or a subtype of) the element data-type specification. 
+<br/>
+<!-- Some collections are immutable. Blah blah blah. -->
+</span></dd>
+</dl>
+
+
+<br/>
+	<a name="ConstantDeclarations"><h3>Constant Declarations</h3></a>	
+<!-- PI Float32 = 3.14159265357989 -->		
+    <code><pre>
+PI = 3.14159265357989
+
+E = 2.17  // or roughly anyway
+
+MAX_WIDTH = 1024
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+A constant declaration consists of a constant name, followed by the assignment operator "=" followed by an expression. The "=" must be preceded by a single space. If the right-side expression is on or begins on the same line as the "=", the ""=" must be followed by a single space, which is followed by the beginning of the right-side expression.
+</p>
+<p>
+The right-side expression may appear in several spatial configurations in the source code file.
+<ul>
+<li>The first configuration is in-line on the same line as the left side and the " = ".  </li>
+<li>The second configuration has the right-side expression starting on the line following the constant name and " =". In this case, the right-side expression must all be indented one indent level from the indent position of the beginning of the constant declaration. </li>
+</ul>
+</p>
+<p>
+A constant declaration can only appear at the top-level lexical scope in a source code file. That is, it must begin in the 1st column of the source code file. It may not occur inside a method body or type declaration.
+</p>
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A constant can only be assigned a value once, at its declaration. The name then represents that value and can be used as the value in an expression.
+Constant names are exported from the package in which they occur <span class="future">unless they are declared within the __private__ section of a source code file, in which case they are only visible within the package.</span>
+</p>
+
+
+<br/>
+	<a name="ControlStatements"><h3>Control Statements</h3></a>	
+	
+	<h4>"if" conditional</h4>
+    <code><pre>
+	
+if lt x 0
+   x = neg x
+
+if lt x 0
+   x = 0
+else
+   x = 1
+	
+if some
+      condition
+      expression
+   statement
+   statement
+elif another condition
+             expression
+   statement
+   statement
+   statement
+elif aThird condition expression
+   statement
+else
+   statement
+   statement
+    </pre></code>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+If the test expression evaluates to any non-false value, the immediately following indented clause (statement sequence) is	executed,
+otherwise control passes to the next elif test if present, or to an else clause if only that is present, or to the statement following the "if", if neither another elif or an else are present.
+If none of the if or elif tests pass, and an else is present, its indented clause (statement sequence) is executed.
+</p>
+<p>
+"if" is a statement but not an expression. It does not return a value.
+</p>
+
+	<h4>"while" loop</h4>
+    <code><pre>
+while neq (location cows) home
+   herd cows	
+   sleepRough
+   drink COWBOY_COFFEE
+	
+while some
+         condition
+         expression
+   statement
+   if condition
+      break
+   elif condition2
+      continue
+   statement
+elif another condition
+             expression
+   statement
+   statement
+elif aThird condition expression
+   statement
+else
+   statement
+   statement
+    </pre></code>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+While the test expression evaluates to any non-false value, the immediately following indented clause (statement sequence) is executed, then the 
+test expression is evaluated again, and so on.
+</p>
+<p>
+"while" is a statement but not an expression. It does not return a value.
+</p>
+<p>
+A while conditional can optionally include alternative clauses (elif,else). The alternative clauses are tested/invoked only if the while condition is false initially (i.e. if the loop is not entered).
+</p>
+
+  <h4>"break" statement</h4>
+  <p>
+    A "break" statement may occur inside the statement sequence body of a "while" loop or "for" loop. If it is executed, the break statement
+    causes execution to immediately resume at the first statement after the "while" or "for" loop.
+  </p>
+  <p>
+    The break statement accepts one optional positive integer argument, which is the number of containing loops to break out of.
+    If the argument is omitted, it is equivalent to "break 1".
+  </p>
+  <code><pre>
+while true
+   while someOtherCondition
+      if tired
+         break 2
+      doMoreWork
+   print "Hello"
+print "Finally done."
+
+// If the tired condition becomes non-false, execution resumes outside both loops, 
+// and "Finally done." is printed without another "Hello"   
+  </pre></code>
+
+  <h4>"continue" statement</h4>
+  <p>
+    A "continue" statement may occur inside the statement sequence body of a "while" loop or "for" loop. If it is executed, the continue statement
+    causes execution to skip over the rest of the statements in the statement sequence body of the loop, and return to the top of the loop; that is, the next thing to execute will be the "while"'s test again, or the "for"'s increment statement or increment-then-test.
+  </p>
+  <p>
+    The continue statement accepts one optional positive integer argument, which is the number of containing loops to jump to the top of the next iteration of.
+    If the argument is omitted, it is equivalent to "continue 1".
+  </p>	
+  <code><pre>
+while someCondition
+   print "Hello"
+   while someOtherCondition
+      if tired
+         continue 2
+      doMoreWork
+      print "Working on the railroad."
+   print "Goodbye"
+print "Finally done."
+
+// If the tired condition becomes non-false, execution resumes at the next test of someCondition 
+// and if that is non-false, "Hello" is printed before another "Working on the railroad." 
+// and before another "Goodbye"  
+  </pre></code>  
+
+
+<h4>"for" loop</h4>
+    <code><pre>
+
+// "for" forms that iterate over a collection <span class="future">or map</span>, 
+// setting an index<span class="future">/key</span> variable and/or an element value variable 
+// to refer successively to each (position and) element in the collection<span class="future">/map</span>.
+
+for i val in someList<span class="future">OrOrderedSet</span>
+   statement
+   statement
+
+for i val        
+   in 
+      someList<span class="future">OrOrderedSet</span>
+   statement
+   statement
+
+for key val in someMap  
+   statement
+   statement
+
+for key val        
+   in 
+      someMap
+   statement
+   statement   
+
+for val in someList<span class="future">OrSet</span>
+   statement
+   statement
+
+for key in someMap  
+   statement
+   statement   
+
+<span class="future">
+for i key val in someOrderedMap  
+   statement
+   statement
+
+// for an ordered map, the val is the key in this case</span>
+for i val1 val2 in someList<span class="future">OrOrderedSetOrOrderedMap</span> someOtherList<span class="future">OrOrderedSetOrOrderedMap</span> 
+   statement
+   statement
+
+<span class="future">// The val variables are assigned the zero-value of the type 
+// when their collection is exhausted before other collection(s).</span>
+
+for i val1 val2 val3                             
+   in 
+      someList<span class="future">OrOrderedSetOrOrderedMap</span>       
+      someOtherList<span class="future">OrOrderedSetOrOrderedMap</span>   
+      someThirdList<span class="future">OrOrderedSetOrOrderedMap</span>
+   statement
+   statement
+
+
+for val1 val2 in someList<span class="future">OrOrderedSetOrOrderedMap</span> someOtherList<span class="future">OrOrderedSetOrOrderedMap</span>
+   statement
+   statement      
+
+
+    
+// Traditional C-style "for" loop incrementing and testing index variables
+
+for i = 0 
+    less i n
+    i = plus i 1
+   statement
+   statement
+
+for i j =
+       min a b
+       min c d
+    and less i m
+        less j n
+    i j = plus i 1
+          calcJ i
+   statement
+   statement
+
+for i = 0   less i n   i = plus i 1  // one-line 3-spaces-separated form allowed if a single index-variable
+   statement
+   statement
+    </pre></code>
+<p>
+<b>Semantics: "for" iteration over one or more Collections/Maps</b>
+</p>
+<p>
+Iteration proceeds from the lowest-indexed to highest-indexed element of an ordered collection or ordered map. The single-variable form of "for" can iterate over an unordered set (or unordered map), and returns the elements (keys) in unspecified order.
+</p>
+<p>
+IMPORTANT NOTE: "for" iteration is <b>not thread-safe</b>. You need to lock explicitly with a Mutex lock to ensure exclusive access while iterating, if multiple go-routines may modify the collection/map. 
+</p>
+<p>
+IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are being modified (by the same or another go-routine) during the iteration is <b>undefined</b>. That means you should never attempt it. It may or may not cause a panic, but even if it does not, the execution sequence and index and value variable settings are undefined and cannot be relied on.
+</p>
+<p>
+<b>Semantics: "for" with index incrementing and test expressions</b>
+</p>
+<p>
+   The traditional C-like for statement requires an initializing assignment statement, a condition expression, and a post-iteration assignment statement.</p>
+<p> The initializing assignment statement is called once before the first execution of the loop body statements, and is used to set initial values for indexing or counting variables.</p>
+<p>The condition expression can be any expression that returns a single value, and the test is whether the value is the zero-value of the return type of the expression, also known as the false-equivalent value of the type.
+</p>
+<p>The post-iteration assignment statement must affect the same variables that were initialized. It is executed at the end of each execution of the loop body statements block. Note that multi-variable assignment statements evaluate their right-hand-sides first (in left-to-right order), and only then assign to the left-hand-side variables.
+</p>
+
+<br/>
+  <a name="MethodCalls"><h3>Method Calls</h3></a>   
+    <code><pre>
+<span class="subtle">1.</span> foo 19 "fast" body.arm[1].elbow.angle[2]
+
+<span class="subtle">2.</span> foo (bar 253 c d[2] a.b) "fast" (calculateAngle opp adj)
+
+<span class="subtle">3.</span> positionAndStamp envelope 
+                    rubberStamp
+
+<span class="subtle">4.</span> positionAndStamp
+      envelope
+      fetchAppropriateStamp rubberStampBox "PAID"                
+
+<span class="subtle">5.</span> positionAndStamp
+      envelope
+      fetchAppropriateStamp 
+         rubberStampBox 
+         "PAID"        
+
+<span class="subtle">6.</span> print times 2 PI
+
+<span class="subtle">7.</span> print times 2 
+               PI
+
+<span class="subtle">8.</span> print times
+            2
+            PI
+
+    </pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+Method names have the same syntax as variable names, method-parameter names, structured-object attribute names<span class="future">, and relation-end names</span>. In relish, you must use contextual information (where they appear in the program, how they are juxtaposed with other program elements, and whether a variable or parameter or attribute <span class="future">or relation-end</span> name has been explicitly defined in the scope) to distinguish the two. <b>Aside on Language philosophy:</b> This conflation of the names of named values (e.g. variables, attributes) and the names of functions, which supply values, is deliberate. It promotes object-oriented data hiding, in that the syntax for getting and setting the values of object attributes is identical to the syntax for calling getter and setter methods. The syntax for calling a unary function of an object is also identical to the syntax for getting the value of an attribute of the object. Therefore, the implementor of the object's data type (class) is free to substitute a computed function for an explicitly stored attribute, or vice versa, without requiring change in code that uses the object.
+</p>
+<p>
+A method call consists of the name of the method followed by zero or more argument expressions. There are three allowed spatial configurations of the arguments in the source code:
+<ul>
+<li>The first configuration is in-line on the same line as the method name, as shown in examples 1. and 2. above. In this configuration, if there are multiple argument expressions, they must be simple so it is not ambiguous where one expression ends and the next begins. Each of the multiple expressions on the line must be one of a) a simple literal, b) a variable name, c) an index expression, dot-notation expression, or combination thereof, or d) a one-line method call which itself has only simple literals, variable names, index expressions, or dot-notation expressions as arguments. </li>
+<li>The second configuration is multiple argument expressions stacked one below the other, starting with the first right-side expression in its normal in-line position one space to the right method name, as shown in example 3. above. </li>
+<li>The third configuration is one or more argument expressions stacked one below the other, starting on the line following the method name, as shown in examples 4. and 5. above. In this case, the argument expressions must all be indented one indent level from the indent position of the beginning of the method call as a whole. </li>
+</ul>
+There is one concession to concise expression of a common case; that where a method's single argument is another method call that consumes all remaining arguments. See examples 6., 7., and 8.
+In this case, the argument method call can be expressed without being surrounded by round brackets or indented onto the next line.
+This form is not allowed if the top-level method requires another argument beyond the value(s) the argument method call returns. 
+</p>
+
+
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A method call first evaluates all of its argument expressions, in left-to-right order. Multiple methods may share the same method name, so multiple dispatch (multimethod dispatch) is performed to choose which method to execute. Once a method is chosen, the argument values are assigned to the method parameters, and the method body statements are executed in sequence until the end of the statement block is reached or a return statement ( "=>" statement in relish ) is encountered. The number of values specified in the method's declaration are returned to the calling context, which may assign those values in an assignment statement, may use them as arguments to another expression or statement, or may discard them. All methods sharing a name (within a package import hierarchy) must be declared to return the same number of values, which may be from 0 to 9 return values.  
+</p>
+<p>
+    <code><pre>
+radius theta = polar x y</pre></code>
+The polar method (more precisely the polar multimethod i.e. the set of methods sharing that name) has been declared to return 2 values, which are assigned to the radius and theta variables in the calling context.
+</p>   
+<p>
+    <code><pre>
+x1 y1 = cartesian polar x y</pre></code>
+The cartesian multimethod has been declared to accept two arguments, which the polar method call supplies.
+</p>
+<p>
+    <code><pre>
+<span class="future">radius _ = polar x y</span></pre></code>
+<span class="future">The calling context only cares about the radius return value and ignores the angle return value by assigning it to the anonymous dummy variable _ .</span>
+</p> 
+<p>
+    <code><pre>
+send "message"</pre></code>
+The send multimethod, we will suppose, has been declared to return an error status value, but the programmer of the calling context, unwisely, has chosen to silently ignore it.
+</p> 
+
+
+
+
+
+
+<h4>Multiple Dispatch</h4>
+<blockquote>
+Multiple dispatch or multimethods or function overloading is the feature of some object-oriented programming languages in which a function or method can be dynamically dispatched based on the run time (dynamic) type of more than one of its arguments. This is an extension of single dispatch polymorphism where a method call is dynamically dispatched based on the actual derived type of the object on which the method has been called. Multiple dispatch generalizes the dynamic dispatching to work with a combination of two or more objects. -- <em>Wikipedia</em>
+</blockquote>
+
+<p>
+  In a relish package, a given method name may be the name of multiple methods, which may be defined in the current package, in a package directly imported by the current package, or in a package imported directly or indirectly by a directly imported package. The set of such methods, as seen from within a given package, is called the multimethod (of a given name.)
+</p>
+<p>
+When there is a method call, a single method (of the multimethod) must be chosen by the relish runtime environment as the method that will be applied to the arguments and executed. This choice is made by a process of pattern matching the parameter type signature of each method against the run time (dynamic) type of each required positional argument that has been supplied in the method call. 
+</p>
+<p>
+ The following is a description of the multi-argument dynamic method dispatch process used by relish.
+ Bear in mind when informally assessing its performance that the full dispatch process is only executed once per program-run
+ for a given type-tuple of arguments applied to a given method. Subsequent calls with the same tuple of types of arguments
+ take advantage of a type-signature-match cache which selects the method using a single hashtable lookup. 
+</p>
+<p>
+  The elevator-pitch version of the multiple dispatch process:
+  <ul>
+   <li>Find methods of the multimethod whose parameter type signature is compatible with (same as or a generalization of) the run time (dynamic) types of the actual arguments in the method call.</li>
+   <li>From those, choose the method whose parameter type signature is closest in types to the types of the arguments.</li>
+   <li>If there is a tie, assess the type signatures of the candidate methods against each other, to determine which method's type signature is
+    more specific in an absolute sense in the type-lattice (the ontology) of data types in the program. Pick that method.</li>
+ </ul>
+</p>
+<p>
+  Here is the lengthier, more precise description of the multiple dispatch process:
+  <ul>
+   <li>Find those method implementations of the multimethod whose parameter-type
+   signature is the same as or a generalization of the type-tuple of run time (dynamic) types of the actual argument objects/values.
+   </li>
+   <li>Select from the type-signature-compatible methods the one whose parameter type signature is the minimal Euclidean distance
+   (in multi-dimensional type specialization space) from the type-tuple of the run time (dynamic) types
+   of the actual argument objects. That is, select the method having the parameter-type-signature that is compatible with and minimally different in types from the argument run time (dynamic) types. Here the <em>method parameter type signature</em> and the <em>list of run-time (dynamic) types of arguments</em> are considered vectors (of length = the method arity) in multi-dimensional type-specialization space.</li>
+  <li>If more than one method is equally close in type signature to the
+   argument types (measuring Euclidean distance down the specialization paths),
+   then the tie is broken by selecting the method whose signature is most specific
+   in types compared to the top types in the ontology of data types in the program.</li>
+   <li>If there is still a tie, the method which was encountered first (in the multimethod's
+   list of methods of a particular arity) is chosen. This last choice is somewhat arbitrary but should almost never need to be invoked as ties in both the first matching criterion (type-tuple Euclidian distance from argument types) and second criterion (absolute specialization-lattice depth of method signature type-tuples) ought to be exceedingly rare.</li>
+ </ul>
+</p>
+
+
+
+
+<h4><span class="future">"dot-notation" for calling single-parameter (unary) methods</span></h4>
+<p>
+<span class="future">Methods which accept only a single positional argument can (optionally) be called with "dot-notation" syntax:</span>
+</p>
+<code><pre>
+<span class="future">a.foo</span></pre></code>
+<span class="future">is equivalent to</span> 
+<code><pre>
+<span class="future">foo a</span></pre></code>
+<span class="future">That is, call method foo on the argument a</span>
+</p>
+<p>
+<span class="future">The dot-notation version can be used in some contexts where prefix calling is not allowed:
+It can increase the depth of method-call nesting allowed in a single-line method call.</span>
+<code><pre>
+<span class="future">
+bar a.b.c.foo "frap" d.e.baz</span></pre></code>
+<p>
+<span class="future">The dot-notation version of unary-method calling provides syntactic equivalence between object attribute access and getter-function
+call and unary function call, allowing for object-oriented data encapsulation (data-hiding) without syntactic baggage.</span>
+</p>
+
+<br/>
+	<a name="MethodDeclarations"><h3>Method Declarations</h3></a>		
+    <code><pre>
+foo a Int b Int > Int
+"""
+ Adds a to b.
+ The => is the return statement. It returns the value(s) of the expression(s) after it.
+"""
+   => add a b
+
+
+divide a Int b Int > dividend Float err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ If one return argument is named, all must be named for consistency.
+ <span class="future">If return arguments have been named, the return statement can
+ occur without any expressions after it, and will cause execution to
+ return from the function immediately. return arguments should already
+ have been assigned to by this time, or they default to the zero/nil value 
+ of their type.</span>
+"""
+   if eq b 0
+      err = Error "Divide by zero!"   <span class="future">=>  // Three spaces precede in-line return statement</span>
+   dividend = div a b
+
+
+foo a Vehicle b Vehicle 
+> Bool er.Error
+"""
+ This is a declaration of a method's interface, with no implementation.
+ <span class="future">This is allowed, and results in a requirement that there exist 
+ a method with an implementation to handle each possible subtype combination of the 
+ input argument types.</span>
+ This example was put here to show the variation in layout of the return values specification.
+"""
+
+
+divide a Int b Int 
+> 
+   dividend Float 
+   err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ Again, just an interface declaration with no method body statements, put here
+ just to show the variation in layout of the return values specification.
+"""
+
+
+divide 
+   a Int 
+   b Int 
+> 
+   dividend Float 
+   err er.Error
+"""
+ Divides a by b. Returns an exception if b is zero.
+ This example shows vertically indented input argument specifications.
+"""
+   err = zeroCheck b
+   if err
+      => nil
+         err
+   dividend = div a b
+   => dividend
+      nil
+
+stamp p Passport
+"""
+ Stamps the passport with an entry stamp.
+ This example shows the declaration of
+ a method that does not return any values.
+"""
+   position p
+   open p
+   bangStamp p
+
+doTheHokeyPokey
+"""
+ This method just does something. It has no input arguments or results returned. 
+ Because it takes no arguments, it requires
+ an implementation because being abstract does not make sense for it.
+"""
+   putInFoot "Left"
+   putInFoot "Right"   
+
+
+doTheHokeyPokey firstFoot String
+"""
+ This method just does something. It has 1 argument and no outputs. 
+"""
+   if eq firstFoot "left"
+      secondFoot = "right"
+   else
+      secondFoot = "left"
+   putInFoot firstFoot
+   putInFoot secondFoot
+    </pre></code><br/>
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+Method declarations start with the method name, which must occur at the top-level scope in a source code file. 
+That is, the method name must be at column 1 of the file.	
+    </p>
+    <p>
+The method name can be followed by zero or more input parameter declarations. Each input parameter declaration is a variable name, followed by a type specification. Input parameter declarations, if the type specifications are simple, can be laid out in-line on the same line as the method name, separated from each other by a space. Or they can be laid out one below the other, starting on the line below the method name, indented one level. This form allows for complex multi-line parameter type specifications.
+    </p>
+    <p>
+      Following the input parameter declarations if any, there may occur the return value(s) declaration. This begins with a &gt;. If the return value(s) declaration is to be on the same line as the method name, the &gt; must follow the last input parameters declaration (or method name if no input parameters) by one space. In this case the return value declaration(s) must follow the &gt; after a space, and be single-space-separated from each other. Each return value declaration consists of an optional variable name then (space separated) a type specification.
+    </p>
+    <p>
+      The return values specification may also occur on the line following the method name or the end of the input parameters, whichever is later.
+      In this case, the &gt; must occur in column 1 of the file. The return value declaration(s) may then follow in-line on that line as described above,
+      or may appear one below the other, starting on the line following the &gt; and indented one level from the &gt;.
+    </p>
+    <p>
+      On the next line below the lowest of the method name, the input parameter declaration(s), or the return value declaration(s), there must appear a method header comment. This comment begins with """ at column 1 of the source code file, and continues until a terminating """ also at column 1 of the
+      file. The text content of the comment must be indented by 1 space from column 1 of the file. i.e. The first comment line must begin at column 2, and subsequent text lines of the comment must begin at column 2 or greater.
+    </p>
+    <p>
+      On the line following the method header comment, the method body statements must begin, if present. A method can be declared as just its commented header i.e. its interface declaration. Implementing methods must exist elsewhere to cover all subtype combinations of the declared input parameter types.
+    </p>  
+    <p>
+      Method body statements must be laid out, one below the other, indented one level (3 spaces) from the column position of the method name and header comment.
+    </p>
+    <p>
+       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence (excluding assignment statements). Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements  (excluding assignments) in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
+    </p>
+
+<h4>"Return" statements</h4>
+<p>
+A return statement <b>=&gt;</b> causes a return from the currently executing method.
+It may also specify the value(s) to return from the method.
+    <code><pre>
+   => "SUCCESS"
+
+   => times 2 b  // returns the value of the times method-call.
+  </pre></code>
+If a method specified two return arguments, and did not name the return arguments (they were specified
+with a type only), then the following form of return statement must be used:
+    <code><pre>
+   => a nil  // return two values, as long as a is a variable and not the name of a method that takes
+             // an argument.
+
+   => a
+      nil 
+
+ <span class="future">//... or the following more vertically separated form, which looks better after a nested statement:
+
+   doSomething
+      someArg
+      someOtherArg
+   =>                 
+      attr1
+      98.6</span>
+  </pre></code>
+A method which specifies names for its return arguments cannot use the form of return statement that has arguments.
+Instead, if a return value is to be set, the return argument must be assigned to within the 
+subroutine body. Named return values which are not assigned to default to the nil/zero-value of the data type. 
+Note that this zero-value defaulting ONLY works for named return args.
+
+  <span class="future">If you want to specify an early return from a subroutine with named return args or no return args, 
+you should use the =&gt; statement with no arguments. In this case only, the =&gt; statement may
+appear on the same line as the end of the previous statement, separated from it by 3 spaces.</span>
+    <code><pre>
+<span class="future">
+   if weNeedToGetOutOfThisMethod
+      doSomeFinalCleanup arg   =>  // ...and exit
+   moreMethodStuff here
+
+   // or...
+
+   if weReallyNeedToGetOutOfThisMethod
+      doSomeFinalCleanup arg  
+      =>  // ...and exit
+   moreMethodStuff here</span> 
+ </pre></code>
+<br/>
+
+<a name="Closures"><h3>Closures</h3></a>
+<p>
+A closure is a declaration of an anonymous function (method), where such declaration is nested as an expression inside the body of another method. A closure can be passed around as a value in the program, then eventually executed (applied to some	arguments).
+</p>	
+<code><pre>
+myOuterMethod tree TreeNode
+"""
+ A method declaration.
+"""	
+   b = 1  // variables declared in the outer method can be referred to inside
+   c = 2  // the nested anonymous function declaration
+
+   f = func a Int > Int 
+       """
+        Yes, a header comment is mandatory for an anonymous func declaration.
+       """
+          => plus a (times c b)  // b and c are free variables in the nested function
+
+   // f now refers to a function closure which has bound its b to 1 and c to 2.
+
+   // We can now pass f in as an argument to another method
+
+   preorderVisit tree f
+
+
+preorderVisit tree TreeNode f Callable
+"""   
+ Within preorderVisit we can now apply f
+"""
+   ...  // some other code presumably to do with visiting tree nodes
+   ...
+   n = apply f 7
+   print n  // Prints 9
+</pre></code>
+
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+	Function closures (also known as Lambda expressions) are declared as
+	an anonymous method declaration (with the special "func" method name)
+	inside the body of an enclosing method. 
+	They can occur wherever an expression (of type Callable) would be permitted.
+</p>
+<p>	 
+	Inside the body of the nested function declaration (i.e. in the Lambda expression),
+	variables which were declared in the enclosing method body prior to the nested 
+	function declaration can be referred to. Such a use of an enclosing-method
+	variable inside a Lambda expression is known as a free variable of the Lambda expression.
+</p>	
+<p>
+	<b>Semantics:</b>
+</p>	
+<p>
+	A closure (or Lambda expression) is a first-class data object in the language, representing
+	the function with bindings of its free variables. The expression can be assigned to 
+	a variable and/or passed as an argument to another method before the function is 
+	eventually executed by "applying" the lambda expression (the function closure) to 
+	some arguments later on. The special builtin method "apply" takes a closure (Lambda expression) as its
+	first argument and as many additional arguments as the closure needs, and 
+	calls the closure's function on the additional arguments.
+</p>
+<p>
+	The binding of free variables:
+	If an enclosing-method variable is referred to inside the body of a Lambda expression, whatever 
+	value the enclosing-method variable has at the time the Lambda expression is encountered in enclosing-method
+	execution is bound to the variable-name inside the Lambda expression. 
+	That value (or object reference) is now snapshotted and "carried along with" the Lambda expression,
+	to be used whenever the Lambda expression function is eventually executed by being "applied".
+</p>
+
+<br/>
+		<a name="BuiltinMethods"><h3>Built-in Methods</h3></a>	
+		<p>
+			relish currently comes with a small but growing number of standard built-in methods. These methods are available from within any package without having to import a package containing the methods. The general plan is that a small number of these methods, the most general purpose, will remain implicitly-imported, but that others will migrate into relish standard library packages, which will have to be imported for the methods to be used. The plan is to (eventually) lift many of Go's standard libraries into relish, using shallow wrapper methods.
+			</p>
+			<p>
+				Here is the current list of built-in standard methods. See also the Packages list for the currently available relish standard library packages.
+		</p>	
+	    <code><pre>
+		
+// Comparison operators
+		
+eq a Any b Any > Bool
+"""
+ Returns whether two values are equal in value.
+ Currently, applies to Numeric,String,Bool,Time, and structured object types.
+ Converts between numeric types if necessary before testing for numeric equality, 
+ and converts a number to its string representation to compare with a string.
+ If applied to two structured objects, returns true if they are 
+ reference-equal (same memory location.) 
+"""
+
+
+neq a Any b Any > Bool
+"""
+ Logical inverse of eq: returns whether two values are unequal in value.
+ Currently, applies to Numeric,String,Bool,Time, and structured object types.
+ Converts between numeric types if necessary before testing for numeric equality, 
+ and converts a number to its string representation to compare with a string.
+ If applied to two structured objects, returns false if they are 
+ reference-equal (same memory location.)
+"""
+
+
+less a Numeric b Numeric > Bool 
+"""
+ Numeric less-than operator.
+"""
+
+less a Time b Time > Bool 
+"""
+ Time less-than operator.
+"""
+
+before a Time b Time > Bool 
+"""
+ Time less-than operator. An alias for 'less'.
+"""
+
+less s1 String s2 String > Bool
+"""
+ Lexicographical less-than operator. Compares two strings.
+"""
+
+
+greater a Numeric b Numeric > Bool
+"""
+ Numeric greater-than operator.
+"""
+
+greater a Time b Time > Bool 
+"""
+ Time greater-than operator.
+"""
+
+after a Time b Time > Bool 
+"""
+ Time greater-than operator. An alias for 'greater'.
+"""
+
+greater s1 String s2 String > Bool
+"""
+ Lexicographical greater-than operator. Compares two strings.
+"""
+
+
+lessEq a Numeric b Numeric > Bool 
+"""
+ Numeric less-than-or-equal-to operator.
+"""
+
+lessEq a Time b Time > Bool 
+"""
+ Time less-than-or-equal-to operator.
+"""
+
+lessEq s1 String s2 String > Bool
+"""
+ Lexicographical less-than-or-equal-to operator. Compares two strings.
+"""
+
+
+greaterEq a Numeric b Numeric > Bool
+"""
+ Numeric greater-than-or-equal-to operator.
+"""
+
+greaterEq a Time b Time > Bool 
+"""
+ Time greater-than-or-equal-to operator.
+"""
+
+greaterEq s1 String s2 String > Bool
+"""
+ Lexicographical greater-than-or-equal-to operator. Compares two strings.
+"""
+
+
+
+// Abbreviated forms of comparison operators
+
+lt a Numeric b Numeric > Bool 
+"""
+ Numeric less-than operator.
+"""
+
+lt a Time b Time > Bool 
+"""
+ Time less-than operator.
+"""
+
+lt s1 String s2 String > Bool
+"""
+ Lexicographical less-than operator. Compares two strings.
+"""
+
+
+gt a Numeric b Numeric > Bool
+"""
+ Numeric greater-than operator.
+"""
+
+gt a Time b Time > Bool 
+"""
+ Time greater-than operator.
+"""
+
+gt s1 String s2 String > Bool
+"""
+ Lexicographical greater-than operator. Compares two strings.
+"""
+
+
+lte a Numeric b Numeric > Bool 
+"""
+ Numeric less-than-or-equal-to operator.
+"""
+
+lte a Time b Time > Bool 
+"""
+ Time less-than-or-equal-to operator.
+"""
+
+lte s1 String s2 String > Bool
+"""
+ Lexicographical less-than-or-equal-to operator. Compares two strings.
+"""
+
+
+gte a Numeric b Numeric > Bool
+"""
+ Numeric greater-than-or-equal-to operator.
+"""
+
+gte a Time b Time > Bool 
+"""
+ Time greater-than-or-equal-to operator.
+"""
+
+gte s1 String s2 String > Bool
+"""
+ Lexicographical greater-than-or-equal-to operator. Compares two strings.
+"""
+
+
+
+// Boolean logic operators
+
+not a Any > Bool
+"""
+ Boolean logical negation operator. Any non-false object/value passed in results in false.
+ Any false-equivalent object/value passed in results in true.
+"""
+
+
+and ...a Any > Any
+"""
+ Boolean logical and operator. If any of its arguments are false-equivalent, returns false,
+ otherwise returns the last argument.
+ All arguments are evaluated, unlike LISP's lazy and operator.
+"""
+
+
+or ...a Any > Any		
+"""
+ Boolean logical or operator. Returns the left-most of its arguments which is non-false.
+ If all arguments are false-equivalent, returns false.
+ All arguments are evaluated, unlike LISP's lazy or operator.
+"""
+
+		
+		
+// Arithmetic operators		
+		
+times a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+
+div a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+
+mod a Integer b Integer > Integer
+""" 
+ Return value type is covariant with argument types.
+"""
+
+
+plus a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+
+sum numbers [] Numeric > Numeric
+"""
+ Returns the sum of the list of numbers.
+ The result type is co-variant with the input list element-type constraint,
+ so if a [] Int is supplied, an Int is returned. [] Float > Float
+"""
+
+
+minus a Numeric b Numeric > Numeric
+""" 
+ Return value type is covariant with argument types.
+"""
+
+
+neg a Numeric > Numeric
+""" 
+ Return value type is covariant with (same as) argument type.
+"""
+
+
+	
+// Collection methods		
+		
+len c Collection > Int
+"""
+ Returns the number of elements in the collection or map.
+"""
+
+
+cap c Collection > Int
+"""
+ Returns the current capacity of the collection or map.
+ The interpretation of capacity depends on the kind of collection.
+ For a List, it is the length of the currently allocated array of object references.
+ Lists grow as needed, so cap is only advisory.
+"""
+
+
+contains coll Collection val Any > Bool  
+"""
+ Returns true if val is an element of the collection. false otherwise.
+ If coll is a Map, returns true if val is a key of the map. false otherwise.
+ If val is a primitive value type, value equality is used, otherwise
+ reference equality is used.
+"""
+
+
+clear c Collection
+"""
+ Empties the collection or map, so that its len method will report 0
+ Panics if called on object or value other than a mutable, clearable collection or map.
+"""
+
+
+
+// Concurrency and inter-goroutine communication methods
+
+len c Channel > Int
+"""
+ Returns the number of objects currently in the channel buffer. 0 always for an unbuffered channel?
+"""
+
+
+cap c Channel > Int
+"""
+ Returns the capacity channel. 0 means an unbuffered synchronous channel.
+"""
+
+
+lock m Mutex
+"""
+ Locks the mutex. When lock is acquired, go-routines attempting to lock this mutex will block.
+"""
+
+
+unlock m Mutex
+"""
+ Unlocks the write-lock on the mutex. A goroutine is free to lock the mutex now.
+"""
+
+
+lock m RWMutex
+"""
+ Locks the mutex. When lock is acquired, go-routines attempting to lock or rlock this mutex will block.
+"""
+
+
+unlock m RWMutex
+"""
+ Unlocks the write-lock on the mutex. A goroutine is free to lock the mutex now.
+"""
+
+
+rlock m RWMutex
+"""
+ Locks the mutex for reading. When lock is acquired, go-routines attempting to write-lock this mutex will block.
+"""
+
+
+runlock m RWMutex
+"""
+ Unlocks the read-lock on the mutex. A goroutine  is free to write-lock the mutex now.
+"""
+
+
+
+// I/O Methods
+
+print ...a Any
+"""
+ Prints a representation of the argument object/value(s) on the standard output, with a space separating 
+ each printed object/value. NOTE: Currently only accepts RelishPrimitive objects as arguments.
+ Note: Currently limited to no more than 7 arguments. See the cat or fill methods in the strings 
+ standard library package to work around this.
+"""	
+
+
+input promptMessage String > String
+"""
+ Prints the prompt message to stdout then reads a string (up to a linefeed) from stdin and returns the 
+ input string (without the linefeed character).
+ Used to get a line of input from the console. If stdin is coming from the console, waits till the
+ [Enter] button is pressed.
+""" 
+
+
+dbg val Any 
+"""
+ If val is a primitive value, prints the standard String representation of it.
+ If a structured object, prints a string representation of debugging innards of the object, 
+ including its uuid and dbid if applicable, and its memory address.
+ If a collection, also prints the length (number of elements) currently in the collection.
+ Prints a newline character after the debug representation of the value.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, without attempting username+password authentication 
+ with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, 
+ without attempting username+password authentication with the sending smtp mail server.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipient String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to a single recipient, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+ Note: If sendingMailAccountUserName is an empty string, does unauthenticated send.
+"""
+
+
+sendEmail 
+   smtpServerAddr String 
+   sendingMailAccountUserName String
+   sendingMailAccountPassword String
+   from String 
+   recipients [] String 
+   subject String 
+   messageBody String 
+> 
+   error String
+"""
+ Send an email message to possibly multiple recipients, first authenticating with the sending smtp mail server
+ to establish that we are a permitted sender by using "plain auth" username+password authentication.
+ Returns an empty String "" if it succeeds, otherwise a mail protocol error message.
+ Note: If sendingMailAccountUserName is an empty string, does unauthenticated send. 
+"""
+
+
+
+
+// String methods
+	
+len s String > Int
+"""
+ Returns the number of bytes in the String. This is not the number of unicode codepoints, which may be fewer.
+"""	
+
+
+at s Strings i Int > Byte
+"""
+ Return the byte-value at index i in the String. 0 &lt;= i &lt; len s
+"""
+
+
+debug val Any > string
+"""
+ If val is a primitive value, returns the standard String representation of it, 
+ If a structured object, returns a string representation of innards/implementation-details of the object 
+ for debugging purposes, including its uuid and dbid if applicable, and its memory address.
+ If a collection, also returns the length (number of elements) currently in the collection.
+"""
+
+
+
+
+// Bytes methods
+	
+len bytes Bytes > Int
+"""
+ Returns the number of bytes in the byte-slice.
+"""	
+
+
+at bytes Bytes i Int > Byte
+"""
+ Return the byte-value at index i in the byte-slice. 0 &lt;= i &lt; len bytes
+"""
+
+
+set bytes Bytes i Int b Byte
+set bytes Bytes i Int b Int	
+set bytes Bytes i Int b Int32
+set bytes Bytes i Int b Uint
+set bytes Bytes i Int b Uint32
+"""
+ Set the byte-value at index i in the byte-slice. 0 &lt;= i &lt; len bytes
+ First converts the last argument to Byte using truncation to least significant byte if necessary.
+"""
+
+</pre></code>	
+<p>
+Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, 
+which explains relish's support for data persistence.
+</p>
+
+
+<br/>
+<a name="DataPersistence"><h3>Data Persistence</h3></a>   
+    <code><pre>
+car1 = Car  // Construct a Car object and assign it to variable car1
+car1.odometerReading = 182430
+engine1 = Engine
+engine1.horsePower = 120
+belt = TimingBelt
+car1.engine = engine1 
+
+dub car1 "FEC 092"  // Make the car object persistent in the local database, 
+                    // using the license plate# as the official, canonical name
+                    // of the persistent object. Directly and indirectly associated 
+                    // objects are automatically made persistent too. 
+
+belt.dateOfManufacture = "2012/07/24"  // This TimingBelt is not yet persistent.
+engine1.timingBelt = belt  // But now it is!
+car1.odometerReading = 194729
+    </pre></code><br/>
+    <p>
+      Now, in a separate run of a relish program that uses the same local database...
+    </p>
+    <code><pre>
+myCar = <span class="future">Car:</span> summon "FEC 092"
+print myCar.engine.timingBelt.dateOfManufacture  // prints 2012/07/24
+print myCar.engine.horsePower  // prints 120
+print myCar.odometerReading  // prints 194729
+person = Person
+person.firstName = "Eric"
+myCar.owner = person
+    </pre></code><br/>
+    <p>
+      Now, in yet another run of a relish program that uses the same local database...
+    </p>
+<code><pre>
+if exists "FEC 092"
+   myCar = <span class="future">Car:</span> summon "FEC 092"
+else
+   myCar = Car
+   dub myCar "FEC 092"
+
+myCar.maxSpeed = 130    
+
+joesCar = Car
+dub joesCar "552 LVH"
+joesCar.odometerReading = 253016
+joesCar.maxSpeed = 170   
+person = Person
+person.firstName = "Joe"
+joesCar.owner = person
+
+bobsCar = Car
+dub bobsCar "NKL 288"
+bobsCar.odometerReading = 78210
+bobsCar.maxSpeed = 105   
+person = Person
+person.firstName = "Bob"
+bobsCar.owner = person
+
+alicesCar = Car
+dub alicesCar "089 SFR"
+alicesCar.odometerReading = 43978
+alicesCar.maxSpeed = 140   
+person = Person
+person.firstName = "Alice"
+alicesCar.owner = person
+</pre></code>
+<p>
+  Finally, in yet another run of a relish program using that database, lets
+  fetch from the database the fast cars that are not quite yet on their deathbed.</p>
+<code><pre>
+viableFastCars = []Car "odometerReading < 200000 and maxSpeed > 110 order by maxSpeed desc"
+for car in viableFastCars
+   print car.owner.firstName
+
+// prints
+// Alice
+// Eric 
+
+</pre></code>
+<h4>Overview of relish's data persistence mechanism</h4>
+<p>
+  relish's local data persistence mechanism currently uses a sqlite3 database to store data objects.
+  Transaction control (deferral of commit) is not yet implemented, but is in the language roadmap.
+  relish's local persistence mechanism MAY be extended to work with other rdbms systems, and these
+  would most likely be done in the order postgresql, mysql, ...?
+</p>
+<p>
+  relish's persistence mechanism is transparent (also known as orthogonal). This means that once
+  you have dubbed a data object with an official (canonical) name, to make it persistent, the object's state
+  is automatically saved to the database at that point, and is automatically re-saved whenever its
+  state changes. Other objects reachable in the object's attribute or relation network are also
+  infected with persistence by their reachability from the newly persistent object, and are similarly
+  automatically saved to the database when their state is updated. 
+</p>
+<p>
+There are three ways to retrieve data objects from the database into memory in a new instance
+of a relish program. 
+<ul>
+<li>The first is to summon the object by its official canonical name.</li>
+<li> The second is to follow the chain of reference from a retrieved persisted object, to find associated objects. You just use ordinary object attribute accessing notation in the programming language to do this (e.g. car.owner) and the associated object is automatically fetched into memory from the database.</li>
+<li>The third retrieval method is to construct a list of the type of object you want e.g. cars = []Car but to include a String argument after the []Car list constructor. The argument String should contain SQL selection criteria (i.e. the tests that occur in a WHERE clause) and can also have a SQL order by clause.
+  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><em>IMPORTANT NOTE: There is a performance distinction in SELECT-style object retrieval: If the list element-type has subtypes,the fetch from the database is polymorphic, meaning that instances of objects of different subtypes of the list element-type may need to be retrieved. Each element may have a different specific data type. Therefore, n+1 database queries are done; one to fetch the list of object ids, and n to fetch the attributes of each of the n objects. If on the other hand you ask to retrieve by query a list whose element-type is a most-specific data type with no subtypes, the whole list of objects can be fetched from the database using one SQL join query.</em> 
+  </li>
+</ul>
+</p>
+<p>
+  Currently, only a structured object can be dubbed with an official name to make it persistent.
+  However, primitive values and collections which are reachable by reference from that object 
+  are also persisted along with it.
+</p>
+<h4>Data Persistence Implementation Details</h4>
+<p>
+Under the hood, relish's persistence mechanism stores data objects using multiple-table inheritance-mapping. Each object is represented by a row in the RObject table, and also by a row in perhaps several other tables; Each datatype declared in a relish program has a corresponding database table. An object occurs as a row in each type-table that corresponds to a data type in the object's type lattice.
+The object's RObject table row holds the object's full universally unique id, the object's data type, and some status flags. The object's row in each type table holds the the object's id, and the values of whichever primitive-value attributes of the object are defined in that type.
+</p>
+<p>
+  A query to fetch an object's state therefore is a join query on the id of the object, across the RObject table and the type tables applicable to the object.
+</p>
+<p>
+  A data-type attribute which refers to another structured object is represented in the database by an association table (also known as a join table).
+  The association table contains rows with the id of the first object and the id of the attribute-value object.
+  Association tables are also used to represent multi-valued attributes (collections) and to represent relish's first-class relations between data types.
+</p>
+<p>
+  You can view a relish sqlite3 database using a properly functioning sqlite browser/manager tool, or with the sqlite3 command-line interface.
+  Note that the popular free "Sqlite Database Browser" and "Sqliteman" tools are buggy with respect to complex database table names so do not work with relish databases. MesaSqlite for Mac (shareware) works well as does the Firefox Sqlite Browser Plug-in. It is inadvisable to modify a relish sqlite database with a database tool, and completely insane to do so while a relish program is running on it.
+</p>
+
+
+<br/>
+  <a name="DataTypeDeclarations"><h3>Data Type Declarations</h3></a>   
+
+<h4>Data types that have attributes</h4>
+<code><pre>
+Car 
+"""
+ A vehicle that carries a small number of passengers and travels on roads.
+"""
+   make Company  
+
+   model String  
+
+   sizeClass VehicleClass
+
+   year Int
+
+   engine Engine
+
+   maxSpeed Int
+
+   vin String
+
+   wheels 3 4 Wheel  // A set of 3 or 4 Wheels
+
+   bucketSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 bucket seats
+
+   cupHolders {} CupHolder  // A set of an undetermined nuber of cup-holders
+  
+</pre></code><br/>
+
+
+
+<h4>Data types that inherit attributes and behaviour from other Data Types</h4>
+<code><pre>
+
+Lollipop &lt;: Candy  
+"""
+ A lollipop is a subtype of candy which has a stick
+ and a ball of coloured sugar.
+ The lollipop inherits attributes and relations from its supertype, Candy, 
+ such as price and a relationship with a CandyStore.
+"""
+   stick PaperCylinder
+
+   ball SugaryMass
+
+
+Polygon &lt;: Shape2D ClosedCurve  // Only if all types are simple single word (non-parameterized)
+"""
+ A polygon is a closed curve - a sequence of line-segments joined end-to-end to form a ring.
+"""
+   ...rest of type declaration omitted in example...
+
+
+Polygon 
+&lt;:
+   Shape2D
+   ClosedCurve
+"""
+ A polygon is a closed curve - a sequence of line-segments joined end-to-end to form a ring.
+"""
+   ...rest of type declaration omitted in example...
+</pre></code><br/>
+
+    <p>
+    	<b>Syntax:</b>
+    </p>
+    <p>
+A Data Type Declaration begins with the name of the data type being defined. This is followed by an optional list of supertypes (prefixed with subtype operator <b>&lt;:</b>), and then a mandatory data type header comment. 
+Both the data type name and the header comment must begin at column 1 of the source code file. The combination of the type name, the supertypes, and the header comment are collectively called the type header. A type header MAY be followed by a list of attribute declarations. If so, attribute declarations must be placed one directly below the other, each indented one level (3 spaces) in from beginning of the type name.	
+    </p>
+<p>
+	Each attribute declaration consists of an attribute name followed by a data type specification.
+	</p>
+	<p>The attribute name's syntax must conform to variable name syntax with the additional stipulation that an attribute name may not be one of the SQL reserved words: <b><code>and or not null in order by desc asc select from where join like</code></b> nor one of the standard object persistence implementation attribute names: <b><code>id id2 flags typeName</code></b>
+	</p>
+	<p>
+		The simplest form of data type specification is simply a data type name, package-qualified data type name, or a list or set or map type specification. <span class="future">More complex forms will exist in later versions of relish that will specify parameterized types.</span>
+		</p>
+<p>
+	  A multi-valued attribute may be declared by specifying:  
+	<ul>
+		<li>a cardinality specification ( e.g. <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated onjects/values,</li>
+		<li>a List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
+		<li>or both. If the List/Set specifier is omitted, it defaults to Set. If [] or {} is present but cardinality constraints are missing, cardinality can be zero or more.</li>
+   </ul>		
+</p>
+
+	    <p>
+	    	<b>Semantics:</b>
+	    </p>
+	    <p>
+	A data type in relish has five key characteristics; 
+	<ol>
+		<li>its position in the multiple-inheritance type-specialization lattice.</li> 	
+		<li>Its behaviours, defined by the set of methods which accept an argument of that type or a supertype
+		<li>Its relations with other data types, as defined in relation declarations in the program. 	
+		<li>Its structure, comprising a list of attributes.</li>
+		<li><span class="future">Its type-invariant predicate</span> 
+			</ol>
+	    </p>
+
+<dl>
+	<dt>A data type's position in the type-specialization lattice</dt>
+	<dd>The meaning of an object/value in relish is largely determined by its data type. And a data type inherits all of the characteristics specified in all of its direct and indirect supertypes, as well as possibly specifying its own additional characteristics. A datatype inherits compatibility with all behaviour (methods) defined for all of its supertypes. A datatype inherits all of the attributes defined for all of its supertypes combined. A datatype inherits expected participation in whatever relations with other objects are specified for any of its supertypes. <span class="future">And a datatype instance, in order to be valid, must satisfy the type-invariant predicate of the datatype as well as the type-invariant predicate of all of the supertypes.</span><br/>	
+The relationship between a data type and its supertypes is an is-a relationship. An object which is an instance of a data type is also implicitly an instance of all of the supertypes of the data type.</dd>
+
+<dt>A data type's defined behaviours</dt>
+	<dd>The behaviours (behavioral capabilities) of an object/value of a data type in relish are specified by the set of all methods declared to accept that data type, or any of its supertypes, as a parameter of the method in any required positional parameter position. Note that some of these behaviours (methods) are defined in the package that defines the data type or in (directly or indirectly) imported packages of the type-defining package. These could be considered to be the defining behaviours of the type, since all instances (objects/values) of the data type in all program contexts are capable of these behaviours. Other methods may also be defined to accept a parameter of the type or a supertype, but those methods are defined in a package on which the type's package is not dependent. Those methods must be thought of as incidental behaviours of the type, as they are only defined in certain contexts, and cannot be considered essential to the identity or nature of an instance of the data type. Methods that are declared to accept a required positional parameter whose type must be a subtype of the data type (but do not declare another required positional parameter of the data type in question or a supertype) are NOT part of the behaviour of the data type. They are part of the behaviour of the particular subtype.</dd>
+<dt>A data type's relations with other data types</dt>
+	<dd>
+		As will be detailed in a subsequent section of this reference document, relish provides language constructs for specifying required or discretionary relationships that objects of one data type have with objects of another data type. That is, relish allows the expression of an entity-relationship-diagram (ERD) in programming language statements. The declared relations with other data types form an important part of the meaning of a data type and its objects/values. An object/value of a datatype can be expected to be participating in the kinds of relationships (associations) specified for that data type as well as in those kinds of relationships specified for any of the supertypes of the datatype. The relish language provides convenient syntactic support (and persistence management support) for the creation, maintenance, and navigation of relationship (i.e. association) networks of objects. 
+	</dd>
+<dt>A data type's structure of attributes</dt> 
+	<dd>Some  but not all datatypes are defined to have a structure, comprising a list of attributes. Each attribute is either a primitive-type value (such as a Numeric, String, or Bool), a collection of primitive-type values, a reference to a structured object, or a collection of references to structured objects. The attributes can be viewed as the components/parts of the structured object being defined by the data type.<br/>
+<span class="future">Attributes which refer to a structured object can be defined to be optional or required. An optional attribute is allowed to be a nil reference. A required attribute (the default) is not.</span><br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+<dt><span class="future">A data type's type-invariant predicate</span></dt>
+	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd>
+<dt><span class="future">The "valid" test</span></dt>
+	<dd><span class="future">
+		relish has a built-in method called "valid" which accepts any object/value as its argument, and returns a boolean status and a String error message. The "valid" function returns true, and an empty error String if the object/value it is passed is currently a valid, fully constructed, and fully-connected instance of its data type. If the object is not currently valid, the valid function returns false and an error message stipulating the general type of invalidity. The valid method checks validity of the object with respect to its datatype and all supertypes of that type. The valid method invokes the type-invariant predicate of all types in the object's type lattice which define an <b>invariant</b> method.
+		<br/>
+		<br/>
+		When an object is invalid, the valid method will return false and one of the following error messages: 
+		<br/>
+		<br/>
+		"MISSING REQUIRED RELATION - relationName - TYPE full/type/Name"<br/>
+		"RELATION CARDINALITY VIOLATION - relationName - TYPE full/type/Name "<br/>
+		"MISSING REQUIRED ATTRIBUTE - attributeName - TYPE full/type/Name"<br/>
+		"TYPE INVARIANT CONDITION VIOLATED - TYPE full/type/Name"<br/>
+	</span></dd>
+	
+</dl>
+
+
+
+
+
+<p>
+  NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
+</p>
+
+<br/>
+  <a name="Attributes"><h3>Attributes</h3></a>   
+
+<h4>Obtaining the value of an object attribute</h4>
+<code><pre>
+print car1.year
+
+print lenosGarage.wing[3].floor[2].parkingSpot[19].car.year
+
+inflateTire car1.wheels[0]
+
+for wheel in car1.wheels
+   inflateTire wheel
+</pre></code>
+
+<h4>Setting the value of an object attribute</h4>
+<code><pre>
+car1.vin = "V0E44R8139WT6214A"
+
+car1.engine = engine1
+
+lenosGarage.wing[3].floor[2].parkingSpot[19].car = car1
+
+car1.wheels[1] = wheel2
+</pre></code>
+
+<h4>Adding an element to a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels += wheel3
+</pre></code>
+
+<h4>Removing an element from a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels -= wheel1
+</pre></code>
+
+<h4>Clearing all elements from a multi-valued object attribute </h4>
+<code><pre>
+car1.wheels = nil  // len car.wheels is now 0
+</pre></code>
+
+
+<br/>
+
+  <a name="ObjectConstructors"><h3>Object Constructors</h3></a>   
+
+<h4>Constructor Calls</h4>
+<code><pre>
+car1 = Car
+
+car2 = Car (Company "General Motors") "Chevrolet Aveo"
+
+car3 = Car 
+          Company "General Motors"
+          "Chevrolet Aveo"
+
+<span class="future">car4 = Car
+          make = Company 
+                    name = "General Motors" 
+          model = "Chevrolet Aveo"
+          sizeClass = VehicleClass 
+                         name = "Subcompact"
+          year = 2011</span>
+
+</pre></code>
+<h4>Constructor Declarations</h4>
+<p>
+	relish implicitly defines the constructor methods that take no arguments, <span class="future">and also all constructor methods that accept only keyword arguments corresponding to (all or a subset of) the attributes of the data type and its supertypes.</span>
+	</p>
+	<p>The implicitly defined constructors can be overridden by explicitly defining a method in the package in which the type is defined. Such a method must be named according to the pattern init&lt;TypeName&gt; e.g. initCar. If an init&lt;TypeName&gt; method's parameter signature matches the arguments which have been supplied to a &lt;TypeName&gt; constructor call, the init&lt;TypeName&gt; method is invoked automatically to initialize state, after the barebones object has been constructed.</p>
+<code><pre>
+
+initCar 
+   c Car 
+   make Company
+   model String
+"""
+ Initializes a Car object.
+"""
+   initVehicle c someArg
+   c.make = make
+   => c
+</pre></code>
+<p>
+init&lt;TypeName&gt; methods can also be defined that accept arguments other than keyword arguments that correspond to data type attributes. Whichever init... function best matches the arguments supplied in the call will be invoked.
+</p>
+<p>
+When a constructor call occurs, that is, a use of the type name in method-name position in a call statement, a search is made automatically for an init&lt;TypeName&gt; method whose second and subsequent parameter signature matches the constructor call arguments. If found, then first a raw, uninitialized newly allocated object of the type is constructed, and then the init... function is called passing the new object as first argument.
+	</p>
+<p>
+An init&lt;TypeName&gt; method should explicitly call init... methods for direct supertypes of the type, if init... methods other than those that would be called by default are needed.
+</p>
+<p>
+An init&lt;TypeName&gt; method can also be called explicitly, in case re-initialization is desired for a pre-existing object, for example, in a scheme that re-uses objects rather than allocating new ones.
+</p>
+
+<br/>
+  <a name="Relations"><h3>Relations</h3></a>   
+<div style="padding-left: 3em">
+<img src="ERD_example.png">
+</div>
+<br/>
+<br/>
+<h4>Relation declarations</h4>
+<p>
+	In relish, to create the data model of your application's domain, just start expressing the the relation-lines of an entity-relation diagram directly in the source code, at the top-level of a relish source code file. 
+</p>
+<code><pre>
+	
+Author 1 N authors -- publisher 0 N Publisher
+
+Author 1 N writers -- contributedTo N Book
+
+Publisher 1 1 publisher -- published 1 N Book
+		
+		
+// Or, using available syntax defaults...
+		
+Author N -- 0 N Publisher     // attribute names default to properly pluralized lowercase 
+                              // type names (authors, publisher). N means 1..N
+
+Author N writers -- contributedTo N Book    // attribute names still needed here since not 
+                                            // just using type names
+
+Publisher 1 -- published N Book    // 1 means 1..1
+
+// These result in automatically declared attributes for the data types:
+
+anAuthor.publisher
+thePublisher.authors   // a set of Authors
+thePublisher.published  // a set of Books
+aBook.publisher
+aBook.writers  // a set of Authors
+anAuthor.contributedTo   // a set of Books
+
+// When the attributes are assigned to or the multi-valued attributes added to/removed from,
+// the other end of the relation (and the corresponding attribute of the other object) is
+// automatically maintained. You can view the relationship from the object at either end.
+
+
+// More examples, showing additional features like sort-order of relation.
+	
+Cart 0 1 cart -- horses {&lt;age} 0 N Horse
+
+Student 1 500 enrollees -- courses 1 8 Course
+
+
+Cart 1 -- {&lt;age} N Horse         // 1 means 1 1, N means 1 N
+
+Student 500 enrollees -- 1 8 Course       // 500 means 500 500 - silly case
+
+
+Cart 1 -- {&lt;age} N Horse         // relation-end names omitted
+
+Student 1 500 enrollees -- [] 1 8 Course       // Use a List to collect the courses 
+
+Student 1 500 enrollees -- {&lt;name} 1 8 Course   // Use a Set that orders by Course.name
+
+<span class="future">Student 1 500 enrollees -- {&lt;} 1 8 name=>Course      
+"""
+ Use a Map of courses that you can access by Course.name. Also sorts by course.name.
+"""
+
+Student 1 500 enrollees -- {&lt;} 1 8 String=>Course
+"""
+ This one is a sorted Map, but you give a String key to each course as you add the
+ course into the relation. The map is ordered by the values of its keys when iterated over.
+"""
+	
+</span>
+</pre></code>
+<p>
+<b>Syntax:</b>
+</p>
+<p>
+	A relation declaration is meant to look like (the text version of) a single relation line joining two Entity types in an Entity-Relation-Diagram (ERD). The name at one end of a relation is the name of that relation from the perspective of the object at the <u>other</u> end. The cardinality constraint at one end of a relation is the number of those objects at that end that can be associated with each individual object at the <u>other</u> end.
+</p>
+<p>
+relation-end names can be omitted. In this case, the relation-end name defaults to the lower-case-initial-letter version of the name of the expected datatype at that end of the relation. If the cardinality specification specifies that there may be N more than 1 of the objects of that type associated with each object of the other type, then an "s" or an "es" is added to the defaulted relation-end name. For example, if the relation is Cart 0 1 -- 1 N Horse, then the relation-end names "cart" and "horses" are defined by default. The implicit attribute horse.cart becomes defined by default to access the cart from a horse, and the implicit attribute cart.horses becomes defined by default to access the horses associated with the cart. 
+</p>
+<p>
+A multi-valued relation-end defaults to being represented in memory by an (unordered, unsorted) Set collection type, if the collection type is not specified. A List collection may be specified instead by using [] at the N-cardinality end of the relation. Automatic sorting can be specified for an N-cardinality end of a relation, by specifying something like this horses {&gt;birthYear} Horse, which will return the 1 year olds followed by the 2 year olds etc. when iterated through. A List collection can also be specified to be sorted e.g. children [&lt;birthDate] Person. This allows access to parent.children[0], the eldest, parent.children[1] the next-oldest, etc. 
+</p>
+<p>
+<b>Semantics:</b>
+</p>
+<p>
+A relation declaration in relish is used to define how objects of two data types relate to each other. Each relation declaration specifies a particular relation between two data types. That relation has two names; one name from the point of view of the object of one data type, and the other name the name of the relation from the point of view of the object of the other data type. A relation declaration specifies the type of the object expected to be at either end of the relationship. It also specifies how many objects of the second type an object of the first type is expected to be related to in this relationship, and vice versa. These are known as the cardinality constraints of the relation.
+</p>
+<p>
+A Horse follows its "cart" relation to find its associated Cart. A Cart follows its "horses" relation to find its associated Horse. These are inverse viewpoints on the same relation.
+</p>
+<p>The relation-end name for the B end of a relation becomes the A object's implicit attribute name for the relation, via which the B object can be accessed from the A object. And the relation-end name for the A end of a relation becomes the B object's implicit attribute name for accessing an A via the relation.
+</p>
+<p>
+A set of relation declarations in relish is equivalent to an Entity-Relation-Diagram (ERD); a model-description convention used in the field of data modelling. If you are unfamiliar with ERDs and data models, it is suggested that you look for an explanation and examples with Google/Wikipedia. The set of data types (the Entity types) and relations between data types are typically used as a data model of a domain in the world. <b>Aside:</b> However, if the part/aspects of the world represented by some relish data types and relations is thought of as the "problem domain", other relish data types and relations can also be used to model the "solution domain"; that is, to model the abstract processes and abstract objects (inserted on top of the  problem-domain model) which are part of a computer program solution to "problem domain" problems. relish data types and relations can be used to represent the "business logic" as well as the controllers and the views of a computer application.
+</p>
+<p>
+	Two data types can be related in several different ways to each other. So the same pair of data types can appear together in multiple relation declarations, so long as the relation-end names are different in the different relation declarations. 
+</p>
+<p>
+As explained in the "Semantics of Data Types" section of this manual, relish can check objects with a "valid" method which among other things, checks that the object is currently related to the right number of other objects of the right type via the right relations.
+</p>
+<p>
+	The other benefit that relish relations convey is that they ensure that if a relation with an object b is established from the point of view of one object a, that the inverse relation is simultaneously established. The a object will be able to access the b object via the A type's implicit attribute name for the relation. But the b object will also be able to access the a object via the B type's implicit attribute name for the relation. Relish relations are always bi-directionally accessible in this manner. 
+</p>
+<p>
+	<b>Etymology:</b> Language and runtime-environment support for relations as first-class, primitive concepts is what gives "relish" its name. That and that it is hoped that after the initial learning curve, programmers will "enjoy greatly" how quickly they can get down to focussing on their domain problems and solutions (and not focussing on low-level data-structure and persistence mechanics) when programming in this language.
+</p>
+
+<h4>Relation maintenance</h4>
+<code><pre>
+cart.driver = Person "Slim Pickens"	
+horse1 = Horse "Seattle Slew"	
+horse2 = Horse "Secretariat"
+cart.horses += horse1
+cart.horses += horse2
+cart.horses += Horse "Big Ben"
+cart.horses -= horse2
+</pre></code>
+
+<h4>Relation traversal</h4>
+<code><pre>
+for horse in cart.horses
+   print horse.name
+
+// Prints
+// Seattle Slew
+// Big Ben
+// ...except the order will be random, if an unsorted set, or determined by insertion order, 
+//    if a List, or determined by the declared sorting criteria.
+
+print horse1.cart.driver.name  // prints Slim Pickens 	
+
+print horse2.cart  // prints *nil*
+
+cart.horses = nil  // clears the multi-valued horses attribute. No horses for this cart.
+
+print len cart.horses  // prints 0
+
+print horse1.cart  // prints *nil*
+
+horsesList = [horse1 horse2]Horse
+
+cart.horses = horsesList  // adds the horses from the list into the relation. 
+                          // The list itself is not assigned. Its elements are.
+
+print student1.courses[2].name  // Prints Biology 101 assuming courses is a List relation-end 
+                                // therefore indexable.
+</pre></code>
+
+
+<br/>
+  <a name="Concurrency"><h3>Concurrency</h3></a>
+
+  <h4>Spawn new go-routines</h4>
+ <p>go-routines are lightweight "threads" - many thousands can be alive at once.</p>
+<code><pre>
+go foo arg1 arg2
+
+go foo arg1
+       arg2
+
+go foo
+      arg1
+      arg2
+</pre></code>
+	  <h4>Use Channels to communicate between go-routines</h4>
+	 <p>A programmer can create a Channel, buffered or unbuffered, which acts as a conduit for data to be sent safely between one concurrent go-routine and another. Provided two go-routines both have reference to the same Channel, the programmer can send data objects/values into the channel in code in one go-routine, and write code in the other go-routine to receive the data from the Channel. The send-to-Channel operation blocks if the buffered channel is full, or if the Channel is unbuffered and no go-routine has asked to receive the next value from it. Receive-from-Channel operations block if the buffered channel is empty, or if the unbuffered Channel has not been sent the next value yet.</p>
+<code><pre>	
+ch = Channel <span class="future">of Car</span>  // an unbuffered, synchronous channel 
+
+ch2 = Channel <span class="future">of Car</span>  
+		100  // an asynchronous, buffered channel with a buffer capacity of 100
+
+// Send the car object to the channel.
+
+ch &lt;- car1
+
+// ... and in a different, concurrent go-routine...
+
+// Receive the car from the channel, in this case, assigning it to a variable.
+
+car2 = &lt;- ch
+</pre></code>
+ <h4><span class="future">Select between alternative communications</span></h4>
+<p><span class="future">The select statement allows only at most one channel operation amongst several alternatives to proceed. The others are abandoned. The one which proceeds is a randomly chosen one which is not blocked. If all channel operations are blocked upon evaluation, the whole select statement blocks until one channel operation can proceed. Except if the select statement has a default clause, then if all channel operations are blocked, the default clause is executed immediately and all of the channel operations are abandoned without being executed.</span></p>
+<code><pre>	
+<span class="future">select
+   case ch1 &lt;- expr
+      do some statement
+      another
+   case ch2 &lt;- expr2
+
+
+// randomly send 1 or 0 to a channel
+
+select
+   case ch &lt;- 0
+      do some statement
+      another
+   case ch &lt;- 1
+
+
+// receive from a channel only if it has something immediately to offer
+
+select
+   case v = &lt;- ch
+      do some statement
+      another
+   default
+      print "there was no v here to claim the prize. You snooze you lose."
+</span> 
+</pre></code>
+ <h4>Mutual-Exclusion Locks</h4>
+<p>For Mutexes, one go-routine at a time can Lock() the mutex. Others block trying to Lock() until the mutex is unlocked,
+at which time one of the go-routines that tried to lock it gets the lock and is unblocked. RWMutexes can be RLocked by 
+any number of readers or Locked by one writer. Mutexes can be used to create <em>critical sections</em> of 
+code whose sequence of statements is executed all together without a context-switch; the statements
+in between an mx.Lock() and an mx.Unlock() cannot be interleaved with execution of statements from 
+other go-routines which also try to lock the same mutex mx before executing their statements.</p>
+<code><pre>	
+mx = Mutex
+
+lock mx
+
+// ...do other things
+
+unlock mx
+
+rwmx = RWMutex
+
+lock rwmx  // write-lock the mutex
+// write to something
+unlock rwmx
+
+rlock rwmx  // read-lock the mutex
+// ...read the something
+rlock rwmx  // read-lock the mutex from in another go-routine. Multiple go-routines can read-lock.
+// ...read the same thing from somewhere else
+runlock rwmx
+runlock rwmx
+</pre></code>
+<br/>
+<p>
+<b>Semantics of Concurrency Constructs</b>
+</p>
+<p>
+Concurrency support in relish is patterned after the <a href="http://golang.org" target="_blank">Go programming language</a>. Go is the implementation language for Relish, and Relish concurrency constructs and capabilities are thin wrappers around the underlying Go constructs and concurrency implementation. The go statement creates a new concurrent go-routine and executes the method call in that go-routine. The go statement immediately returns, after launching the new go-routine. A go-routine is a "light-weight" separate thread of execution, with its own method-call stack. Go-routines may be mapped onto separate operating-system threads (true concurrency) but the mapping is unlikely to be 1-to-1. Instead, many go-routines may be mapped (multiplexed) onto the same OS thread. The Go runtime environment ensures sharing of processor cycles between go-routines, and facilitates data communication between go-routines by means of channels. Because the mapping of go-routines to OS threads is not 1 to 1, it is fine in Go to create hundreds thousands of concurrent go-routines in a program. relish, being interpreted, and maintaining its own stack per go-routine, will have more memory and processing overhead for go-routine creation, but should still be able to take substantial advantage of Go's light-weight concurrency facilities.
+</p>
+<h4><span class="future">relish wrapping of Go channels as Channel, InChannel, OutChannel data types</span></h4>
+<code><pre>
+<span class="future">ChannelBase
+"""
+ Abstract base type for channels. Defines the channel buffer capacity.
+"""
+   cap Int = 0  // capacity of the channel's buffer - 0 means unbuffered channel
+
+
+InChannel of T
+&lt;:
+   ChannelBase
+"""
+ An abstract channel type, from which data can be received.
+"""
+
+
+from 
+   ch InChannel of T
+>
+   T
+"""
+ Returns the next value from the channel. Blocks until a sender puts something into the channel, if the
+ channel capacity is zero. If the channel is buffered, blocks if there is no value available in the channel, 
+ until there is. 
+"""
+
+
+OutChannel of T
+&lt;: 
+   ChannelBase
+"""
+ An abstract channel type, to which data can be sent.
+"""
+
+
+to 
+   ch OutChannel of T
+   val T
+"""
+ Puts a value into a channel. Blocks until a receiver is ready to take the value from the channel, if
+ the channel capacity is zero. If the channel is buffered, blocks if the channel is full to capacity, 
+ until it is no longer full.
+"""       
+
+
+Channel of T 
+&lt;:
+   InChannel of T
+   OutChannel of T
+"""
+ A channel capable of accepting and supplying data objects/values. All channels instantiated
+ (constructed) must be of this type. A method may specify however, that it accepts an 
+ InChannel parameter, in which case code inside the method body can only receive from the channel. 
+ Or if a method specifies an OutChannel parameter, code inside the method body can only send to the 
+ channel.
+ Or an attribute may be declared to be of type InChannel, meaning that code
+ accessing that channel via the object attribute can only receive from the channel. Or an
+ attribute may be declared to be of type OutChannel, in which case code using the
+ channel via the object attribute can only send to the channel.
+"""
+</span>
+</pre></code>
+
+
+<br/>
+  <a name="Packages"><h3>Packages</h3></a>
+<code><pre>
+origin   elvisoft.com2012
+artifact cool_new_game	
+package  game/players
+	
+import 
+   game/physics/geometry as geom   
+   generous.opensource.developer.org2011/game_naive_physics/pkg/phys_obj/gravity
+</pre></code>
+<p>
+	<b>Syntax:</b>
+</p>
+<p>
+	Every relish source code file must be located in a package directory under a version directory of a software artifact directory.
+	Source code files, which must be called some_name.rel, must begin with an origin, artifact, and package declaration, which
+	identifies which package of which software artifact from which code-originating organization this file is part of.
+</p>
+<p>
+	A source code file can use data types, methods, and constants from other packages, provided those other packages are
+	imported into the file, as shown in the import example above.</p>
+	<p>The first import line above shows an import of
+	a package from the same software artifact as the current package. This package, whose name inside this source file
+	would normally be geometry, as in geometry.Polygon, is aliased so that it is known in this source file as geom, as
+	in geom.Polygon. 
+</p>
+<p>
+	The second import line above shows an import of a package from a different software artifact. The other software
+	artifact's originating organization is called generous.opensource.developer.org2011 . The relish software artifact they
+	developed is called game_naive_physics, presumably a code library of physics objects and calculation methods.
+	The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to
+	in this source code file. As in gravity.G 
+	</p>
+<br/>
+  <a name="SoftwareArtifacts"><h3>Software Artifacts</h3></a>
+<p>
+relish code must be organized into coherent units called relish software artifacts. The software artifact is the unit of code that
+is distributed; the unit that is released in a sequence of versions. A relish software artifact can represent a software application,
+a software library, or a software framework.
+</p>
+<p>
+Each software artifact must be stated to come from a software originating organization.
+An originating organization must be identified by a domain name suffixed by the first year in which the organization owned
+the domain name. Third-level or fourth-level domain names may be used. e.g. generous.opensource.developer.org2011
+</p>	
+<p>
+	The full name of a relish software artifact is the originating organization name as described above, followed by
+	a slash and one or more name parts, slash-separated e.g. generous.opensource.developer.org2011/game_naive_physics
+	or generous.opensource.developer.org2011/energy_apps/cool_app
+</p>
+<p>
+	relish software artifacts must be released in sequentially numbered versions, each resident in a subdirectory of the artifact directory, beginning with the v0001 directory e.g. generous.opensource.developer.org2011/energy_apps/cool_app/v0001
+</p>
+<p>
+	Below the version directory must reside the software packages that make up the software artifact. Each software package must reside in a directory whose path below the version directory corresponds to the full package name, which must consist of package name parts like phys_obj or gravity, separated by slashes.
+	</p>
+	<p>
+		In addition to its version directories, each with their packages, a relish software artifact must have a metadata.txt file in the artifact directory. This file, examples of which are included in the relish distribution, gives the name of the originating organization and the name of the artifact, its current release version number, its latest date of release, some standard and some optional classifying tags, and a text description of the context of use, purpose, and functionality of the artifact.
+		</p>
+<p>
+	relish insists on this discipline of software organization to ensure that relish software artifacts and packages are, and will remain over long software lifecycles, globally interoperable. <span class="future">The mandatory code organization conventions are used as the basis for a version-sensitive Internet code fetching and loading system. The relish code fetching and loading system should allow a relish program to find and load its dependencies, in the proper version required, automatically over the Internet, provided the dependencies are named fully and correctly in the dependent code.</span>
+	</p>
+</div>
+
+</body>
+</html>

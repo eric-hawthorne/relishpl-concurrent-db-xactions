@@ -1,0 +1,16 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  output
+
+"""
+ hello.rel
+
+ Output to the standard output stream (stdout) typically the terminal (console).
+"""
+
+
+main
+"""
+ Prints a greeting on the standard output, then exits.
+"""
+   print "Hello, 世界"

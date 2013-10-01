@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# clean
+#
+# Removes all pkg directories in the local (unshared) artifacts directories,
+# thus forcing all local artifacts and packages to be recompiled from relish source code
+# next time they are needed, instead of just loading .rlc intermediate-code files. 
+# Cleans all versions of all local artifacts.
+#
+# You can also clean only a single local artifact by issuing a command like
+# 
+# clean shared.relish.pl2012/relish_tests
+# 
+# which will clean all versions of the artifact.
+#
+# clean shared.relish.pl2012/relish_tests 1.0.23
+#
+# Cleans only version 1.0.23 of the specified artifact.
+#
+#
+# See also the rmdb script.
+
+# 
+# IMPORTANT
+#
+# If you have not set the RELISH_HOME environment variable and don't want to,
+# then edit the following two variable value to match where your relish source distribution working directory is 
+#
+DEFAULT_RELISH_HOME=~/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
+
+# Use the environment variable preferentially, but if not set, use the default above.
+RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}
+
+if [ -d $RELISH_HOME/rt ] # It is a source distribution  
+then
+   ARTIFACTSDIR=$RELISH_HOME/rt/artifacts
+else
+   ARTIFACTSDIR=$RELISH_HOME/artifacts
+fi
+
+if [ $# -eq 0 ]  
+then
+	rm -fr $ARTIFACTSDIR/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/*/*/pkg 
+        echo "Removed pkg directories (intermediate-code files)"
+elif [ $# -eq 1 ]  
+then
+	ARTIFACT=$1
+	REMOVED=$ARTIFACTSDIR/$ARTIFACT/*/pkg 
+	rm -fr $ARTIFACTSDIR/$ARTIFACT/*/pkg 
+        echo "Removed $REMOVED"
+elif [ $# -eq 2 ]  
+then
+	ARTIFACT=$1
+	VERSION=$2
+	REMOVED=$ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg
+	rm -fr $ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg 
+	echo "Removed $REMOVED"
+else
+	echo "usage:" 
+	echo "clean" 
+	echo "clean shared.relish.pl2012/relish_tests" 
+	echo "clean shared.relish.pl2012/relish_tests 1.0.23" ; exit 0
+fi
+
