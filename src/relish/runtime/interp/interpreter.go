@@ -237,9 +237,12 @@ func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positi
    firstNonSpecialArgIndex := 0
    // Special case. If first parameter of the method is of type http.Request, create
    // a wrapped Go-native object representing the request.
-   if paramTypes[0].IsNative && paramTypes.Name == "shared.relish.pl2012/relish_lib/pkg/http/Request" {
+   if paramTypes[0].IsNative && paramTypes[0].Name == "shared.relish.pl2012/relish_lib/pkg/http/Request" {
 	
-	  args[0] = // create the request wrapper object.
+	  args[0],err = i.createRequest(request)
+	  if err != nil {		   
+	  	 return
+	  }  	  
 	  firstNonSpecialArgIndex = 1
    }
 	
@@ -2920,3 +2923,21 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
     return
 }
 
+
+
+/*
+Create an http.Request object. Special-case constructor used in webv service method evaluation.
+*/
+func (i *Interpreter) createRequest(r *http.Request) (req RObject, err error) {
+   
+    req, err = i.rt.NewObject("shared.relish.pl2012/relish_lib/pkg/http/Request")
+    if err != nil {
+    	return 
+    }
+
+    reqWrapper := req.(*GoWrapper)
+
+    reqWrapper.GoObj = r
+
+	return 
+}

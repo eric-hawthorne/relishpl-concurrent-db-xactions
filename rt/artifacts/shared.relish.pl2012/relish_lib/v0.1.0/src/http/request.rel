@@ -31,3 +31,9 @@ Request
 //
 // cookie r Request key String > c Cookie err String
 
+
+Cookie
+"""
+ An http cookie. 
+ Native methods TBD
+"""

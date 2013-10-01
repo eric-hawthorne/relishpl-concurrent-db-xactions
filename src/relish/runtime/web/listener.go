@@ -20,7 +20,6 @@ import (
 	"sync"
   "relish/rterr"
   "net/url"
-  "mime/multipart"
 )
 
 
