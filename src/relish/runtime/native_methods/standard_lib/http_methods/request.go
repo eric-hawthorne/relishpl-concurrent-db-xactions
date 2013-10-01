@@ -10,19 +10,68 @@ package http_methods
 
 import (
 	. "relish/runtime/data"
-	"os"
+//	"os"
 	"io"
 	"bufio"
-	"http"
+	"net/http"
 	"mime/multipart"
 )
 
+///////////
+// Go Types
+
+/*
+ An instance of this type is the wrapped native object referred to by a relish http.UploadedFile instance.
+*/
+type UploadedFile struct {
+   header *multipart.FileHeader
+   file multipart.File
+}
+
+/*
+Ensures that uf.File refers to an open multipart.File which can be read and closed.
+Harmless to call this if uf is already open. 
+*/
+func (uf *UploadedFile) Open() (err error) {
+   if uf.file == nil {
+   	  uf.file, err = uf.header.Open()
+   }
+   return
+}
+
+func (uf *UploadedFile) Name() string {
+	return uf.header.Filename
+}
+
+func (uf *UploadedFile) File() multipart.File {
+	return uf.file
+}
+
+
+/////////////////////////////////////
+// relish method to go method binding
 
 func InitHttpMethods() {
 
+    // print name file 
+	nameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"name", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	nameMethod.PrimitiveCode = name
+
+
+    // err = open file 
+	openMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"open", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	openMethod.PrimitiveCode = open
+
+
     // buf = Bytes 1000
     // n err = read file buf
-	readMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"read", []string{"file","buf"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","Bytes"}, []string{"Int","String"}, false, 0, false)
+	readMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"read", []string{"file","buf"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","Bytes"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -34,13 +83,13 @@ func InitHttpMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllTextMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllText", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	readAllTextMethod.PrimitiveCode = readAllText
 
-	readAllTextMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","Bool"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","Bool"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +100,7 @@ func InitHttpMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllBinaryMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"readAllBinary", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String","String"}, false, 0, false)
+	readAllBinaryMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllBinary", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +110,7 @@ func InitHttpMethods() {
 	
 
     // err = close file
-	closeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"close", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File"}, []string{"String"}, false, 0, false)
+	closeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"close", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -73,23 +122,52 @@ func InitHttpMethods() {
 
 
 
-	fileInitMethod1, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
+
+
+
+
+
+
+
+
+
+
+    // http.Request methods
+
+    // First, make sure we have the appropriate list type in existence.
+    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"]
+    uploadedFileListType, err := RT.GetListType(uploadedFileType) 
+	if err != nil {
+		panic(err)
+	}    
+
+    // files r Request key String > fs [] UploadedFile
+	filesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"files", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	fileInitMethod1.PrimitiveCode = initFile  
-	
-	fileInitMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
+	filesMethod.PrimitiveCode = files
+
+    // file r Request key String > f UploadedFile err String
+	fileMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"file", []string{"request","key"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	fileInitMethod2.PrimitiveCode = initFile
-	
-	fileInitMethod3, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"shared.relish.pl2012/relish_lib/pkg/files/initFile", []string{"file","filePath","mode","permission"}, []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String","String","String"},  []string{"shared.relish.pl2012/relish_lib/pkg/files/File","String"}, false, 0, false)
-	if err != nil {
-		panic(err)
-	}
-	fileInitMethod3.PrimitiveCode = initFile		
+	fileMethod.PrimitiveCode = file
+
+    //   TODO
+    //
+    // cookies r Request > c [] Cookie
+    //
+    // cookie r Request key String > c Cookie err String
+
+
+
+
+
+
+
+
 }
 
 
@@ -99,14 +177,41 @@ func InitHttpMethods() {
 ///////////////////////////////////////////////////////////////////////////////////////////
 // I/O functions
 
-// read f File buf Bytes > n Int err String
+
+// name f UploadedFile  > String
+//
+func name(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	file := wrapper.GoObj.(*UploadedFile)
+	return []RObject{String(file.Name())}
+}
+
+
+// open f UploadedFile  > err String
+//
+func open(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	file := wrapper.GoObj.(*UploadedFile)
+	err := file.Open()
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+
+// read f UploadedFile buf Bytes > n Int err String
 //
 func read(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
 	buf := objects[1].(Bytes)
 	b := ([]byte)(buf)
-	file := wrapper.GoObj.(*os.File)
+	uf := wrapper.GoObj.(*UploadedFile)	
+	file := uf.File()
 	n, err := file.Read(b)
 	errStr := ""
 	if err != nil {
@@ -118,7 +223,7 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 
 
 // readAllText 
-//    f File 
+//    f UploadedFile 
 //    addMissingLinefeed Bool = false
 // > 
 //    fileContent String err String
@@ -126,7 +231,8 @@ func read(th InterpreterThread, objects []RObject) []RObject {
 func readAllText(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
-	file := wrapper.GoObj.(*os.File)
+	uf := wrapper.GoObj.(*UploadedFile)	
+	file := uf.File()	
     addMissingLinefeed := false
     if len(objects) == 2 {
     	addMissingLinefeed = bool(objects[1].(Bool))
@@ -165,14 +271,15 @@ func readAllText(th InterpreterThread, objects []RObject) []RObject {
 
 
 // readAllBinary
-//    f File 
+//    f UploadedFile 
 // > 
 //    fileContent String err String
 //
 func readAllBinary(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
-	file := wrapper.GoObj.(*os.File)	
+	uf := wrapper.GoObj.(*UploadedFile)	
+	file := uf.File()	
 	var buf []byte = make([]byte,8192)
 	var content []byte
 	var err error 	
@@ -202,7 +309,8 @@ func readAllBinary(th InterpreterThread, objects []RObject) []RObject {
 func close(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)	
-	file := wrapper.GoObj.(*os.File)
+	uf := wrapper.GoObj.(*UploadedFile)	
+	file := uf.File()	
 	err := file.Close()
 	errStr := ""
 	if err != nil {
@@ -212,8 +320,87 @@ func close(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
-///////////
-// Go Types
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Request Processing functions
+
+
+//
+// files r Request key String > fs [] UploadedFile
+//
+func files(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	request := wrapper.GoObj.(*http.Request)	
+
+    key := string(objects[1].(String))
+
+
+    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"]
+
+    fileList,err := RT.Newrlist(uploadedFileType,0,-1,nil,nil)
+    if err != nil {
+    	panic(err)
+    }
+
+    if request.MultipartForm != nil && request.MultipartForm.File != nil {
+    	fhs := request.MultipartForm.File[key]
+    	for _,fh := range fhs {
+    		uploadedFile,err := createUploadedFile(fh)
+            if err != nil {
+    	       panic(err)
+            }    		
+    		fileList.AddSimple(uploadedFile)
+    	}
+    }
+	return []RObject{fileList}
+}
+
+
+
+
+
+
+//
+// file r Request key String > f UploadedFile err String
+//
+func file(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)
+	request := wrapper.GoObj.(*http.Request)	
+
+    key := string(objects[1].(String))
+
+    var err error
+
+    var uploadedFile RObject = NIL
+
+    if request.MultipartForm != nil && request.MultipartForm.File != nil {
+    	fhs := request.MultipartForm.File[key]
+        if len(fhs) > 0 {
+     		uploadedFile,err = createUploadedFile(fhs[0])       	
+        }
+    }
+
+    var errStr string
+    if err != nil {
+    	errStr = err.Error()
+    } else if uploadedFile == NIL {
+        errStr = "http: no such file"   	
+    } 
+
+	return []RObject{uploadedFile, String(errStr)}
+}
+
+
+
+//   TODO
+//
+// cookies r Request > c [] Cookie
+//
+// cookie r Request key String > c Cookie err String
+
+
 
 
 
@@ -221,184 +408,22 @@ func close(th InterpreterThread, objects []RObject) []RObject {
 // Type init functions
 
 
-// file err = File filePath [mode [perm]]
-//
-// mode = "r" - read only (the default)
-//        "w" - write only, creates if not exist, or truncates if does
-//        "a" - appends, creates if not exist
-//        "r+" - read and write, creates if not exist, does not truncate
-//        "w+" - read and write, creates if not exist, truncates if does
-//        "a+" - read and append, creates if not exist, read pointer at end
-//        "nw" - write only, creates. File must not exist
-//        "nw+" - read write, creates, File must not exist
-//
-// perm = "rwxrwxrwx"
-//        "rw-rw----"
-//        "777"
-//        "660"
-//
-func initFile(th InterpreterThread, objects []RObject) []RObject {
-   
-    fileWrapper := objects[0].(*GoWrapper)
-
-     filePath := string(objects[1].(String))   
- 
-    modeStr := "r"
-    if len(objects) > 2 {
-       modeStr = string(objects[2].(String))    
-    }
-    permStr := "666"
-    if len(objects) > 3 {
-       permStr = string(objects[3].(String))    
-    }
-
-    var errStr string    
-
-// Accept a read/write etc mode parameter
-//    switch mode 
-
-    var flag int 
-    switch modeStr {
-	   case "r":
-		  flag = os.O_RDONLY
-		  permStr = "0"
-	   case "w":
-		  flag = os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	   case "a":
-		  flag = os.O_WRONLY | os.O_CREATE | os.O_APPEND
-       case "r+":
-		  flag = os.O_RDWR | os.O_CREATE	
-	   case "w+":
-		  flag = os.O_RDWR | os.O_CREATE | os.O_TRUNC		
-	   case "a+":
-		  flag = os.O_RDWR | os.O_CREATE | os.O_APPEND			
-	   case "nw":
-		  flag = os.O_WRONLY | os.O_CREATE | os.O_EXCL			
-	   case "nw+":
-		  flag = os.O_RDWR | os.O_CREATE | os.O_EXCL			
-	   default:
-	   	  errStr = `File mode if supplied must be one of "r","w","a","r+","w+","a+","nw","nw+".`
-	}
-
-    var perm os.FileMode
-
-    if errStr == "" {
-       perm, errStr = getFilePermissions(permStr)
-    }
-
-    if errStr == "" {
-	    file,err := os.OpenFile(filePath, flag, perm) 
-
-		if err != nil {
-			errStr = err.Error()
-		} else {
-		   fileWrapper.GoObj = file
-	    }
-    }
-	return []RObject{fileWrapper,String(errStr)}
-}
-
-
-
 /*
-Helper function.
-Given the argument permissions string, which can be in a format like "666" "0666" or "rwxrw_r__",
-Return the corresponding FileMode value with the appropriate permission bits set.
-See Go os.FileMode specification.
-Returns a non-empty errStr error message if the input is invalidly formatted.
-Note. the input permStr value "0" is allowed and results in a perm with no permission bits set.
+Construct and initialize an http.UploadedFile object.
 */
-func getFilePermissions(permStr string) (perm os.FileMode, errStr string) {
-    var permUser, permGroup, permOther uint32
-    if permStr != "0" {
-	   n := len(permStr)
-       if n == 4 || n == 3 {
-	      if n == 4 {
-	         permStr = permStr[1:]
-	      }
-          permUser = uint32(permStr[0] - '0')	     
-          permGroup = uint32(permStr[1] - '0')
-          permOther = uint32(permStr[2] - '0')
-          if permUser < 0 || permUser > 7 ||  permGroup < 0 || permGroup > 7 ||  permOther < 0 || permOther > 7 {
-	         errStr = `Allowed formats for permission are e.g. "666" or "rwxrw_r__"`
-	      } else {
-             var p uint32 = (64 * permUser) + (8 * permGroup) + permOther		
-		     perm = os.FileMode(p)
-		     //fmt.Println(permUser, permGroup, permOther)
-		     //fmt.Println(p)
-		     //fmt.Println(perm)
-		  }
-	   } else if n == 9 {   // "rw-------" style
-		  permStrUser := permStr[0:3]
-		  switch permStrUser {
-	      case "---":
-		     permUser = 0
-		  case "--x":
-			 permUser = 1
-		  case "-w-":
-			 permUser = 2
-	      case "-wx":
-		     permUser = 3
-		  case "r--":
-			 permUser = 4
-		  case "r-x":
-			 permUser = 5
-	      case "rw-":
-		     permUser = 6
-	      case "rwx":
-		     permUser = 7	
-		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
-		  }	
-		  permStrGroup := permStr[3:6]
-		  switch permStrGroup {
-	      case "---":
-		     permGroup = 0
-		  case "--x":
-			 permGroup = 1
-		  case "-w-":
-			 permGroup = 2
-	      case "-wx":
-		     permGroup = 3
-		  case "r--":
-			 permGroup = 4
-		  case "r-x":
-			 permGroup = 5
-	      case "rw-":
-		     permGroup = 6
-	      case "rwx":
-		     permGroup = 7	
-		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
-		  }		
-		  permStrOther := permStr[6:]
-		  switch permStrOther {
-	      case "---":
-		     permOther = 0
-		  case "--x":
-			 permOther = 1
-		  case "-w-":
-			 permOther = 2
-	      case "-wx":
-		     permOther = 3
-		  case "r--":
-			 permOther = 4
-		  case "r-x":
-			 permOther = 5
-	      case "rw-":
-		     permOther = 6
-	      case "rwx":
-		     permOther = 7	
-		  default:	
-		     errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`					
-		  }
-		  if errStr == "" {
-             var p uint32 = (64 * permUser) + (8 * permGroup) + permOther	
-		     perm = os.FileMode(p)						
-		  }		
-	   } else {
-		  errStr = `Allowed formats for permission are e.g. "666" or "rwxrw-r--"`
-	   }
-    }
-    return
+func createUploadedFile(fh *multipart.FileHeader) (uf RObject, err error) {
+   
+    uf,err = RT.NewObject("shared.relish.pl2012/relish_lib/pkg/http/UploadedFile")
+
+    ufWrapper := uf.(*GoWrapper)
+
+    uploadedFile := &UploadedFile{fh,nil}
+
+    ufWrapper.GoObj = uploadedFile
+
+	return 
 }
+
+
+
+

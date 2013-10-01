@@ -18,12 +18,16 @@ import
 UploadedFile <: io.Reader io.Closer
 """
  An UploadedFile represents a mime/multipart/FileHeader and its mime/multipart/File.
- Includes a name field which holds the filename that the file had on the client computer.
- The open method must be called on one of these before calling read methods.
+ Includes a name method which returns the filename that the file had on the client computer.
+ The open method must be called before read methods are called.
 """
 
 
 // NATIVE METHODS
+//
+// name f UploadedFile > String
+//
+// open f UploadedFile > err String
 //
 // read f UploadedFile buf Bytes > n Int err String
 //
