@@ -1,0 +1,33 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  http
+
+""" 
+ request.rel
+
+ Represents an http request as received by the http server.
+ This package includes Go native methods, defined in 
+ relish/runtime/native_methods/standard_lib/http_methods/files.go
+"""
+
+
+import 
+
+
+Request 
+"""
+ A Request represents an http request.
+ Has cookie methods and uploaded file methods.
+"""
+
+
+// NATIVE METHODS
+//
+// files r Request key String > fs [] UploadedFile
+//
+// file r Request key String > f UploadedFile err String
+//
+// cookies r Request > c [] Cookie
+//
+// cookie r Request key String > c Cookie err String
+

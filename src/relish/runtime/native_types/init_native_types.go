@@ -22,8 +22,11 @@ var NativeType = map [string] bool {
 	// relish standard library types with Go native instances.
 	// DO NOT MODIFY THIS LIST OF MAP ENTRIES !!
 	"shared.relish.pl2012/relish_lib/pkg/files/File" : true,
+	"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile" : true,	
+	"shared.relish.pl2012/relish_lib/pkg/http/Cookie" : true,	
+	"shared.relish.pl2012/relish_lib/pkg/http/Request" : true,
 	
-		
+				
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!
 	// Add extensions types which need a GoWrapper as the instance here. 
 

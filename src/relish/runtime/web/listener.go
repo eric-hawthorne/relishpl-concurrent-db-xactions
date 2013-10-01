@@ -20,6 +20,7 @@ import (
 	"sync"
   "relish/rterr"
   "net/url"
+  "mime/multipart"
 )
 
 
@@ -389,6 +390,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
       return  
    }     
 
+   //var files map[string] []*multipart.FileHeader
+   //if r.MultipartForm != nil {
+//	  files = r.MultipartForm.File  // Could still be nil
+//   }
+
    // TODO TODO Should return the InterpreterThread out of here, and
    // Do the commit or rollback later.
    // Or I should demand a thread from the interpreter separately, first, pass it in to 
@@ -400,7 +406,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    defer t.CommitOrRollback()
 	
-   resultObjects,err := interpreter.RunServiceMethod(t, handlerMethod, positionalArgStringValues, keywordArgStringValues)   
+   resultObjects,err := interpreter.RunServiceMethod(t, 
+	                                                 handlerMethod, 
+	                                                 positionalArgStringValues, 
+	                                                 keywordArgStringValues,
+	                                                 r)   
 
    interpreter.DeregisterThread(t)
      

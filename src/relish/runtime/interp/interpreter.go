@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"strings"
 	. "relish/defs"
+	"net/http"
 )
 
 
@@ -126,7 +127,7 @@ TODO WE HAVE SOME SERIOUS DRY VIOLATIONS between this method and a few others in
 
 TODO See EvalMethodCall for updates (to nArgs etc) that have not been applied here yet!!!!
 */
-func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalArgStringValues []string, keywordArgStringValues url.Values) (resultObjects []RObject, err error) {
+func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalArgStringValues []string, keywordArgStringValues url.Values, request *http.Request) (resultObjects []RObject, err error) {
 	defer UnM(t,TraceM(t,INTERP_TR, "RunServiceMethod", fmt.Sprintf("%s", mm.Name)))	
 	
 	method := i.dispatcher.GetSingletonMethod(mm)
@@ -136,7 +137,7 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 		return
 	}
 	
-	args, err := i.matchServiceArgsToMethodParameters(method, positionalArgStringValues, keywordArgStringValues)
+	args, err := i.matchServiceArgsToMethodParameters(method, positionalArgStringValues, keywordArgStringValues, request)
 	if err != nil {
 		return
 	}
@@ -227,17 +228,28 @@ RMethod
 	parameterNames []string               // names of parameters
 	Signature      *RTypeTuple            // types of parameters
 */
-func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positionalArgStringValues []string, keywordArgStringValues url.Values) (args []RObject, err error) {
+func (i *Interpreter) matchServiceArgsToMethodParameters(method *RMethod, positionalArgStringValues []string, keywordArgStringValues url.Values, request *http.Request) (args []RObject, err error) {
    
    arity := len(method.ParameterNames)
    args = make([]RObject,arity)
    paramTypes := method.Signature.Types
 
+   firstNonSpecialArgIndex := 0
+   // Special case. If first parameter of the method is of type http.Request, create
+   // a wrapped Go-native object representing the request.
+   if paramTypes[0].IsNative && paramTypes.Name == "shared.relish.pl2012/relish_lib/pkg/http/Request" {
+	
+	  args[0] = // create the request wrapper object.
+	  firstNonSpecialArgIndex = 1
+   }
+	
    var extraArgKeys []string
    for key := range keywordArgStringValues {
       foundKey := false
       for ix,paramName := range method.ParameterNames {
-
+         if ix < firstNonSpecialArgIndex {
+	        continue
+	     }
       	 if paramName == key {
             valStr := keywordArgStringValues.Get(key)   
 //            if valStr == "" {
