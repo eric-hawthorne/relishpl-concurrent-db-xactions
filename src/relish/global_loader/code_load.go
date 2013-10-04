@@ -169,7 +169,7 @@ func (ldr *Loader) PackageSrcDirPath(fullPackagePath string) string {
 	originAndArtifactPath := fullPackagePath[:pkgPos]
 	packagePath := fullPackagePath[pkgPos + 5:]
 	
-    versionStr := fmt.Sprintf("/v%04d",version)
+    versionStr := "/v" + version
     artifactVersionDir := ldr.artifactDirPath(originAndArtifactPath) + versionStr	
     packageSrcPath := artifactVersionDir + "/src/" + packagePath
 	return packageSrcPath

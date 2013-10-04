@@ -1,6 +1,6 @@
 origin   shared.relish.pl2012
 artifact relish_lib
-package  http
+package  http_srv
 
 """ 
  files.rel

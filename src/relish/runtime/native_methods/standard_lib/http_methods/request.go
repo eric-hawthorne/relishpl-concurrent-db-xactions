@@ -5,7 +5,7 @@ package http_methods
 
 /*
    request.go - native methods for http request objects and their attributes, such as uploaded files and cookies.
-   These methods are used by types defined in the relish standard library 'http' package. 
+   These methods are used by types defined in the relish standard library 'http_srv' package. 
 */
 
 import (
@@ -21,7 +21,7 @@ import (
 // Go Types
 
 /*
- An instance of this type is the wrapped native object referred to by a relish http.UploadedFile instance.
+ An instance of this type is the wrapped native object referred to by a relish http_srv.UploadedFile instance.
 */
 type UploadedFile struct {
    header *multipart.FileHeader
@@ -54,7 +54,7 @@ func (uf *UploadedFile) File() multipart.File {
 func InitHttpMethods() {
 
     // print name file 
-	nameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"name", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
+	nameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"name", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ func InitHttpMethods() {
 
 
     // err = open file 
-	openMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"open", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
+	openMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"open", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -71,7 +71,7 @@ func InitHttpMethods() {
 
     // buf = Bytes 1000
     // n err = read file buf
-	readMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"read", []string{"file","buf"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","Bytes"}, []string{"Int","String"}, false, 0, false)
+	readMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"read", []string{"file","buf"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile","Bytes"}, []string{"Int","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -83,13 +83,13 @@ func InitHttpMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllTextMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllText", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"readAllText", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	readAllTextMethod.PrimitiveCode = readAllText
 
-	readAllTextMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","Bool"}, []string{"String","String"}, false, 0, false)
+	readAllTextMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"readAllText", []string{"file","addMissingLinefeed"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile","Bool"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +100,7 @@ func InitHttpMethods() {
 	// > 
 	//    fileContent String err String
 	//
-	readAllBinaryMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"readAllBinary", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String","String"}, false, 0, false)
+	readAllBinaryMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"readAllBinary", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"}, []string{"String","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +110,7 @@ func InitHttpMethods() {
 	
 
     // err = close file
-	closeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"close", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"}, []string{"String"}, false, 0, false)
+	closeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"close", []string{"file"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"}, []string{"String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -132,24 +132,24 @@ func InitHttpMethods() {
 
 
 
-    // http.Request methods
+    // http_srv.Request methods
 
     // First, make sure we have the appropriate list type in existence.
-    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"]
+    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"]
     uploadedFileListType, err := RT.GetListType(uploadedFileType) 
 	if err != nil {
 		panic(err)
 	}    
 
     // files r Request key String > fs [] UploadedFile
-	filesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"files", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
+	filesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"files", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	filesMethod.PrimitiveCode = files
 
     // file r Request key String > f UploadedFile err String
-	fileMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http",nil,"file", []string{"request","key"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http/UploadedFile","String"}, false, 0, false)
+	fileMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"file", []string{"request","key"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -163,10 +163,69 @@ func InitHttpMethods() {
 
 
 
+	// contentLength r Request > Int 
+	//
+	contentLengthMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"contentLength", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	contentLengthMethod.PrimitiveCode = contentLength	
+	
+
+	// requestUri r Request > String 
+	//
+	requestUriMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"requestUri", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	requestUriMethod.PrimitiveCode = requestUri	
 
 
+	// referer r Request > String 
+	//
+	// Note: Misspelling of "referrer" inherited from http_srv standard.
+	//
+	refererMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"referer", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	refererMethod.PrimitiveCode = referer	
+	
 
+	// method r Request > String 
+	//
+	// GET POST PUT
+	//
+	methodMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"method", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	methodMethod.PrimitiveCode = method	
+	
+	
+	// host r Request > String 
+	//
+	// host or host:port
+	//
+	hostMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"host", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	hostMethod.PrimitiveCode = host
+	
+		
 
+	// remoteAddr r Request > String 
+	//
+	// The client address
+	//
+	// IP:port
+	//
+	remoteAddrMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"remoteAddr", []string{"request"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	remoteAddrMethod.PrimitiveCode = remoteAddr
 
 }
 
@@ -336,7 +395,7 @@ func files(th InterpreterThread, objects []RObject) []RObject {
     key := string(objects[1].(String))
 
 
-    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http/UploadedFile"]
+    uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"]
 
     fileList,err := RT.Newrlist(uploadedFileType,0,-1,nil,nil)
     if err != nil {
@@ -386,7 +445,7 @@ func file(th InterpreterThread, objects []RObject) []RObject {
     if err != nil {
     	errStr = err.Error()
     } else if uploadedFile == NIL {
-        errStr = "http: no such file"   	
+        errStr = "http_srv: no such file"   	
     } 
 
 	return []RObject{uploadedFile, String(errStr)}
@@ -401,6 +460,80 @@ func file(th InterpreterThread, objects []RObject) []RObject {
 // cookie r Request key String > c Cookie err String
 
 
+// contentLength r Request > Int 
+//
+func contentLength(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{Int(request.ContentLength)}
+}
+
+// requestUri r Request > String 
+//
+func requestUri(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{String(request.RequestURI)}
+}
+
+// referer r Request > String 
+//
+// Note: Misspelling of "referrer" inherited from http standard.
+//
+func referer(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{String(request.Referer())}
+}
+
+
+
+
+// method r Request > String 
+//
+// GET POST PUT
+//
+func method(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{String(request.Method)}
+}
+
+
+// host r Request > String 
+//
+// host or host:port
+//
+func host(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{String(request.Host)}
+}
+
+
+// remoteAddr r Request > String 
+//
+// The client address
+//
+// IP:port
+//
+func remoteAddr(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+	return []RObject{String(request.RemoteAddr)}
+}
 
 
 
@@ -409,11 +542,11 @@ func file(th InterpreterThread, objects []RObject) []RObject {
 
 
 /*
-Construct and initialize an http.UploadedFile object.
+Construct and initialize an http_srv.UploadedFile object.
 */
 func createUploadedFile(fh *multipart.FileHeader) (uf RObject, err error) {
    
-    uf,err = RT.NewObject("shared.relish.pl2012/relish_lib/pkg/http/UploadedFile")
+    uf,err = RT.NewObject("shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile")
 
     ufWrapper := uf.(*GoWrapper)
 
