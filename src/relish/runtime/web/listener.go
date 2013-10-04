@@ -587,7 +587,9 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
             err = fmt.Errorf("%s HTML FILE response expecting a .html file", methodName) 
             return   
         }          
-        filePath = makeAbsoluteFilePath(methodName, filePath)        
+        filePath = makeAbsoluteFilePath(methodName, filePath)  
+        // fmt.Println(methodName) 
+        // fmt.Println(filePath)      
         http.ServeFile(w,r,filePath)
 
 	  case "JSON":	

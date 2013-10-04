@@ -6,17 +6,6 @@
 
 package defs
 
-/*
-// Lookup table of sstandard library package pathnames.
-
-var StandardLibPackagePath map[string]bool = map[string]bool {
-	"strings" : true,
-	"datetime" : true,
-	"http" : true,
-	"csv" : true,	
-	"json" : true,		
-}
-*/
 
 // Lookup table of the origin and artifact of each relish standard library package pathname.
 // In theory, the standard library can thus be split into several different artifacts such
@@ -31,7 +20,8 @@ var StandardLibPackageArtifact map[string]string = map[string]string {
 	"csv" : "relish",	
 	"json" : "relish",	
 	"io" : "shared.relish.pl2012/relish_lib",		
-	"files" : "shared.relish.pl2012/relish_lib",		
+	"files" : "shared.relish.pl2012/relish_lib",	
+	"http_srv" : "shared.relish.pl2012/relish_lib",		
 }
 
 

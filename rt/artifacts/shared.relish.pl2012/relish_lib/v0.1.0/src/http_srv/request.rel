@@ -1,6 +1,6 @@
 origin   shared.relish.pl2012
 artifact relish_lib
-package  http
+package  http_srv
 
 """ 
  request.rel
@@ -8,10 +8,7 @@ package  http
  Represents an http request as received by the http server.
  This package includes Go native methods, defined in 
  relish/runtime/native_methods/standard_lib/http_methods/files.go
-"""
-
-
-import 
+""" 
 
 
 Request 

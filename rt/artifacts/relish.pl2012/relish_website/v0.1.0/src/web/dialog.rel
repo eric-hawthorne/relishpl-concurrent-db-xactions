@@ -8,13 +8,22 @@ package  web
  Web dialog handling methods.
 """
 
+import
+   http_srv
+   strings
 
-index > String String
+
+index request http_srv.Request > String String
 """
  Handles a request for the root (i.e. empty path) url on the server and port.
+ TODO Change "local" to "shared" below!
 """
-   => "HTML FILE"
-      "index.html"
+   if hasPrefix (host request) "local"
+      => "HTML FILE"
+         "shared_index.html"
+   else
+      => "HTML FILE"
+         "index.html"
 
 
 icon > String String
