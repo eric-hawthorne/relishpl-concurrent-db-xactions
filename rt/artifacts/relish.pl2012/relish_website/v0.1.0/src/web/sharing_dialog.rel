@@ -5,8 +5,24 @@ package  web
 """ 
  sharing_dialog.rel
 
- Web dialog handling methods.
+ Web dialog handling methods for the shared.relish.pl sitelet.
 """
+
+
+register > String String
+"""
+ Handles a request for the "register a code origin" page.
+"""
+   => "HTML FILE"
+      "register.html"
+
+
+registerAction > String String
+"""
+ Processes a "register a code origin" request.
+"""
+   => "HTML FILE"
+      "index.html"
 
 
 loginAction > String String
