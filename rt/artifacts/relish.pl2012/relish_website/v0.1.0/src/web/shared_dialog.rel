@@ -59,24 +59,11 @@ uploadAction request http_srv.Request > String String
       fileName = name file
       err = open file
       if err
-         => "HTML"
-            fill """
-<html>
-Error opening uploaded file %s: %s
-</html>
-"""
-                 fileName
-                 err      
+         => errf "Error opening uploaded file" fileName err
+     
       content err = readAllBinary file
       if err
-         => "HTML"
-            fill """
-<html>
-Error reading uploaded file %s: %s
-</html>
-"""
-                 fileName
-                 err
+         => errf "Error reading uploaded file" fileName err
 
       close file
       if eq fileName "metadata.txt"
@@ -89,34 +76,17 @@ Error reading uploaded file %s: %s
          artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
          err = mkdirAll artifactDirPath
          if err
-            => "HTML"
-               fill """
-<html>
-%s
-</html>
-"""
-                    err
+            => errf err
 
-         metadataFilePath = cat artifactDirPath "/metadata.txt"        
+         metadataFilePath = cat artifactDirPath "/metadata.txt"    
          metadataFile err = files.File metadataFilePath "w"
          if err
-            => "HTML"
-               fill """
-<html>
-%s
-</html>
-"""
-                    err
+            => errf err
+
          write metadataFile content                   
          err = close metadataFile
          if err
-            => "HTML"
-               fill """
-<html>
-%s
-</html>
-"""
-                    err
+            => errf err
 
       elif hasSuffix fileName ".zip"
          print fileName
@@ -128,19 +98,46 @@ Error reading uploaded file %s: %s
          version = slice fileName 
                          plus lastSepPos 3
                          minus (len fileName) 4
-         artifactName = slice  fileName
-                               plus sepPos 2
-                               lastSepPos
-         artifactName = replace artifactName "--" "/"                                      
+         artifactName = slice fileName
+                              plus sepPos 2
+                              lastSepPos
+         artifactName = replace artifactName "--" "/"   
+
+         artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
+         artifactVersionDirPath = cat artifactDirPath "/v" version 
+         fileInfo versionDirExists err = stat artifactVersionDirPath
+         if err
+            => errf "Can't stat directory" artifactVersionDirPath err
+         elif versionDirExists
+            => errf cat "Error: Version " 
+                        version 
+                        " of " 
+                        originName 
+                        "/" 
+                        artifactName 
+                        " has already been uploaded. Cannot replace it."
+    
+         err = mkdirAll artifactVersionDirPath
+         if err
+            => errf err
+
+         zipFilePath = cat artifactDirPath "/" fileName
+
+         zipFile err = files.File zipFilePath "w"
+         if err
+            => errf err
+
+         write zipFile content                   
+         err = close zipFile
+         if err
+            => errf err
+
+         err = extract content artifactVersionDirPath
+         if err
+            => errf "Could not extract zip file into" artifactVersionDirPath err                                  
 
       else 
-         => "HTML"
-            fill """
-<html>
-Error: Uploaded file %s is not a metadata.txt file or an artifact version .zip file.
-</html>
-"""
-                 name file
+         => errf cat "Error: Uploaded file " fileName " is not a metadata.txt file or an artifact version .zip file."
 
    => "HTML"
       """
