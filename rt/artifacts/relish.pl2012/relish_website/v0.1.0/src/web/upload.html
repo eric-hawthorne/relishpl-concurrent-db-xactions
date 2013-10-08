@@ -60,13 +60,16 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<tr>
 		<td class="contentside">
 <div id="content_left">
-	<h3>Upload code for your relish software artifact</h3>	
+	<h3>Upload the source-code for your relish software artifact</h3>	
 	<p>Upload a metadata.txt file and/or one or more artifact version zip files for a software artifact</p>
 	<ul>
 		<li>If uploading files for an artifact that is new to shared.relish.pl, you must upload a metadata.txt file and at least one artifact-version zip file (zipped source code).
 		</li>  
 		<li>If updating an already uploaded artifact, you can upload a newer, revised metadata.txt file, and/or you can upload one or more higher-version artifact-version zip files.
 			</li>
+		<li>To make an artifact-version zip file suitable for publishing on your own host server and/or here, 
+			<br/>use <b>relish&nbsp;-publish&nbsp;yourorigin.net2013/your_artifact&nbsp;0.9.0</b> to copy the artifact source code (version 0.9.0) from your artifacts directory to your shared/relish/artifacts directory in your local relish installation directory trees.<br/><b>relish -publish</b> will create a file called yourorigin.net2013--your_artifact---0.9.0.zip
+			</li>			
 			</ul>		
 <p>
 <form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
@@ -76,76 +79,24 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </fieldset>
 </form>
 </p>
-<table>
-	
-	
-	<tr>
-		<td class="fieldLabelTop">Given Name: </td><td class="field"><input class="field" type="text" size="40" /></td><td></td>
-	</tr>
-	<tr>		
-		<td class="fieldLabelBottom">Family Name: </td><td class="field"><input class="field" type="text" size="40" /></td><td></td>
-	</tr>
-	<tr>		
-		<td class="fieldLabelTop">Organization: </td><td class="field"><input class="field" type="text" size="50" /></td><td></td>
-	</tr>
-	<tr>		
-	    <td class="fieldLabelBottom">Department/Division: </td><td class="field"><input class="field" type="text" size="50" /></td><td></td>
-	</tr>
-	<tr>	
-	    <td class="fieldLabelTop"><span class="star">*</span>Email Address: </td><td class="field"><input class="field" type="text" size="40" /></td><td></td>	
-	</tr>
-	<tr>	
-	    <td class="fieldLabelBottom"><span class="star">*</span>Confirm Email Address: </td><td class="field"><input class="field" type="text" size="40" /></td><td></td>		
-	</tr>
-	<tr>	
-	    <td class="fieldLabelTop"><span class="star">*</span>Choose a Password: </td><td class="field"><input class="field" type="password" size="30" /></td><td></td>	
-	</tr>
-	<tr>	
-	    <td class="fieldLabelBottom"><span class="star">*</span>Re-enter Password: </td><td class="field"><input class="field" type="password" size="30"/></td><td></td>	
-	</tr>
-	<tr>	
-	    <td class="fieldLabel"><span class="star">*</span>Code Origin Identifer: </td><td class="field"><input class="field" type="text" size="30" /></td><td></td>									
-	</tr>
-	<tr>	
-	    <td class="fieldLabel"><span class="star">*</span> <span style="color: red">= required</span></td><td style="text-align: right" class="field"> <input class="field" type="submit" value=" register "/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </td><td></td>									
-	</tr>	
-</table>
-
-	<h3>Why register your relish code origin?</h3>
-	<p>
-	If you register your relish code origin, you will receive a code-signing key pair (a private key and a public key). If you install these keys in your relish installation (instructions are provided on how to do that), you can publish relish code artifacts that are signed with your key, so that other programmers and other relish programs can verify that the code comes from you and is unaltered.
-</p>
-<p>
-	If you register your relish code origin, you can also upload your relish code artifacts, if you wish, to http://shared.relish.pl, which will then serve as a mirror host for your artifacts. shared.relish.pl may then become a useful and easily searchable repository of a variety of shared code artifacts from many origins.
-</p>
-	<p>
-	By registering, you help ensure that all relish code origins are indeed uniquely identified, which maximizes code interoperability and allows shared relish code to be found automatically on the Internet by relish programs that need the code.
-	</p>
-
+	<ul>
+		<li>If you upload your relish software artifact here, it will be published on this site, and become part of a searchable and browsable directory of relish software artifacts. As well, relish programs which import your artifact by name will be able to find, download, and link with your software artifact automatically.</li>
+		<li>If you publish your software artifact here, you retain copyright and all other rights to your software artifact, except the right to keep the artifact a trade secret. 
+		</li>  
+		<br/>
+		<li>BY THE ACT OF UPLOADING THE SOFTWARE ARTIFACT HERE, YOU ASSERT THAT YOU PERSONALLY (AND THE ORGANIZATION LISTED AS CODE ORIGINATOR, IF ANY) HAVE THE RIGHT TO PUBLISH THE SOFTWARE, OR ARE PROPERLY AUTHORIZED TO DO SO BY THE RIGHTSHOLDER. 
+		</li>  		
+					
+			</ul>
 </div>
 </td>
 <td class="contentside">
 <div id="content_right">
-	<h2>What is a <b>Code Origin Identifier</b>?</h2>
+	<h2>More info</h2>
 	<p>
-		Every originator of a relish code artifact should be uniquely identifiable globally and perpetually. This will create an unambiguous namespace for all relish code artifacts.
+		Goes here.
 	</p>
-	<p>
-		To have a published relish code origin, you should own or have control of an Internet domain name. This may be a two-part domain name like mywidgets.com or columbia.edu, or it may be a three or more part domain name like ee.columbia.edu or  alphaworks.hal.com. Individuals with no domain name should consider pooling resources to create and administer a shared origin by registering and maintaining a domain name and renting an inexpensive host server or "cloud" virtual server slice for it.
-	</p>
-	<h2>Code Origin Identifier format rule</h2>	
-	<p>
-		The <em>code origin identifier</em> of a relish code origin MUST be an Internet domain name owned or controlled by the code originator(s), followed by the year in which the specific Internet domain was first registered or used by the originators. e.g. If hal.com was registered in 1997, the code origin identifier <b>alphaworks.hal.com1997</b> could be created. 
-	</p>
-	<p>
-		DO NOT USE the year of first publication of a relish code artifact as the year suffix of the code origin identifier, unless it happens to be the same year that the originators obtained the domain.
-</p>
-<p>
-	relish source code that the originators intend to make publicly available SHOULD be hosted on a server that has the exact domain name that forms the code origin identifier. So for example, an artifact whose origin id is <b>alphaworks.hal.com1997</b> should be hosted at <b>http://alphaworks.hal.com</b> (at a standard path on that server.)
-</p>		
-<p>
-		 The purpose of the year suffix is to provide long term uniqueness of the domain name, surviving even the dissolution of the originating organization and the re-use of the domain by a new organization or individual later. If, hypothetically, that new organization or individual, years down the road, wanted to make a relish code origin based on their newly acquired hal.com domain, they could create a relish code origin whose identifier was e.g. code.hal.com2017. With luck, there will still be mirrors of the old artifacts from alphaworks.hal.com1997 around on the Internet.
-	</p>
+	
 </div>
 </td>
 </tr>
@@ -153,13 +104,3 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 </div>
 </body>
 </html>
-
-
-
-
-<form class="form-signin" method="post" action="/upload" enctype="multipart/form-data">
-    <fieldset>
-      <input type="file" name="myfiles" id="myfiles" multiple="multiple">
-      <input type="submit" name="submit" value="Submit">
-  </fieldset>
-</form>

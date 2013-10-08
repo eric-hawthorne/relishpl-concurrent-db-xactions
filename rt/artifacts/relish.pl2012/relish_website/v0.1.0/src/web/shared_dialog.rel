@@ -1,0 +1,150 @@
+origin   relish.pl2012
+artifact relish_website
+package  web 
+
+""" 
+ shared_dialog.rel
+
+ Web dialog handling methods for the shared.relish.pl sitelet.
+"""
+
+
+import
+   http_srv
+   strings
+   files
+
+
+register > String String
+"""
+ Handles a request for the "register a code origin" page.
+"""
+   => "HTML FILE"
+      "register.html"
+
+
+registerAction > String String
+"""
+ Processes a "register a code origin" request.
+"""
+   => "HTML FILE"
+      "index.html"
+
+
+loginAction > String String
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+   => "HTML FILE"
+      "index.html"
+
+
+upload > String String
+"""
+ Handles a request for the "upload a code artifact" page.
+"""
+   => "HTML FILE"
+      "upload.html"
+
+
+REPOSITORY_ROOT = "/opt/devel/relish/rt/shared/relish/replicas/"
+
+
+uploadAction request http_srv.Request > String String
+"""
+ Processes an upload of artifact files.
+"""
+   fileList = files request "myfiles"
+   for file in fileList
+      fileName = name file
+      err = open file
+      if err
+         => "HTML"
+            fill """
+<html>
+Error opening uploaded file %s: %s
+</html>
+"""
+                 fileName
+                 err      
+      content err = readAllBinary file
+      if err
+         => "HTML"
+            fill """
+<html>
+Error reading uploaded file %s: %s
+</html>
+"""
+                 fileName
+                 err
+
+      close file
+      if eq fileName "metadata.txt"
+         print fileName
+         print content
+         snippet i = between content "origin: " "\n"
+         originName = trimSpace snippet
+         snippet i = between content "artifact: " "\n"
+         artifactName = trimSpace snippet    
+         artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
+         err = mkdirAll artifactDirPath
+         if err
+            => "HTML"
+               fill """
+<html>
+%s
+</html>
+"""
+                    err
+
+         metadataFilePath = cat artifactDirPath "/metadata.txt"        
+         metadataFile err = files.File metadataFilePath "w"
+         if err
+            => "HTML"
+               fill """
+<html>
+%s
+</html>
+"""
+                    err
+         write metadataFile content                   
+         err = close metadataFile
+         if err
+            => "HTML"
+               fill """
+<html>
+%s
+</html>
+"""
+                    err
+
+      elif hasSuffix fileName ".zip"
+         print fileName
+         print len content
+
+         sepPos = index fileName "--"
+         originName = first fileName sepPos
+         lastSepPos = lastIndex fileName "---"
+         version = slice fileName 
+                         plus lastSepPos 3
+                         minus (len fileName) 4
+         artifactName = slice  fileName
+                               plus sepPos 2
+                               lastSepPos
+         artifactName = replace artifactName "--" "/"                                      
+
+      else 
+         => "HTML"
+            fill """
+<html>
+Error: Uploaded file %s is not a metadata.txt file or an artifact version .zip file.
+</html>
+"""
+                 name file
+
+   => "HTML"
+      """
+<html>
+Uploaded !
+</html>
+"""
