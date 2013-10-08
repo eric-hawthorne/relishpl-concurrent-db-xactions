@@ -54,7 +54,7 @@ uploadAction request http_srv.Request > String String
 """
  Processes an upload of artifact files.
 """
-   fileList = files request "myfiles"
+   fileList = uploadedFiles request "myfiles"
    for file in fileList
       fileName = name file
       err = open file
@@ -132,9 +132,15 @@ uploadAction request http_srv.Request > String String
          if err
             => errf err
 
-         err = extract content artifactVersionDirPath
+         srcZipContent err = extract1 content "src.zip" 
          if err
-            => errf "Could not extract zip file into" artifactVersionDirPath err                                  
+            => errf err
+
+         // Note: Should really verify the signed code here.   
+
+         err = extract srcZipContent artifactVersionDirPath
+         if err
+            => errf "Could not extract src zip file into" artifactVersionDirPath err                                  
 
       else 
          => errf cat "Error: Uploaded file " fileName " is not a metadata.txt file or an artifact version .zip file."

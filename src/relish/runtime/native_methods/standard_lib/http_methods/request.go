@@ -142,18 +142,18 @@ func InitHttpMethods() {
 	}    
 
     // files r Request key String > fs [] UploadedFile
-	filesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"files", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
+	uploadedFilesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"uploadedFiles", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	filesMethod.PrimitiveCode = files
+	uploadedFilesMethod.PrimitiveCode = uploadedFiles
 
     // file r Request key String > f UploadedFile err String
-	fileMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"file", []string{"request","key"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile","String"}, false, 0, false)
+	uploadedFileMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"uploadedFile", []string{"request","key"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	fileMethod.PrimitiveCode = file
+	uploadedFileMethod.PrimitiveCode = uploadedFile
 
     //   TODO
     //
@@ -385,9 +385,9 @@ func close(th InterpreterThread, objects []RObject) []RObject {
 
 
 //
-// files r Request key String > fs [] UploadedFile
+// uploadedFiles r Request key String > fs [] UploadedFile
 //
-func files(th InterpreterThread, objects []RObject) []RObject {
+func uploadedFiles(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
 	request := wrapper.GoObj.(*http.Request)	
@@ -421,9 +421,9 @@ func files(th InterpreterThread, objects []RObject) []RObject {
 
 
 //
-// file r Request key String > f UploadedFile err String
+// uploadedFile r Request key String > f UploadedFile err String
 //
-func file(th InterpreterThread, objects []RObject) []RObject {
+func uploadedFile(th InterpreterThread, objects []RObject) []RObject {
 	
 	wrapper := objects[0].(*GoWrapper)
 	request := wrapper.GoObj.(*http.Request)	

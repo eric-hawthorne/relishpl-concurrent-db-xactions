@@ -11,7 +11,8 @@ package  web
 
 between s String delimiter1 String delimiter2 String > snippet String snippetIndex Int
 """
- Returns the substring of the string between the first occurrence of delimiter1 and the first subsequent occurrence of delimiter 2.
+ Returns the substring of the string between the first occurrence of delimiter1 and the first 
+ subsequent occurrence of delimiter 2.
  Also returns the index in s at which the snippet begins.
 """
    i = index s delimiter1
@@ -35,8 +36,8 @@ errf preamble String name String err String > String String
  The result of this function is suitable for being returned (in the case of error) by a web dialog
  request-handler method.
 """   
-    => "HTML"
-       fill """
+   => "HTML"
+      fill """
 <html>
 <center>
 <p style="max-width: 800px; padding: 30px">
@@ -45,9 +46,9 @@ errf preamble String name String err String > String String
 </center>
 </html>
 """
-            preamble
-            name
-            err
+           preamble
+           name
+           err
 
 
 errf preamble String err String > String String
@@ -58,8 +59,8 @@ errf preamble String err String > String String
  The result of this function is suitable for being returned (in the case of error) by a web dialog
  request-handler method.
 """   
-    => "HTML"
-       fill """
+   => "HTML"
+      fill """
 <html>
 <center>
 <p style="max-width: 800px; padding: 30px">
@@ -68,8 +69,8 @@ errf preamble String err String > String String
 </center>
 </html>
 """
-            preamble
-            err
+           preamble
+           err
 
 
 errf err String > String String
@@ -80,8 +81,8 @@ errf err String > String String
  The result of this function is suitable for being returned (in the case of error) by a web dialog
  request-handler method.
 """   
-    => "HTML"
-       fill """
+   => "HTML"
+      fill """
 <html>
 <center>
 <p style="max-width: 800px; padding: 30px">
@@ -90,4 +91,4 @@ errf err String > String String
 </center>
 </html>
 """
-            err
+           err
