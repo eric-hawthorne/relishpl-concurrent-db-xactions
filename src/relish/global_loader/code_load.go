@@ -13,8 +13,6 @@ import (
 //    "net/http"
 	"io/ioutil"
 //    "regexp"
-    "io"
-	"bytes"
     "strings"
     "bufio"
 //    "strconv"
@@ -25,8 +23,8 @@ import (
     "relish/compiler/token"
 	"relish/compiler/generator"
     "relish/runtime/native_methods"
-	"relish"
-    "archive/zip"	
+	"relish"	
+    "util/zip_util"
     . "relish/dbg"
 )
 
@@ -616,99 +614,19 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
           return
        }
 
-	   // Open a zip archive for reading.
+	   // Open an artifact version zip archive for reading.
 	
-	   // Note: Assuming the zip file starts with src/ pkg/ doc/ etc not with v0002/
-
-	   wrapperByteSliceReader := bytes.NewReader(zipFileContents) 
-
-       var rWrapper *zip.Reader
-	   rWrapper, err = zip.NewReader(wrapperByteSliceReader, int64(len(zipFileContents)))
-	   if err != nil {
-	      return
-	   }
-
        var srcZipFileContents []byte
-
-	   // Iterate through the files in the wrapper archive,
-	   // looking for the src.zip file
-	   for _, fWrapper := range rWrapper.File {
-
-	      fileInfo := fWrapper.FileHeader.FileInfo()  
-	      if strings.Index(fileInfo.Name(),"src.zip") == 0 {
-	
-	
-	         var zippedFileReader io.ReadCloser
-	         zippedFileReader, err = fWrapper.Open()
-             if err != nil {
-               return
-             }	
-	         srcZipFileContents, err = ioutil.ReadAll(zippedFileReader)
-	         if err != nil {
-	            return
-	         }	
-	         err = zippedFileReader.Close()
-             if err != nil {
-                return
-             }	
-	         break
-	      }
-	   }
-
-	   byteSliceReader := bytes.NewReader(srcZipFileContents) 
-
-       var r *zip.Reader
-	   r, err = zip.NewReader(byteSliceReader, int64(len(srcZipFileContents)))
+       srcZipFileContents, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "src.zip") 
 	   if err != nil {
 	      return
 	   }
 
+       // Note: Assuming the src.zip file starts with src/ pkg/ doc/ etc not with v0002/       
 
-	   // Iterate through the files in the archive,
-	   // copying their contents.
-	   for _, f := range r.File {
-	
-	      fileInfo := f.FileHeader.FileInfo()  
-	      if strings.Index(fileInfo.Name(),"__MACOSX") == 0 {
-		     continue
-	      }
-	      if fileInfo.IsDir() {  
-		      Log(LOAD2_,"Directory %s:\n", f.Name)	
-		      err = os.MkdirAll(artifactVersionDir + "/" + f.Name,perm)
-	          if err != nil {
-	             return
-	          }	
-		  } else {
-		      Log(LOAD2_,"Copying file %s:\n", f.Name)
-		      var rc io.ReadCloser
-		      rc, err = f.Open()
-		      if err != nil {
-		         return
-		      }
-
-              slashPos := strings.LastIndex(f.Name,"/")
-              if slashPos != -1 {
-                 dirPath := f.Name[:slashPos]
-                 err = os.MkdirAll(artifactVersionDir + "/" + dirPath,perm)
-                 if err != nil {
-                    return
-                 } 
-              }
-
-              var outFile *os.File
-	          outFile, err = os.Create(artifactVersionDir + "/" + f.Name)  
-	          if err != nil {
-	            return
-	          }
-          
-		      _, err = io.Copy(outFile, rc)
-		      if err != nil {
-		         return
-		      }
-		      rc.Close()
-		      outFile.Close()
-		      Logln(LOAD2_)
-	      }
+       err = zip_util.ExtractZipFileContents(srcZipFileContents, artifactVersionDir) 
+	   if err != nil {
+	      return
 	   }
 	
        Log(ALWAYS_,"Downloaded %s (v%s) from %s\n", originAndArtifactPath, version, hostURL)		
@@ -945,6 +863,10 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
     
    return
 }
+
+
+
+
   	
 /*
 If a file at the specified path exists, reads the current version info, and the metadata date, from it.

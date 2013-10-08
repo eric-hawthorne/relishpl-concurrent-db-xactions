@@ -12,6 +12,7 @@ import (
 	"os"
 	"io"
 	"bufio"
+    "util/zip_util"
 )
 
 
@@ -198,6 +199,22 @@ func InitFilesMethods() {
 	}
 	tempDirMethod.PrimitiveCode = tempDir
 
+
+    // err = extract zipFileContent String directoryPath String
+    //
+	extractMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"extract", []string{"zipFileContent","dirPath"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	extractMethod.PrimitiveCode = extract
+
+	// innerFileContent err = extract1 zipFileContent String innerFilePath String
+    //
+	extract1Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"extract1", []string{"zipFileContent","innerFilePath"}, []string{"String","String"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	extract1Method.PrimitiveCode = extract1
 
 
 
@@ -561,6 +578,54 @@ func tempDir(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+// 
+//
+// extract zipFileContent String directoryPath String > err String
+// """
+//  Extracts the zip file content into the specified directory, which must exist and be writeable.
+//
+//  err = extract zipFileContent directoryPath 
+// """
+func extract(th InterpreterThread, objects []RObject) []RObject {
+	
+    zipFileContent := string(objects[0].(String))
+    dirPath := string(objects[1].(String))
+	  
+    err := zip_util.ExtractZipFileContents([]byte(zipFileContent), dirPath) 
+
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	}
+	return []RObject{String(errStr)}
+}
+
+// 
+//
+// extract1 zipFileContent String innerFilePath String > innerFileContent String err String
+// """
+//  Returns the extracted (decompressed) content of one file that is contained in the zip archive.
+//  The inner file to extract is specified by its relative path name (path name in the zip file).
+//
+//  innerFileContent err = extract1 zipFileContent  innerFilePath 
+//
+// """
+func extract1(th InterpreterThread, objects []RObject) []RObject {
+	
+    zipFileContent := []byte(string(objects[0].(String)))
+    innerFilePath := string(objects[1].(String))
+	
+    innerFileContents, err := zip_util.ExtractFileFromZipFileContents(zipFileContent, innerFilePath) 
+
+    innerFileContentStr := ""
+	errStr := ""
+	if err != nil {
+	   errStr = err.Error()
+	} else {
+		innerFileContentStr = string(innerFileContents)
+	}
+	return []RObject{String(innerFileContentStr),String(errStr)}
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Type init functions
