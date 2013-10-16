@@ -9,11 +9,13 @@ package crypto_util
 
 import (
 	"bytes"
+	"crypto"
 	"crypto/rand"
     "crypto/rsa"
     "crypto/sha256"
     "crypto/x509"
     "errors"
+    "encoding/pem"
 )
 
 const RSAKeySize = 3072  // Default or suggested key length in bits.
@@ -26,9 +28,8 @@ If password is a non-empty string, encrypts the private key so that password is 
 to decrypt and use it. If password == "", the private key returned is unencrypted.
 */
 func GenerateKeyPair(keyLenBits int, password string) (privateKeyPEM string, publicKeyPEM string, err error) {
-	var pk *rsa.PrivateKey
 	
-    priv, err = rsa.GenerateKey(rand.Reader, keyLenBits) 
+    priv, err := rsa.GenerateKey(rand.Reader, keyLenBits) 
     if err != nil {
 	   return
 	}
@@ -76,7 +77,7 @@ func EncodePublicKeyPEM(binaryKey []byte) (pemBlock string, err error) {
 }
 
 func EncodeSignaturePEM(binarySignature []byte) (pemBlock string, err error) {
-	pemBlock, err = EncodePEM(binaryKey, "SIGNATURE")
+	pemBlock, err = EncodePEM(binarySignature, "SIGNATURE")
 	return
 }
 
@@ -84,7 +85,7 @@ func EncodePEM(binary []byte, blockType string) (pemBlock string, err error) {
     blk := new(pem.Block)
     blk.Type = blockType
     blk.Bytes = binary
-    buf = new(bytes.Buffer)
+    buf := new(bytes.Buffer)
 
     err = pem.Encode(buf, blk)
     if err != nil {
@@ -152,17 +153,18 @@ CAltWyuLbfXWce9jd8CSHLI8Jwpw4lmOb/idGfEFrMLT8Ms18pKA4Thrb2TE7yLh
 Returns the decoding of the base-64 into a byte slice.
 Also returns the block type, in this case "RSA PUBLIC KEY"
 */
-func DecodePEM(pem string) (decoded []byte, blockType string, err error) {
+func DecodePEM(pemBlock string) (decoded []byte, blockType string, err error) {
 
  	var blk *pem.Block
-    cert := ([]byte)pem
- 	blk, cert = pem.Decode(cert)
+    pb := ([]byte)(pemBlock)
+ 	blk, _ = pem.Decode(pb)
  	if blk == nil {
  		err = errors.New("DecodePEM: No PEM block found.")
         return
  	}
-    decoded = blk.bytes
+    decoded = blk.Bytes
     blockType = blk.Type
+    return
 }
 
 
@@ -192,24 +194,25 @@ certifyingPrivateKeyPEM. This will result in a public key certificate signed by 
 key that corresponds to the certified public key.
 */
 func GenerateCertifiedRsaKeyPair(keyLen int, 
-	                             entityType string
+	                             entityType string,
 	                             entityNameAssociatedWitKeyPair string,
 	                             certifyingEntityType string,
 	                             certifyingEntityName string, 
 	                             certifyingPrivateKeyPEM string) (privateKeyPEM string, publicKeyCertificate string) {
+	return // TODO Implement
 } 
 	
 	
 func HashSha256(content string) []byte {
 	hasher := sha256.New()
 	hasher.Write([]byte(content))
-	return hasher.Sum(nil
+	return hasher.Sum(nil)
 }	
 
 /*
 Signs based on SHA256 hash of the content.
 */
-func Sign(privateKeyPEM string, content String) (signaturePEM string, err error) {
+func Sign(privateKeyPEM string, content string) (signaturePEM string, err error) {
 	
 	priv, err := DecodePrivateKeyPEM(privateKeyPEM)
 	if err != nil {
@@ -218,7 +221,7 @@ func Sign(privateKeyPEM string, content String) (signaturePEM string, err error)
 		
 	hashed := HashSha256(content)
 
-    signatureBytes, err := SignPKCS1v15(rand.Reader, priv, crypto.SHA256, hashed) 
+    signatureBytes, err := rsa.SignPKCS1v15(rand.Reader, priv, crypto.SHA256, hashed) 
     if err != nil {
 	   return
     }
@@ -233,7 +236,7 @@ Returns true if the signature is the signature of the content, as signed by the 
 that corresponds to the argument public key.
 Assumes that SHA256 was used as the hash function to hash the content for signing.
 */
-func Verify(publicKeyPEM string, signaturePEM string, content String) bool {
+func Verify(publicKeyPEM string, signaturePEM string, content string) bool {
 	pubKey, err := DecodePublicKeyPEM(publicKeyPEM)
 	if err != nil {
 		return false
@@ -246,7 +249,7 @@ func Verify(publicKeyPEM string, signaturePEM string, content String) bool {
 	
 	hashed := HashSha256(content)
 	
-    err = rsa.VerifyPKCS1v15(pub, crypto.SHA256, hashed, signatureBytes)	
+    err = rsa.VerifyPKCS1v15(pubKey, crypto.SHA256, hashed, signatureBytes)	
     if err != nil {
 	   return false
     }
@@ -263,4 +266,5 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	                   publicKeyCertificate string, 
 	                   entityType string, 
 	                   entityName string) (publicKeyPEM string) {
+	return // TODO Implement
 }
