@@ -40,11 +40,8 @@ func GenerateKeyPair(keyLenBits int, password string) (privateKeyPEM string, pub
 	
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(priv)
 	
-	if len(password) > 0 {
-		// TODO Need to encrypt the key here
-	} 
 	
-    privateKeyPEM, err = EncodePrivateKeyPEM(privateKeyBytes) 	
+    privateKeyPEM, err = EncodePrivateKeyPEM(privateKeyBytes, password) 	
     if err != nil {
        return
     }
@@ -66,25 +63,36 @@ func GenerateKeyPair(keyLenBits int, password string) (privateKeyPEM string, pub
 
 // Helper functions
 
-func EncodePrivateKeyPEM(binaryKey []byte) (pemBlock string, err error) {
-	pemBlock, err = EncodePEM(binaryKey, "RSA PRIVATE KEY")
+func EncodePrivateKeyPEM(binaryKey []byte, password string) (pemBlock string, err error) {
+	pemBlock, err = EncodePEM(binaryKey, "RSA PRIVATE KEY", password)
 	return
 }
 
 func EncodePublicKeyPEM(binaryKey []byte) (pemBlock string, err error) {
-	pemBlock, err = EncodePEM(binaryKey, "RSA PUBLIC KEY")
+	pemBlock, err = EncodePEM(binaryKey, "RSA PUBLIC KEY","")
 	return
 }
 
 func EncodeSignaturePEM(binarySignature []byte) (pemBlock string, err error) {
-	pemBlock, err = EncodePEM(binarySignature, "SIGNATURE")
+	pemBlock, err = EncodePEM(binarySignature, "SIGNATURE", "")
 	return
 }
 
-func EncodePEM(binary []byte, blockType string) (pemBlock string, err error) {
-    blk := new(pem.Block)
-    blk.Type = blockType
-    blk.Bytes = binary
+func EncodePEM(binary []byte, blockType string, password string) (pemBlock string, err error) {
+	
+	var blk *pem.Block
+	if password != "" {
+	   passwordBytes := ([]byte)(password)
+	   blk, err = x509.EncryptPEMBlock(rand.Reader, blockType, binary, passwordBytes, x509.PEMCipherAES256) 
+	   if err != nil {
+		  return
+	   }
+    } else {
+       blk = new(pem.Block)
+       blk.Type = blockType
+       blk.Bytes = binary
+    }
+
     buf := new(bytes.Buffer)
 
     err = pem.Encode(buf, blk)
@@ -96,8 +104,11 @@ func EncodePEM(binary []byte, blockType string) (pemBlock string, err error) {
     return
 }
 
-func DecodePrivateKeyPEM(privateKeyPEM string) (priv *rsa.PrivateKey, err error) {
-	blockBytes, blockType, err := DecodePEM(privateKeyPEM)
+/*
+If the password is not "", the private key is decrypted using the password.
+*/
+func DecodePrivateKeyPEM(privateKeyPEM string, privateKeyPassword string) (priv *rsa.PrivateKey, err error) {
+	blockBytes, blockType, err := DecodePEM(privateKeyPEM, privateKeyPassword)
 	if err != nil {
 		return
 	}
@@ -110,7 +121,7 @@ func DecodePrivateKeyPEM(privateKeyPEM string) (priv *rsa.PrivateKey, err error)
 }
 
 func DecodePublicKeyPEM(publicKeyPEM string) (pub *rsa.PublicKey, err error) {
-	blockBytes, blockType, err := DecodePEM(publicKeyPEM)
+	blockBytes, blockType, err := DecodePEM(publicKeyPEM,"")
 	if err != nil {
 		return
 	}
@@ -130,7 +141,7 @@ func DecodePublicKeyPEM(publicKeyPEM string) (pub *rsa.PublicKey, err error) {
 
 
 func DecodeSignaturePEM(signaturePEM string) (signatureBytes []byte, err error) {
-	signatureBytes, blockType, err := DecodePEM(signaturePEM)
+	signatureBytes, blockType, err := DecodePEM(signaturePEM,"")
 	if err != nil {
 		return
 	}
@@ -153,16 +164,25 @@ CAltWyuLbfXWce9jd8CSHLI8Jwpw4lmOb/idGfEFrMLT8Ms18pKA4Thrb2TE7yLh
 Returns the decoding of the base-64 into a byte slice.
 Also returns the block type, in this case "RSA PUBLIC KEY"
 */
-func DecodePEM(pemBlock string) (decoded []byte, blockType string, err error) {
+func DecodePEM(pemBlock string, password string) (decoded []byte, blockType string, err error) {
+
 
  	var blk *pem.Block
     pb := ([]byte)(pemBlock)
+
  	blk, _ = pem.Decode(pb)
  	if blk == nil {
  		err = errors.New("DecodePEM: No PEM block found.")
         return
  	}
-    decoded = blk.Bytes
+
+	if password != "" {
+		passwordBytes := ([]byte)(password)
+		decoded, err = x509.DecryptPEMBlock(blk, passwordBytes) ([]byte, error)
+    } else {
+        decoded = blk.Bytes
+    }
+
     blockType = blk.Type
     return
 }
@@ -212,9 +232,9 @@ func HashSha256(content string) []byte {
 /*
 Signs based on SHA256 hash of the content.
 */
-func Sign(privateKeyPEM string, content string) (signaturePEM string, err error) {
+func Sign(privateKeyPEM string, privateKeyPassword string, content string) (signaturePEM string, err error) {
 	
-	priv, err := DecodePrivateKeyPEM(privateKeyPEM)
+	priv, err := DecodePrivateKeyPEM(privateKeyPEM, privateKeyPassword)
 	if err != nil {
 		return
 	}
