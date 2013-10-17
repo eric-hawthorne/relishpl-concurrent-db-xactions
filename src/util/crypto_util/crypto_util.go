@@ -81,6 +81,7 @@ func EncodeSignaturePEM(binarySignature []byte) (pemBlock string, err error) {
 func EncodePEM(binary []byte, blockType string, password string) (pemBlock string, err error) {
 	
 	var blk *pem.Block
+/* Awaiting Go 1.2 
 	if password != "" {
 	   passwordBytes := ([]byte)(password)
 	   blk, err = x509.EncryptPEMBlock(rand.Reader, blockType, binary, passwordBytes, x509.PEMCipherAES256) 
@@ -88,10 +89,13 @@ func EncodePEM(binary []byte, blockType string, password string) (pemBlock strin
 		  return
 	   }
     } else {
+ */
        blk = new(pem.Block)
        blk.Type = blockType
        blk.Bytes = binary
+/* Awaiting Go 1.2  
     }
+*/
 
     buf := new(bytes.Buffer)
 
@@ -176,12 +180,16 @@ func DecodePEM(pemBlock string, password string) (decoded []byte, blockType stri
         return
  	}
 
+/* Awaiting Go 1.2 
 	if password != "" {
 		passwordBytes := ([]byte)(password)
-		decoded, err = x509.DecryptPEMBlock(blk, passwordBytes) ([]byte, error)
+		decoded, err = x509.DecryptPEMBlock(blk, passwordBytes)
     } else {
+*/    	
         decoded = blk.Bytes
+ /* Awaiting Go 1.2        
     }
+    */
 
     blockType = blk.Type
     return

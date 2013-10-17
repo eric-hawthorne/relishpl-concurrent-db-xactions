@@ -91,8 +91,10 @@ Verifies the signature as being the signature for the content.
 Returns true if the signature is the signature of the content, as signed by the private key
 that corresponds to the argument public key.
 Assumes that SHA256 was used as the hash function to hash the content for signing.
-*/
+
 func Verify(publicKeyPEM string, signaturePEM string, content string) bool {
+}
+*/
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////
