@@ -13,6 +13,11 @@ import
    http_srv
    strings
    files
+   model
+   crypto
+
+
+RSA_KEY_LEN_BITS = 3072
 
 
 register > String String
@@ -23,12 +28,191 @@ register > String String
       "register.html"
 
 
-registerAction > String String
+registerAction 
+   givenName String
+   familyName String
+   organization String
+   dept String
+   email String
+   email2 String
+   password String
+   password2 String
+   originId String
+> 
+   String String
 """
  Processes a "register a code origin" request.
 """
+   givenName = trimSpace givenName
+   familyName = trimSpace familyName
+   organization = trimSpace organization
+   dept = trimSpace dept
+   email = trimSpace email
+   email2 = trimSpace email2
+   password = trimSpace password
+   password2 = trimSpace password2
+   originId = trimSpace originId
+
+   if not givenName
+      => errf "Please enter the given name (first name in western tradition) of a contact person for the code origin."
+   if not familyName
+      => errf "Please enter the family name (last name in western tradition) of a contact person for the code origin."
+
+   if not email
+      => errf "Please enter a contact email address for the code origin."
+   if lt 1 (index email "@")
+      => errf "Please enter a valid contact email address for the code origin."
+   if lt (lastIndex email ".") 
+         plus 2 (index email "@")
+      => errf "Please enter a valid contact email address for the code origin."
+   if neq email email2
+      => errf "Emails don't match. Please re-enter."
+
+   if neq password password2
+      => errf "Passwords don't match. Please re-enter."
+
+   err = originIdError originId
+   if err
+      => errf err
+ 
+   pwHash = base64Hash password
+   emailVerificationToken = base64Hash cat pwHash email originId
+
+   smtpServer = "c1.votingplace.net:25"
+   err = sendEmail 
+            smtpServerAddr String 
+            "relishpl@gmail.com"  
+            email
+            "Confirm registration of relish code origin"
+            fill """
+If you are registering the relish code origin %s please confirm this
+and complete the origin registration by clicking the following link:
+http://shared.relish.pl/verifyRegistration/%s/%s
+"""
+                 originId
+                 originId
+                 emailVerificationToken
+     
+   if err
+      print err
+      print "ignoring email error during testing"
+      // => errf err
+         
+   o = Origin
+   o.ident = originId
+   o.contactGivenName = givenName
+   o.contactFamilyName = familyName
+   o.organization = organization
+   o.department = dept
+   o.email = email
+   o.pwHash = pwHash
+   o.isPublic = false
+   o.isVerified = false
+   o.emailVerificationToken = emailVerificationToken
+   o.publicKeyCert = ""
+   o.registered = now "UTC"
+
+   dub o originId
+
    => "HTML FILE"
-      "index.html"
+      "register_continue.html"
+
+
+verifyRegistration originId String token String > String String 
+"""
+ Processes a confirmation of registration.
+ An email message has been sent to the origin contact email address and the confirmation link has been clicked.
+"""
+   if not exists originId
+      => errf cat originId " is not a newly registered relish code origin."
+   
+   o = summon originId
+   if o.isVerified
+      => errf cat originId " is already verified."
+
+   o.isVerified = true
+
+   => "REDIRECT"
+      "registrationConfirmed"
+
+
+registrationConfirmed originId String > String String
+"""
+ Confirms that registration has been verified via response to confirmation email.
+ Allows continuing on to generate private and public keys for the origin.
+ Requires password to be entered to generate keys, as extra security measure.
+"""
+   => "registration_confirmed.html"
+      {"originId"=>originId}String > String 
+
+
+generateKeysAction originId String password String > String String
+"""
+ Generates a private-key public-key pair for an origin.
+ If a key pair has already been generated, asks for confirmation before re-keying the origin.
+"""
+   if not exists originId
+      => errf cat originId " is not a registered relish code origin."
+
+   o = summon originId
+   if neq (base64Hash password) o.pwHash
+      => errf "Incorrect passord for origin administration."    
+
+   if o.publicKeyCert  // cert already exists - re-keying  
+      => "confirm_rekey.html"
+         {"originId"=>originId}String > String 
+
+   privateKeyPem publicKeyPem err = 
+      generateCertifiedKeyPair RSA_KEY_LEN_BITS 
+                               "origin"
+                               "shared.relish.pl2012"
+                               sharedRelishPlPrivateKeyPem
+                               sharedRelishPlPrivateKeyPassword
+                               "origin" 
+                               originId 
+                               password
+   if err
+      => errf err
+
+   o.publicKeyCert = publicKeyPem
+  
+   => "keys.html"
+      {
+	     "privateKey" => privateKeyPem
+	     "publicKey"  => publicKeyPem	
+	  }String > String
+   
+
+confirmReKeyAction originId String password String > String String
+"""
+ Generates a private-key public-key pair for an origin.
+"""
+   if not exists originId
+      => errf cat originId " is not a registered relish code origin."
+
+   o = summon originId
+   if neq (base64Hash password) o.pwHash
+      => errf "Incorrect passord for origin administration."    
+
+   privateKeyPem publicKeyPem err = 
+      generateCertifiedKeyPair RSA_KEY_LEN_BITS 
+                               "origin"
+                               "shared.relish.pl2012"
+                               sharedRelishPlPrivateKeyPem
+                               sharedRelishPlPrivateKeyPassword
+                               "origin" 
+                               originId 
+                               password
+   if err
+      => errf err
+
+   o.publicKeyCert = publicKeyPem
+
+   => "keys.html"
+      {
+	     "privateKey" => privateKeyPem
+	     "publicKey"  => publicKeyPem	
+	  }String > String
 
 
 loginAction > String String

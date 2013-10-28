@@ -204,10 +204,11 @@ func DecodePEM(pemBlock string, password string) (decoded []byte, blockType stri
 Returns a private key and a public key certificate. 
 The public key certificate is a text string that includes
 0) the entity type and entity name that certifies
-1) a signature PEM for the statement below it
+1) certifies with this signature
+2) a signature PEM for the statement below it
 EMPTY LINE
 2) The statement:
-The public key for
+that the public key for
 entityTypeName entityName
 is
 ---- BEGIN RSA PUBLIC KEY ----
@@ -221,14 +222,18 @@ As a special case, a self-signed cert can be created by supplying the empty stri
 certifyingPrivateKeyPEM. This will result in a public key certificate signed by the very private
 key that corresponds to the certified public key.
 */
-func GenerateCertifiedRsaKeyPair(keyLen int, 
-	                             entityType string,
-	                             entityNameAssociatedWitKeyPair string,
-	                             certifyingEntityType string,
-	                             certifyingEntityName string, 
-	                             certifyingPrivateKeyPEM string) (privateKeyPEM string, publicKeyCertificate string) {
+func GenerateCertifiedKeyPair(keyLen int, 
+                              certifyingEntityType string,
+                              certifyingEntityName string, 
+                              certifyingPrivateKeyPEM string,
+                              passwordForCertifyingPrivateKey string,	
+	                          entityType string,
+	                          entityNameAssociatedWithKeyPair string,
+	                          passwordForPrivateKey string) (privateKeyPEM string, publicKeyCertificate string) {
 	return // TODO Implement
 } 
+
+
 	
 	
 func HashSha256(content string) []byte {
@@ -296,3 +301,87 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	                   entityName string) (publicKeyPEM string) {
 	return // TODO Implement
 }
+
+
+var sharedRelishPlPrivateKeyPassword string = "squeamish_surgeon_10"
+
+/*
+ Sets in the relish runtime the private key password for shared.relish.pl's code-signing private key.
+ Of course this can only be called by a relish distribution that has the shared.relish.pl2012_private_key.pem
+ file. Also, this is only permitted to be called once in the relish runtime. 
+*/
+func SetSharedRelishPlPrivateKeyPassword(pw string) {
+	sharedRelishPlPrivateKeyPassword = pw
+} 
+
+
+var relishRuntimeLocation string
+
+func SetRelishRuntimeLocation(path string) {
+	relishRuntimeLocation = path
+}
+
+/*
+ Gets from the relish runtime the private key password for shared.relish.pl's code-signing private key.
+ Only works if the corresponding set function has been called.
+*/
+func GetSharedRelishPlPrivateKeyPassword() string {
+   return sharedRelishPlPrivateKeyPassword
+}
+
+
+/*
+Get a private key in PEM format from the standard directory in the relish installation, 
+using standard file naming convention. 
+*/
+func GetPrivateKey(entityType string, entityName string) (privateKeyPEM string, err error) {
+	fileName := entityType + "__" + entityName + "_private_key.pem"
+	path := relishRuntimeLocation + "/keys/private/" + filename
+	
+	bts, err := ioutil.ReadFile(path) 
+	if err != nil {
+		return
+	}
+	privateKeyPEM = string(bts)
+}
+
+
+/*
+Get a public key in PEM format from the standard directory in the relish installation, 
+using standard file naming convention. 
+*/
+func GetPublicKey(entityType string, entityName string) (publicKeyPEM string, err error) {
+	fileName := entityType + "__" + entityName + "_public_key.pem"
+	path := relishRuntimeLocation + "/keys/public/" + filename
+	
+	bts, err := ioutil.ReadFile(path) 
+	if err != nil {
+		return
+	}
+	publicKeyPEM = string(bts)
+}
+
+/*
+Store a private key in PEM format into a file in the standard directory in the relish installation, 
+using standard file naming convention. 
+*/
+func StorePrivateKey(entityType string, entityName string, privateKeyPEM string) (err error) {
+	fileName := entityType + "__" + entityName + "_private_key.pem"
+	path := relishRuntimeLocation + "/keys/private/" + filename
+	var perm os.FileMode = 0666
+    err = ioutil.WriteFile(path, ([]byte)(privateKeyPEM), perm) 	
+}
+
+
+/*
+Store a public key in PEM format into a file in the standard directory in the relish installation, 
+using standard file naming convention. 
+*/
+func StorePublicKey(entityType string, entityName string, publicKeyPEM string) (err error) {
+	fileName := entityType + "__" + entityName + "_public_key.pem"
+	path := relishRuntimeLocation + "/keys/public/" + filename
+	var perm os.FileMode = 0666
+    err = ioutil.WriteFile(path, ([]byte)(publicKeyPEM), perm) 	
+}
+
+
