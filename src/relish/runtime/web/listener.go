@@ -275,18 +275,23 @@ var responseProcessingMutex sync.Mutex
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	
-   if (! strings.HasSuffix(r.URL.Path,".ico")) && (strings.LastIndex(r.URL.Path,".") > -1) && (! strings.Contains(r.URL.Path,"?")) {
+   path := r.URL.Path
+   possibleDotPos := len(path)-7
+   if possibleDotPos < 0 {
+      possibleDotPos = 0
+   }
+   if (! strings.HasSuffix(path,".ico")) && (strings.LastIndex(path,".") > possibleDotPos) && (! strings.Contains(path,"?")) {
 	  // Serve static content 
 	
       // fmt.Fprintln(w, r.URL.Path)
 
-      filePath := webPackageSrcDirPath + "/static" + r.URL.Path      
+      filePath := webPackageSrcDirPath + "/static" + path      
       http.ServeFile(w,r,filePath)
 	
 	  return
    }
  	
-   pathSegments := strings.Split(r.URL.Path, "/") 
+   pathSegments := strings.Split(path, "/") 
    if len(pathSegments) > 0 && len(pathSegments[0]) == 0 {
       pathSegments = pathSegments[1:]
    }
