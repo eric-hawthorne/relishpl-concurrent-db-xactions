@@ -82,6 +82,7 @@ import (
 		"relish/dbg"
 		"relish/global_loader"
 		"relish/global_publisher"		
+		"util/crypto_util"
 		"regexp"
 //		"strconv"
 		"runtime/pprof"
@@ -307,7 +308,7 @@ func main() {
 
 
 
-
+    crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.
 
 
 

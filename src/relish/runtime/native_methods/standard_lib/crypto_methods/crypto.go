@@ -34,6 +34,22 @@ func InitCryptoMethods() {
 	generateKeyPairMethod.PrimitiveCode = generateKeyPair
 
 
+
+
+
+
+
+GenerateCertifiedKeyPair(keyLenBits int, 
+                              certifyingEntityType string,
+                              certifyingEntityName string, 
+                              certifyingPrivateKeyPEM string,
+                              passwordForCertifyingPrivateKey string,	
+	                          entityType string,
+	                          entityNameAssociatedWithKeyPair string,
+	                          passwordForPrivateKey string) (privateKeyPEM string, publicKeyCertificate string, err error)
+
+
+
     // generateCerifiedKeyPair keyLenBits Int entityType String entityName String passwordForPrivateKey String > privateKeyPem String publicKeyPem String err String
     // 
 	generateCertifiedKeyPairMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/crypto",nil,"generateCertifiedKeyPair", []string{"keyLenBits","entityType","entityName","passwordForPrivateKey"}, []string{"Int","String","String","String"}, []string{"String","String","String"}, false, 0, false)
@@ -124,6 +140,30 @@ getPublicKey entityType entityName > publicKeyPem
 """
  Get from file.
 """
+
+
+
+func VerifiedPublicKey(certifierPublicKeyPEM string, 
+	                   publicKeyCertificate string, 
+	                   entityType string, 
+	                   entityName string) (publicKeyPEM string)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 How do we prevent someone pretending to be shared.relish.pl?
 Can't but
