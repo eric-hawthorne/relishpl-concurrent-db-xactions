@@ -9,6 +9,7 @@ package crypto_util
 
 import (
 	"bytes"
+	"strings"
 	"crypto"
 	"crypto/rand"
     "crypto/rsa"
@@ -18,6 +19,7 @@ import (
     "encoding/pem"
     "io/ioutil"
     "os"
+    "fmt"
 )
 
 const RSAKeySize = 3072  // Default or suggested key length in bits.
@@ -232,32 +234,47 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	                          passwordForPrivateKey string) (privateKeyPEM string, publicKeyCertificate string, err error) {
 
 
-    if strings.Lower(certifyingEntityName) == "shared.relish.pl2012" {
+    if strings.ToLower(certifyingEntityName) == "shared.relish.pl2012" {
        err = errors.New("No.")
        return
     }
+    
+    selfSigned := false
+    
     if certifyingEntityName == "" {
     	certifyingEntityType = "origin"
     	certifyingEntityName = "shared.relish.pl2012"
+
+     
     	certifyingPrivateKeyPEM, err = GetPrivateKey(certifyingEntityType, certifyingEntityName) 
  	    if err != nil {
-           err = errors.New("No.") 	    	
-		   return
-	    }
-	    passwordForCertifyingPrivateKey = GetSharedRelishPlPrivateKeyPassword() 
+	       if entityNameAssociatedWithKeyPair == "shared.relish.pl2012" {
+		      passwordForCertifyingPrivateKey = passwordForPrivateKey
+		      selfSigned = true
+		   } else {
+              err = errors.New("No.") 	    	
+		      return
+	       }
+	    } else {
+	       passwordForCertifyingPrivateKey = GetSharedRelishPlPrivateKeyPassword() 
+        }
     }
 
-    privateKeyPEM, publicKeyPEM, err = GenerateKeyPair(keyLenBits, passwordforPrivateKey) 
+    privateKeyPEM, publicKeyPEM, err := GenerateKeyPair(keyLenBits, passwordForPrivateKey) 
 	if err != nil {
 		return
+	}
+	
+	if selfSigned {
+	   certifyingPrivateKeyPEM = privateKeyPEM
 	}
 
     assertion := fmt.Sprintf("%s %s certifies with this signature\nthat the public key for %s %s is\n%s\n",
     	                     certifyingEntityType,
                              certifyingEntityName,
                              entityType,
-                             entityName,
-                             publicKeyPEM
+                             entityNameAssociatedWithKeyPair,
+                             publicKeyPEM,
     	                    )
 	signaturePEM, err := Sign(certifyingPrivateKeyPEM, passwordForCertifyingPrivateKey, assertion)
 	if err != nil {
@@ -266,7 +283,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 
 	publicKeyCertificate = fmt.Sprintf("%s%s\n",
     	                     assertion,
-                             signaturePEM
+                             signaturePEM,
     	                    )
 	return
 }
@@ -356,7 +373,7 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 
    pubKeyPos := ownerStatementPos + len(ownerStatement) - 30
 
-   publicKeyPEM := assertion[pubKeyPos:len(assertion)-1]
+   publicKeyPEM = assertion[pubKeyPos:len(assertion)-1]
 
    return 
 }
@@ -410,7 +427,7 @@ func GetPrivateKey(entityType string, entityName string) (privateKeyPEM string, 
 Get a public key in PEM format from the standard directory in the relish installation, 
 using standard file naming convention. 
 */
-func GetPublicKey(entityType string, entityName string) (publicKeyPEM string, err error) {
+func GetPublicKeyCert(entityType string, entityName string) (publicKeyPEM string, err error) {
 	fileName := entityType + "__" + entityName + "_public_key.pem"
 	path := relishRuntimeLocation + "/keys/public/" + fileName
 	
@@ -436,14 +453,14 @@ func StorePrivateKey(entityType string, entityName string, privateKeyPEM string)
 
 
 /*
-Store a public key in PEM format into a file in the standard directory in the relish installation, 
+Store a public key certificate in PEM format into a file in the standard directory in the relish installation, 
 using standard file naming convention. 
 */
-func StorePublicKey(entityType string, entityName string, publicKeyPEM string) (err error) {
+func StorePublicKeyCert(entityType string, entityName string, publicKeyCertPEM string) (err error) {
 	fileName := entityType + "__" + entityName + "_public_key.pem"
 	path := relishRuntimeLocation + "/keys/public/" + fileName
 	var perm os.FileMode = 0666
-    err = ioutil.WriteFile(path, ([]byte)(publicKeyPEM), perm) 	
+    err = ioutil.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
     return
 }
 

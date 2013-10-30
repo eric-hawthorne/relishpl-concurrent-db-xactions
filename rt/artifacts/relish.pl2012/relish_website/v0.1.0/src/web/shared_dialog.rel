@@ -190,6 +190,7 @@ generateKeysAction originId String password String > String String
       {
 	     "privateKey" => privateKeyPem
 	     "publicKey"  => publicKeyPem	
+	     "originId"   => originId
 	  }String > String
    
 
@@ -225,6 +226,7 @@ confirmReKeyAction originId String password String > String String
       {
 	     "privateKey" => privateKeyPem
 	     "publicKey"  => publicKeyPem	
+	     "originId"   => originId	
 	  }String > String
 
 
