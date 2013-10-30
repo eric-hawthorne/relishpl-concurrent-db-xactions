@@ -47,7 +47,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <div id="content_left">
 	<h3>Confirm re-keying your origin</h3>
 <p>
-	The origin {{originId}} already has a private key and public key generated for code-signing.
+	The origin {{.originId}} already has a private key and public key generated for code-signing.
 </p>
 <p>
 	Confirm that you wish to generate a <b>new replacement</b> private key and public key for code-signing.
@@ -58,14 +58,14 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 </p>
 <p>
 	Copy the private-key base-64-encoded text block into the file
-	relish/keys/private/{{originId}}_private_key.pem
+	RELISH_RUNTIME_DIR/keys/private/origin_{{.originId}}_private_key.pem
 </p>
 <p>
 	Copy the public-key base-64-encoded text block into the file
-	relish/keys/public/{{originId}}_public_key.pem
+	RELISH_RUNTIME_DIR/keys/public/origin_{{.originId}}_public_key.pem
 </p>
 <form method="post" action="/confirmReKeyAction">
-	<input type="hidden" name="originId" value="{{originId}}" />
+	<input type="hidden" name="originId" value="{{.originId}}" />
 <table>		
 	<tr>	
 	    <td class="fieldLabelTop"><span class="star">*</span>Enter Origin Password: </td><td  class="field"><input name="password"  class="field" type="password" size="30" /></td><td></td>	

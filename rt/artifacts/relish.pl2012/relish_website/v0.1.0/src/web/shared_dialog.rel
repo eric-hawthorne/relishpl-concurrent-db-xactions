@@ -15,9 +15,7 @@ import
    files
    model
    crypto
-
-
-RSA_KEY_LEN_BITS = 3072
+   datetime
 
 
 register > String String
@@ -39,7 +37,8 @@ registerAction
    password2 String
    originId String
 > 
-   String String
+   String 
+   String
 """
  Processes a "register a code origin" request.
  Validates registration form info. Makes sure origin is not already registered.
@@ -54,6 +53,11 @@ registerAction
    password = trimSpace password
    password2 = trimSpace password2
    originId = trimSpace originId
+   print givenName familyName
+   print organization dept
+   print email email2
+   print password password2
+   print originId
 
    if not givenName
       => errf "Please enter the given name (first name in western tradition) of a contact person for the code origin."
@@ -62,9 +66,9 @@ registerAction
 
    if not email
       => errf "Please enter a contact email address for the code origin."
-   if lt 1 (index email "@")
+   if lt (index email "@") 1
       => errf "Please enter a valid contact email address for the code origin."
-   if lt (lastIndex email ".") 
+   if lt lastIndex email "." 
          plus 2 (index email "@")
       => errf "Please enter a valid contact email address for the code origin."
    if neq email email2
@@ -80,13 +84,10 @@ registerAction
    pwHash = base64Hash password
    emailVerificationToken = base64Hash cat pwHash email originId
 
-   smtpServer = "c1.votingplace.net:25"
-   err = sendEmail 
-            smtpServerAddr String 
-            "relishpl@gmail.com"  
-            email
-            "Confirm registration of relish code origin"
-            fill """
+   smtpServer = "mail.bcit.ca:25"
+
+   requestToConfirmRegistration = 
+      fill """
 If you are registering the relish code origin %s please confirm this
 and complete the origin registration by clicking the following link:
 http://shared.relish.pl/verifyRegistration/%s/%s
@@ -96,16 +97,26 @@ It means someone else has inadvertently or deliberately used your
 email address as the contact address for creating a relish code origin.
 See http://relish.pl if you have more questions.
 """
-                 originId
-                 originId
-                 emailVerificationToken
+           originId
+           originId
+           emailVerificationToken
+
+   err = sendEmail 
+            smtpServer
+            "relishpl@gmail.com"  
+            email
+            "Confirm registration of relish code origin"
+            requestToConfirmRegistration
      
    if err
+      print "Sending email to" email
+      print "Subject: Confirm registration of relish code origin"
+      print requestToConfirmRegistration
       print err
       print "ignoring email error during testing"
       // => errf err
          
-   o = Origin
+   o = model.Origin
    o.ident = originId
    o.contactGivenName = givenName
    o.contactFamilyName = familyName
@@ -140,10 +151,10 @@ verifyRegistration originId String token String > String String
    o.isVerified = true
 
    => "REDIRECT"
-      "registrationConfirmed"
+      cat "/registrationConfirmed?originId=" originId
 
 
-registrationConfirmed originId String > String String
+registrationConfirmed originId String > String Any
 """
  Confirms that registration has been verified via response to confirmation email.
  Allows continuing on to generate private and public keys for the origin.
@@ -153,7 +164,7 @@ registrationConfirmed originId String > String String
       {"originId"=>originId}String > String 
 
 
-generateKeysAction originId String password String > String String
+generateKeysAction originId String password String > String Any
 """
  Generates a private-key public-key pair for an origin.
  If a key pair has already been generated, asks for confirmation before re-keying the origin.
@@ -173,7 +184,7 @@ generateKeysAction originId String password String > String String
          {"originId"=>originId}String > String 
 
    privateKeyPem publicKeyPem err = 
-      generateCertifiedKeyPair RSA_KEY_LEN_BITS 
+      generateCertifiedKeyPair crypto.DEFAULT_RSA_KEY_LEN_BITS 
                                ""  // "origin"
                                ""  // "shared.relish.pl2012"
                                ""  // sharedRelishPlPrivateKeyPem
@@ -188,13 +199,13 @@ generateKeysAction originId String password String > String String
   
    => "keys.html"
       {
-	     "privateKey" => privateKeyPem
-	     "publicKey"  => publicKeyPem	
-	     "originId"   => originId
-	  }String > String
+         "privateKey" => privateKeyPem
+         "publicKey"  => publicKeyPem
+         "originId"   => originId
+      }String > String
    
 
-confirmReKeyAction originId String password String > String String
+confirmReKeyAction originId String password String > String Any
 """
  Generates a private-key public-key pair for an origin.
 """
@@ -209,7 +220,7 @@ confirmReKeyAction originId String password String > String String
       => errf cat originId " has not been confirmed by click on email message link."      
 
    privateKeyPem publicKeyPem err = 
-      generateCertifiedKeyPair RSA_KEY_LEN_BITS 
+      generateCertifiedKeyPair crypto.DEFAULT_RSA_KEY_LEN_BITS 
                                ""  // "origin"
                                ""  // "shared.relish.pl2012"
                                ""  // sharedRelishPlPrivateKeyPem
@@ -224,10 +235,10 @@ confirmReKeyAction originId String password String > String String
 
    => "keys.html"
       {
-	     "privateKey" => privateKeyPem
-	     "publicKey"  => publicKeyPem	
-	     "originId"   => originId	
-	  }String > String
+         "privateKey" => privateKeyPem
+         "publicKey"  => publicKeyPem
+         "originId"   => originId
+      }String > String
 
 
 loginAction > String String

@@ -9,13 +9,17 @@ package  model
 """
 
 
+import
+   strings
+
+
 Origin
 """
  A relish code origin that has registered at shared.relish.pl.
 """
    ident String
    contactGivenName String
-   contactLastName String
+   contactFamilyName String
    organization String
    department String
    email String
@@ -32,13 +36,13 @@ originIdError originId String > String
  Checks that the origin id has valid syntax and is not a duplicate of an already registered origin.
  Returns "" if origin is ok, else an error message.
 """
-   if not origin
+   if not originId
       => "Please enter an origin id. e.g. foo.org2013"
-   if neq origin (lower origin)
+   if neq originId (lower originId)
       => "The origin id must be lowercase."
-   if lt 1 (index origin ".")
+   if lt (index originId ".") 1
       => "The origin id must include an internet domain name. Example: foo.org2013"
    // TODO: Need regexp matching library in relish
-   if exists origin
-      => cat "The origin '" origin "' is already registered. Please choose another origin id."
+   if exists originId
+      => cat "The origin '" originId "' is already registered. Please choose another origin id."
    => ""

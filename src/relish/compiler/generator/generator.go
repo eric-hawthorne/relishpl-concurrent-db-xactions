@@ -103,7 +103,12 @@ func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 			dependencyPackageName := importedPackageSpec.OriginAndArtifactName + "/pkg/" + importedPackageSpec.PackageName
 			dependencyPackage, dependencyAlreadyProcessed := g.pkg.Dependencies[dependencyPackageName]
 	        if ! dependencyAlreadyProcessed {
-			   dependencyPackage = data.RT.Packages[dependencyPackageName]
+	           var dependencyPackageExists bool	
+			   dependencyPackage, dependencyPackageExists = data.RT.Packages[dependencyPackageName]
+			   if ! dependencyPackageExists {
+	              rterr.Stopf("Package %s imported in file %s is an incorrectly defined native extension package.",dependencyPackageName,g.files[file])
+               }
+
 			   g.pkg.Dependencies[dependencyPackageName] = dependencyPackage
 
 			   g.updatePackageMultiMethodMap(dependencyPackage)
@@ -121,6 +126,7 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
 //   if strings.HasSuffix(g.pkg.Name,"basic_tests") {
 //      defer Un(Trace(ALWAYS_, "updatePackageMultiMethodMap of", g.pkg.Name,"from",dependencyPackage.Name))   
 //   }	
+
    for multiMethodName,multiMethod := range dependencyPackage.MultiMethods {
    // Loop through all of the dependency package's multimethods.
 
