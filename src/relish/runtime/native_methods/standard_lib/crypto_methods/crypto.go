@@ -35,28 +35,40 @@ func InitCryptoMethods() {
 
 
 
-
-
-
-
-GenerateCertifiedKeyPair(keyLenBits int, 
-                              certifyingEntityType string,
-                              certifyingEntityName string, 
-                              certifyingPrivateKeyPEM string,
-                              passwordForCertifyingPrivateKey string,	
-	                          entityType string,
-	                          entityNameAssociatedWithKeyPair string,
-	                          passwordForPrivateKey string) (privateKeyPEM string, publicKeyCertificate string, err error)
-
-
-
-    // generateCerifiedKeyPair keyLenBits Int entityType String entityName String passwordForPrivateKey String > privateKeyPem String publicKeyPem String err String
+    // generateCertifiedKeyPair 
+    //    keyLenBits Int 
+    //    certifyingEntityType String 
+    //    certifyingEntityName String 
+    //    passwordForCertifyingPrivateKey String
+    //    entityType String 
+    //    entityName String 
+    //    passwordForPrivateKey String 
+    // > privateKeyPem String publicKeyPem String err String
     // 
-	generateCertifiedKeyPairMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/crypto",nil,"generateCertifiedKeyPair", []string{"keyLenBits","entityType","entityName","passwordForPrivateKey"}, []string{"Int","String","String","String"}, []string{"String","String","String"}, false, 0, false)
+	generateCertifiedKeyPairMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/crypto",
+	                                                       nil,
+	                                                       "generateCertifiedKeyPair", 
+	                                                       []string{"keyLenBits","certifyingEntityType","certifyingEntityName","passwordForCertifyingPrivateKey","entityType","entityName","passwordForPrivateKey"}, 
+	                                                       []string{"Int","String","String","String","String","String","String"}, 
+	                                                       []string{"String","String","String"}, 
+	                                                       false, 
+	                                                       0, 
+	                                                       false)
 	if err != nil {
 		panic(err)
 	}
 	generateCertifiedKeyPairMethod.PrimitiveCode = generateCertifiedKeyPair
+
+
+    // sign privateKeyPem String privateKeyPassword String content String > signaturePem String err String
+    // 
+	signMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/crypto",nil,"sign", []string{"privateKeyPem","passwordForPrivateKey"}, []string{"String","String"}, []string{"String","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	signMethod.PrimitiveCode = sign
+
+
 
 
 }
@@ -89,23 +101,7 @@ func generateKeyPair (th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{String(privateKeyPEM), String(publicKeyPEM), String(errStr)}    
 }
 
-/*
-sign privateKeyPem String privateKeyPassword String content String > signaturePem String err String
 
-Signs based on SHA256 hash of the content.
-*/
-func Sign (th InterpreterThread, objects []RObject) []RObject {
-    privateKeyPEM := string(objects[0].(String))
-    password := string(objects[1].(String))
-    content := string(objects[2].(String))
-    signaturePEM, err := crypto_util.Sign(privateKeyPEM, password, content) 
-	
-    var errStr string
-    if err != nil {
-       errStr = err.Error()
-    }
-	return []RObject{String(signaturePEM), String(errStr)}    
-}
 
 
 /*
@@ -118,25 +114,14 @@ func Verify(publicKeyPEM string, signaturePEM string, content string) bool {
 }
 */
 
-setSharedRelishPlPrivateKeyPassword pw String
-"""
- Sets in the relish runtime the private key password for shared.relish.pl's code-signing private key.
- Of course this can only be called by a relish distribution that has the shared.relish.pl2012_private_key.pem
- file. Also, this is only permitted to be called once in the relish runtime. 
-"""
-
-getSharedRelishPlPrivateKeyPassword > String
-"""
- Gets from the relish runtime the private key password for shared.relish.pl's code-signing private key.
- Only works if the corresponding set function has been called.
-"""
+/*
 
 getPrivateKey entityType entityName > privateKeyPem
 """
  Get from file.
 """
 
-getPublicKey entityType entityName > publicKeyPem
+getPublicKeyCert entityType entityName > publicKeyPem
 """
  Get from file.
 """
@@ -149,6 +134,7 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	                   entityName string) (publicKeyPEM string)
 
 
+*/
 
 
 
@@ -160,13 +146,6 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 
 
 
-
-
-
-
-
-How do we prevent someone pretending to be shared.relish.pl?
-Can't but
 
 // generateCerifiedKeyPair 
 //    keyLenBits Int 
@@ -178,7 +157,7 @@ Can't but
 //    entityName String 
 //    passwordForPrivateKey String 
 // > 
-//    privateKeyPem String publicKeyPem String err String
+//    privateKeyPem String publicKeyCertPem String err String
 // """
 //  Generates an RSA private key and public key as ascii-armoured (base-64) PEM strings.
 //  Minimum keyLenBits recommended is 2048, 3072 is better.
@@ -189,32 +168,39 @@ Can't but
 //
 func generateCertifiedKeyPair (th InterpreterThread, objects []RObject) []RObject {
 	keyLenBits := int(int64(objects[0].(Int)))
-	// TODO
-    entityType := string(objects[1].(String))
-    entityName := string(objects[2].(String))	
-    password := string(objects[3].(String))
-    privateKeyPEM, publicKeyPEM, err := crypto_util.GenerateCertifiedKeyPair(keyLenBits, entityType, entityName, password) 	
+    certifyingEntityType := string(objects[1].(String))	
+    certifyingEntityName := string(objects[2].(String))	
+    certifyingPrivateKeyPEM := string(objects[3].(String))
+    certifyingPrivateKeyPassword := string(objects[4].(String))
+    entityType := string(objects[5].(String))
+    entityName := string(objects[6].(String))	
+    password := string(objects[7].(String))
+    privateKeyPEM, publicKeyCertPEM, err := crypto_util.GenerateCertifiedKeyPair(keyLenBits, certifyingEntityType, certifyingEntityName, certifyingPrivateKeyPEM, certifyingPrivateKeyPassword, entityType, entityName, password) 	
     var errStr string
     if err != nil {
        errStr = err.Error()
     }
-	return []RObject{String(privateKeyPEM), String(publicKeyPEM), String(errStr)}    
+	return []RObject{String(privateKeyPEM), String(publicKeyCertPEM), String(errStr)}    
 }
 
-// generateRelishCerifiedKeyPair 
-//    keyLenBits Int 
-//    entityType String 
-//    entityName String 
-//    passwordForPrivateKey String 
-// > 
-//    privateKeyPem String publicKeyPem String err String
-// """
-//  Generates an RSA private key and public key as ascii-armoured (base-64) PEM strings.
-//  Minimum keyLenBits recommended is 2048, 3072 is better.
-//  If passwordForPrivateKey is not "", then the private key returned is encrypted and, before its use, 
-//  it must be decrypted using the password.
-// """
-//
+
+/*
+sign privateKeyPem String privateKeyPassword String content String > signaturePem String err String
+
+Signs based on SHA256 hash of the content.
+*/
+func sign (th InterpreterThread, objects []RObject) []RObject {
+    privateKeyPEM := string(objects[0].(String))
+    password := string(objects[1].(String))
+    content := string(objects[2].(String))
+    signaturePEM, err := crypto_util.Sign(privateKeyPEM, password, content) 
+	
+    var errStr string
+    if err != nil {
+       errStr = err.Error()
+    }
+	return []RObject{String(signaturePEM), String(errStr)}    
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Type init functions
