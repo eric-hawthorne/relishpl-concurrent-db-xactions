@@ -86,7 +86,7 @@ errf err String > String String
 <html>
 <center>
 <p style="max-width: 800px; padding: 30px">
-%s: %s
+%s
 </p>
 </center>
 </html>
