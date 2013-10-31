@@ -269,7 +269,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	   certifyingPrivateKeyPEM = privateKeyPEM
 	}
 
-    assertion := fmt.Sprintf("%s %s certifies with this signature\nthat the public key for %s %s is\n%s\n",
+    assertion := fmt.Sprintf("%s %s certifies with the signature above\nthat the public key for %s %s is\n%s",
     	                     certifyingEntityType,
                              certifyingEntityName,
                              entityType,
@@ -282,8 +282,8 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	}	
 
 	publicKeyCertificate = fmt.Sprintf("%s%s\n",
+	                         signaturePEM,
     	                     assertion,
-                             signaturePEM,
     	                    )
 	return
 }
@@ -354,12 +354,13 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	                   publicKeyCertificate string, 
 	                   entityType string, 
 	                   entityName string) (publicKeyPEM string) {
-   signaturePos := strings.Index(publicKeyCertificate, "-----BEGIN SIGNATURE-----")
-   if signaturePos == -1 {
+   signatureEndPos := strings.Index(publicKeyCertificate, "-----END SIGNATURE-----\n")
+   if signatureEndPos == -1 {
 	  return
    }
-   assertion := publicKeyCertificate[:signaturePos]
-   signaturePEM := publicKeyCertificate[signaturePos:]
+   assertionStartPos := signatureEndPos + 24
+   assertion := publicKeyCertificate[assertionStartPos:]
+   signaturePEM := publicKeyCertificate[:assertionStartPos]
 
    if ! Verify(certifierPublicKeyPEM, signaturePEM, assertion) {
    	   return
@@ -373,7 +374,7 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 
    pubKeyPos := ownerStatementPos + len(ownerStatement) - 30
 
-   publicKeyPEM = assertion[pubKeyPos:len(assertion)-1]
+   publicKeyPEM = assertion[pubKeyPos:]
 
    return 
 }
