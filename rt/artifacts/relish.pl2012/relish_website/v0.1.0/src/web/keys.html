@@ -58,18 +58,22 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<p>
 		<em>IMPORTANT: It is essential that you keep this private key secret. Anyone who obtains it can publish relish code and claim that it comes from the origin {{.originId}}.</em>
 	</p>
+<div class="separatorBlock"></div>	
 <pre>
 {{.privateKey}}	
 </pre>	
+<div class="separatorBlock"> &nbsp; &nbsp;</div>
 	<h3>Public Key Certificate</h3>
 	<p>
 		Copy the following key text block and paste it into a text file 
 		you create.
 		The file should be called RELISH_RUNTIME_DIR/keys/public/origin_{{.originId}}_public_key.pem
 	</p>
+<div class="separatorBlock"></div>	
 <pre>
 {{.publicKey}}	
 </pre>	
+<div class="separatorBlock"></div>
 	<h3>XYZ</h3>
 	<p>
 Lorum ipsum.	

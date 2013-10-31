@@ -202,7 +202,11 @@ h1 a
 }
 
 
-
+div.separatorBlock 
+{
+	background-color: #666666;
+	height: 3em;
+}
 
 
 #content_manual
