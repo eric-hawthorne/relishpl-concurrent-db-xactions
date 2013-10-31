@@ -276,7 +276,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
                              entityNameAssociatedWithKeyPair,
                              publicKeyPEM,
     	                    )
-	signaturePEM, err := Sign(certifyingPrivateKeyPEM, passwordForCertifyingPrivateKey, assertion)
+	signaturePEM, err := Sign(certifyingPrivateKeyPEM, passwordForCertifyingPrivateKey, strings.TrimSpace(assertion))
 	if err != nil {
 		return
 	}	
@@ -349,6 +349,7 @@ func Verify(publicKeyPEM string, signaturePEM string, content string) bool {
 If the public key certificate was signed by the certifier private key corresponding to certifierPublicKeyPEM, and
 indeed certifies that entityType entityName has the public key in the certificate, then returns the
 public key PEM for for the entity. Otherwise returns an empty string.
+If the certifierPublicKeyPEM is "", it means verify a self-signed public key certificate.
 */
 func VerifiedPublicKey(certifierPublicKeyPEM string, 
 	                   publicKeyCertificate string, 
@@ -359,13 +360,9 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	  return
    }
    assertionStartPos := signatureEndPos + 24
-   assertion := publicKeyCertificate[assertionStartPos:]
+   assertion := strings.TrimSpace(publicKeyCertificate[assertionStartPos:])
    signaturePEM := publicKeyCertificate[:assertionStartPos]
 
-   if ! Verify(certifierPublicKeyPEM, signaturePEM, assertion) {
-   	   return
-   }
-   
    ownerStatement := "\nthat the public key for " + entityType + " " + entityName + " is\n-----BEGIN RSA PUBLIC KEY-----"
    ownerStatementPos := strings.Index(assertion, ownerStatement)
    if ownerStatementPos == -1 {
@@ -376,8 +373,16 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 
    publicKeyPEM = assertion[pubKeyPos:]
 
+   if certifierPublicKeyPEM == "" {
+   	  certifierPublicKeyPEM = publicKeyPEM
+   }
+   if ! Verify(certifierPublicKeyPEM, signaturePEM, assertion) {
+   	   publicKeyPEM = ""
+   }
+
    return 
 }
+
 
 
 var sharedRelishPlPrivateKeyPassword string = "squeamish_surgeon_10"

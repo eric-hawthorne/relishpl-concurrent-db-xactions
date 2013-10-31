@@ -26,7 +26,9 @@ import (
 //    . "relish/dbg"
 
     "crypto/sha256"
-    "encoding/base64"    
+    "encoding/base64"  
+    "util/crypto_util"  
+    "errors"
 )
 
 /*
@@ -84,6 +86,60 @@ possible redownloading of re-signed code artifacts is necessary.
 
 */
 func PublishSourceCode(relishRoot string, originAndArtifact string, version string) (err error) {
+
+   slashPos := strings.Index(originAndArtifact,"/")
+   originId := originAndArtifact[:slashPos]
+
+   // Obtain the private key for the origin that is publishing.
+
+   originPrivateKey, err := crypto_util.GetPrivateKey("origin", originId) 
+   if err != nil {
+      return
+   }
+
+   // Obtain the public key certificate for the origin that is publishing.
+
+   originPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", originId)  
+   if err != nil {
+      return
+   }
+
+   // Obtain the public key certificate of shared.relish.pl2012
+
+   sharedRelishPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")  
+   if err != nil {
+      return
+   }
+
+   // Validate that it is signed properly, obtaining the shared.relish.pl2012 publicKeyPEM.
+
+   sharedRelishPublicKey := crypto_util.VerifiedPublicKey("", sharedRelishPublicKeyCertificate, "origin", "shared.relish.pl2012") 
+
+    if sharedRelishPublicKey == "" {
+        err = errors.New("Invalid shared.relish.pl2012 public key certificate.")
+        return
+    }
+
+   // Do a quick validation of publishing origin's public key cert
+@@@@@@@@@@@@@@@@@@@
+   // prompt for the publishing origin's private key password.
+
+
+
+    originPrivateKey := "some dark secret kept private to the origin development server"
+    originPublicKeyCertificate 
+
+
+
+
+
+
+
+
+
+
+
+
    localArtifactPath := relishRoot + "/artifacts/" + originAndArtifact + "/"
    sharedArtifactPath := relishRoot + "/shared/relish/artifacts/" + originAndArtifact + "/"
 
