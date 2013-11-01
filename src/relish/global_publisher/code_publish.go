@@ -10,6 +10,7 @@ import (
     "fmt"
 //    "net/http"
 	"io/ioutil"
+  "bufio"
 //    "regexp"
     "io"
 	"bytes"
@@ -203,6 +204,8 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
     localSrcDirPath := localArtifactPath + versionPath + "/src"  
     srcDirPath := sharedArtifactVersionPath + "/src"
+    localDocDirPath := localArtifactPath + versionPath + "/doc"     
+    docDirPath := sharedArtifactVersionPath + "/doc"    
 
     // mkdir the version of the shared directory
 
@@ -220,15 +223,21 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
         fmt.Printf("Error copying local src dir to create %s: %s\n", srcDirPath,err)
         return 
     }   
+
+    err = copyDocDirTree(localDocDirPath, docDirPath)
+    if err != nil {
+        fmt.Printf("Error copying local doc dir to create %s: %s\n", docDirPath,err)
+        return 
+    }      
     // TBD
 
-    // Zip the source !
+    // Zip the source and docs!
 
 
-    srcZipFilePath := sharedArtifactVersionPath + "/src.zip"
-    err = zipSrcDirTree(srcDirPath,srcZipFilePath)
+    srcZipFilePath := sharedArtifactVersionPath + "/artifactVersionContents.zip"
+    err = zipSrcAndDocDirTrees(srcDirPath,docDirPath,srcZipFilePath)
     if err != nil {
-        fmt.Printf("Error zipping %s: %s\n", srcDirPath,err)
+        fmt.Printf("Error zipping %s and %s: %s\n", srcDirPath,docDirPath,err)
         return 
     }
     
@@ -288,7 +297,43 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
     return
 }
 
+func copyDocDirTree(fromDocDirPath string, toDocDirPath string) (err error) {
+   
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = os.Open(fromDocDirPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
 
+   err = os.Mkdir(toDocDirPath,0777)
+
+   for _, fileInfo := range filesInDir {
+        fromItemPath := fromDocDirPath + "/" + fileInfo.Name()
+        toItemPath := toDocDirPath + "/" + fileInfo.Name()    
+        if fileInfo.IsDir() {
+           err = copyDocDirTree(fromItemPath, toItemPath)
+           if err != nil {
+              return
+           }
+        } else { // plain old file to be copied.
+           if strings.HasSuffix(fileInfo.Name(), ".txt") || strings.HasSuffix(fileInfo.Name(), ".html") || strings.HasSuffix(fileInfo.Name(), ".htm") || strings.HasSuffix(fileInfo.Name(), ".css") {
+              var content []byte
+              content, err = ioutil.ReadFile(fromItemPath)
+              if err != nil {
+                 return
+              }
+              err = ioutil.WriteFile(toItemPath, content, 0666)
+              if err != nil {
+                 return
+              }              
+           }
+        }
+    }
+    return
+}
 
 
 
@@ -333,7 +378,7 @@ func signZippedSrc(srcZipPath string,
         return
     }
 
-    content := wrapperFilename + "_|_" + string(srcZipFileContents)
+    content := wrapperFilename + "_|_" + string(srcZipContents)
     signaturePEM, err := crypto_util.Sign(originPrivateKey, originPrivateKeyPassword, content)
 
     var buf *bytes.Buffer 
@@ -380,10 +425,10 @@ func signZippedSrc1(srcZipPath string, originPublicKeyCertificate string, shared
    
 Are the cert and the signature actually []byte arguments????
 */
-func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate string, signature string) (err error) {
+func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate string, sharedRelishPublicKeyCertificate string, signature string) (err error) {
 
    var zw io.Writer
-   zw, err = w.Create("src.zip")
+   zw, err = w.Create("artifactVersionContents.zip")
    if err != nil {
       return
    }   
@@ -399,7 +444,16 @@ func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate
       return
    }      
 
-   zw, err = w.Create("certifiedOriginPublicKey.txt")
+   zw, err = w.Create("sharedRelishPublicKeyCertificate.pem")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(sharedRelishPublicKeyCertificate))
+   if err != nil {
+      return
+   }
+
+   zw, err = w.Create("originPublicKeyCertificate.pem")
    if err != nil {
       return
    }
@@ -408,7 +462,7 @@ func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate
       return
    }
 
-   zw, err = w.Create("signatureOfSrcZip.txt")
+   zw, err = w.Create("signatureOfArtifactVersionContents.pem")
    if err != nil {
       return
    }
@@ -427,10 +481,10 @@ func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate
 /*
 Zips the specified directory tree of relish source code files into the specified zip file.
 */
-func zipSrcDirTree(directoryPath string, zipFilePath string) (err error) {
+func zipSrcAndDocDirTrees(srcDirectoryPath string, docDirectoryPath string, zipFilePath string) (err error) {
 
     var buf *bytes.Buffer 
-    buf, err = zipSrcDirTree1(directoryPath)
+    buf, err = zipSrcDirTree1(srcDirectoryPath, docDirectoryPath)
 
     var file *os.File
 	file, err = os.Create(zipFilePath)
@@ -455,15 +509,15 @@ func zipSrcDirTree(directoryPath string, zipFilePath string) (err error) {
    Note: this will not work if there are symbolic links in the src directory tree.
    (because Readdir does not follow links.)
 */
-func zipSrcDirTree1(directoryPath string) (buf *bytes.Buffer, err error) {
+func zipSrcDirTree1(srcDirectoryPath string, docDirectoryPath string) (buf *bytes.Buffer, err error) {
 
-   var rootDirFileInfo os.FileInfo
-   rootDirFileInfo, err = os.Stat(directoryPath)
+   var srcRootDirFileInfo os.FileInfo
+   srcRootDirFileInfo, err = os.Stat(srcDirectoryPath)
    if err != nil {
        return
    }
-   if ! rootDirFileInfo.IsDir() {
-      err = fmt.Errorf("%s is not a directory.", directoryPath)
+   if ! srcRootDirFileInfo.IsDir() {
+      err = fmt.Errorf("%s is not a directory.", srcDirectoryPath)
       return
    }
 
@@ -472,10 +526,28 @@ func zipSrcDirTree1(directoryPath string) (buf *bytes.Buffer, err error) {
    // Create a new zip archive.
    w := zip.NewWriter(buf)
 
-   err = zipSrcDirTree2(w, directoryPath, rootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/src"  "src"
+   err = zipSrcDirTree2(w, srcDirectoryPath, srcRootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/src"  "src"
    if err != nil {
       return
    }    
+
+   var docRootDirFileInfo os.FileInfo
+   docRootDirFileInfo, err = os.Stat(docDirectoryPath)
+   if err == nil {
+     if ! docRootDirFileInfo.IsDir() {
+        err = fmt.Errorf("%s is not a directory.", docDirectoryPath)
+        return
+     }
+
+     err = zipSrcDirTree2(w, docDirectoryPath, docRootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/doc"  "doc"
+     if err != nil {
+        return
+     }      
+   } else if os.IsNotExist(err) {  // /doc directory is allowed not to exist.
+     err = nil
+   } else {
+     return  // weird stat error on /doc path
+   }
 
    err = w.Close()
 
@@ -510,7 +582,7 @@ func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string)
               return
            }
         } else { // plain old file to be added.
-           if strings.HasSuffix(fileInfo.Name(), ".rel") {
+           if strings.HasSuffix(fileInfo.Name(), ".rel") || strings.HasSuffix(fileInfo.Name(), ".txt") || strings.HasSuffix(fileInfo.Name(), ".html") || strings.HasSuffix(fileInfo.Name(), ".htm") || strings.HasSuffix(fileInfo.Name(), ".css") {
               subItemPath := directoryPath + "/" + fileInfo.Name()    
               subItemRelativePath := relativeDirName + "/" + fileInfo.Name()   
 

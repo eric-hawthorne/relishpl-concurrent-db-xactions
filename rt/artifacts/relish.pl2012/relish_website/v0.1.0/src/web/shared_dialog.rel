@@ -342,7 +342,7 @@ uploadAction request http_srv.Request > String String
          if err
             => errf err
 
-         srcZipContent err = extract1 content "src.zip" 
+         srcZipContent err = extract1 content "artifactVersionContents.zip" 
          if err
             => errf err
 
@@ -350,7 +350,7 @@ uploadAction request http_srv.Request > String String
 
          err = extract srcZipContent artifactVersionDirPath
          if err
-            => errf "Could not extract src zip file into" artifactVersionDirPath err                                  
+            => errf "Could not extract artifact version contents zip file into" artifactVersionDirPath err                                  
 
       else 
          => errf cat "Error: Uploaded file " fileName " is not a metadata.txt file or an artifact version .zip file."
