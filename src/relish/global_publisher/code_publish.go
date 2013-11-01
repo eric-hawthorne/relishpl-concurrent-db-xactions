@@ -25,8 +25,8 @@ import (
     "archive/zip"	
 //    . "relish/dbg"
 
-    "crypto/sha256"
-    "encoding/base64"  
+//    "crypto/sha256"
+//    "encoding/base64"  
     "util/crypto_util"  
     "errors"
 )
@@ -139,7 +139,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
     if err != nil {
        return
     }
-   originPrivateKeyPassword := input[:len(input)-1]
+    originPrivateKeyPassword := input[:len(input)-1]
 
 
 
@@ -235,7 +235,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
     // Now have to sign it and put into an outer zip file.
 
-    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPrivateKeyPassword, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
+    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPrivateKeyPassword, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
     if err != nil {
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
         return 
@@ -315,7 +315,14 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
 
   NOTE: STEPS 1 and 2. a. b. are TBD !!!! Just re-zips the src.zip file presently.   
 */
-func signZippedSrc(srcZipPath string, originPrivateKey string,originPrivateKeyPassword string, originPublicKeyCertificate string, sharedArtifactPath string, originAndArtifact string, version string) (err error) {
+func signZippedSrc(srcZipPath string, 
+                   originPrivateKey string,
+                   originPrivateKeyPassword string, 
+                   originPublicKeyCertificate string, 
+                   sharedRelishPublicKeyCertificate string,
+                   sharedArtifactPath string, 
+                   originAndArtifact string, 
+                   version string) (err error) {
    originAndArtifactFilenamePart := strings.Replace(originAndArtifact, "/","--",-1)
    wrapperFilename := originAndArtifactFilenamePart + "---" + version + ".zip"
    wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
@@ -326,18 +333,11 @@ func signZippedSrc(srcZipPath string, originPrivateKey string,originPrivateKeyPa
         return
     }
 
-@@@@@@@@@@@@ Use crypto_util method here. Also, prepend the outer zip file name before signing!!!!!
-    hasher := sha256.New()
-    hasher.Write(srcZipContents)
-    sha := hasher.Sum(nil)
-    b64 := base64.URLEncoding.EncodeToString(sha) 
-
-    signature := b64 // Temporary - not actually creating a signature here yet
-    // signature = sign(sha, originPrivateKey, originPrivateKeyPassword)
-
+    content := wrapperFilename + "_|_" + string(srcZipFileContents)
+    signaturePEM, err := crypto_util.Sign(originPrivateKey, originPrivateKeyPassword, content)
 
     var buf *bytes.Buffer 
-    buf, err = signZippedSrc1(srcZipPath, originPublicKeyCertificate, signature)
+    buf, err = signZippedSrc1(srcZipPath, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, signaturePEM)
 
 
     var file *os.File
@@ -358,14 +358,14 @@ func signZippedSrc(srcZipPath string, originPrivateKey string,originPrivateKeyPa
 /*
    Helper. 
 */
-func signZippedSrc1(srcZipPath string, originPublicKeyCertificate string, signature string) (buf *bytes.Buffer, err error) {
+func signZippedSrc1(srcZipPath string, originPublicKeyCertificate string, sharedRelishPublicKeyCertificate string, signature string) (buf *bytes.Buffer, err error) {
 
    buf = new(bytes.Buffer)
 
    // Create a new zip archive.
    w := zip.NewWriter(buf)
 
-   err = signZippedSrc2(w, srcZipPath, originPublicKeyCertificate, signature)
+   err = signZippedSrc2(w, srcZipPath, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, signature)
    if err != nil {
       return
    }    
