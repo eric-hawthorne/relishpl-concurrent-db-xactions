@@ -430,10 +430,10 @@ func GetPrivateKey(entityType string, entityName string) (privateKeyPEM string, 
 
 
 /*
-Get a public key in PEM format from the standard directory in the relish installation, 
+Get a public key certificate in PEM format from the standard directory in the relish installation, 
 using standard file naming convention. 
 */
-func GetPublicKeyCert(entityType string, entityName string) (publicKeyPEM string, err error) {
+func GetPublicKeyCert(entityType string, entityName string) (publicKeyCertPEM string, err error) {
 	fileName := entityType + "__" + entityName + "_public_key.pem"
 	path := relishRuntimeLocation + "/keys/public/" + fileName
 	
@@ -441,7 +441,7 @@ func GetPublicKeyCert(entityType string, entityName string) (publicKeyPEM string
 	if err != nil {
 		return
 	}
-	publicKeyPEM = string(bts)
+	publicKeyCertPEM = string(bts)
 	return
 }
 

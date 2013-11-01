@@ -25,7 +25,9 @@ import (
     "relish/runtime/native_methods"
 	"relish"	
     "util/zip_util"
+    "util/crypto_util"    
     . "relish/dbg"
+    "errors"
 )
 
 
@@ -621,6 +623,94 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	   if err != nil {
 	      return
 	   }
+
+       /////////////////////////////////////////////////////////////////////////////////////
+       // Verify the signed contents using digital signature verification.
+
+       var sharedRelishPublicKeyCertificateBytes []byte
+       var sharedRelishPublicKeyCertificate string
+       var installationSharedRelishPublicKeyCert string       
+       var originPublicKeyCertificateBytes []byte
+       var originPublicKeyCertificate string
+       var signatureBytes []byte
+       var signature string
+
+       sharedRelishPublicKeyCertificateBytes, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "sharedRelishPublicKeyCertificate.pem") 
+       if err != nil {
+          return
+       }
+
+       sharedRelishPublicKeyCertificate = strings.TrimSpace(string(sharedRelishPublicKeyCertificateBytes))
+
+       originPublicKeyCertificateBytes, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "originPublicKeyCertificate.pem") 
+       if err != nil {
+          return
+       }
+
+       originPublicKeyCertificate = strings.TrimSpace(string(originPublicKeyCertificateBytes))
+
+       signatureBytes, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "signatureOfArtifactVersionContents.pem") 
+       if err != nil {
+          return
+       }
+
+       signature = strings.TrimSpace(string(signatureBytes))
+
+       installationSharedRelishPublicKeyCert, err = crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")
+       installationSharedRelishPublicKeyCert = strings.TrimSpace(installationSharedRelishPublicKeyCert)
+       if err != nil {
+          return
+       }
+
+       //   Is the shared relish public key cert in the artifact zip file identical to the cert that came with my
+       //   relish distribution? If not, panic.
+
+       if sharedRelishPublicKeyCertificate != installationSharedRelishPublicKeyCert {
+          err = fmt.Errorf("Did not install downloaded artifact because shared.relish.pl2012 public key certificate\n" + 
+                           "in artifact %s (v%s) downloaded from %s\n" + 
+                           "is different than shared.relish.pl2012 public key certificate in this relish installation.\n", 
+                           originAndArtifactPath, version, hostURL)    
+          return      
+       }
+
+       // Validate that shared.relish.pl2012 public key is signed properly, obtaining the shared.relish.pl2012 publicKeyPEM.
+
+       sharedRelishPublicKey := crypto_util.VerifiedPublicKey("", sharedRelishPublicKeyCertificate, "origin", "shared.relish.pl2012") 
+
+       if sharedRelishPublicKey == "" {
+          err = errors.New("Invalid shared.relish.pl2012 public key certificate.")
+          return
+        }
+
+        // Validate the artifact-publishing origin's public key cert
+
+        slashPos := strings.Index(originAndArtifactPath,"/")
+        originId := originAndArtifactPath[:slashPos]
+        
+        originPublicKey := crypto_util.VerifiedPublicKey(sharedRelishPublicKey, originPublicKeyCertificate, "origin", originId) 
+
+        if originPublicKey == "" {
+             err = fmt.Errorf("Did not install downloaded artifact because %s public key certificate\n" + 
+                              "in artifact %s (v%s) downloaded from %s\n" + 
+                              "is invalid.\n", 
+                              originId, originAndArtifactPath, version, hostURL)             
+            return
+        }
+
+        signedContent := zipFileName + "_|_" + string(srcZipFileContents)
+        if ! crypto_util.Verify(originPublicKey, signature, signedContent) {
+             err = fmt.Errorf("Did not install downloaded artifact because artifact version content\n" + 
+                              "in artifact %s (v%s) downloaded from %s\n" + 
+                              "does not match (was not verified by) its digital signature.\n", 
+                              originAndArtifactPath, version, hostURL)             
+            return
+        }
+
+       // Woohoo! Contents are verified. 
+       //
+       /////////////////////////////////////////////////////////////////////////////////////
+       //
+       // Write them to relish installation shared code directory tree.
 
        // Note: Assuming the artifactVersionContents.zip file starts with src/ pkg/ doc/ etc not with v0002/       
 
