@@ -617,12 +617,12 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	   // Open an artifact version zip archive for reading.
 	
        var srcZipFileContents []byte
-       srcZipFileContents, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "src.zip") 
+       srcZipFileContents, err = zip_util.ExtractFileFromZipFileContents(zipFileContents, "artifactVersionContents.zip") 
 	   if err != nil {
 	      return
 	   }
 
-       // Note: Assuming the src.zip file starts with src/ pkg/ doc/ etc not with v0002/       
+       // Note: Assuming the artifactVersionContents.zip file starts with src/ pkg/ doc/ etc not with v0002/       
 
        err = zip_util.ExtractZipFileContents(srcZipFileContents, artifactVersionDir) 
 	   if err != nil {
