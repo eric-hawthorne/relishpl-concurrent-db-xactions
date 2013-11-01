@@ -121,20 +121,25 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
     }
 
    // Do a quick validation of publishing origin's public key cert
-@@@@@@@@@@@@@@@@@@@
-   // prompt for the publishing origin's private key password.
+
+   originPublicKey := crypto_util.VerifiedPublicKey(sharedRelishPublicKey, originPublicKeyCertificate, "origin", originId) 
+
+    if originPublicKey == "" {
+        err = errors.New("Invalid " + originId + " public key certificate.")
+        return
+    }
 
 
 
-    originPrivateKey := "some dark secret kept private to the origin development server"
-    originPublicKeyCertificate 
+    // prompt for the publishing origin's private key password.
 
-
-
-
-
-
-
+    var buf *bufio.Reader = bufio.NewReader(os.Stdin)
+    fmt.Print("Enter code-origin administration password:")
+    input,err := buf.ReadString('\n')
+    if err != nil {
+       return
+    }
+   originPrivateKeyPassword := input[:len(input)-1]
 
 
 
@@ -230,11 +235,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
     // Now have to sign it and put into an outer zip file.
 
-    // Real ones TBD - must read from some standard directory in the distribution
-    originPrivateKey := "some dark secret kept private to the origin development server"
-    originPublicKeyCertificate := "This signature and shared.relish.pl public key certifies that xxxxxx is the signed-code-verifying public key for relish code origin x.com2013."
-
-    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
+    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPrivateKeyPassword, originPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
     if err != nil {
         fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
         return 
@@ -314,7 +315,7 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
 
   NOTE: STEPS 1 and 2. a. b. are TBD !!!! Just re-zips the src.zip file presently.   
 */
-func signZippedSrc(srcZipPath string, originPrivateKey string, originPublicKeyCertificate string, sharedArtifactPath string, originAndArtifact string, version string) (err error) {
+func signZippedSrc(srcZipPath string, originPrivateKey string,originPrivateKeyPassword string, originPublicKeyCertificate string, sharedArtifactPath string, originAndArtifact string, version string) (err error) {
    originAndArtifactFilenamePart := strings.Replace(originAndArtifact, "/","--",-1)
    wrapperFilename := originAndArtifactFilenamePart + "---" + version + ".zip"
    wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
@@ -325,13 +326,14 @@ func signZippedSrc(srcZipPath string, originPrivateKey string, originPublicKeyCe
         return
     }
 
+@@@@@@@@@@@@ Use crypto_util method here. Also, prepend the outer zip file name before signing!!!!!
     hasher := sha256.New()
     hasher.Write(srcZipContents)
     sha := hasher.Sum(nil)
     b64 := base64.URLEncoding.EncodeToString(sha) 
 
     signature := b64 // Temporary - not actually creating a signature here yet
-    // signature = sign(sha, originPrivateKey)
+    // signature = sign(sha, originPrivateKey, originPrivateKeyPassword)
 
 
     var buf *bytes.Buffer 
