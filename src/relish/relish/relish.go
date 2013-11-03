@@ -265,6 +265,7 @@ func main() {
 		return		
 	}
 	
+    crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.
 
     if publish {
        if len(pathParts) < 2 {
@@ -301,15 +302,6 @@ func main() {
 
        web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
 	}
-
-
-
-
-
-
-
-    crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.
-
 
 
 	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db")

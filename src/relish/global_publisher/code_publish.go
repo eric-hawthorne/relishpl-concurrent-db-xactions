@@ -224,11 +224,14 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
         return 
     }   
 
-    err = copyDocDirTree(localDocDirPath, docDirPath)
-    if err != nil {
-        fmt.Printf("Error copying local doc dir to create %s: %s\n", docDirPath,err)
-        return 
-    }      
+    _,statErr := os.Stat(localDocDirPath)
+    if statErr == nil {
+	    err = copyDocDirTree(localDocDirPath, docDirPath)
+	    if err != nil {
+	        fmt.Printf("Error copying local doc dir to create %s: %s\n", docDirPath,err)
+	        return 
+	    }    
+    }  
     // TBD
 
     // Zip the source and docs!
