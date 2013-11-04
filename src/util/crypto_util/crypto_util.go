@@ -234,7 +234,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	                          passwordForPrivateKey string) (privateKeyPEM string, publicKeyCertificate string, err error) {
 
 
-    if strings.ToLower(certifyingEntityName) == "shared.relish.pl2012" {
+    if strings.ToLower(certifyingEntityName) == "shared.relish.pl2012" {	
        err = errors.New("No.")
        return
     }
@@ -249,16 +249,23 @@ func GenerateCertifiedKeyPair(keyLenBits int,
     	certifyingPrivateKeyPEM, err = GetPrivateKey(certifyingEntityType, certifyingEntityName) 
  	    if err != nil {
 	       if entityNameAssociatedWithKeyPair == "shared.relish.pl2012" {
-		      passwordForCertifyingPrivateKey = passwordForPrivateKey
 		      selfSigned = true
 		   } else {
+		   	  // Only allowed to not have a pre-existing shaerd relish private key here 
+		   	  // if creating shared relish key pair for first time.
               err = errors.New("No. No. " + err.Error()) 	
-         	
 		      return
 	       }
+	    } else if entityType == "origin" && entityNameAssociatedWithKeyPair == "shared.relish.pl2012" {
+	    	  // Trying to re-create shared relish origin key pair certified by another private key or 
+	    	  // by an old shared relish private key.
+              err = errors.New("No. No. No. ") 	
+              return
 	    } else {
 	       passwordForCertifyingPrivateKey = GetSharedRelishPlPrivateKeyPassword() 
         }
+    } else if certifyingEntityName == entityNameAssociatedWithKeyPair && certifyingEntityType == entityType && certifyingPrivateKeyPEM == "" {
+    	selfSigned = true
     }
 
     privateKeyPEM, publicKeyPEM, err := GenerateKeyPair(keyLenBits, passwordForPrivateKey) 
@@ -268,6 +275,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	
 	if selfSigned {
 	   certifyingPrivateKeyPEM = privateKeyPEM
+	   passwordForCertifyingPrivateKey = passwordForPrivateKey    		   
 	}
 
     assertion := fmt.Sprintf("%s %s certifies with the signature above\nthat the public key for %s %s is\n%s",
@@ -286,6 +294,20 @@ func GenerateCertifiedKeyPair(keyLenBits int,
 	                         signaturePEM,
     	                     assertion,
     	                    )
+
+/* Debugging creation of self-signed certs
+    if selfSigned {  // A little extra check here.
+    	vpk := VerifiedPublicKey(publicKeyPEM, 
+	                   publicKeyCertificate, 
+	                   entityType, 
+	                   entityNameAssociatedWithKeyPair) 
+    	if vpk == "" {
+              err = errors.New("Self-signed cert did not verify.")  
+              return   		
+    	} 
+    }
+*/
+
 	return
 }
 
@@ -392,6 +414,11 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 	   fmt.Println("++++++++++++++++")		
 	   fmt.Println(assertion)		
 	   fmt.Println("++++++++++++++++")		
+
+
+    		fmt.Println("len(Certificate)=", len(publicKeyCertificate))
+    		fmt.Println("len(trimmed assertion)=", len(assertion))
+
    	   publicKeyPEM = ""
    }
 
