@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish simple program trial environment</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+
+<form action="playAction" method="POST"> 
+<input type="text" size="30" name="artfctName" />	
+		
+<table>	
+	<tr>
+		<td class="contentside">
+<div>
+	
+	
+	
+	<h3>Imports</h3>
+		<textarea class="code" id="imports" name="imports">
+{{.importsFileContent}}			
+</textarea>
+	<h3>Constants</h3>
+    <textarea class="code" id="constants" name="constants">
+{{.constantsFileContent}}	
+</textarea>
+	<h3>Data Types and Relations</h3>
+	<textarea class="code" id="types" name="types">
+{{.typesFileContent}}	
+</textarea>	
+    <h3>Methods</h3>
+	<textarea class="code" id="methods" name="methods">
+{{.methodsFileContent}}		
+</textarea>
+</div>
+</td>
+<td class="contentside">
+<div>
+	<h3>Statements of Main Method</h3>
+	<textarea class="code" id="main" name="main">
+{{.mainFileContent}}		
+</textarea>	
+	<h3>Output Console</h3>
+    <textarea class="code" id="console" name="console">
+{{.consoleOutput}}	
+</textarea>		
+<input type="submit" name="action" value="Run">
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+<input type="submit" name="action" value="Clear DB">	
+</div>
+</td>
+</tr>
+</table>
+</form>	
+</div>
+</body>
+</html>

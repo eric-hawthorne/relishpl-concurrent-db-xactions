@@ -1,0 +1,141 @@
+origin   relish.pl2012
+artifact playground
+package  web 
+
+""" 
+ dialog.rel
+
+ Web dialog handling methods.
+"""
+
+import
+   strings
+   files
+
+
+
+index 
+   ...kw {} String > String
+> 
+   String 
+   Artifact
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+
+ Note: Should use artifact instead of package? and standard "test_program" package.
+"""
+   
+   artifactName artifactNameFound = kw["artfct"]
+   if artifactNameFound 
+      if not exists artifactName
+         => "HTML"
+            "<html>An artifact of that name does not exist.</html>"
+
+      artfct = summon artifactName
+
+   else
+      artfct = Artifact
+      artfct.name = ""
+      artfct.importsFileContent = ""
+      artfct.constantsFileContent = ""
+      artfct.typesFileContent = ""
+      artfct.methodsFileContent = ""
+      artfct.mainFileContent = ""
+      artfct.consoleOutput = ""
+
+   => "index.html"
+      artfct
+
+
+playAction 
+   artfctName String
+   imports String
+   constants String
+   types String 
+   methods String
+   main String
+   console String
+   action String 
+> 
+   String 
+   String
+"""
+ Process a Run button press or a Clear DB button press.
+"""
+   if not artfctName
+      => errf "Must specify name of your program."
+   if exists artfctName
+      artfct = summon artfctName
+   else
+      artfct = Artifact
+      dub artfct artfctName
+
+   artfct.name = artfctName
+   artfct.importsFileContent = imports
+   artfct.constantsFileContent = constants
+   artfct.typesFileContent = types
+   artfct.methodsFileContent = methods
+   artfct.mainFileContent = main
+   artfct.consoleOutput = console
+
+   // Write fixed up content to relish source code files.
+
+   root = playgroundSrcPath artfctName
+
+   path = cat root "/imports.rel"  
+   file = open path1 "w"
+   write file fixImports imports
+   close path
+
+   path = cat root "/constants.rel"  
+   file = open path1 "w"
+   write file fixConstants constants
+   close path
+
+   path = cat root "/types.rel"  
+   file = open path1 "w"
+   write file fixTypes types
+   close path
+
+   path = cat root "/methods.rel"  
+   file = open path1 "w"
+   write file fixMethods methods
+   close path
+
+   path = cat root "/main.rel"  
+   file = open path1 "w"
+   write file fixMain main
+   close path
+
+   // Now perform the action. Either clear the db or run the program code.
+
+   if eq action "Clear DB" 
+      dbPath = cat (playgroundDataPath artfctName) "/db1.db"  
+      remove dbPath
+      print "Removed database" dbPath        
+   else  // "Run"
+      originAndArtifact = cat "local.relish.pl2012/" artfctName
+      outputBytes err = exec "relish" originAndArtifact "playground"
+      if err
+         artfct.consoleOutput = err
+      else
+         artfct.consoleOutput = String outputBytes
+
+   => "REDIRECT"
+      cat "/?artfct=" artfctName    
+
+
+icon > String String
+"""
+ Serves the favicon.ico request.
+"""
+   => "IMAGE FILE"
+      "relish_logo4_icon.png"
+
+
+default > String String
+"""
+ Handles all url paths on this server and port which are not otherwise handled.
+"""
+   => "HTML"
+      "<html><body><center><br/><br/><h3>Oops. Nothing here.</h3></center></body></html>"     

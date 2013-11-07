@@ -1,0 +1,63 @@
+origin   relish.pl2012
+artifact playground
+package  web 
+
+""" 
+ util.rel
+
+ Miscellaneous methods in the trial program running environment.
+"""
+
+
+import
+   strings
+
+
+IMPORTS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+\"\"\" 
+ imports.rel
+
+ List of imported packages.
+\"\"\"
+
+
+import
+"""
+
+
+fixImports raw String artfct String > String
+"""
+ Indents each line of the content, and prepends the file header info and a line with "import"
+"""
+   => cat fill IMPORTS_FILE_HEADER artfct
+          indentWithSpaces 3 raw
+
+
+indentWithSpaces numSpaces Int raw String > indented String
+"""
+ Return the result of prepending the specified number of spaces to each line of the raw string.
+"""
+   lines = split raw "\n"
+   for line in lines
+      for i = 0   lt i numSpaces   i = plus i 1 
+         indented = cat indented " "
+      
+      indented = cat indented line
+
+
+playgroundSrcPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat "/home/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct "/v1.0.0/src/playground"
+
+
+playgroundDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat "/home/eric/devel/relish/rt/data/local.relish.pl2012/" artfct

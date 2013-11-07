@@ -30,6 +30,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"sort"
+	"os/exec"
 )
 
 // Reader for reading from standard input
@@ -99,6 +100,58 @@ func InitBuiltinFunctions() {
 		panic(err)
 	}
 	inputMethod.PrimitiveCode = builtinInput
+	
+	
+	
+	
+	
+	execMethod, err := RT.CreateMethod("",nil,"exec", []string{"p"}, []string{"String"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execMethod.PrimitiveCode = builtinExec
+
+	exec2Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2"}, []string{"String", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec2Method.PrimitiveCode = builtinExec
+
+	exec3Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3"}, []string{"String", "Any", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec3Method.PrimitiveCode = builtinExec
+
+	exec4Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4"}, []string{"String", "Any", "Any", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec4Method.PrimitiveCode = builtinExec
+
+	exec5Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"String", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec5Method.PrimitiveCode = builtinExec
+
+	exec6Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec6Method.PrimitiveCode = builtinExec
+
+	exec7Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exec7Method.PrimitiveCode = builtinExec
+	
+	
+		
+	
+	
+	
 
 
 
@@ -4739,6 +4792,32 @@ func treeFromGoToRelish(v interface{}) RObject {
     }
     return nil
 }
+
+
+
+
+/*
+
+outputBytes err = exec "commmand" "arg1" "arg2"  
+
+*/
+func builtinExec(th InterpreterThread, objects []RObject) []RObject {
+   command := string(objects[1].(String))	
+   var args []string
+   for _,obj := range objects[1:] {
+	  args = append(args, string(obj.String()))
+   }
+   cmd := exec.Command(command, args...)
+   output, err := cmd.CombinedOutput()
+
+   var errStr string
+   if err != nil {
+      errStr = err.Error()
+   }
+
+   return []RObject{Bytes(output), String(errStr)}
+}
+
 
 
 
