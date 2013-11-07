@@ -1,0 +1,8 @@
+relish artifact metadata: 2013/11/02
+origin: relish.pl2012
+artifact: playground
+current version: 0.7.0
+release date: 2013/11/02
+tags: web application,relish
+
+Interactive environment for running relish programs.
