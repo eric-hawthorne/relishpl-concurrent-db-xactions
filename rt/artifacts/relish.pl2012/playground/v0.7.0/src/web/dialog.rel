@@ -70,6 +70,9 @@ playAction
       artfct = Artifact
       dub artfct artfctName
 
+   imports = trimSpace imports
+   main = trimSpace main
+
    artfct.name = artfctName
    artfct.importsFileContent = imports
    artfct.constantsFileContent = constants
@@ -82,30 +85,59 @@ playAction
 
    root = playgroundSrcPath artfctName
 
+   err = mkdirAll root
+   if err
+      => errf err
+
    path = cat root "/imports.rel"  
-   file = open path1 "w"
-   write file fixImports imports
-   close path
+   if imports
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixImports imports artfctName)
+      close file
+   else
+      remove path
 
    path = cat root "/constants.rel"  
-   file = open path1 "w"
-   write file fixConstants constants
-   close path
+   if constants
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixConstants constants artfctName)
+      close file
+   else
+      remove path
 
    path = cat root "/types.rel"  
-   file = open path1 "w"
-   write file fixTypes types
-   close path
+   if types
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixTypes types artfctName)
+      close file
+   else
+      remove path
 
    path = cat root "/methods.rel"  
-   file = open path1 "w"
-   write file fixMethods methods
-   close path
+   if methods
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixMethods methods artfctName)
+      close file
+   else
+      remove path
 
    path = cat root "/main.rel"  
-   file = open path1 "w"
-   write file fixMain main
-   close path
+   if main
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixMain main artfctName)
+      close file
+   else
+      remove path
 
    // Now perform the action. Either clear the db or run the program code.
 
@@ -113,13 +145,16 @@ playAction
       dbPath = cat (playgroundDataPath artfctName) "/db1.db"  
       remove dbPath
       print "Removed database" dbPath        
-   else  // "Run"
-      originAndArtifact = cat "local.relish.pl2012/" artfctName
-      outputBytes err = exec "relish" originAndArtifact "playground"
-      if err
-         artfct.consoleOutput = err
+   else  // " Run "
+      if main
+         originAndArtifact = cat "local.relish.pl2012/" artfctName
+         outputBytes err = exec "relish" originAndArtifact "playground"
+         if err
+            artfct.consoleOutput = err
+         else
+            artfct.consoleOutput = String outputBytes
       else
-         artfct.consoleOutput = String outputBytes
+         artfct.consoleOutput = "No main program statements to run."
 
    => "REDIRECT"
       cat "/?artfct=" artfctName    
