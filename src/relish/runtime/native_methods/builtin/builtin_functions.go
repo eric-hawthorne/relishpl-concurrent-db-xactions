@@ -105,43 +105,43 @@ func InitBuiltinFunctions() {
 	
 	
 	
-	execMethod, err := RT.CreateMethod("",nil,"exec", []string{"p"}, []string{"String"}, nil, false, 0, false)
+	execMethod, err := RT.CreateMethod("",nil,"exec", []string{"p"}, []string{"String"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	execMethod.PrimitiveCode = builtinExec
 
-	exec2Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2"}, []string{"String", "Any"}, nil, false, 0, false)
+	exec2Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2"}, []string{"String", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	exec2Method.PrimitiveCode = builtinExec
 
-	exec3Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3"}, []string{"String", "Any", "Any"}, nil, false, 0, false)
+	exec3Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3"}, []string{"String", "Any", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	exec3Method.PrimitiveCode = builtinExec
 
-	exec4Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4"}, []string{"String", "Any", "Any", "Any"}, nil, false, 0, false)
+	exec4Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4"}, []string{"String", "Any", "Any", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	exec4Method.PrimitiveCode = builtinExec
 
-	exec5Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"String", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	exec5Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"String", "Any", "Any", "Any", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	exec5Method.PrimitiveCode = builtinExec
 
-	exec6Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	exec6Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	exec6Method.PrimitiveCode = builtinExec
 
-	exec7Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, nil, false, 0, false)
+	exec7Method, err := RT.CreateMethod("",nil,"exec", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"Bytes","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -1377,6 +1377,11 @@ urlPathPartDecode s > String
 	stringJoin2AnyMethod.PrimitiveCode = builtinStringJoin
 
 
+    stringSplitMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"split", []string{"a","sep"}, []string{"String","String"}, []string{"List_of_String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringSplitMethod.PrimitiveCode = builtinStringSplit
 
 
 	
@@ -3942,8 +3947,26 @@ func builtinStringJoin(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{String(s2)}
 }
 
+/*
+split a String sep String > [] String
+*/
+func builtinStringSplit(th InterpreterThread, objects []RObject) []RObject {
+    s := string(objects[0].(String))
+    sep := string(objects[1].(String))
 
+    stringSlice := strings.Split(s,sep)
 
+    elementList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+    for _,element := range stringSlice {
+	   elementList.AddSimple(String(element))
+	} 
+
+	return []RObject{elementList}
+}
 
 
 
@@ -4802,7 +4825,7 @@ outputBytes err = exec "commmand" "arg1" "arg2"
 
 */
 func builtinExec(th InterpreterThread, objects []RObject) []RObject {
-   command := string(objects[1].(String))	
+   command := string(objects[0].(String))	
    var args []string
    for _,obj := range objects[1:] {
 	  args = append(args, string(obj.String()))

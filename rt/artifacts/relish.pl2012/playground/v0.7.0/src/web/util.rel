@@ -13,6 +13,9 @@ import
    strings
 
 
+
+
+
 IMPORTS_FILE_HEADER = """
 origin   local.relish.pl2012
 artifact %s
@@ -29,12 +32,101 @@ import
 """
 
 
+CONSTANTS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+\"\"\" 
+ constants.rel
+
+ Constant declarations.
+\"\"\"
+
+
+"""
+
+
+TYPES_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+\"\"\" 
+ types_and_relations.rel
+
+ Data Type and relation declarations.
+\"\"\"
+
+
+"""
+
+
+METHODS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+\"\"\" 
+ methods.rel
+
+ Method declarations.
+\"\"\"
+
+
+"""
+
+
+MAIN_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+\"\"\" 
+ main.rel
+
+ Main program.
+\"\"\"
+
+
+main
+"""
+
+
 fixImports raw String artfct String > String
 """
  Indents each line of the content, and prepends the file header info and a line with "import"
 """
-   => cat fill IMPORTS_FILE_HEADER artfct
-          indentWithSpaces 3 raw
+   => cat (fill IMPORTS_FILE_HEADER artfct) (indentWithSpaces 3 raw)
+
+
+fixConstants raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat (fill CONSTANTS_FILE_HEADER artfct) raw
+
+
+fixTypes raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat (fill TYPES_FILE_HEADER artfct) raw
+
+
+
+fixMethods raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat (fill METHODS_FILE_HEADER artfct) raw
+
+
+fixMain raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat (fill MAIN_FILE_HEADER artfct) (indentWithSpaces 3 raw)
 
 
 indentWithSpaces numSpaces Int raw String > indented String
@@ -42,22 +134,45 @@ indentWithSpaces numSpaces Int raw String > indented String
  Return the result of prepending the specified number of spaces to each line of the raw string.
 """
    lines = split raw "\n"
+   lineSep = ""
    for line in lines
       for i = 0   lt i numSpaces   i = plus i 1 
-         indented = cat indented " "
+         line = cat " " line
       
-      indented = cat indented line
+      indented = cat indented lineSep line
+      lineSep = "\n"
 
 
 playgroundSrcPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat "/home/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct "/v1.0.0/src/playground"
+   => cat "/Users/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct "/v1.0.0/src/playground"
 
 
 playgroundDataPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat "/home/eric/devel/relish/rt/data/local.relish.pl2012/" artfct
+   => cat "/Users/eric/devel/relish/rt/data/local.relish.pl2012/" artfct
+
+
+errf err String > String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s
+</p>
+</center>
+</html>
+"""
+           err
