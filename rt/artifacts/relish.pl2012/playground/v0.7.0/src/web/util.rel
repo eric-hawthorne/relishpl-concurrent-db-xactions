@@ -22,11 +22,11 @@ origin   local.relish.pl2012
 artifact %s
 package  playground
 
-\"\"\" 
+%s 
  imports.rel
 
  List of imported packages.
-\"\"\"
+%s
 
 
 import
@@ -38,11 +38,11 @@ origin   local.relish.pl2012
 artifact %s
 package  playground
 
-\"\"\" 
+%s
  constants.rel
 
  Constant declarations.
-\"\"\"
+%s
 
 
 """
@@ -53,11 +53,11 @@ origin   local.relish.pl2012
 artifact %s
 package  playground
 
-\"\"\" 
+%s
  types_and_relations.rel
 
  Data Type and relation declarations.
-\"\"\"
+%s
 
 
 """
@@ -68,11 +68,11 @@ origin   local.relish.pl2012
 artifact %s
 package  playground
 
-\"\"\" 
+%s 
  methods.rel
 
  Method declarations.
-\"\"\"
+%s
 
 
 """
@@ -83,14 +83,17 @@ origin   local.relish.pl2012
 artifact %s
 package  playground
 
-\"\"\" 
+%s
  main.rel
 
  Main program.
-\"\"\"
+%s
 
 
 main
+%s
+ The main program.
+%s
 """
 
 
@@ -98,7 +101,7 @@ METADATA_FILE = """
 relish artifact metadata: %s
 origin: local.relish.pl2012
 artifact: %s
-current version: 0.9.0
+current version: 0.7.0
 release date: %s
 tags: application,trial program
 
@@ -106,7 +109,7 @@ tags: application,trial program
 """
 
 
-metadataFile arfct String description String > String
+metadataFile artfct String description String > String
 """
  Generates the content of the trial program metadata file.
 """
@@ -126,21 +129,21 @@ fixImports raw String artfct String > String
 """
  Indents each line of the content, and prepends the file header info and a line with "import"
 """
-   => cat (fill IMPORTS_FILE_HEADER artfct) (indentWithSpaces 3 raw)
+   => cat (fill IMPORTS_FILE_HEADER artfct "\"\"\"" "\"\"\"") (indentWithSpaces 3 raw)
 
 
 fixConstants raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill CONSTANTS_FILE_HEADER artfct) raw
+   => cat (fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
 
 
 fixTypes raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill TYPES_FILE_HEADER artfct) raw
+   => cat (fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
 
 
 
@@ -148,14 +151,24 @@ fixMethods raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill METHODS_FILE_HEADER artfct) raw
+   => cat (fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
 
 
 fixMain raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill MAIN_FILE_HEADER artfct) (indentWithSpaces 3 raw)
+   => cat (fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" "\"\"\"" "\"\"\"") (indentWithSpaces 3 raw)
+
+
+
+fixUpErrorMessage output String > String
+"""
+ Given relish program execution output, determines if there is an error message in it.
+ If so, repairs the line number reference to account for the hidden file headers.
+"""
+   => output
+
 
 
 indentWithSpaces numSpaces Int raw String > indented String
@@ -172,25 +185,41 @@ indentWithSpaces numSpaces Int raw String > indented String
       lineSep = "\n"
 
 
+
+
+
+
+
+
+
+
+
+
+RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+
+
+// RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
+
+
 playgroundSrcPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat "/Users/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct "/v1.0.0/src/playground"
+   => cat RELISH_RUNTIME_DIR "/artifacts/local.relish.pl2012/" artfct "/v0.7.0/src/playground"
 
 
 playgroundArtifactPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat "/Users/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct 
+   => cat RELISH_RUNTIME_DIR "/artifacts/local.relish.pl2012/" artfct 
 
 
 playgroundDataPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat "/Users/eric/devel/relish/rt/data/local.relish.pl2012/" artfct
+   => cat RELISH_RUNTIME_DIR "/data/local.relish.pl2012/" artfct
 
 
 errf err String > String String

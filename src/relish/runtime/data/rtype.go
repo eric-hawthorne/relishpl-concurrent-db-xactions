@@ -291,6 +291,38 @@ func (t *RType) HasSubtypes() bool {
 	return len(t.Children) > 0
 }
 
+/*
+Computes and returns the closure of the type's direct and indirect subtypes, in breadth first, left-to-right order.
+*/
+func (t *RType) SubtypeClosure() (subtypes []*RType) {
+    subtypes = make([]*RType,len(t.Children))
+    copy(subtypes,t.Children)
+
+	for _,st := range t.Children {
+		st.subtypeClosure1(&subtypes)
+	}
+	return
+}
+
+func (t *RType) subtypeClosure1(subtypes *[]*RType) {
+	var uniqueChildren [] *RType
+	Outerloop: 
+	   for _,st := range t.Children {
+		  // Is st already listed in the closure? 
+		   for _,st1 := range *subtypes {
+			   if st1 == st {
+			   	   continue Outerloop
+			   }
+		    }
+		    uniqueChildren = append(uniqueChildren, st)
+		}
+    *subtypes = append(*subtypes,uniqueChildren...)
+    for _,c := range uniqueChildren {
+    	c.subtypeClosure1(subtypes)
+    }
+}
+
+
 func (t RType) String() string {
 	return t.Name
 }
