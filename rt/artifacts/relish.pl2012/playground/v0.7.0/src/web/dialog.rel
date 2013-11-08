@@ -36,6 +36,7 @@ index
    else
       artfct = Artifact
       artfct.name = ""
+      artfct.description = ""
       artfct.importsFileContent = ""
       artfct.constantsFileContent = ""
       artfct.typesFileContent = ""
@@ -49,6 +50,7 @@ index
 
 playAction 
    artfctName String
+   description String
    imports String
    constants String
    types String 
@@ -70,13 +72,21 @@ playAction
       artfct = Artifact
       dub artfct artfctName
 
-   description = "A trial program."
-   metaContent = metadataFile arfct description
-
+   artfctName = trimSpace artfctName
+   description = trimSpace description
    imports = trimSpace imports
+   constants = trimSpace constants
+   types = trimSpace types
+   methods = trimSpace methods
    main = trimSpace main
 
+   if not description 
+      description = "A trial program - replace this text with your description of program."
+
+   metaContent = metadataFile artfctName description
+
    artfct.name = artfctName
+   artfct.description = description
    artfct.importsFileContent = imports
    artfct.constantsFileContent = constants
    artfct.typesFileContent = types
@@ -93,7 +103,7 @@ playAction
       => errf err
 
 
-   path = cat (playgroundArtifactPath artfct) "/metadata.txt"  
+   path = cat (playgroundArtifactPath artfctName) "/metadata.txt"  
    file err = files.File path "w"
    if err
       => errf err
@@ -160,10 +170,11 @@ playAction
       if main
          originAndArtifact = cat "local.relish.pl2012/" artfctName
          outputBytes err = exec "relish" originAndArtifact "playground"
-         if err
-            artfct.consoleOutput = err
-         else
-            artfct.consoleOutput = String outputBytes
+
+         artfct.consoleOutput = String outputBytes
+
+         if and err (neq err "exit status 1")
+            artfct.consoleOutput = cat artfct.consoleOutput "\n" err
       else
          artfct.consoleOutput = "No main program statements to run."
 

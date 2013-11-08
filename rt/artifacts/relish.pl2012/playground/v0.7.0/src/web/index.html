@@ -46,8 +46,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <div id="content">
 
 <form action="playAction" method="POST"> 
-<input type="text" size="30" name="artfctName" />	
-		
+<input type="text" size="30" name="artfctName" value="{{.name}}" />	
+<input type="text" size="80" name="description" value="{{.description}}" />			
 <table>	
 	<tr>
 		<td class="contentside">
@@ -56,33 +56,21 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	
 	
 	<h3>Imports</h3>
-		<textarea class="code" id="imports" name="imports">
-{{.importsFileContent}}			
-</textarea>
+		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
 	<h3>Constants</h3>
-    <textarea class="code" id="constants" name="constants">
-{{.constantsFileContent}}	
-</textarea>
+    <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
 	<h3>Data Types and Relations</h3>
-	<textarea class="code" id="types" name="types">
-{{.typesFileContent}}	
-</textarea>	
+	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>	
     <h3>Methods</h3>
-	<textarea class="code" id="methods" name="methods">
-{{.methodsFileContent}}		
-</textarea>
+	<textarea class="code" id="methods" name="methods">{{.methodsFileContent}}</textarea>
 </div>
 </td>
 <td class="contentside">
 <div>
 	<h3>Statements of Main Method</h3>
-	<textarea class="code" id="main" name="main">
-{{.mainFileContent}}		
-</textarea>	
+	<textarea class="code" id="main" name="main">{{.mainFileContent}}</textarea>	
 	<h3>Output Console</h3>
-    <textarea class="code" id="console" name="console">
-{{.consoleOutput}}	
-</textarea>		<br/>
+    <textarea class="code" id="console" name="console">{{.consoleOutput}}</textarea><br/>
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value=" Run ">
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
 <input type="submit" name="action" value="Clear DB">	

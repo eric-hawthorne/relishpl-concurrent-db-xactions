@@ -25,7 +25,8 @@ var NativeType = map [string] bool {
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile" : true,	
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie" : true,	
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/Request" : true,
-	
+	"shared.relish.pl2012/relish_lib/pkg/reflect/DataType" : true,	
+	"shared.relish.pl2012/relish_lib/pkg/reflect/Attribute" : true,		
 				
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!
 	// Add extensions types which need a GoWrapper as the instance here. 

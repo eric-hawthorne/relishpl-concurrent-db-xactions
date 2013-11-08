@@ -23,6 +23,7 @@ var StandardLibPackageArtifact map[string]string = map[string]string {
 	"files" : "shared.relish.pl2012/relish_lib",	
 	"http_srv" : "shared.relish.pl2012/relish_lib",		
 	"crypto" : "shared.relish.pl2012/relish_lib",			
+	"reflect" : "shared.relish.pl2012/relish_lib",		
 }
 
 

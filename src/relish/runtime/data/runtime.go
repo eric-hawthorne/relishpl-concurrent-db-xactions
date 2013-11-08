@@ -86,7 +86,11 @@ type RuntimeEnv struct {
     // The value is the number of times the object is currently in a channel.
     inTransit map[RObject]uint32
 
+	// from fully qualified type name to reflect.DataType, a *GoWrapper RObject.
+	ReflectedDataTypes map[string]RObject
 
+	// from fully qualified attribute name to reflect.Attribute, a *GoWrapper RObject.
+	ReflectedAttributes map[string]RObject
 
 	// a map of contexts for the evaluation of methods.
 
@@ -201,6 +205,8 @@ func NewRuntimeEnv() *RuntimeEnv {
 		attributes:    make(map[*AttributeSpec]map[RObject]RObject),
 		constants:     make(map[string]RObject),
 		inTransit:     make(map[RObject]uint32),
+	    ReflectedDataTypes: make(map[string]RObject),
+	    ReflectedAttributes: make(map[string]RObject),
 		evalContexts:  make(map[RObject]MethodEvaluationContext),
 	}
 	rt.PkgNameToShortName["relish.pl2012/core/inbuilt"] = "inbuilt"

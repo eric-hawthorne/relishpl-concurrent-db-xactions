@@ -57,6 +57,29 @@ func (rt *RuntimeEnv) MarkConstants() {
 }
 
 
+/*
+Mark the reflected DataTypes as reachable.
+*/
+func (rt *RuntimeEnv) MarkDataTypes() {
+    defer Un(Trace(GC2_,"MarkDataTypes"))
+	for _,obj := range rt.ReflectedDataTypes {
+		obj.Mark()
+	}
+    Logln(GC2_,"Marked",len(rt.ReflectedDataTypes),"reflected DataTypes.")		
+}
+
+/*
+Mark the reflected Attributes as reachable.
+*/
+func (rt *RuntimeEnv) MarkAttributes() {
+    defer Un(Trace(GC2_,"MarkAttributes"))
+	for _,obj := range rt.ReflectedAttributes {
+		obj.Mark()
+	}
+    Logln(GC2_,"Marked",len(rt.ReflectedAttributes),"reflected Attributes.")		
+}
+
+
 var inTransitMutex sync.Mutex
 
 func (rt *RuntimeEnv) IncrementInTransitCount(obj RObject) {

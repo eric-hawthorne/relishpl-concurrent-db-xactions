@@ -19,6 +19,7 @@ Artifact
  of the artifact.
 """
    name String
+   description String
    importsFileContent String
    constantsFileContent String
    typesFileContent String
