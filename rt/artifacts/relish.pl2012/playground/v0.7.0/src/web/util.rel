@@ -11,6 +11,7 @@ package  web
 
 import
    strings
+   datetime
 
 
 
@@ -93,6 +94,34 @@ main
 """
 
 
+METADATA_FILE = """
+relish artifact metadata: %s
+origin: local.relish.pl2012
+artifact: %s
+current version: 0.9.0
+release date: %s
+tags: application,trial program
+
+%s
+"""
+
+
+metadataFile arfct String description String > String
+"""
+ Generates the content of the trial program metadata file.
+"""
+   if neq (last description 1) "."
+      description = cat description "."
+
+   t = now "Local"
+   date = format t "2006/01/02"
+   => fill METADATA_FILE
+           date
+           artfct
+           date
+           description
+
+
 fixImports raw String artfct String > String
 """
  Indents each line of the content, and prepends the file header info and a line with "import"
@@ -148,6 +177,13 @@ playgroundSrcPath artfct String > String
  Temporary. This should be a builtin function.
 """
    => cat "/Users/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct "/v1.0.0/src/playground"
+
+
+playgroundArtifactPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat "/Users/eric/devel/relish/rt/artifacts/local.relish.pl2012/" artfct 
 
 
 playgroundDataPath artfct String > String

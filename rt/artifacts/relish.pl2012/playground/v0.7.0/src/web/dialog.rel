@@ -70,6 +70,9 @@ playAction
       artfct = Artifact
       dub artfct artfctName
 
+   description = "A trial program."
+   metaContent = metadataFile arfct description
+
    imports = trimSpace imports
    main = trimSpace main
 
@@ -88,6 +91,14 @@ playAction
    err = mkdirAll root
    if err
       => errf err
+
+
+   path = cat (playgroundArtifactPath artfct) "/metadata.txt"  
+   file err = files.File path "w"
+   if err
+      => errf err
+   write file metaContent
+   close file
 
    path = cat root "/imports.rel"  
    if imports
