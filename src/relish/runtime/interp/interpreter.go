@@ -53,11 +53,13 @@ func (i *Interpreter) SetRunningArtifact(originAndArtifact string) {
 Runs the main method found in the specified package. 
 Currently, when multimethods/methods are generated, "main" ones are prefixed by full unversioned package name, as should be zero arg methods.
 */
-func (i *Interpreter) RunMain(fullUnversionedPackagePath string) {
-	Logln(ANY_, " ")
-	Logln(ANY_, "==============================")
-	Logln(ANY_, "== RELISH Interpreter 0.0.9 ==")
-	Logln(ANY_, "==============================")
+func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
+	if ! quiet {
+	   Logln(ANY_, " ")
+	   Logln(ANY_, "==============================")
+	   Logln(ANY_, "== RELISH Interpreter 0.0.9 ==")
+	   Logln(ANY_, "==============================")
+    }
 	Logln(GENERATE2_, " ")
 	Logln(GENERATE2_, "----------")
 	Logln(GENERATE2_, "Data Types")

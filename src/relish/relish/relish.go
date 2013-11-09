@@ -101,6 +101,7 @@ func main() {
     var dbName string 
     var cpuprofile string
     var publish bool
+    var quiet bool
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
@@ -114,6 +115,8 @@ func main() {
 	flag.IntVar(&shareListeningPort, "share", 0, "The code sharing http listening port - if not supplied, does not listen for source code sharing http requests")	    
 
     flag.BoolVar(&publish, "publish", false, "artifactpath version - copy specified version of artifact to shared/relish/artifacts")
+
+    flag.BoolVar(&quiet, "quiet", false, "do not show package loading info or interpreter version in program output")
 
     flag.Parse()
 
@@ -304,7 +307,7 @@ func main() {
 	}
 
 
-	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db")
+	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db", quiet)
 	
 	
 	
@@ -390,7 +393,7 @@ func main() {
 			return	
 	   }
 	
-	   go g.Interp.RunMain(fullUnversionedPackagePath)
+	   go g.Interp.RunMain(fullUnversionedPackagePath, quiet)
 	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
 	  
 	   if shareListeningPort == webListeningPort {
@@ -402,6 +405,6 @@ func main() {
 	      web.ListenAndServe(webListeningPort, "")	
 	   }	
 	} else {
-	   g.Interp.RunMain(fullUnversionedPackagePath)
+	   g.Interp.RunMain(fullUnversionedPackagePath,quiet)
 	}
 }

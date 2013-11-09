@@ -169,7 +169,7 @@ playAction
    else  // " Run "
       if main
          originAndArtifact = cat "local.relish.pl2012/" artfctName
-         outputBytes err = exec "relish" originAndArtifact "playground"
+         outputBytes err = exec "relish" "-quiet" originAndArtifact "playground"
 
          artfct.consoleOutput = String outputBytes
 
