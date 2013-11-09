@@ -101,6 +101,11 @@ textarea#console
 }
 
 input.helpbutton 
-{
-   font-size: 60%;
+{ 
+    vertical-align: top;
+    padding-top: 0px;
+    margin-top: 0px;
+    font-size: 60%;
+    padding-bottom: 0px;
+    margin-bottom: 0px;
 }
