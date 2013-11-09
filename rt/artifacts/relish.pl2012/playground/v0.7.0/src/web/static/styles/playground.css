@@ -57,55 +57,113 @@
   margin-bottom: 0px;
 }
 
+@media screen and (max-device-height: 768px) and (orientation: landscape) {
+	textarea.code 
+	{
+		width: 450px;
+		background-color: #FFFF99;
+		font-family: "Monaco", "Lucida Console", monospace;
+	}
 
-textarea.code 
-{
-	width: 450px;
-	background-color: #FFFF99;
+	textarea.codewide 
+	{
+	  width: 910px;
+	  background-color: #FFFF99;
+	}
+
+	textarea#imports 
+	{
+		height: 5em;
+	}
+
+	textarea#constants 
+	{
+		height: 5em;
+	}
+
+	textarea#types 
+	{
+			height: 45em;
+	}
+
+	textarea#methods
+	{
+			height: 45em;
+	}
+
+	textarea#main 
+	{
+			height: 42em;	
+	}
+
+	textarea#console
+	{
+		height: 60em;
+	}
+
+	input.helpbutton 
+	{ 
+	    vertical-align: top;
+	    padding-top: 0px;
+	    margin-top: 0px;
+	    font-size: 60%;
+	    padding-bottom: 0px;
+	    margin-bottom: 0px;
+	}
+
 }
+@media only screen and (min-device-height: 769px) and (orientation: landscape) {
+	textarea.code 
+	{
+		width: 450px;
+		background-color: #FFFF99;
+		font-family: "Monaco", "Lucida Console", monospace;			
+	}
 
-textarea.codewide 
-{
-  width: 910px;
-  background-color: #FFFF99;
-}
+	textarea.codewide 
+	{
+	  width: 910px;
+	  background-color: #FFFF99;
+	}
 
-textarea#imports 
-{
-	height: 5em;
-}
+	textarea#imports 
+	{
+		height: 5em;
+	}
 
-textarea#constants 
-{
-	height: 5em;
-}
+	textarea#constants 
+	{
+		height: 5em;
+	}
 
-textarea#types 
-{
-		height: 50em;
-}
+	textarea#types 
+	{
+			height: 50em;
+	}
 
-textarea#methods
-{
-		height: 50em;
-}
+	textarea#methods
+	{
+			height: 50em;
+	}
 
-textarea#main 
-{
-		height: 47em;	
-}
+	textarea#main 
+	{
+			height: 47em;	
+	}
 
-textarea#console
-{
-	height: 60em;
-}
+	textarea#console
+	{
+		height: 60em;
+	}
 
-input.helpbutton 
-{ 
-    vertical-align: top;
-    padding-top: 0px;
-    margin-top: 0px;
-    font-size: 60%;
-    padding-bottom: 0px;
-    margin-bottom: 0px;
+	input.helpbutton 
+	{ 
+	    vertical-align: top;
+	    padding-top: 0px;
+	    margin-top: 0px;
+	    font-size: 60%;
+	    padding-bottom: 0px;
+	    margin-bottom: 0px;
+	}
+
 }
