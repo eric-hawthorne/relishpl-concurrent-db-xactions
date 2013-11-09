@@ -326,38 +326,3 @@ span.star {
   padding-right: 0.3em;
 }
 
-textarea.code 
-{
-	width: 450px;
-	background-color: #FFFF99;
-}
-
-textarea#imports 
-{
-	height: 5em;
-}
-
-textarea#constants 
-{
-	height: 5em;
-}
-
-textarea#types 
-{
-		height: 50em;
-}
-
-textarea#methods
-{
-		height: 50em;
-}
-
-textarea#main 
-{
-		height: 50em;	
-}
-
-textarea#console
-{
-	height: 60em;
-}
