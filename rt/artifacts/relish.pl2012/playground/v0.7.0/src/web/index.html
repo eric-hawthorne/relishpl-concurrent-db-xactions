@@ -14,10 +14,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/default.css" />
-
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/playground.css" />
 
 </head>
 <body>
+<form action="playAction" method="POST"> 	
   <div id="header">	
   <table>
 	<tr>
@@ -33,52 +35,90 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
       </td>
+
+     
 	  <td>	
-        <h2>relish simple program trial environment</h2>
+        <h2>simple program trial environment</h2>
+        <table>
+        	<tr>
+        		<td>
+                   <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+               </td>
+               <td>
+               	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+               </td>
+               <td>
+               	<h3>Description</h3>
+               </td>
+           </tr>
+           <tr>
+           	<td>
+ <input type="text" size="30" name="artfctName" value="{{.name}}" />	
+           </td>
+           <td>
+	       </td>
+	       <td>
+<input type="text" size="100" name="description" value="{{.description}}" />	
+           </td>
+           </tr>
+        </table>	
       </td>
+
+
     </tr>
   </table>
+	 
   </div>
   <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
 	DOWNLOAD
   </div> -->
 
 <div id="content">
-
-<form action="playAction" method="POST"> 
-<input type="text" size="30" name="artfctName" value="{{.name}}" />	
-<input type="text" size="80" name="description" value="{{.description}}" />			
 <table>	
 	<tr>
 		<td class="contentside">
 <div>
-	
-	
-	
 	<h3>Imports</h3>
 		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
 	<h3>Constants</h3>
     <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
 	<h3>Data Types and Relations</h3>
 	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>	
-    <h3>Methods</h3>
-	<textarea class="code" id="methods" name="methods">{{.methodsFileContent}}</textarea>
 </div>
 </td>
 <td class="contentside">
-<div>
-	<h3>Statements of Main Method</h3>
-	<textarea class="code" id="main" name="main">{{.mainFileContent}}</textarea>	
-	<h3>Output Console</h3>
-    <textarea class="code" id="console" name="console">{{.consoleOutput}}</textarea><br/>
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value=" Run ">
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-<input type="submit" name="action" value="Clear DB">	
-</div>
+	<table>
+		<tr>
+			<td class="contentside">
+                <div>
+                  <h3>Methods</h3>
+	              <textarea class="code" id="methods" name="methods">{{.methodsFileContent}}</textarea>
+                </div>
+           </td>
+           <td class="contentside">
+			<div>
+				<h3>Statements of Main Method</h3>
+				<textarea class="code" id="main" name="main">{{.mainFileContent}}</textarea>	
+
+<br/>
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value="Clear DB">	
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value=" Run ">
+
+			</div>
+			</td>
+		</tr>
+        <tr>  
+			<td class="contentside" colspan="2">
+				<h3>Output Console</h3>
+			    <textarea class="codewide" id="console" name="console">{{.consoleOutput}}</textarea>
+			</td>
+		</tr>
+	</table>
 </td>
 </tr>
 </table>
-</form>	
 </div>
+</form>	
 </body>
 </html>
