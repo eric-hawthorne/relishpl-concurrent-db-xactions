@@ -57,6 +57,7 @@ type Loader struct {
     originUrls map[string][]string  
     replicaUrls map[string][]string  
     repositoryUrls []string  
+    quiet bool
 }
 
 //
@@ -71,13 +72,13 @@ Params:
    the root of where relish code artifacts can be expected to reside on the computer. Path must end in relish or in relish/rt
    e.g. /opt/relish or /opt/relish/rt
 */
-func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string) *Loader {
+func NewLoader(relishRuntimeLocation string, sharedCodeOnly bool, databaseName string, quiet bool) *Loader {
 
 	ldr := &Loader{relishRuntimeLocation,make(map[string]string),make(map[string]bool),
                    make(map[string]bool),make(map[string]bool),make(map[string]string),
                    make(map[string]bool),make(map[string]string),make(map[string]string), 
                    sharedCodeOnly, databaseName, make(map[string][]string),
-                   make(map[string][]string),make(map[string][]string),make(map[string][]string),nil}
+                   make(map[string][]string),make(map[string][]string),make(map[string][]string),nil, quiet}
 
     ldr.initCodeLocations()
 	return ldr
@@ -287,8 +288,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
     ldr.PackagesBeingLoaded[packageIdentifier] = true
 
-    Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
-
+    if ! ldr.quiet {
+        Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
+    }
     mustBeFromShared = mustBeFromShared || ldr.SharedCodeOnly  // Set whether will consider local code for this package.
     var mustBeFromLocal bool                 // We may end up constrained to load from local artifact.
 
@@ -932,7 +934,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
 
 	       if parseNeeded {
-		      Log(ALWAYS_,"Compiled %s\n", sourceFilePath)		
+		      if ! ldr.quiet {
+		         Log(ALWAYS_,"Compiled %s\n", sourceFilePath)
+		      }		
 		   } 
 		
 	    } // end of if it is a code file.
@@ -949,7 +953,9 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
     delete(ldr.PackagesBeingLoaded,packageIdentifier)
 
-    Log(ALWAYS_,"Loaded %s\n", packageCompiledPath)	
+    if ! ldr.quiet {
+       Log(ALWAYS_,"Loaded %s\n", packageCompiledPath)	
+    }
     
    return
 }

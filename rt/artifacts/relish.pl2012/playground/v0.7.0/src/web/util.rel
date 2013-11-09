@@ -129,21 +129,30 @@ fixImports raw String artfct String > String
 """
  Indents each line of the content, and prepends the file header info and a line with "import"
 """
-   => cat (fill IMPORTS_FILE_HEADER artfct "\"\"\"" "\"\"\"") (indentWithSpaces 3 raw)
+   => cat fill IMPORTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          indentWithSpaces 3 (replace raw "\r" "")
+          """
+
+
+
+DUMMY = "A dummy constant is here as a kludge until source code files are allowed to only have import."
+"""
 
 
 fixConstants raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
+   => cat fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          replace raw "\r" ""
 
 
 fixTypes raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
+   => cat fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          replace raw "\r" ""
 
 
 
@@ -151,14 +160,16 @@ fixMethods raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"") raw
+   => cat fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          replace raw "\r" ""
 
 
 fixMain raw String artfct String > String
 """
  Prepends the file header info.
 """
-   => cat (fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" "\"\"\"" "\"\"\"") (indentWithSpaces 3 raw)
+   => cat fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" "\"\"\"" "\"\"\""
+          indentWithSpaces 3 (replace raw "\r" "")
 
 
 
@@ -195,10 +206,10 @@ indentWithSpaces numSpaces Int raw String > indented String
 
 
 
-RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+// RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
 
 
-// RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
+RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
 
 
 playgroundSrcPath artfct String > String
