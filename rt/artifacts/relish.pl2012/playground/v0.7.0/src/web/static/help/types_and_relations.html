@@ -1,0 +1,118 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+</head>
+<body>	
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>  
+	  <td>	
+        <h2>Data Types and Relations</h2>	
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+<p>
+You can define your own structured data types, with data type declarations.
+</p>
+<h3>Example</h3>
+<code><pre>
+FurniturePiece 
+"""
+ A piece of furniture. Often found in or near a building.
+"""
+
+	
+Table &lt;: FurniturePiece
+"""
+ A piece of furniture used to support other objects at a comfortable height for people
+ to access them.
+"""
+   width Int
+   height Int
+   surfaceMaterial String
+   leg 3 4 TableLeg
+
+	
+Chair &lt;: FurniturePiece
+"""
+ A piece of furniture used to support people in a sitting position.
+"""	
+
+
+DiningRoomSet 
+"""
+ Furniture used in a dining room, to support people eating a meal.
+"""
+</pre></code>
+<p>
+The relish programming language supports the declaration of bi-directional relations between datatypes. Each relation has a forward direction and an inverse direction. Relation declarations specify the allowed cardinality range of each end of the relation, as in an entity-relationship-diagram (ERD). They also optionally specify the attribute names (relation-end names) by which the object(s) on one end of the relation can be accessed from an object on the other end of the relation.
+</p>
+<h3>Example</h3>
+<code><pre>
+DiningRoomSet 0 1 set -- chairs 2 8 Chair
+
+DiningRoomSet 0 1 set -- table 1 Table
+</pre></code>
+<p>	
+Relations turn into an attribute of each object, which can be accessed by normal attribute access notation: e.g. 
+<code><pre>
+tbl = myDiningRoomSet.table
+for chair in myDiningRoomSet.chairs
+   position chair tbl
+</pre></code>
+<p>
+Attribute names (relation-end names), if not specified, default to the singular or pluralized lowercase-first-letter version of the data-type at the other end of the relation.
+</p>
+<code><pre>
+DiningRoomSet 0 1 -- 1 Table
+
+DiningRoomSet 0 1 -- 2 8 Chair
+</pre></code>
+<p>
+myDiningRoomSet.chairs is an automatically available attribute. So is aChair.diningRoomSet.
+</p>
+<h3>Reference</h3>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#DataTypeDeclarations">Data Type Declarations syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#DataTypes">Data Types syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#Relations">Relation declarations syntax and semantics by example</a>
+</p>
+</div>
+</body>
+</html>
