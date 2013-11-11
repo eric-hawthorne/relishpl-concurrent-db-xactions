@@ -17,6 +17,14 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/playground.css" />
 
+	<script type="text/javascript">
+		
+		function help(topic) {
+			mywindow = window.open ("/help/" + topic + ".html");
+			mywindow.moveTo(150,50);	
+			return false;		
+		}
+	</script>
 </head>
 <body>
 <form action="playAction" method="POST"> 	
@@ -42,7 +50,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
         <table>
         	<tr>
         		<td>
-                   <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+                   <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:help('program_name')"/></h3>
                </td>
                <td>
                	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
@@ -78,11 +86,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<tr>
 		<td class="contentside">
 <div>
-	<h3>Imports &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+	<h3>Imports &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('imports')"/></h3>
 		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
-	<h3>Constants &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+	<h3>Constants &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('constants')"/></h3>
     <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
-	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/></h3>
 	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>	
 </div>
 </td>
@@ -91,13 +99,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 		<tr>
 			<td class="contentside">
                 <div>
-                  <h3>Methods &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+                  <h3>Methods &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('methods')"/></h3>
 	              <textarea class="code" id="methods" name="methods">{{.methodsFileContent}}</textarea>
                 </div>
            </td>
            <td class="contentside">
 			<div>
-				<h3>Statements of Main Method &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:alert('Ok')"/></h3>
+				<h3>Statements of Main Method &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('main_method_statements')"/></h3>
 				<textarea class="code" id="main" name="main">{{.mainFileContent}}</textarea>	
 
 <br/>

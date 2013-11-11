@@ -1,0 +1,94 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+</head>
+<body>	
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>  
+	  <td>	
+        <h2>Imports</h2>	
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+<p>
+Your relish program can import code from elsewhere, in order to use the data types, methods, and constants of the other code.
+</p>
+relish software comes in units called artifacts, subdivided into packages.<br/>
+An artifact can be a software library or framework, or an application.<br/>
+A package is a single module in the artifact. A package is a set of code files in a single directory.
+A package is a namespace for the data types and constants that it defines. If a package's (path)name is game/physics/motion, then constants in the package are used as motion.MAX_SPEED in the importing program, and data types are used as motion.VelocityVector
+</p>
+<p>
+You import one package at a time into your program, with a package import declaration. The import declaration simply specifies the name of the package. There are three cases determining how package names are formatted in the import declaration.
+<ul>
+	<li>If the package is a relish standard-library package, then the import declaration is only the package name (package pathname within the standard-library  artifact).</li>
+	<li>If the package is in the same artifact as your program, then the import declaration is only the package name (package pathname within its artifact).</li>
+	<li>If the package is in a different software artifact, then the import declaration must be the artifact's full name followed by '/pkg/' then the package pathname.</li>		
+</ul>
+</p>
+<h3>Example</h3>
+<code><pre>
+import
+   strings
+   game/physics/motion 
+   game/physics/geometry as geom   
+   generous.opensource.developer.org2011/game_naive_physics/pkg/phys_obj/gravity	
+</pre></code>
+<p>
+	<span style="background-color:yellow"><em>Note: In the simple program trial environment, leave out the 'import' line and don't indent the actual import declarations.</em></span>
+</p>
+<p>
+The first import is of the relish standard-library strings package. This makes String manipulating methods available to the program.
+</p>
+<p>
+The second import line above shows an import of a package from the same software artifact as the current program. <em>Note that imports like this are not possible in the trial program environment, because a trial program is a whole artifact to itself, with no packages other than your trial program in it.</em>
+</p>
+<p>
+The third import line above shows an import of a package from the same software artifact as the current program. This package, whose name inside this source file would normally be geometry, as in geometry.Polygon, is aliased so that it is known in this source file as geom, as in geom.Polygon.
+</p>
+<p>
+The fourth import line above shows an import of a package from a different software artifact. The other software artifact's originating organization is called generous.opensource.developer.org2011 . The relish software artifact they developed is called game_naive_physics, presumably a code library of physics objects and calculation methods. The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to in this source code file. As in gravity.G
+</p>
+<h3>Reference</h3>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#Packages">Packages and imports syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#SoftwareArtifacts">Software artifacts syntax and semantics by example</a>
+</p>
+</div>
+</body>
+</html>
