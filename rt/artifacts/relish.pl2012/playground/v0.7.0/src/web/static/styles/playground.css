@@ -1,7 +1,7 @@
 #header 
 {
   padding-top: 0.1em;
-  padding-bottom: 0.5em;  
+  padding-bottom: 0.1em;  
   padding-left: 1em;
   padding-right: 1em; 
 
@@ -56,6 +56,28 @@
   padding-bottom: 0px;
   margin-bottom: 0px;
 }
+  input.helpbutton 
+  { 
+      vertical-align: top;
+      padding-top: 0px;
+      margin-top: 0px;
+      font-size: 60%;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+  }
+    input.thinbutton 
+  { 
+      vertical-align: middle;
+      padding-top: 0px;
+      margin-top: 0px;
+      font-size: 60%;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+  }
+  p#copydb
+  {
+    font-size: 90%;
+  }
 
 @media screen and (max-device-height: 768px) and (orientation: landscape) {
 	textarea.code 
@@ -100,17 +122,6 @@
 	{
 		height: 60em;
 	}
-
-	input.helpbutton 
-	{ 
-	    vertical-align: top;
-	    padding-top: 0px;
-	    margin-top: 0px;
-	    font-size: 60%;
-	    padding-bottom: 0px;
-	    margin-bottom: 0px;
-	}
-
 }
 @media only screen and (min-device-height: 769px) and (orientation: landscape) {
 	textarea.code 
@@ -155,15 +166,4 @@
 	{
 		height: 60em;
 	}
-
-	input.helpbutton 
-	{ 
-	    vertical-align: top;
-	    padding-top: 0px;
-	    margin-top: 0px;
-	    font-size: 60%;
-	    padding-bottom: 0px;
-	    margin-bottom: 0px;
-	}
-
 }
