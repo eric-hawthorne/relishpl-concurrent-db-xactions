@@ -102,7 +102,35 @@ func InitBuiltinFunctions() {
 	inputMethod.PrimitiveCode = builtinInput
 	
 	
+	dbidMethod, err := RT.CreateMethod("",nil,"dbid", []string{"obj"}, []string{"Any"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	dbidMethod.PrimitiveCode = builtinDBID	
 	
+	uuidMethod, err := RT.CreateMethod("",nil,"uuid", []string{"obj"}, []string{"Any"}, []string{"Bytes"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uuidMethod.PrimitiveCode = builtinUUID
+	
+	uuidStrMethod, err := RT.CreateMethod("",nil,"uuidStr", []string{"obj"}, []string{"Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	uuidStrMethod.PrimitiveCode = builtinUUIDstr
+	
+	isPersistedLocallyMethod, err := RT.CreateMethod("",nil,"isPersistedLocally", []string{"obj"}, []string{"Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	isPersistedLocallyMethod.PrimitiveCode = builtinIsPersistedLocally	
+	
+	hasUuidMethod, err := RT.CreateMethod("",nil,"hasUuid", []string{"obj"}, []string{"Any"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	hasUuidMethod.PrimitiveCode = builtinHasUUID		
 	
 	
 	execMethod, err := RT.CreateMethod("",nil,"exec", []string{"p"}, []string{"String"}, []string{"Bytes","String"}, false, 0, false)
@@ -1082,8 +1110,14 @@ func InitBuiltinFunctions() {
 	if err != nil {
 		panic(err)
 	}
-	summonMethod.PrimitiveCode = builtinSummon
+	summonMethod.PrimitiveCode = builtinSummon	
 
+	summonByIdMethod, err := RT.CreateMethod("",nil,"summon", []string{"dbid"}, []string{"Int"}, []string{"Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	summonByIdMethod.PrimitiveCode = builtinSummonById
+	
 	existsMethod, err := RT.CreateMethod("",nil,"exists", []string{"name"}, []string{"String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -3341,6 +3375,19 @@ func builtinSummon(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{obj}
 }
 
+
+func builtinSummonById(th InterpreterThread, objects []RObject) []RObject {
+	relish.EnsureDatabase()
+	dbid := int64(objects[0].(Int))
+
+	obj, err := th.DB().Fetch(dbid, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	return []RObject{obj}
+}
+
 /*
 exists String > Bool
 
@@ -4816,6 +4863,78 @@ func treeFromGoToRelish(v interface{}) RObject {
     return nil
 }
 
+
+
+/*
+
+dbid obj Any > Int 
+
+*/
+func builtinDBID(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   if ! (obj.HasUUID() && obj.IsStoredLocally()) {
+	   rterr.Stop("Requested DBID of a non-persistent object.")
+   }
+   id := obj.DBID()
+   
+   return []RObject{Int(id)}
+}
+
+
+/*
+
+uuid obj Any > Bytes
+
+*/
+func builtinUUID(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   if ! obj.HasUUID() {
+	   rterr.Stop("Requested UUID of an object that has none.")
+   }
+   uuid := obj.UUID()
+
+   return []RObject{Bytes(uuid)}
+}
+
+
+/*
+
+uuidStr obj Any > String 
+
+*/
+func builtinUUIDstr(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   if ! obj.HasUUID() {
+	   rterr.Stop("Requested UUID of an object that has none.")
+   }
+   uuid := obj.UUIDstr()
+
+   return []RObject{String(uuid)}
+}
+
+
+/*
+
+isPersistedLocally obj Any > Bool
+
+*/
+func builtinIsPersistedLocally(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   persisted :=  (obj.HasUUID() && obj.IsStoredLocally()) 
+   
+   return []RObject{Bool(persisted)}
+}
+
+
+/*
+
+hasUuid obj Any > Bool
+
+*/
+func builtinHasUUID(th InterpreterThread, objects []RObject) []RObject {
+   obj := objects[0]
+   return []RObject{Bool(obj.HasUUID())}
+}
 
 
 
