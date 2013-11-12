@@ -206,10 +206,10 @@ indentWithSpaces numSpaces Int raw String > indented String
 
 
 
-// RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
 
 
-RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
+// RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
 
 
 playgroundSrcPath artfct String > String

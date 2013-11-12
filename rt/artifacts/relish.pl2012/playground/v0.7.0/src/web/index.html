@@ -40,39 +40,56 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	  <td>	
         <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
-	  <td style="width: 4em">	
+	  <td style="width: 2em">	
          &nbsp; &nbsp;
       </td>
 
      
-	  <td>	
-        <h2>simple program trial environment</h2>
-        <table>
-        	<tr>
-        		<td>
-                   <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:help('program_name')"/></h3>
-               </td>
-               <td>
-               	&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
-               </td>
-               <td>
-               	<h3>Description</h3>
-               </td>
-           </tr>
-           <tr>
-           	<td>
- <input type="text" size="30" name="artfctName" value="{{.name}}" />	
-           </td>
-           <td>
-	       </td>
-	       <td>
-<input type="text" size="100" name="description" value="{{.description}}" />	
-           </td>
-           </tr>
-        </table>	
+	  <td>
+	    <table>
+	      <tr>
+	        <td>	
+              <h2>simple program trial environment</h2>
+            </td>
+            <td style="width: 1em">	
+               &nbsp; &nbsp;
+            </td>
+            <td>
+            	<table>
+            		<tr>
+            			<td>
+                           <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:help('program_name')"/> :</h3>            				
+            			</td>
+            			<td>
+                           <input type="text" size="30" name="artfctName" value="{{.name}}" />	            			
+            			</td>    
+            			<td>
+            			</td>              			        			
+            		</tr>
+            		<tr>
+            			<td>
+            			</td>
+            			<td>
+            				<select name="chosenArtfctName">
+            					<option>-- Choose existing trial program --</option>
+            				</select>
+            			</td>  
+            			<td>
+            			</td>              			          			
+            		</tr>
+            		<tr>
+            		    <td style="text-align: right;">
+               	           <h3>Description :</h3>            		    	
+            			</td>  
+            			<td colspan="2">
+            			   <input type="text" size="72" name="description" value="{{.description}}" />	
+            			</td>           			
+            		</tr>            		            		
+            	</table>
+            </td>
+          </tr>
+        </table>
       </td>
-
-
     </tr>
   </table>
 	 
@@ -90,8 +107,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
 	<h3>Constants &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('constants')"/></h3>
     <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
-	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/></h3>
-	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>	
+	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="thinbutton" value=" explore program data " onclick="javascript:help('types_and_relations')"/></h3>
+	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>
+	<p id="copydb">
+	<b>Advanced feature for debugging:</b> Copy existing database<br/>
+	from artifact: <input type="text" name="dbArtifact" size="33" /> <input type="submit" name="action" value="Copy DB"/>
+    </p>
 </div>
 </td>
 <td class="contentside">
