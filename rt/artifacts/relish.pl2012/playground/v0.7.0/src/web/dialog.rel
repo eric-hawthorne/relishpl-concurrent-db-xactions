@@ -18,7 +18,7 @@ index
    ...kw {} String > String
 > 
    String 
-   Artifact
+   Any
 """
  Handles a request for the root (i.e. empty path) url on the server and port.
 
@@ -44,12 +44,31 @@ index
       artfct.mainFileContent = ""
       artfct.consoleOutput = ""
 
+   artifacts = []Artifact fill "name <> '%s' order by name" artifactName
+   programs = [
+                 for a in artifacts
+                    a.name
+              ]String
+
+   args = {
+             "name"                 => artfct.name
+             "description"          => artfct.description
+             "importsFileContent"   => artfct.importsFileContent
+             "constantsFileContent" => artfct.constantsFileContent                          
+             "typesFileContent"     => artfct.typesFileContent
+             "methodsFileContent"   => artfct.methodsFileContent
+             "mainFileContent"      => artfct.mainFileContent
+             "consoleOutput"        => artfct.consoleOutput       
+             "programs"             => programs
+          }String > Any
+
    => "index.html"
-      artfct
+      args
 
 
 playAction 
-   artfctName String
+   artfctName String 
+   dbArtifact String  // Usually empty string, or else other artifact to copy db from.
    description String
    imports String
    constants String
@@ -62,7 +81,7 @@ playAction
    String 
    String
 """
- Process a Run button press or a Clear DB button press.
+ Process a Run button press or a Clear DB button or a Copy DB button press.
 """
    if not artfctName
       => errf "Must specify name of your program."
