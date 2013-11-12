@@ -24,6 +24,15 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 			mywindow.moveTo(150,50);	
 			return false;		
 		}
+
+		function loadProgram() {
+			var sel = document.getElementById("chosenArtfctName");
+			var chosenArtfct = sel.options[sel.selectedIndex].value;
+			if (chosenArtfct != "-- Choose existing trial program --") {
+               location.href = "/?artfct=" + chosenArtfct 
+            }
+		}
+        
 	</script>
 </head>
 <body>
@@ -70,8 +79,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
             			<td>
             			</td>
             			<td>
-            				<select name="chosenArtfctName">
+            				<select id="chosenArtfctName" onchange="loadProgram()">
             					<option>-- Choose existing trial program --</option>
+            					{{range .programs}}
+            					  <option>{{.}}</option>
+            					{{end}}
             				</select>
             			</td>  
             			<td>
