@@ -2348,6 +2348,24 @@ func (f FakeInterpreterThread) Method() *RMethod {
 }
 
 /*
+Returns the package from which the currently executing method was called, 
+or nil if at stack bottom.
+*/
+func (f FakeInterpreterThread) CallingPackage() *RPackage {
+	return nil
+}
+
+/*
+Returns the method that called the currently executing method, 
+or nil if at stack bottom.
+*/
+func (f FakeInterpreterThread) CallingMethod() *RMethod {
+	return nil
+}
+
+
+
+/*
 A db connection thread. Used to serialize access to the database in a multi-threaded environment,
 and to manage database transactions.
 */

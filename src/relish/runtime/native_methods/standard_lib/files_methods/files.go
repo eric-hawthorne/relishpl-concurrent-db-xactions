@@ -202,7 +202,7 @@ func InitFilesMethods() {
 	if err != nil {
 		panic(err)
 	}
-	mkdirMethod.PrimitiveCode = copy		
+	copyMethod.PrimitiveCode = copy		
 
 	copyMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"copy", []string{"filePath1","filePath2","permissions"}, []string{"String","String","String"}, []string{"String"}, false, 0, false)
 	if err != nil {
@@ -404,7 +404,6 @@ func copy(th InterpreterThread, objects []RObject) []RObject {
     }
 
     perm, errStr := getFilePermissions(permStr)
-    var err error
     if errStr == "" {
 	   content, err := ioutil.ReadFile(filePath1)
 	   if err != nil {

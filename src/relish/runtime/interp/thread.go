@@ -216,6 +216,35 @@ func (t *Thread) PopFinalBase(numReturnArgs int) {
 }
 
 
+// Note: These should be supplemented by a full stack backtrace capability.
+
+/*
+Returns the method that called the currently executing method, 
+or nil if at stack bottom.
+*/
+func (t *Thread) CallingMethod() *RMethod {
+	defer UnM(t, TraceM(t, INTERP_TR3, "CallingMethod"))
+	previousBase := int(t.Stack[t.Base].(Int32))
+
+	if previousBase == -2 {
+		return nil
+	} 		
+	return t.Stack[previousBase+1].(*RMethod)
+}
+
+/*
+Returns the package from which the currently executing method was called, 
+or nil if at stack bottom.
+*/
+func (t *Thread) CallingPackage() *RPackage {
+	defer UnM(t, TraceM(t, INTERP_TR3, "CallingPackage"))
+	method := t.CallingMethod()
+    if method == nil {
+    	return nil
+    }
+	return method.Pkg
+}
+
 
 /*
 Return the value of the local variable (or parameter) with the given offset from the current routine's 

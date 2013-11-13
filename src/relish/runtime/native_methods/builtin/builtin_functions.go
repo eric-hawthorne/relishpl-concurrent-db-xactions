@@ -4879,9 +4879,11 @@ rtPath > String
 */
 func builtinRtPath(th InterpreterThread, objects []RObject) []RObject {
    var path string
-   pkg := th.Package().Name
-   if strings.HasPrefix(pkg, "relish.pl2012/playground/pkg/") {  // Change to shared.relish.pl2012 
-      path = relishRuntimeRoot
+   pkg := th.CallingPackage()
+   if pkg != nil {   
+	   if strings.HasPrefix(pkg.Name, "relish.pl2012/playground/pkg/") {  // Change to shared.relish.pl2012 
+	      path = relishRuntimeRoot
+	   }
    }
       
    return []RObject{String(path)}

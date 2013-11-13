@@ -174,10 +174,23 @@ type InterpreterThread interface {
 	*/
 	Method() *RMethod
 
-    /*
+  /*
+  Returns the package from which the currently executing method was called, 
+  or nil if at stack bottom.
+  */
+  CallingPackage() *RPackage 
+
+  /*
+  Returns the method that called the currently executing method, 
+  or nil if at stack bottom.
+  */
+  CallingMethod() *RMethod
+
+
+   /*
     A db connection thread. Used to serialize access to the database in a multi-threaded environment,
     and to manage database transactions.
-    */
+  */
 	DB() DB
 	
 	/*
