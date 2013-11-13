@@ -36,8 +36,11 @@ import (
 // Reader for reading from standard input
 var buf *bufio.Reader = bufio.NewReader(os.Stdin)
 
+var relishRuntimeRoot string
 
-func InitBuiltinFunctions() {
+func InitBuiltinFunctions(relishRoot string) {
+
+    relishRuntimeRoot = relishRoot
 
 	dbgMethod, err := RT.CreateMethod("",nil,"dbg", []string{"p"}, []string{"Any"}, nil, false, 0, false)
 	if err != nil {
@@ -4875,10 +4878,10 @@ rtPath > String
 
 */
 func builtinRtPath(th InterpreterThread, objects []RObject) []RObject {
-   var path String
+   var path string
    pkg := th.Package().Name
    if strings.HasPrefix(pkg, "relish.pl2012/playground/pkg/") {  // Change to shared.relish.pl2012 
-      // path = RT.RootPath
+      path = relishRuntimeRoot
    }
       
    return []RObject{String(path)}

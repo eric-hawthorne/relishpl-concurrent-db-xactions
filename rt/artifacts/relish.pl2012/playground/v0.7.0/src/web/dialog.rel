@@ -186,10 +186,11 @@ playAction
       remove dbPath
       print "Removed database" dbPath     
    elif eq action "Copy DB" 
-      dbPath = cat (playgroundDataPath dbArtifact) "/db1.db"  
-
-      // Cop
-
+      sourceDbPath = cat (localDataPath dbArtifact) "/db1.db"
+      dbPath = cat (playgroundDataPath artfctName) "/db1.db"  
+      err = copy sourceDbPath dbPath
+      if err
+         => errf err
       print "Debugging a copy of database from" dbArtifact 
 
    else  // " Run "

@@ -12,6 +12,7 @@ package  web
 import
    strings
    datetime
+   env
 
 
 
@@ -206,7 +207,7 @@ indentWithSpaces numSpaces Int raw String > indented String
 
 
 
-RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+// RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
 
 
 // RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
@@ -216,22 +217,28 @@ playgroundSrcPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat RELISH_RUNTIME_DIR "/artifacts/local.relish.pl2012/" artfct "/v0.7.0/src/playground"
+   => cat env.rtPath "/artifacts/local.relish.pl2012/" artfct "/v0.7.0/src/playground"
 
 
 playgroundArtifactPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat RELISH_RUNTIME_DIR "/artifacts/local.relish.pl2012/" artfct 
+   => cat env.rtPath "/artifacts/local.relish.pl2012/" artfct 
 
 
 playgroundDataPath artfct String > String
 """
  Temporary. This should be a builtin function.
 """
-   => cat RELISH_RUNTIME_DIR "/data/local.relish.pl2012/" artfct
+   => cat env.rtPath "/data/local.relish.pl2012/" artfct
 
+
+localDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat env.rtPath "/data/" artfct
 
 errf err String > String String
 """

@@ -13,6 +13,7 @@ import (
 	"io"
 	"bufio"
     "util/zip_util"
+"io/ioutil"
 )
 
 
@@ -192,6 +193,25 @@ func InitFilesMethods() {
 	mkdirAllMethod2.PrimitiveCode = mkdirAll		
 
 
+	// 
+	// permissions = "rwxrw_r__"  // or permissions = "764"
+	//
+	// err = copy filePath1 filePath2 [permissions]
+	//
+	copyMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"copy", []string{"filePath1","filePath2"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	mkdirMethod.PrimitiveCode = copy		
+
+	copyMethod2, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"copy", []string{"filePath1","filePath2","permissions"}, []string{"String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	copyMethod2.PrimitiveCode = copy
+
+
+
 
 	tempDirMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/files",nil,"tempDir", []string{}, []string{}, []string{"String"}, false, 0, false)
 	if err != nil {
@@ -366,6 +386,37 @@ func write(th InterpreterThread, objects []RObject) []RObject {
 	   errStr = err.Error()
 	}
 	return []RObject{Int(n),String(errStr)}
+}
+
+/*
+copy file1 String file2 String > err String
+
+copy file1 String file2 permissions > err String
+*/
+func copy(th InterpreterThread, objects []RObject) []RObject {
+	
+    filePath1 := string(objects[0].(String))
+    filePath2 := string(objects[1].(String))
+
+    permStr := "766"
+    if len(objects) > 2 {
+       permStr = string(objects[2].(String))    
+    }
+
+    perm, errStr := getFilePermissions(permStr)
+    var err error
+    if errStr == "" {
+	   content, err := ioutil.ReadFile(filePath1)
+	   if err != nil {
+	      errStr = err.Error()
+	   } else {
+		  err = ioutil.WriteFile(filePath2, content, perm)
+	      if err != nil {
+	         errStr = err.Error()
+	      }		
+	   }
+	}
+	return []RObject{String(errStr)}
 }
 
 

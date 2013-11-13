@@ -445,6 +445,10 @@ func SetRelishRuntimeLocation(path string) {
 	relishRuntimeLocation = path
 }
 
+func GetRelishRuntimeLocation() string {
+   return relishRuntimeLocation
+}
+
 /*
  Gets from the relish runtime the private key password for shared.relish.pl's code-signing private key.
  Only works if the corresponding set function has been called.
