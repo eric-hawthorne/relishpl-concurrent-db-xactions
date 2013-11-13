@@ -432,6 +432,11 @@ func InitBuiltinFunctions() {
 	jsonUnmarshal2Method.PrimitiveCode = builtinJsonUnmarshal
 
 
+	rtPathMethod, err := RT.CreateMethod("relish/pkg/env",nil,"rtPath", []string{}, []string{}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	rtPathMethod.PrimitiveCode = builtinRtPath
 
 
 
@@ -4861,6 +4866,22 @@ func treeFromGoToRelish(v interface{}) RObject {
 	 default: panic("Unexpected value type.")	
     }
     return nil
+}
+
+
+/*
+
+rtPath > String 
+
+*/
+func builtinRtPath(th InterpreterThread, objects []RObject) []RObject {
+   var path String
+   pkg := th.Package().Name
+   if strings.HasPrefix(pkg, "relish.pl2012/playground/pkg/") {  // Change to shared.relish.pl2012 
+      // path = RT.RootPath
+   }
+      
+   return []RObject{String(path)}
 }
 
 
