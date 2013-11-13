@@ -138,9 +138,9 @@ func main() {
    	dbg.InitLogging(int32(loggingLevel))
 	//relish.InitRuntime("relish.db")
     
-    if ! publish {
-    	builtin.InitBuiltinFunctions()	
-	}
+//  if ! publish {
+//    	builtin.InitBuiltinFunctions()	
+//	}
 
 	var g *generator.Generator
 	
@@ -268,6 +268,10 @@ func main() {
 		return		
 	}
 	
+    if ! publish {
+	   builtin.InitBuiltinFunctions(relishRoot)	
+    }
+
     crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.
 
     if publish {
