@@ -1,0 +1,262 @@
+origin   relish.pl2012
+artifact playground
+package  web 
+
+""" 
+ util.rel
+
+ Miscellaneous methods in the trial program running environment.
+"""
+
+
+import
+   strings
+   datetime
+   env
+
+
+
+
+
+IMPORTS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s 
+ imports.rel
+
+ List of imported packages.
+%s
+
+
+import
+"""
+
+
+CONSTANTS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ constants.rel
+
+ Constant declarations.
+%s
+
+
+"""
+
+
+TYPES_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ types_and_relations.rel
+
+ Data Type and relation declarations.
+%s
+
+
+"""
+
+
+METHODS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s 
+ methods.rel
+
+ Method declarations.
+%s
+
+
+"""
+
+
+MAIN_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ main.rel
+
+ Main program.
+%s
+
+
+main
+%s
+ The main program.
+%s
+"""
+
+
+METADATA_FILE = """
+relish artifact metadata: %s
+origin: local.relish.pl2012
+artifact: %s
+current version: 0.7.0
+release date: %s
+tags: application,trial program
+
+%s
+"""
+
+
+metadataFile artfct String description String > String
+"""
+ Generates the content of the trial program metadata file.
+"""
+   if neq (last description 1) "."
+      description = cat description "."
+
+   t = now "Local"
+   date = format t "2006/01/02"
+   => fill METADATA_FILE
+           date
+           artfct
+           date
+           description
+
+
+fixImports raw String artfct String > String
+"""
+ Indents each line of the content, and prepends the file header info and a line with "import"
+"""
+   => cat fill IMPORTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          indentWithSpaces 3 (replace raw "\r" "")
+          """
+
+
+
+DUMMY = "A dummy constant is here as a kludge until source code files are allowed to only have import."
+"""
+
+
+fixConstants raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          replace raw "\r" ""
+
+
+fixTypes raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          replace raw "\r" ""
+
+
+
+fixMethods raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          replace raw "\r" ""
+
+
+fixMain raw String artfct String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" "\"\"\"" "\"\"\""
+          indentWithSpaces 3 (replace raw "\r" "")
+
+
+
+fixUpErrorMessage output String > String
+"""
+ Given relish program execution output, determines if there is an error message in it.
+ If so, repairs the line number reference to account for the hidden file headers.
+"""
+   => output
+
+
+
+indentWithSpaces numSpaces Int raw String > indented String
+"""
+ Return the result of prepending the specified number of spaces to each line of the raw string.
+"""
+   lines = split raw "\n"
+   lineSep = ""
+   for line in lines
+      for i = 0   lt i numSpaces   i = plus i 1 
+         line = cat " " line
+      
+      indented = cat indented lineSep line
+      lineSep = "\n"
+
+
+
+
+
+
+
+
+
+
+
+
+// RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+
+
+// RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
+
+
+playgroundSrcPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/artifacts/local.relish.pl2012/" artfct "/v0.7.0/src/playground"
+
+
+playgroundArtifactPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/artifacts/local.relish.pl2012/" artfct 
+
+
+playgroundDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/data/local.relish.pl2012/" artfct
+
+
+localDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/data/" artfct
+
+
+errf err String > String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s
+</p>
+</center>
+</html>
+"""
+           err

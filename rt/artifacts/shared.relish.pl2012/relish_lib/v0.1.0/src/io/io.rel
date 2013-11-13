@@ -1,0 +1,71 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  io
+
+""" 
+ io.rel
+
+ Abstract types and methods for input/output. 
+"""
+
+
+Reader
+"""
+ A Reader has data content (or a data stream) which can be sequentially read.
+ Capable of transferring its data into a Bytes buffer, consuming and transferring 
+ the data in chunks via a sequence of calls to the read method of the Reader.
+"""
+
+
+read r Reader buf Bytes > n Int err String
+"""
+ Reads up to (len buf) bytes from the Reader into buf, consuming the data of the Reader
+ so that the next read call will normally read subsequent data. (Some Reader subtypes may however
+ have methods that reposition or reset to 0 the readable position in the reader's data.)
+
+ Returns the number of bytes read (i.e. copied to buf) as n.
+ Returns an empty String if the read operation succeeded, or an error message if not.
+
+ Details:
+ Read reads up to (len buf) bytes into p. It returns the number of bytes read (0 <= n <= len buf) 
+ and any error encountered. Even if Read returns n < len buf, it may use all of buf as scratch space during the call.
+ If some data is available but not (len buf) bytes, Read conventionally returns what is available instead of waiting 
+ for more.
+
+ When Read encounters an error or end-of-file condition after successfully reading n > 0 bytes, it returns the 
+ number of bytes read. It may return the (non-nil) error from the same call or return the error (and n == 0) 
+ from a subsequent call. An instance of this general case is that a Reader returning a non-zero number of bytes 
+ at the end of the input stream may return either err == EOF or err == nil. The next Read should return 0, EOF 
+ regardless.
+
+ Callers should always process the n > 0 bytes returned before considering the error err. Doing so correctly 
+ handles I/O errors that happen after reading some bytes and also both of the allowed EOF behaviors.
+"""
+   n = 0
+   err = "No read method defined for the type of Reader supplied."
+
+
+Writer
+"""
+ A Writer can have bytes written to it.
+"""
+
+
+write w Writer buf Bytes > n Int err String
+"""
+ Writes (len buf) bytes from buf to the underlying data stream. 
+ It returns the number of bytes written from buf (0 <= n <= len buf) and any error encountered that caused 
+ the write to stop early. write must return a non-empty error if it returns n < len buf.
+"""
+
+
+Closer
+"""
+ A Closer can have its I/O stream closed.
+"""
+
+
+close c Closer > err String
+"""
+ Closes the stream, rendering it unusable for I/O. It returns an error, if any.
+"""

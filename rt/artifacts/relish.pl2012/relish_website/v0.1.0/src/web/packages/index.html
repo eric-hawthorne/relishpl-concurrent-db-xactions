@@ -1,0 +1,116 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish standard library packages - relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+         <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1> <a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Standard Library Packages</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </div>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </div>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </div>
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<p>
+		You can use the methods from a standard-library package by importing the package as
+		if it were a package in your own software artifact e.g.:
+<code><pre>
+import 
+   strings
+</pre></code>
+Then, in your source code, refer to the methods from the standard-library package without package-name qualification of the method name. For example, <code>s2 = replace s1 "foo" "bar"</code>
+	</p>
+<table>
+	<tr>
+		<th>Package Name</th><th>&nbsp;</th><th>Synopsis</th>
+	</tr>
+	<tr>
+		<td><a href="csv.html">csv</a></td><td>&nbsp;</td><td>Methods to read or write data records in text/csv format.</td>
+    </tr>	
+	<tr>
+		<td><a href="datetime.html">datetime</a></td><td>&nbsp;</td><td>Provides functionality for measuring and displaying time.</td>
+    </tr>
+    <tr>		
+		<td><a href="files.html">files</a></td><td>&nbsp;</td><td>File I/O types and methods.</td>	
+	</tr>    
+    <tr>		
+		<td><a href="http.html">http</a></td><td>&nbsp;</td><td>A simple http client - perform GET or POST requests.</td>		
+	</tr>    
+    <tr>		
+		<td><a href="io.html">io</a></td><td>&nbsp;</td><td>Abstract I/O types and methods.</td>	
+	</tr> 	
+    <tr>		
+		<td><a href="strings.html">strings</a></td><td>&nbsp;</td><td>Methods to manipulate or find out about text strings.</td>	
+	</tr>
+</table>	
+	
+	<h3>relish Built-in Functions</h3>
+	<p>
+		In addition to the small standard library, there is a suite of built-in relish methods which provide useful general-purpose operations on relish primitive data types such as Numeric, Bool, List, Channel, and String. These functions are implemented as native functions, written in Go. These are thin wrappings of functions from several of Go's standard library packages, or of Go primitive operators and built-in functions, such as arithmetic and logical operators.
+	</p>	
+	<p>
+		The currently available Built-in Functions are listed in the <b>relish Syntax and Semantics By Example</b> reference manual.
+		</p>
+	<h3>Roadmap for the relish standard library</h3>
+	<p>
+	The plan is to lift a subset of Go standard library packages into relish by providing thin adapter wrappers for the Go functions. Wrapper functions generally just cast the Go primitive data type arguments into equivalent data types which implement the RObject interface, which every relish data object implements.
+	</p>
+		<p>
+			A small number of methods will remain as relish language standard built-in methods, available for use in any relish package without importing a package of methods. More of the "lifted" standard library methods, however, will be placed in separate relish standard library packages. The library packages will then have to be individually imported into any new package in order to use the standard library package method.
+</p>		
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+</div>
+</td>
+</tr>
+</table>	
+</div>
+</body>
+</html>

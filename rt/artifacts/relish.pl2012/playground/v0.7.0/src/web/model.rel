@@ -1,0 +1,28 @@
+origin   relish.pl2012
+artifact playground
+package  web 
+
+""" 
+ model.rel
+
+ Data types for keeping track of source code files in the trial program running environment.
+"""
+
+
+import
+   strings
+
+
+Artifact
+"""
+ Represents the name of a playground program artifact and the content of the source code files
+ of the artifact.
+"""
+   name String
+   description String
+   importsFileContent String
+   constantsFileContent String
+   typesFileContent String
+   methodsFileContent String
+   mainFileContent String
+   consoleOutput String

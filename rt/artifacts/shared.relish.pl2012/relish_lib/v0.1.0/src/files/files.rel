@@ -1,0 +1,144 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  files
+
+""" 
+ files.rel
+
+ Implements file i/o. A straightforward wrap of Go's os.File.
+ This package includes Go native methods, defined in 
+ relish/runtime/native_methods/standard_lib/files_methods/files.go
+"""
+
+
+import 
+   io
+
+
+File <: io.Reader io.Writer io.Closer
+"""
+ A File represents an open file descriptor.
+ A file, described at the logical level, is a named, readable and/or writable/appendable sequence of bytes 
+ stored in persistent storage on the computer.
+"""
+
+
+// NATIVE METHODS
+//
+// read f File buf Bytes > n Int err String
+//
+// write f File val Any > n Int err String
+//
+// close f File > err String
+//
+// readAllText 
+//    f File 
+//    addMissingLinefeed Bool = false
+// > 
+//    fileContent String err String
+// """
+//  Reads all text lines in the file, concatenating them into a single string in which each line
+// is terminated by a "\n". 
+//  If the last line of the file had no line-ending character(s) at its end, the behaviour depends
+//  on the "addMissingLinefeed" argument. If false (the default) , the last line in the result string
+//  also has no linefeed "\n" at its end.
+//  If addMissingLinefeed is true, the last line in the result string gets 
+//  a "\n" appended, so that lines can be processed in a uniform manner.
+// 
+//  Note that if the file has MSWindows-style line end markers (CRLF i.e. "\r\n") these are replaced
+//  in the output string by a single "\n" at end of each line.
+// 
+//  An empty file causes the fileContent result to be the empty string.
+// """
+//
+// readAllBinary f File > fileContent String err String
+// """
+//  Reads the entire file contents into the fileContent String.
+//  All bytes in the file are put in the String as-is, with no line-end processing.
+//  You can use this method on text files too, if you like, but you won't get any
+//  normalizing of line-ending characters. You get the exact file bytes as returned by
+//  low-level file read functions.
+// """
+//
+//
+// sync f File > err String
+// """
+//  Commits the current contents of the file to stable storage.
+//  Typically, this means flushing the file system's in-memory copy
+//  of recently written data to disk.
+// """
+//
+//
+// remove path String > err String
+// """
+//  Removes the named file or directory.
+// """
+//
+// removeAll path String > err String  
+// """
+//  Removes the named file or directory and all sub directories and contained files recursively.
+// """
+//
+// rename oldName String newName String > err String
+// """
+//  Renames the file or directory.
+// """
+//
+
+
+
+FileInfo
+"""
+ A FileInfo describes a File and is returned by stat and lstat methods.
+"""
+   name String  // base name of the file
+   size Int  // length in bytes for regular files; system-dependent for others
+   mode Uint32  // file mode bits - see Go os package documentation of FileMode type.
+   modTime Time  // modification time.
+   isDir Bool  // true if the file is a directory
+
+
+stat path String > fi FileInfo fileExists Bool err String
+"""
+ stat returns a FileInfo describing the named file. 
+ Or if the file/directory/link does not exist, the fileExists return value will be false
+ Or if there is any other failure in the attempt to stat, a non-empty err is
+ returned as the third argument. 
+ Usage:
+
+  path = "myfile.txt"
+  fileInfo fileExists err = stat path
+  if err
+     print "Can't stat file" path ":" err
+  elif fileExists
+     print path "last modified at" fileInfo.modTime
+  else  
+     print path "does not exist."
+"""
+   name size mode modTime isDir fileExists err =
+      statPrimitive path
+   if and fileExists
+          not err
+      fi = FileInfo
+      fi.name = name
+      fi.size = size
+      fi.mode = mode
+      fi.modTime = modTime
+      fi.isDir = isDir       
+
+
+lstat path String > fi FileInfo fileExists Bool err String
+"""
+ Like stat but does not follow symbolic links. Returns info about the link itself if the name refers
+ to a symbolic link.
+"""
+   name size mode modTime isDir fileExists err =
+      lstatPrimitive path
+   if and fileExists
+          not err
+      fi = FileInfo
+      fi.name = name
+      fi.size = size
+      fi.mode = mode
+      fi.modTime = modTime
+      fi.isDir = isDir   

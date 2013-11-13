@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>The relish Programming Language Shared Code Repository</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="artifacts_button" class="menubutton" href="/directory">
+	Artifacts
+  </a>
+  <a id="featured_button" class="menubutton" href="/featured">
+	Featured
+  </a>
+  <a id="register_button" class="menubutton" href="/register">
+	Register
+  </a>
+  <a id="upload_button" class="menubutton" href="/upload">
+	Upload Code
+  </a>	
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<h3>Register your relish code origin</h3>
+<p>
+</p>
+<form method="post" action="/registerAction">
+<table>
+	<tr>
+		<td class="fieldLabelTop">Contact Given Name: </td><td class="field"><input name="givenName" class="field" type="text" size="40" /></td><td></td>
+	</tr>
+	<tr>		
+		<td class="fieldLabelBottom">Contact Family Name: </td><td class="field"><input  name="familyName"  class="field" type="text" size="40" /></td><td></td>
+	</tr>
+	<tr>		
+		<td class="fieldLabelTop">Organization: </td><td class="field"><input  name="organization"  class="field" type="text" size="50" /></td><td></td>
+	</tr>
+	<tr>		
+	    <td class="fieldLabelBottom">Department/Division: </td><td class="field"><input  name="dept"  class="field" type="text" size="50" /></td><td></td>
+	</tr>
+	<tr>	
+	    <td class="fieldLabelTop"><span class="star">*</span>Email Address: </td><td class="field"><input name="email" class="field" type="text" size="40" /></td><td></td>	
+	</tr>
+	<tr>	
+	    <td class="fieldLabelBottom"><span class="star">*</span>Confirm Email Address: </td><td  class="field"><input name="email2" class="field" type="text" size="40" /></td><td></td>		
+	</tr>
+	<tr>	
+	    <td class="fieldLabelTop"><span class="star">*</span>Choose a Password: </td><td  class="field"><input name="password"  class="field" type="password" size="30" /></td><td></td>	
+	</tr>
+	<tr>	
+	    <td class="fieldLabelBottom"><span class="star">*</span>Re-enter Password: </td><td class="field"><input name="password2" class="field" type="password" size="30"/></td><td></td>	
+	</tr>
+	<tr>	
+	    <td class="fieldLabel"><span class="star">*</span>Code Origin Identifer: </td><td class="field"><input name="originId"  class="field" type="text" size="30" /></td><td></td>									
+	</tr>	
+	<tr>	
+	    <td class="fieldLabel"><span class="star">*</span> <span style="color: red">= required</span></td><td style="text-align: right" class="field"> <input class="field" type="submit" value=" register "/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </td><td></td>									
+	</tr>	
+</table>
+</form>
+
+	<h3>Why register your relish code origin?</h3>
+	<p>
+	If you register your relish code origin, you will receive a code-signing key pair (a private key and a public key). If you install these keys in your relish installation (instructions are provided on how to do that), you can publish relish code artifacts that are signed with your key, so that other programmers and other relish programs can verify that the code comes from you and is unaltered.
+</p>
+<p>
+	If you register your relish code origin, you can also upload your relish code artifacts, if you wish, to http://shared.relish.pl, which will then serve as a mirror host for your artifacts. shared.relish.pl may then become a useful and easily searchable repository of a variety of shared code artifacts from many origins.
+</p>
+	<p>
+	By registering, you help ensure that all relish code origins are indeed uniquely identified, which maximizes code interoperability and allows shared relish code to be found automatically on the Internet by relish programs that need the code.
+	</p>
+
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+	<h2>What is a <b>Code Origin Identifier</b>?</h2>
+	<p>
+		Every originator of a relish code artifact should be uniquely identifiable globally and perpetually. This will create an unambiguous namespace for all relish code artifacts.
+	</p>
+	<p>
+		To have a published relish code origin, you should own or have control of an Internet domain name. This may be a two-part domain name like mywidgets.com or columbia.edu, or it may be a three or more part domain name like ee.columbia.edu or  alphaworks.hal.com. Individuals with no domain name should consider pooling resources to create and administer a shared origin by registering and maintaining a domain name and renting an inexpensive host server or "cloud" virtual server slice for it.
+	</p>
+	<h2>Code Origin Identifier format rule</h2>	
+	<p>
+		The <em>code origin identifier</em> of a relish code origin MUST be an Internet domain name owned or controlled by the code originator(s), followed by the year in which the specific Internet domain was first registered or used by the originators. e.g. If hal.com was registered in 1997, the code origin identifier <b>alphaworks.hal.com1997</b> could be created. 
+	</p>
+	<p>
+		DO NOT USE the year of first publication of a relish code artifact as the year suffix of the code origin identifier, unless it happens to be the same year that the originators obtained the domain.
+</p>
+<p>
+	relish source code that the originators intend to make publicly available SHOULD be hosted on a server that has the exact domain name that forms the code origin identifier. So for example, an artifact whose origin id is <b>alphaworks.hal.com1997</b> should be hosted at <b>http://alphaworks.hal.com</b> (at a standard path on that server.)
+</p>		
+<p>
+		 The purpose of the year suffix is to provide long term uniqueness of the domain name, surviving even the dissolution of the originating organization and the re-use of the domain by a new organization or individual later. If, hypothetically, that new organization or individual, years down the road, wanted to make a relish code origin based on their newly acquired hal.com domain, they could create a relish code origin whose identifier was e.g. code.hal.com2017. With luck, there will still be mirrors of the old artifacts from alphaworks.hal.com1997 around on the Internet.
+	</p>
+</div>
+</td>
+</tr>
+</table>	
+</div>
+</body>
+</html>
