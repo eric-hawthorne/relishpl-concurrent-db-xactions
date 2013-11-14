@@ -590,5 +590,31 @@ func ensureAttribute(t *RType, attrName string) (attribute RObject, err error) {
 
 
 
+reflectIdByName name String > reflectId String
 
-    // attribute d DataType attributeName String > Attribute
+
+ensureReflectId obj Any > reflectId String
+
+
+getUnaryPrimitiveAttributes reflectId > [ [attrName,typeName,val] [...] ] 
+
+
+getOtherAttributes reflectId >
+
+[ [attrName, minArity, maxArity, 
+   inverseAttrName, inverseMinArity, inversMaxArity, 
+   typeName, valIsObject, valIsCollection
+   [val1, val2, ...] 
+  ]
+  ...
+]
+
+
+isCollection reflectId > Bool
+collectionElementType reflectId > typeName
+
+collectionElements reflectId > [val1, val2,...]
+
+
+
+
