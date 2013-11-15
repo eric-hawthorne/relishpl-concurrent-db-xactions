@@ -1,0 +1,54 @@
+origin   shared.relish.pl2012
+artifact explorer_api
+package  web 
+
+""" 
+ explorer_api_dialog.rel
+
+ Web dialog handling methods concerned with the data explorer application.
+
+ NOTE: Can I import more dialog handler methods by importing another artifact's
+ web package into a web package, renaming the imported package so it doesn't conflict?
+"""
+
+import
+   strings
+   files
+   reflect
+
+
+reflectId name String > String String String
+"""
+ Given an object name (a dubbed name in the persistence system, or a transientDub name)
+ returns the reflectId by which the object can be fetched through this API.
+ If the name does not find an object, the string NOT FOUND is returned.
+"""
+   id = reflectIdByName name
+   if not id
+      id = "NOT FOUND"
+   => "MEDIA"
+      "text/plain"   
+      id
+
+
+simpleAttributes reflectId String > String String
+"""
+ Returns a JSON formatted list of attribute descriptors.
+"""
+   attrs = simpleAttrs reflectId
+   => "JSON"
+      attrs 
+
+
+complexAttributes reflectId String > String String
+"""
+ Returns a JSON formatted list of attribute descriptors of the complex attributes
+ of the object: multi-valued attributes or attributes which are object-valued rather
+ than primitive-valued.
+"""
+   attrs = complexAttrs reflectId
+   => "JSON"
+      attrs 
+
+
+
