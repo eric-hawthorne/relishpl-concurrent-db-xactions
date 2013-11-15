@@ -5,4 +5,10 @@ current version: 0.7.0
 release date: 2013/11/02
 tags: web service,relish,debugging
 
-Web service API for exploring data.
+Web service API for exploring data. Callers (clients) of these web services use an object name to obtain
+a reflectId token for an object, then use the reflectId to request various attributes of the
+object. Object attribute metadata and values are passed to the client in JSON format.
+To create a data explorer (data object-network navigator) debugging tool for looking at both
+persistent and non-persistent data in a relish program, the data explorer program can be a client
+of this API. The explorer runs as one program (process), and the relish program being debugged is
+another program, which must be listening for http requests and must offer the explorer_api web service.
