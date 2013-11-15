@@ -12,6 +12,8 @@ import (
 	. "relish/runtime/data"
     "fmt"
     "sort"
+    "strconv"
+    "relish"
 )
 
 ///////////
@@ -47,8 +49,9 @@ func InitReflectMethods() {
 	}
 	typeMethod.PrimitiveCode = typ
 
-    // attributeNames d dataType includeInherited Bool > [] String
-	attributeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"attributeNames", []string{"d"}, []string{"shared.relish.pl2012/relish_lib/pkg/reflect/DataType"}, []string{"List_of_String"}, false, 0, false)
+    // attributeNames d dataType includeSimple Bool includeComplex Bool includeInherited Bool > [] String
+
+	attributeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"attributeNames", []string{"d","simple","complex","inherited"}, []string{"shared.relish.pl2012/relish_lib/pkg/reflect/DataType","Bool","Bool","Bool"}, []string{"List_of_String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -216,13 +219,16 @@ func typ(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
-    // attributeNames d dataType includeInherited Bool > [] String
+    // attributeNames d dataType includeSimple Bool includeComplex Bool includeInherited Bool > [] String
 //
 func attributeNames(th InterpreterThread, objects []RObject) []RObject {
 	
 	datatype := objects[0].(*GoWrapper)
 	t := datatype.GoObj.(*RType)
-	includeInherited := bool(objects[1].(Bool))
+
+	includeSimple := bool(objects[1].(Bool))
+	includeComplex := bool(objects[2].(Bool))		
+	includeInherited := bool(objects[3].(Bool))
 
 
 
@@ -233,12 +239,16 @@ func attributeNames(th InterpreterThread, objects []RObject) []RObject {
 
     var attrNameSlice []string
 
-	for attrName := range t.AttributesByName {
+	for attrName,attr := range t.AttributesByName {
+
+        
 		attrNameSlice = append(attrNameSlice, attrName)
 	}
 	if includeInherited {
 		for _, supertype := range t.Up {
 	       for attrName := range supertype.AttributesByName {
+
+	       	@@@@@@@
 		      attrNameSlice = append(attrNameSlice, attrName)
 	       }
 		}		
@@ -587,19 +597,34 @@ func ensureAttribute(t *RType, attrName string) (attribute RObject, err error) {
 	return 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Data object instance exploration methods - use a reflectId to access objects 
 
+
+
+/*
 
 
 reflectIdByName name String > reflectId String
+"""
+ Given an object name, which is either a tempCache name (Todo) or a perstence-dubbed name, return
+ the reflectId of the object.
+"""
 
 
 ensureReflectId obj Any > reflectId String
+"""
+ Ensures a reflectId exists for the (non-primitive) object and returns that reflectId, using which
+ the object can later be retrieved.
+""" 
 
 
-getUnaryPrimitiveAttributes reflectId > [ [attrName,typeName,val] [...] ] 
+getSimpleAttributes reflectId > [] SimpleAttrDescriptor 
+"""
+ Get unary atomic-primitive-typed attributes.
+"""
 
-
-getOtherAttributes reflectId >
+getComplexAttributes reflectId >
 
 [ [attrName, minArity, maxArity, 
    inverseAttrName, inverseMinArity, inversMaxArity, 
@@ -612,8 +637,137 @@ getOtherAttributes reflectId >
 
 isCollection reflectId > Bool
 collectionElementType reflectId > typeName
+isCollectionOfObjects reflectId > Bool
 
 collectionElements reflectId > [val1, val2,...]
+*/
+
+
+// Helper functions for methods that use a reflectId 
+
+// Notes about reflectIds
+// ======================
+// reflectIds are used as string tokens that represent a particular structured or collection
+// object in the current relish program runtime. They can refer to a persistent or non-persistent
+// object. The reflectId gives a way for web services to refer to any relish object that is maintained
+// in memory in the runtime, whether the object is also persistent or not.
+//
+// "" is an invalid reflectId, representing the result of a failed search for a reflectId
+// "0" is the reflectId of NIL
+// reflectIds of regular structured or collection objects are string representations
+// of the integers from 1 up in sequence with the order that the object first had a 
+// reflectId assigned in the current program run. However, the sequence can be cleared
+// and a new sequence can start from some higher integer.
+
+/*
+Given an object name, which is either a tempCache name (Todo) or a perstence-dubbed name, return
+the reflectId of the object. Note: The transient dubbed namespace is searched before the 
+persistent name.
+Returns the empty string, an invalid reflectId, if the object is not found by name.
+*/
+func reflectIdByName(objectName string) (reflectId string) {
+   reflectId,found := reflectIdsByName[objectName]
+   if found {
+   	  return
+   }
+
+   relish.EnsureDatabase()
+
+	found, err := th.DB().ObjectNameExists(objectName) 
+	if err != nil {
+		panic(err)
+	}
+	if ! found {
+		return
+	}
+	obj, err := th.DB().FetchByName(objectName, 0)
+	if err != nil {
+		panic(err)
+	}
+    
+	reflectId = ensureReflectId(obj) 
+    return
+}
+
+/*
+Given the reflectId, return the relish object, which may or may nor be persistent.
+If given reflectId "0", returns relish NIL RObject.
+If given an invalid reflectId or one that no longer is mapped to an object,
+returns Go nil.
+*/
+func objectByReflectId(reflectId string) RObject {	
+   if reflectId == "0" {
+   	  return NIL
+   }
+   return objectsByReflectId[reflectId]
+}
+
+/*
+Given a non-primitive object, return its reflectId. Give the object a reflectId if it
+does not already have one.
+
+IMPORTANT NOTE: Presence of a reflectId for an object does not prevent
+the object from being garbage-collected (its attribute associations removed etc)
+by the relish garbage collector. It does prevent the object from being collected
+by Go's garbage collector until the reflectIds maps are cleared.
+So if you don't make sure that objects with reflectIds are still referenced by
+a relish program variable directly or indirectly, you could retrieve a broken
+relish object (with no attribute values) when you get the object by reflectId later.
+*/
+func ensureReflectId(obj RObject) (reflectId string) {
+   reflectId,found := reflectIdsByObject[obj]
+   if ! found {
+      reflectId = strconv.FormatUint(idGen.NextID(),10)
+      objectsByReflectId[reflectId] = obj
+      reflectIdsByObject[obj] = reflectId
+   }
+}
+
+
+/*
+Associates the object with a name. The association is in memory only, and
+actually associates the name with the reflectId of the object, from which
+the object can be fetched by the reflection interface as long as reflectIds
+have not been cleared.
+
+IMPORTANT NOTE: Presence of an object in this name cache does not prevent
+the object from being garbage-collected (its attribute associations removed etc)
+by the relish garbage collector. It does prevent the object from being collected
+by Go's garbage collector until the reflectIds maps are cleared.
+*/
+func transientDub(obj RObject, name string) {
+   reflectIdsByName[name] = ensureReflectId(obj)
+}
+
+
+/*
+   Removes all reflectId assignments.
+*/
+func clearReflectIds()  {
+   clearTransientNameCache()	
+   objectsByReflectId  = make(map[string]RObject)
+   reflectIdsByObject  = make(map[RObject]string)
+}
+
+	
+var idGen *IdGenerator = NewIdGenerator()
+
+var objectsByReflectId map[string]RObject = make(map[string]RObject)
+
+var reflectIdsByObject map[RObject]string = make(map[RObject]string)
+
+
+// Need some methods to clearReflectIds and clearTempCache
+
+/*
+   Removes all reflectId assignments.
+*/
+func clearTransientNameCache()  {
+   reflectIdsByName  = make(map[string]string)
+}
+
+
+var reflectIdsByName = map[string]string = make(map[string]string)
 
 
 
