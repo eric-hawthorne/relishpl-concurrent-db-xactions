@@ -4881,7 +4881,7 @@ func builtinRtPath(th InterpreterThread, objects []RObject) []RObject {
    var path string
    pkg := th.CallingPackage()
    if pkg != nil {   
-	   if strings.HasPrefix(pkg.Name, "relish.pl2012/playground/pkg/") {  // Change to shared.relish.pl2012 
+	   if strings.HasPrefix(pkg.Name, "shared.relish.pl2012/playground/pkg/") {  
 	      path = relishRuntimeRoot
 	   }
    }
