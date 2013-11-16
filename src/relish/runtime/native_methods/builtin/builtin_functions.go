@@ -4875,6 +4875,10 @@ func treeFromGoToRelish(v interface{}) RObject {
 /*
 
 rtPath > String 
+"""
+ Returns the runtime root directory of the running relish program.
+ Either .../relish (for binary relish distros) or .../relish/rt (for source distros).
+"""
 
 */
 func builtinRtPath(th InterpreterThread, objects []RObject) []RObject {
