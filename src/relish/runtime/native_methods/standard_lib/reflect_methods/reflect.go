@@ -230,31 +230,12 @@ func attributeNames(th InterpreterThread, objects []RObject) []RObject {
 	includeComplex := bool(objects[2].(Bool))		
 	includeInherited := bool(objects[3].(Bool))
 
-
-
     attrNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
     if err != nil {
 	   panic(err)
     }
 
-    var attrNameSlice []string
-
-	for attrName,attr := range t.AttributesByName {
-
-        
-		attrNameSlice = append(attrNameSlice, attrName)
-	}
-	if includeInherited {
-		for _, supertype := range t.Up {
-	       for attrName := range supertype.AttributesByName {
-
-	       	@@@@@@@
-		      attrNameSlice = append(attrNameSlice, attrName)
-	       }
-		}		
-	}
-
-    sort.Strings(attrNameSlice)
+    attrNameSlice := t.AttributeNames(includeSimple, includeComplex, includeInherited)
 
     for _,attrName := range attrNameSlice {
     	attrNameList.AddSimple(String(attrName))
@@ -603,27 +584,167 @@ func ensureAttribute(t *RType, attrName string) (attribute RObject, err error) {
 
 
 /*
+transientDub obj Any name String > reflectId String
+*/
+func transientDub(th InterpreterThread, objects []RObject) []RObject {
+	
+	obj := objects[0]
+	name := string(objects[1].(String))	
+    reflectId := transientDub1(obj, name) 
 
+	return []RObject{String(reflectId)}
+}
 
+/*
+clearReflectIds 
+"""
+ Clear the maps from transient dubbed names and reflectIds to objects.
+ Should be done at the end of a debugging session to avoid build up of reflectId cruft in the 
+ target runtime, but how do we know when the "end" of a debugging session is?
+"""
+*/
+func clearReflectIds(th InterpreterThread, objects []RObject) []RObject {
+	clearReflectIds1()
+	return []RObject{}
+}
+
+/*
 reflectIdByName name String > reflectId String
 """
  Given an object name, which is either a tempCache name (Todo) or a perstence-dubbed name, return
  the reflectId of the object.
 """
+*/
+func reflectIdByName(th InterpreterThread, objects []RObject) []RObject {
+
+	name := string(objects[0].(String))	
+
+    reflectId := reflectIdByName1(name)
+
+	return []RObject{String(reflectId)}
+}
 
 
+
+/*
 ensureReflectId obj Any > reflectId String
 """
  Ensures a reflectId exists for the (non-primitive) object and returns that reflectId, using which
  the object can later be retrieved.
 """ 
+*/
+func ensureReflectId(th InterpreterThread, objects []RObject) []RObject {
+
+	obj := objects[0]
+
+    reflectId := ensureReflectId1(obj)
+
+	return []RObject{String(reflectId)}
+}
 
 
+/*
+objectByReflectId reflectId String > obj Any
+"""
+ Given the reflectId, return the relish object, which may or may nor be persistent.
+ If given reflectId "0", returns relish NIL RObject.
+ If given an invalid reflectId or one that no longer is mapped to an object,
+ also returns NIL
+""" 
+*/
+func objectByReflectId(th InterpreterThread, objects []RObject) []RObject {
+
+	reflectId := string(objects[0].(String))	
+
+    obj := objectByReflectId1(reflectId)
+    if obj == nil {
+    	obj = NIL
+    }
+	return []RObject{obj}
+}
+
+
+/*
 getSimpleAttributes reflectId > [] SimpleAttrDescriptor 
 """
- Get unary atomic-primitive-typed attributes.
-"""
+ Get unary atomic-primitive-typed attributes of the object.
 
+      SimpleAttrDescriptor
+      """
+       A descriptor of a unary primitive attribute and its value for some object instance.
+       The value has been converted to type String.
+      """
+         attrName String
+         typeName String
+         val String 
+"""
+*/
+
+func getSimpleAttributes(th InterpreterThread, objects []RObject) []RObject {
+
+	reflectId := string(objects[0].(String))	
+    obj := objectByReflectId1(reflectId)
+
+    simpleAttrDescrType, typFound := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/SimpleAttrDescriptor"]
+    if ! typFound {
+    	panic("reflect.SimpleAttrDescriptor is not defined.")
+    }
+
+    attrDescrList, err := RT.Newrlist(simpleAttrDescrType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+
+    if obj != nil && obj != NIL {
+    	
+       attrs,vals := simpleAttrs(obj)
+
+       for i, attr := range attrs {
+
+           val := vals[i]
+
+	       descr, err := RT.NewObject("shared.relish.pl2012/relish_lib/pkg/reflect/SimpleAttrDescriptor")
+	       if err != nil {
+	    	  panic(err)
+	       }
+
+	       attrNameAttr, found := descr.Type().GetAttribute("attrName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an attrName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  attrNameAttr, String( attr.Part.Name )   )  
+
+	       typeNameAttr, found := descr.Type().GetAttribute("typeName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an typeName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  typeNameAttr, String( attr.Part.Type.Name )   )
+
+	       valAttr, found := descr.Type().GetAttribute("val")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an val attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  valAttr, String( val.String() )   )
+
+
+           attrDescrList.AddSimple(descr)
+       }
+    }
+
+	return []RObject{attrDescrList}
+}
+
+
+
+
+
+
+
+/*
 getComplexAttributes reflectId >
 
 [ [attrName, minArity, maxArity, 
@@ -633,7 +754,12 @@ getComplexAttributes reflectId >
   ]
   ...
 ]
+*/
 
+
+/*
+
+// TBD
 
 isCollection reflectId > Bool
 collectionElementType reflectId > typeName
@@ -643,8 +769,9 @@ collectionElements reflectId > [val1, val2,...]
 */
 
 
-// Helper functions for methods that use a reflectId 
-
+/////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+// Helper functions for Data object instance exploration methods - use a reflectId to access objects 
+//
 // Notes about reflectIds
 // ======================
 // reflectIds are used as string tokens that represent a particular structured or collection
@@ -665,11 +792,15 @@ the reflectId of the object. Note: The transient dubbed namespace is searched be
 persistent name.
 Returns the empty string, an invalid reflectId, if the object is not found by name.
 */
-func reflectIdByName(objectName string) (reflectId string) {
+func reflectIdByName1(objectName string) (reflectId string) {
+
+   // Try the transientDub namespace first...	
    reflectId,found := reflectIdsByName[objectName]
    if found {
    	  return
    }
+
+   // Not a transient dubbed name - see if is a persistence-system object name.
 
    relish.EnsureDatabase()
 
@@ -685,7 +816,7 @@ func reflectIdByName(objectName string) (reflectId string) {
 		panic(err)
 	}
     
-	reflectId = ensureReflectId(obj) 
+	reflectId = ensureReflectId1(obj) 
     return
 }
 
@@ -695,7 +826,7 @@ If given reflectId "0", returns relish NIL RObject.
 If given an invalid reflectId or one that no longer is mapped to an object,
 returns Go nil.
 */
-func objectByReflectId(reflectId string) RObject {	
+func objectByReflectId1(reflectId string) RObject {	
    if reflectId == "0" {
    	  return NIL
    }
@@ -714,7 +845,7 @@ So if you don't make sure that objects with reflectIds are still referenced by
 a relish program variable directly or indirectly, you could retrieve a broken
 relish object (with no attribute values) when you get the object by reflectId later.
 */
-func ensureReflectId(obj RObject) (reflectId string) {
+func ensureReflectId1(obj RObject) (reflectId string) {
    reflectId,found := reflectIdsByObject[obj]
    if ! found {
       reflectId = strconv.FormatUint(idGen.NextID(),10)
@@ -722,6 +853,64 @@ func ensureReflectId(obj RObject) (reflectId string) {
       reflectIdsByObject[obj] = reflectId
    }
 }
+
+
+
+
+
+
+/*
+Fetches both attribute metadata and values of the simple attributes of the object.
+*/
+func simpleAttrs(obj RObject) (attrs []AttributeSpec, vals []RObject) {
+   return getAttrs(obj,false,true, false)
+}
+
+/*
+Fetches both attribute metadata and values of the complex attributes of the object.
+*/
+func complexAttrs(obj RObject) (attrs []AttributeSpec, vals []RObject) {
+   return getAttrs(obj,false,true)
+}
+
+/*
+Fetches both attribute metadata and values of the simple or complex attributes of the object.
+*/
+func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []AttributeSpec, vals []RObject) {
+	includeInherited := true
+    attrNames := ob.Type().AttributeNames(includeSimple, includeComplex, includeInherited)
+    for _,attrName := range attrNames {  
+    	attr,found := t.GetAttribute(attrName)
+    	if ! found {
+    		panic("getAttrs: attribute of type unexpectedly not found.")
+    	}
+    	attrs = append(attrs, attr)
+
+	    val, found := RT.AttrVal(obj, attr)
+	    if ! found {
+	    	val = NIL
+	    }     	
+    } 
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
@@ -735,15 +924,16 @@ the object from being garbage-collected (its attribute associations removed etc)
 by the relish garbage collector. It does prevent the object from being collected
 by Go's garbage collector until the reflectIds maps are cleared.
 */
-func transientDub(obj RObject, name string) {
-   reflectIdsByName[name] = ensureReflectId(obj)
+func transientDub1(obj RObject, name string) (reflectId string) {
+   reflectId = ensureReflectId(obj)
+   reflectIdsByName[name] = reflectId
 }
 
 
 /*
    Removes all reflectId assignments.
 */
-func clearReflectIds()  {
+func clearReflectIds1()  {
    clearTransientNameCache()	
    objectsByReflectId  = make(map[string]RObject)
    reflectIdsByObject  = make(map[RObject]string)
@@ -767,7 +957,7 @@ func clearTransientNameCache()  {
 }
 
 
-var reflectIdsByName = map[string]string = make(map[string]string)
+var reflectIdsByName map[string]string = make(map[string]string)
 
 
 

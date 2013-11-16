@@ -531,6 +531,46 @@ func (t *RType) countAllAttributes(m map[string]interface{}) (n int, unmatched [
    return
 }
 
+/*
+Return the names of the attributes of the datatype, in alphabetical order.
+Arguments determine whether simple, complex attributes are returned and whether inherited attributes are
+returned (also subject to the simple &/or complex filter).
+*/
+func (t *RType) AttributeNames(includeSimple bool, includeComplex bool, includeInherited bool) []string {
+
+    var attrNameSlice []string
+
+	for attrName,attr := range t.AttributesByName {
+
+        if (! includeComplex) && attr.IsComplex() {
+        	continue
+        }
+        if (! includeSimple) && attr.IsSimple() {
+        	continue
+        }        
+		attrNameSlice = append(attrNameSlice, attrName)
+	}
+	if includeInherited {
+		for _, supertype := range t.Up {
+	       for attrName,attr := range supertype.AttributesByName {
+	          if (! includeComplex) && attr.IsComplex() {
+	        	 continue
+	          }
+	          if (! includeSimple) && attr.IsSimple() {
+	          	 continue
+	          }  
+		      attrNameSlice = append(attrNameSlice, attrName)
+	       }
+		}		
+	}
+
+    sort.Strings(attrNameSlice)
+
+	return attrNameSlice
+}
+
+
+
 
 /*
 A specification of a type of object having an attribute whose value is a given allowable number of a given type
@@ -553,10 +593,21 @@ func (attr *AttributeSpec) IsOneWay() bool {
 	return ! attr.IsForwardRelation && ! attr.IsReverseRelation
 }
 
+/*
+Is this correct? I don't think so. How do we specify an attribute that points to a single collection?
+Right now can't do that.
+*/
 func (attr *AttributeSpec) IsMultiValued() bool {
 	return attr.Part.CollectionType != ""
 }
 
+func (attr *AttributeSpec) IsSimple() bool {
+	return attr.Part.Type.IsPrimitive && ! attr.IsMultiValued()
+}
+
+func (attr *AttributeSpec) IsComplex() bool {
+	return ! attr.IsSimple()
+}
 
 /*
 One end of a relation - specifies arity and type constraints and a few other details.

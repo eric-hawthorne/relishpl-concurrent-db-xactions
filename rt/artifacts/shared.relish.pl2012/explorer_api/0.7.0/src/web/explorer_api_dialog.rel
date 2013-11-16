@@ -9,11 +9,11 @@ package  web
 
  NOTE: Can I import more dialog handler methods by importing another artifact's
  web package into a web package, renaming the imported package so it doesn't conflict?
+ e.g. Can I import shared.relish.pl2012/explorer_api/pkg/web as explorer_services
 """
 
+
 import
-   strings
-   files
    reflect
 
 
@@ -21,7 +21,10 @@ reflectId name String > String String String
 """
  Given an object name (a dubbed name in the persistence system, or a transientDub name)
  returns the reflectId by which the object can be fetched through this API.
- If the name does not find an object, the string NOT FOUND is returned.
+ The response is a single line of plaintext containing either the reflectId (an integer)
+ or if the name does not find an object, the line 
+ NOT FOUND 
+ is returned.
 """
    id = reflectIdByName name
    if not id
@@ -33,9 +36,11 @@ reflectId name String > String String String
 
 simpleAttributes reflectId String > String String
 """
- Returns a JSON formatted list of attribute descriptors.
+ Returns a JSON formatted list of attribute descriptors for 
+ the simple (unary, atomic-primitive-valued) attributes of the object.
+ An empty list is returned if the object is not found or has no simple attributes.
 """
-   attrs = simpleAttrs reflectId
+   attrs = getSimpleAttributes reflectId
    => "JSON"
       attrs 
 
@@ -45,8 +50,9 @@ complexAttributes reflectId String > String String
  Returns a JSON formatted list of attribute descriptors of the complex attributes
  of the object: multi-valued attributes or attributes which are object-valued rather
  than primitive-valued.
+ An empty list is returned if the object is not found or has no complex attributes.
 """
-   attrs = complexAttrs reflectId
+   attrs = getComplexAttributes reflectId
    => "JSON"
       attrs 
 
