@@ -166,6 +166,134 @@ func InitReflectMethods() {
 	}
 	attrValMethod.PrimitiveCode = attrVal  	
 
+
+
+   //////////////////////////////
+   // reflectId methods
+
+
+
+ 
+/*
+ 	transientDub obj Any name String > reflectId String
+*/   
+ 	transientDubMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"transientDub", 
+		                                    []string{"obj","name"}, 
+		                                    []string{"Any","String"}, 
+		                                    []string{"String"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	transientDubMethod.PrimitiveCode = transientDub
+ 
+ 
+   /*
+   reflectIdByName name String > reflectId String
+   """
+    Given an object name, which is either a tempCache name (Todo) or a perstence-dubbed name, return
+    the reflectId of the object.
+   """
+   */ 	
+ 	reflectIdByNameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"reflectIdByName", 
+		                                    []string{"name"}, 
+		                                    []string{"String"}, 
+		                                    []string{"String"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	reflectIdByNameMethod.PrimitiveCode = reflectIdByName	
+ 
+ 
+ 	clearReflectIdsMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"clearReflectIds", 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	clearReflectIdsMethod.PrimitiveCode = clearReflectIds
+ 
+
+
+   /*
+   ensureReflectId obj Any > reflectId String
+   """
+    Ensures a reflectId exists for the (non-primitive) object and returns that reflectId, using which
+    the object can later be retrieved.
+   """ 
+   */
+ 	ensureReflectIdMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"ensureReflectId", 
+		                                    []string{"obj"}, 
+		                                    []string{"Any"}, 
+		                                    []string{"String"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	ensureReflectIdMethod.PrimitiveCode = ensureReflectId
+
+
+
+   /*
+   objectByReflectId reflectId String > obj Any
+   """
+    Given the reflectId, return the relish object, which may or may nor be persistent.
+    If given reflectId "0", returns relish NIL RObject.
+    If given an invalid reflectId or one that no longer is mapped to an object,
+    also returns NIL
+   """ 
+   */
+ 	objectByReflectIdMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"objectByReflectId", 
+		                                    []string{"reflectId"}, 
+		                                    []string{"String"}, 
+		                                    []string{"Any"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	objectByReflectIdMethod.PrimitiveCode = objectByReflectId
+
+ 	
+ 	
+   // First, make sure we have the appropriate list types in existence.
+ 	
+   simpleAttrDescriptorType := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/SimpleAttrDescriptor"]
+   simpleAttrDescriptorListType, err := RT.GetListType(simpleAttrDescriptorType) 
+ 	if err != nil {
+ 		panic(err)
+ 	}
+ 	
+   complexAttrDescriptorType := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor"]
+   complexAttrDescriptorListType, err := RT.GetListType(complexAttrDescriptorType) 
+ 	if err != nil {
+ 		panic(err)
+ 	}
+
+	getSimpleAttributesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"getSimpleAttributes", 
+		                                    []string{"reflectId"}, 
+		                                    []string{"String"}, 
+		                                    []string{simpleAttrDescriptorListType.Name}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	getSimpleAttributesMethod.PrimitiveCode = getSimpleAttributes
+
+
+	getComplexAttributesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"getComplexAttributes", 
+		                                    []string{"reflectId"}, 
+		                                    []string{"String"}, 
+		                                    []string{complexAttrDescriptorListType.Name}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	getComplexAttributesMethod.PrimitiveCode = getComplexAttributes
+
+
 }
 
 
@@ -619,7 +747,7 @@ func reflectIdByName(th InterpreterThread, objects []RObject) []RObject {
 
 	name := string(objects[0].(String))	
 
-    reflectId := reflectIdByName1(name)
+    reflectId := reflectIdByName1(th, name)
 
 	return []RObject{String(reflectId)}
 }
@@ -711,21 +839,21 @@ func getSimpleAttributes(th InterpreterThread, objects []RObject) []RObject {
 
 	       attrNameAttr, found := descr.Type().GetAttribute("attrName")
 	       if ! found {
-	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an attrName attribute?")
+	    	  err = fmt.Errorf("Hmm. Why does reflect.SimpleAttrDescriptor not have an attrName attribute?")
 	    	  panic(err)
 	       }
 	       RT.RestoreAttr(descr,  attrNameAttr, String( attr.Part.Name )   )  
 
 	       typeNameAttr, found := descr.Type().GetAttribute("typeName")
 	       if ! found {
-	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an typeName attribute?")
+	    	  err = fmt.Errorf("Hmm. Why does reflect.SimpleAttrDescriptor not have an typeName attribute?")
 	    	  panic(err)
 	       }
 	       RT.RestoreAttr(descr,  typeNameAttr, String( attr.Part.Type.Name )   )
 
 	       valAttr, found := descr.Type().GetAttribute("val")
 	       if ! found {
-	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an val attribute?")
+	    	  err = fmt.Errorf("Hmm. Why does reflect.SimpleAttrDescriptor not have an val attribute?")
 	    	  panic(err)
 	       }
 	       RT.RestoreAttr(descr,  valAttr, String( val.String() )   )
@@ -754,7 +882,159 @@ getComplexAttributes reflectId >
   ]
   ...
 ]
+
+			ComplexAttrDescriptor
+			"""
+			 Temporary
+			"""
+			   attrName String
+			   typeName String
+			   minArity Int
+			   maxArity Int
+			   valIsObject Bool
+			   valIsCollection Bool
+			   inverseAttrName String
+			   inverseMinArity Int
+			   inverseMaxArity Int
+			   vals [] String
 */
+func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
+
+	reflectId := string(objects[0].(String))	
+    obj := objectByReflectId1(reflectId)
+
+    complexAttrDescrType, typFound := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor"]
+    if ! typFound {
+    	panic("reflect.ComplexAttrDescriptor is not defined.")
+    }
+
+    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+
+    if obj != nil && obj != NIL {
+    	
+       attrs,vals := complexAttrs(obj)
+
+       for i, attr := range attrs {
+
+           val := vals[i]
+
+	       descr, err := RT.NewObject("shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor")
+	       if err != nil {
+	    	  panic(err)
+	       }
+
+	       attrNameAttr, found := descr.Type().GetAttribute("attrName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an attrName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  attrNameAttr, String( attr.Part.Name )   )  
+
+	       typeNameAttr, found := descr.Type().GetAttribute("typeName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an typeName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  typeNameAttr, String( attr.Part.Type.Name )   )
+
+
+	       minArityAttr, found := descr.Type().GetAttribute("minArity")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an minArity attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  minArityAttr, Int( int64(attr.Part.ArityLow) )   )
+
+
+	       maxArityAttr, found := descr.Type().GetAttribute("maxArity")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have a maxArity attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  maxArityAttr, Int( int64(attr.Part.ArityHigh) )   )
+
+           inverseAttr := attr.Inverse
+           inverseAttrName := ""
+           if inverseAttr != nil {
+	           inverseAttrName = inverseAttr.Part.Name
+
+		       inverseMinArityAttr, found := descr.Type().GetAttribute("inverseMinArity")
+		       if ! found {
+		    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an inverseMinArity attribute?")
+		    	  panic(err)
+		       }
+		       RT.RestoreAttr(descr,  inverseMinArityAttr, Int( int64(inverseAttr.Part.ArityLow) )   )
+
+
+		       inverseMaxArityAttr, found := descr.Type().GetAttribute("inverseMaxArity")
+		       if ! found {
+		    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have a inverseMaxArity attribute?")
+		    	  panic(err)
+		       }
+		       RT.RestoreAttr(descr,  inverseMaxArityAttr, Int( int64(inverseAttr.Part.ArityHigh) )   )		
+		   }       
+
+	       inverseAttrNameAttr, found := descr.Type().GetAttribute("inverseAttrName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an inverseAttrName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  inverseAttrNameAttr, String( inverseAttrName )   )
+
+
+
+
+           // TODO NOW HANDLE MULTIPLE VALS ETC
+
+
+	       valsAttr, found := descr.Type().GetAttribute("vals")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an vals attribute?")
+	    	  panic(err)
+	       }
+	
+
+	
+	       var valStr string
+	
+	       if attr.IsMultiValued() {
+			  primitive := attr.Part.Type.IsPrimitive
+		
+		      // val must be a collection - iterate over it !! TODO
+	          valColl := val.(RCollection)
+	          for obj := range valColl.Iter(th) {
+			      if primitive {
+				      valStr = obj.String()
+				  } else {
+					  valStr = ensureReflectId1(obj)
+				  }
+
+				  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+			      if err != nil {
+					 panic(err)
+				  }
+		      }
+		   } else {
+			  valStr = ensureReflectId1(val)
+			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+		      if err != nil {
+				 panic(err)
+			  }		   
+		   }
+
+           attrDescrList.AddSimple(descr)
+       }
+    }
+
+	return []RObject{attrDescrList}
+}
+
+
+
 
 
 /*
@@ -792,7 +1072,7 @@ the reflectId of the object. Note: The transient dubbed namespace is searched be
 persistent name.
 Returns the empty string, an invalid reflectId, if the object is not found by name.
 */
-func reflectIdByName1(objectName string) (reflectId string) {
+func reflectIdByName1(th InterpreterThread, objectName string) (reflectId string) {
 
    // Try the transientDub namespace first...	
    reflectId,found := reflectIdsByName[objectName]
@@ -852,6 +1132,7 @@ func ensureReflectId1(obj RObject) (reflectId string) {
       objectsByReflectId[reflectId] = obj
       reflectIdsByObject[obj] = reflectId
    }
+   return
 }
 
 
@@ -862,25 +1143,25 @@ func ensureReflectId1(obj RObject) (reflectId string) {
 /*
 Fetches both attribute metadata and values of the simple attributes of the object.
 */
-func simpleAttrs(obj RObject) (attrs []AttributeSpec, vals []RObject) {
-   return getAttrs(obj,false,true, false)
+func simpleAttrs(obj RObject) (attrs []*AttributeSpec, vals []RObject) {
+   return getAttrs(obj,true,false)
 }
 
 /*
 Fetches both attribute metadata and values of the complex attributes of the object.
 */
-func complexAttrs(obj RObject) (attrs []AttributeSpec, vals []RObject) {
+func complexAttrs(obj RObject) (attrs []*AttributeSpec, vals []RObject) {
    return getAttrs(obj,false,true)
 }
 
 /*
 Fetches both attribute metadata and values of the simple or complex attributes of the object.
 */
-func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []AttributeSpec, vals []RObject) {
+func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []*AttributeSpec, vals []RObject) {
 	includeInherited := true
-    attrNames := ob.Type().AttributeNames(includeSimple, includeComplex, includeInherited)
+    attrNames := obj.Type().AttributeNames(includeSimple, includeComplex, includeInherited)
     for _,attrName := range attrNames {  
-    	attr,found := t.GetAttribute(attrName)
+    	attr,found := obj.Type().GetAttribute(attrName)
     	if ! found {
     		panic("getAttrs: attribute of type unexpectedly not found.")
     	}
@@ -889,8 +1170,10 @@ func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []Att
 	    val, found := RT.AttrVal(obj, attr)
 	    if ! found {
 	    	val = NIL
-	    }     	
+	    }     
+	    vals = append(vals, val)	
     } 
+    return
 }
 
 
@@ -925,8 +1208,9 @@ by the relish garbage collector. It does prevent the object from being collected
 by Go's garbage collector until the reflectIds maps are cleared.
 */
 func transientDub1(obj RObject, name string) (reflectId string) {
-   reflectId = ensureReflectId(obj)
+   reflectId = ensureReflectId1(obj)
    reflectIdsByName[name] = reflectId
+   return
 }
 
 

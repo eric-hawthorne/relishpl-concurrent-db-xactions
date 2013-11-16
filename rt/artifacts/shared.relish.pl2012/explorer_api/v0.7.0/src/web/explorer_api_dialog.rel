@@ -34,7 +34,10 @@ reflectId name String > String String String
       id
 
 
-simpleAttributes reflectId String > String String
+simpleAttributes reflectId String 
+> 
+   String
+   [] reflect.SimpleAttrDescriptor 
 """
  Returns a JSON formatted list of attribute descriptors for 
  the simple (unary, atomic-primitive-valued) attributes of the object.
@@ -45,7 +48,10 @@ simpleAttributes reflectId String > String String
       attrs 
 
 
-complexAttributes reflectId String > String String
+complexAttributes reflectId String
+> 
+   String
+   [] reflect.ComplexAttrDescriptor
 """
  Returns a JSON formatted list of attribute descriptors of the complex attributes
  of the object: multi-valued attributes or attributes which are object-valued rather
