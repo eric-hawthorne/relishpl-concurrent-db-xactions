@@ -457,8 +457,10 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
     if ! artifactVersionDirFound {
 
 	    // Have not found the artifact version locally. Fetch it from the Internet.
-	
-	
+
+        Log(LOAD2_,"artifact version |%s| not found locally\n",version) 	
+        Log(LOAD2_,"localArtifactMetadataFilePath=%s\n",localArtifactMetadataFilePath) 
+	    	
 	
         // TODO Need this path in order to install or update the artifact metadata file from remote, if there is none locally
         // or if the remote one is more recent.
