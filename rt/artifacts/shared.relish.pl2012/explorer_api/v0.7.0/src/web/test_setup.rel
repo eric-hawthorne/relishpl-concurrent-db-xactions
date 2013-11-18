@@ -66,40 +66,40 @@ main
 """
  Create some objects.
 """
-   if not exists "Bookcase 1"
-      herman = Author
-      herman.givenName = "Herman"
-      herman.familyName = "Melville"
-      herman.birthDate err = Time "1819-08-01T14:23Z"
+   // if not exists "Bookcase 1"
+   herman = Author
+   herman.givenName = "Herman"
+   herman.familyName = "Melville"
+   herman.birthDate err = Time "1819-08-01T14:23Z"
 
-      jane = Author
-      jane.givenName = "Jane"
-      jane.familyName = "Austin"
-      jane.birthDate err = Time "1775-12-16T10:00Z"
+   jane = Author
+   jane.givenName = "Jane"
+   jane.familyName = "Austin"
+   jane.birthDate err = Time "1775-12-16T10:00Z"
 
-      book1 = Book
-      book1.title = "Moby Dick"
-      book1.pageCount = 403
-      book1.x = -122.435
-      book1.y = 49.03245
-      book1.z = 189.0
+   book1 = Book
+   book1.title = "Moby Dick"
+   book1.pageCount = 403
+   book1.x = -122.435
+   book1.y = 49.03245
+   book1.z = 189.0
 
-      book2 = Book
-      book2.title = "Pride & Prejudice"
-      book2.pageCount = 385
-      book1.x = -122.435
-      book1.y = 49.03246
-      book1.z = 189.0
+   book2 = Book
+   book2.title = "Pride & Prejudice"
+   book2.pageCount = 385
+   book2.x = -122.435
+   book2.y = 49.03246
+   book2.z = 189.0
 
-      bookcase = BookCase
-      bookcase.shelves += BookShelf
-      bookcase.shelves += BookShelf
-      bookcase.shelves += BookShelf
+   bookcase = BookCase
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
 
-      bookcase.shelves[0].books += book1
-      bookcase.shelves[0].books += book2
+   bookcase.shelves[0].books += book1
+   bookcase.shelves[0].books += book2
 
-      book1.authors += herman
-      book2.authors += jane
+   book1.authors += herman
+   book2.authors += jane
 
-      dub bookcase "Bookcase 1"
+   transientDub bookcase "Bookcase 2"

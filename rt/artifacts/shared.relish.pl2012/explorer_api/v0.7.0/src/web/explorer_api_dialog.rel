@@ -17,7 +17,7 @@ import
    reflect
 
 
-reflectId name String > String String String
+reflectId name String > String String String String
 """
  Given an object name (a dubbed name in the persistence system, or a transientDub name)
  returns the reflectId by which the object can be fetched through this API.
@@ -29,13 +29,20 @@ reflectId name String > String String String
    id = reflectIdByName name
    if not id
       id = "NOT FOUND"
-   => "MEDIA"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0  
+"""    
+      "MEDIA"
       "text/plain"   
       id
 
 
 simpleAttributes reflectId String 
 > 
+   String
    String
    [] reflect.SimpleAttrDescriptor 
 """
@@ -44,12 +51,19 @@ simpleAttributes reflectId String
  An empty list is returned if the object is not found or has no simple attributes.
 """
    attrs = getSimpleAttributes reflectId
-   => "JSON"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
       attrs 
 
 
-complexAttributes reflectId String
+complexAttributes reflectId String b Int
 > 
+   String
    String
    [] reflect.ComplexAttrDescriptor
 """
@@ -59,7 +73,17 @@ complexAttributes reflectId String
  An empty list is returned if the object is not found or has no complex attributes.
 """
    attrs = getComplexAttributes reflectId
-   => "JSON"
+   print "vals of attr"
+   for attr in attrs
+      for v in attr.vals
+         print v
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
       attrs 
 
 
