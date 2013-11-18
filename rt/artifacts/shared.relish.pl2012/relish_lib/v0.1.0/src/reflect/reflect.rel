@@ -1,0 +1,51 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  reflect
+
+""" 
+ reflect.rel
+
+ TEMPORARY REPLACEMENT
+"""
+
+
+DataType
+"""
+ Temporary
+"""
+   name String
+
+
+Attribute
+"""
+ Temporary
+"""
+   name String
+   minArity Int
+   maxArity Int
+   inverse ?Attribute
+
+
+SimpleAttrDescriptor
+"""
+ Temporary
+"""
+   attrName String
+   typeName String
+   val String
+
+
+ComplexAttrDescriptor
+"""
+ Temporary
+"""
+   attrName String
+   typeName String
+   minArity Int
+   maxArity Int
+   valIsObject Bool
+   valIsCollection Bool
+   inverseAttrName String
+   inverseMinArity Int
+   inverseMaxArity Int
+   vals 0 N [] String
