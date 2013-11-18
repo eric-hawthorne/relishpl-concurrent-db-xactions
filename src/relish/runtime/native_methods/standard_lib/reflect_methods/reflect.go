@@ -901,6 +901,7 @@ getComplexAttributes reflectId >
 func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 
 	reflectId := string(objects[0].(String))	
+	 fmt.Println(reflectId)
     obj := objectByReflectId1(reflectId)
 
     complexAttrDescrType, typFound := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor"]
@@ -913,11 +914,12 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	   panic(err)
     }
 
-
+    fmt.Println(obj)
+    
     if obj != nil && obj != NIL {
     	
        attrs,vals := complexAttrs(obj)
-
+       fmt.Println(len(attrs))
        for i, attr := range attrs {
 
            val := vals[i]
@@ -956,6 +958,30 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	    	  panic(err)
 	       }
 	       RT.RestoreAttr(descr,  maxArityAttr, Int( int64(attr.Part.ArityHigh) )   )
+	       
+	       
+	       valIsObjectAttr, found := descr.Type().GetAttribute("valIsObject")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an valIsObject attribute?")
+	    	  panic(err)
+	       }
+	       isObject := ! attr.Part.Type.IsPrimitive
+	       RT.RestoreAttr(descr,  valIsObjectAttr, Bool(isObject)   )
+
+	       valIsCollectionAttr, found := descr.Type().GetAttribute("valIsCollection")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an valIsCollection attribute?")
+	    	  panic(err)
+	       }       
+	       isIndependentCollection := false
+	       if val.IsCollection() {
+	          if val.(RCollection).Owner() == nil {
+                isIndependentCollection = true
+             }
+          }
+	       RT.RestoreAttr(descr,  valIsCollectionAttr, Bool(isIndependentCollection)   )
+
+	       
 
            inverseAttr := attr.Inverse
            inverseAttrName := ""
@@ -1002,7 +1028,8 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	       var valStr string
 	
 	       if attr.IsMultiValued() {
-			  primitive := attr.Part.Type.IsPrimitive
+	          fmt.Println(attr.Part.Name, "is multivalued")
+			    primitive := attr.Part.Type.IsPrimitive
 		
 		      // val must be a collection - iterate over it !! TODO
 	          valColl := val.(RCollection)
@@ -1014,11 +1041,15 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 				  }
 
 				  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+				  
+              fmt.Println("adding ",valStr)				  
+				  
 			      if err != nil {
 					 panic(err)
 				  }
 		      }
 		   } else {
+	          fmt.Println(attr.Part.Name, "is not multivalued")		      
 			  valStr = ensureReflectId1(val)
 			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 		      if err != nil {

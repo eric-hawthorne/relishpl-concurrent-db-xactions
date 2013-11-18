@@ -630,6 +630,8 @@ with attribute values themselves converted to maps and slices.
 */
 func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
 	
+   fmt.Println("runit.ToMapListTree",o.String())
+	
 	// Record myself in the visited set so we don't infinitely loop.
 	visited[o] = true
 	
@@ -645,21 +647,21 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
         if includePrivate || attr.Part.IsPublicReadable() {
             key = attr.Part.Name
 
-			value, found := RT.AttrValue(o, attr, true, true)
-			if !found {
-				break
-			}
-			
-	        if visited[value] {
+			  value, found := RT.AttrValue(o, attr, true, true)
+			  fmt.Println(attr.Part.Name,":",value)			
+			  if !found {
+			     fmt.Println("attr val not found")
+				  value = NIL // TODO Decide how to really handle these !
+			  } else if visited[value] {
 	           continue
 	        }			
 			
-			val, err = value.ToMapListTree(includePrivate, visited)	
-			if err != nil {
-				return
-			}
-			m[key] = val
-		}
+			 val, err = value.ToMapListTree(includePrivate, visited)	
+			 if err != nil {
+			 	return
+			 }
+			 m[key] = val
+		 }
 	}
 
 	for _, typ := range o.rtype.Up {
@@ -668,13 +670,13 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 	            key = attr.Part.Name
 
 				value, found := RT.AttrValue(o, attr, true, true)
+				fmt.Println(attr.Part.Name,":",value)
 				if !found {
-					break
-				}
-				
-	            if visited[value] {
-	               continue
-	            }
+			      fmt.Println("attr val not found")				   
+				   value = NIL // TODO Decide how to really handle these !
+ 			   } else if visited[value] {
+ 	            continue
+ 	         }
 					
 				val, err = value.ToMapListTree(includePrivate, visited)	
 				if err != nil {
