@@ -1252,6 +1252,10 @@ If the type is not found, an empty list of Any type is returned.
 */
 func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryConditions string) RObject {
 
+    if queryConditions == "" {
+       queryConditions = "1=1"
+    }
+    
     t, typeFound := RT.Types[typeName]
     if ! typeFound {
        objectList, err := RT.Newrlist(AnyType, 0, -1, nil, nil)
