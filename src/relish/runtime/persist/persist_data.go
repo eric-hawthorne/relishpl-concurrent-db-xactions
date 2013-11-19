@@ -499,6 +499,64 @@ func (db *SqliteDB) ObjectNameExists(name string) (found bool, err error) {
 	return
 }
 
+
+
+
+func (db * SqliteDB) ObjectNames(prefix string) (names []string, err error) {
+   if prefix == "" {
+		stmt := "SELECT name FROM RName order by name"
+		selectStmt, dbErr := db.Prepare(stmt)
+		if dbErr != nil {
+			err = dbErr
+			return
+		}
+
+		// This is a well used prepared statement so does not need to be destroyed with Finalize.
+		// defer selectStmt.Finalize()
+
+		err = selectStmt.Exec()
+		if err != nil {
+			return
+		}
+		for selectStmt.Next() {
+			var name string
+
+			err = selectStmt.Scan(&name)
+			if err != nil {
+				return
+			}
+			names = append(names,name)
+		}
+   } else {
+        prefix = SqlStringValueEscape(prefix) + "%"
+		stmt := "SELECT name FROM RName where name like ? order by name"
+		selectStmt, dbErr := db.Prepare(stmt)
+		if dbErr != nil {
+			err = dbErr
+			return
+		}
+
+		// This is a well used prepared statement so does not need to be destroyed with Finalize.
+		// defer selectStmt.Finalize()
+
+		err = selectStmt.Exec(prefix)
+		if err != nil {
+			return
+		}
+		for selectStmt.Next() {
+			var name string
+
+			err = selectStmt.Scan(&name)
+			if err != nil {
+				return
+			}
+			names = append(names,name)
+		}
+   }
+   return
+}
+
+
 /*
 TODO Better error reporting
 */

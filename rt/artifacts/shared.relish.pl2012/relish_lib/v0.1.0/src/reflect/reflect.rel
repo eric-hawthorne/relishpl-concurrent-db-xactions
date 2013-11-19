@@ -5,30 +5,41 @@ package  reflect
 """ 
  reflect.rel
 
- TEMPORARY REPLACEMENT
+ Types and methods for reflection on the relish language structure (metadata) of data in relish programs. 
+
+ Note. This is pretty conservative right now. There are no data modification or method execution provisions
+ in the reflection library yet. Just interrogating the structure.
+
+ Note 2: Once public/private attribute and method classification comes into the language,
+ protection will need to be imlpemented in this reflection library to ensure it is not a way around
+ privacy protections.
 """
 
 
 DataType
 """
- Temporary
+ Represents a relish datatype.
+ Can list the attributes specified by the type, or all attributes specified in the closure of the type and 
+ all of its direct and indirect supertypes.
 """
    name String
 
 
 Attribute
 """
- Temporary
+ Represents an attribute descriptor of a datatype, or one direction of a bi-directional type-relation descriptor.
 """
    name String
-   minArity Int
+   type DataType
+   minArity Int 
    maxArity Int
    inverse ?Attribute
 
 
 SimpleAttrDescriptor
 """
- Temporary
+ A descriptor of a unary primitive attribute and its value for some object instance.
+ The value has been converted to type String.
 """
    attrName String
    typeName String
@@ -37,15 +48,19 @@ SimpleAttrDescriptor
 
 ComplexAttrDescriptor
 """
- Temporary
+ A descriptor of an attribute and its value for som object instance,
+ where the attribute is not a unary attribute or does not have a atomic primitive as value type.
+ The values have been converted to type String.
+ If valIsObject is true, the values are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes.
 """
    attrName String
    typeName String
    minArity Int
    maxArity Int
    valIsObject Bool
-   valIsCollection Bool
-   inverseAttrName String
+   valIsCollection Bool  // valIsObject will also be true - this is used with single-val attr w. collection type
+   inverseAttrName String  // "" if there is no inverse
    inverseMinArity Int
-   inverseMaxArity Int
+   inverseMaxArity Int    
    vals 0 N [] String

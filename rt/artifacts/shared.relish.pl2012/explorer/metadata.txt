@@ -1,0 +1,19 @@
+relish artifact metadata: 2013/11/18
+origin: shared.relish.pl2012
+artifact: explorer
+current version: 0.7.0
+release date: 2013/11/18
+tags: web application,relish,debugging
+
+Web application for exploring and debugging the data objects within a running relish program.
+Can be focussed on a particular object within the runtime memory or database of
+another running relish program.
+Then displays that object and its attributes, including other objects which 
+are attributes of the focus object. Displays a portion of the object reference tree
+(object network) out from the focus object.
+Can be refocussed on any of the displayed objects.
+Queries can be performed in the explorer's user interface 
+to select objects for potential focus of the explorer.
+This explorer runs as one program (process),
+and the relish program being debugged is another program, 
+which must be listening for http requests and must offer the explorer_api web service.
