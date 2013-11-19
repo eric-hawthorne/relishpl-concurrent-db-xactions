@@ -76,6 +76,7 @@ type DB interface {
 	EnsurePersisted(obj RObject) (err error)
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)
+  ObjectNames(prefix string) (names []string, err error)  
 	NameObject(obj RObject, name string)
 	RenameObject(oldName string, newName string)	
 	
@@ -397,6 +398,14 @@ func (dbt * DBThread) ObjectNameExists(name string) (found bool, err error) {
    dbt.ReleaseDB()
    return
 }
+
+func (dbt * DBThread) ObjectNames(prefix string) (names []string, err error) {
+   dbt.UseDB()
+   names,err = dbt.db.ObjectNames(prefix)
+   dbt.ReleaseDB()
+   return  
+}
+
 
 func (dbt * DBThread) NameObject(obj RObject, name string) {
    dbt.UseDB()

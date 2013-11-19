@@ -14,6 +14,7 @@ import (
     "sort"
     "strconv"
     "relish"
+    "strings"
 )
 
 ///////////
@@ -204,6 +205,54 @@ func InitReflectMethods() {
 		panic(err)
 	}
 	reflectIdByNameMethod.PrimitiveCode = reflectIdByName	
+
+
+
+   /*
+   objectNames prefix String > [] String
+   """
+    Returns the list of dub'bed or transientDub'bed names of objects.
+    The names are returned in lexicographic order.
+    If a non-empty prefix string is supplied, only names which start with the prefix are returned.
+   """
+   */ 	
+ 	objectNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"objectNames", 
+		                                    []string{"prefix"}, 
+		                                    []string{"String"}, 
+		                                    []string{"List_of_String"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	objectNamesMethod.PrimitiveCode = objectNames	
+
+
+
+   /*
+   select typeName String queryConditions String > List
+   """
+    Returns the list of objects which are compatible with the specified data type
+    (specified by its full artifact-and-package-qualified name), and which meet the queryConditions.
+    If the typeName is valid and denotes type T, the returned list will be of type [] T, whereas
+    if the typeName is invalid, an empty list of type [] Any will be returned. 
+   """
+   */ 	
+ 	selectMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"select", 
+		                                    []string{"typeName","queryConditions"}, 
+		                                    []string{"String","String"}, 
+		                                    []string{"List"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	selectMethod.PrimitiveCode = selectByTypeAndConditions	
+
+
+
+
+
+
+
  
  
  	clearReflectIdsMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"clearReflectIds", 
@@ -753,6 +802,54 @@ func reflectIdByName(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+/*
+objectNames prefix String > [] String
+"""
+ Given a prefix (which may be the empty String), return a lexicographically ordered list of 
+ object names that match the prefix (or of all object names if the prefix is empty.)
+ The names are made up of both dubbed and transientDubbed object names.
+"""
+*/
+func objectNames(th InterpreterThread, objects []RObject) []RObject {
+
+	prefix := string(objects[0].(String))	
+
+    nameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+    nameSlice := objectNames1(th, prefix)
+    for _,name := range nameSlice {
+    	nameList.AddSimple(String(name))
+    }
+
+	return []RObject{nameList}
+}
+
+
+/*
+select typeName String queryConditions String > List
+"""
+ Return a list of the persistent objects which are compatible with the type and meet the query conditions.
+ TODO Consider promoting this method to builtin method status.
+"""
+*/
+func selectByTypeAndConditions(th InterpreterThread, objects []RObject) []RObject {
+
+	typeName := string(objects[0].(String))	
+	queryConditions := string(objects[1].(String))		
+
+    objectList := selectByTypeAndConditions1(th, typeName, queryConditions)
+
+	return []RObject{objectList}
+}
+
+
+
+
+
+
 
 /*
 ensureReflectId obj Any > reflectId String
@@ -1131,6 +1228,59 @@ func reflectIdByName1(th InterpreterThread, objectName string) (reflectId string
     return
 }
 
+
+/*
+Sorted, transientDub names and persistent dub names, matching the prefix.
+*/
+func objectNames1(th InterpreterThread, prefix string) (names []string) {
+
+    names, err := th.DB().ObjectNames(prefix) 
+    if err != nil {
+	   panic(err)
+    }
+ 
+    transNames := transientNames(prefix)
+    names = append(transNames, names...)
+
+    sort.Strings(names)    
+    return
+}
+
+/*
+Returns a relish list of the resulting objects.
+If the type is not found, an empty list of Any type is returned.
+*/
+func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryConditions string) RObject {
+
+    t, typeFound := RT.Types[typeName]
+    if ! typeFound {
+       objectList, err := RT.Newrlist(AnyType, 0, -1, nil, nil)
+       if err != nil {
+	      panic(err)
+       }
+	   return objectList
+    }
+
+    objectList, err := RT.Newrlist(t, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+    queryArgs := []RObject{} 
+    radius := 1
+    objs := []RObject{} 
+    mayContainProxies, err := th.DB().FetchN(t, queryConditions, queryArgs, radius, &objs)		
+    if err != nil {
+	    panic(err)
+    }	
+
+    objectList.ReplaceContents(objs)
+    objectList.SetMayContainProxies(mayContainProxies)
+    return objectList
+}
+ 
+
+
 /*
 Given the reflectId, return the relish object, which may or may nor be persistent.
 If given reflectId "0", returns relish NIL RObject.
@@ -1244,6 +1394,21 @@ func transientDub1(obj RObject, name string) (reflectId string) {
    return
 }
 
+func transientNames(prefix string) (names []string) {
+   if prefix == "" {
+	   for name := range reflectIdsByName {
+		  names = append(names,name)
+	   }
+   } else {
+	   for name := range reflectIdsByName {
+	      if strings.HasPrefix(name,prefix) {
+	      	 names = append(names,name)
+	      }
+	   }
+   }
+   sort.Strings(names)
+   return
+}
 
 /*
    Removes all reflectId assignments.

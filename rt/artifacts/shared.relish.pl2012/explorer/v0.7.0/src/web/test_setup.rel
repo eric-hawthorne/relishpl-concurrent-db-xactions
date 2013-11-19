@@ -1,0 +1,105 @@
+origin   shared.relish.pl2012
+artifact explorer_api
+package  web 
+
+""" 
+ test_setup.rel
+
+ Objects for testing.
+"""
+
+
+import
+   datetime
+
+
+BookCase
+"""
+ A bookshelf furniture unit.
+"""
+   shelves 1 9 [] BookShelf
+
+
+BookShelf
+"""
+ A single shelf in a bookcase.
+"""
+   books 0 N Book
+
+
+PhysObj
+"""
+ A physical object located in a 3D cartesian-coordinate space.
+"""
+   x Float
+   y Float
+   z Float
+
+
+Book <: PhysObj
+"""
+ A book.
+"""
+   title String
+   pageCount Int
+
+
+Person
+"""
+ A human being.
+"""
+   givenName String
+   familyName String
+   birthDate Time
+
+
+Author <: Person
+"""
+ A person who has written a book.
+"""
+   
+
+Book 1 N -- 1 N Author
+
+
+main
+"""
+ Create some objects.
+"""
+   // if not exists "Bookcase 1"
+   herman = Author
+   herman.givenName = "Herman"
+   herman.familyName = "Melville"
+   herman.birthDate err = Time "1819-08-01T14:23Z"
+
+   jane = Author
+   jane.givenName = "Jane"
+   jane.familyName = "Austin"
+   jane.birthDate err = Time "1775-12-16T10:00Z"
+
+   book1 = Book
+   book1.title = "Moby Dick"
+   book1.pageCount = 403
+   book1.x = -122.435
+   book1.y = 49.03245
+   book1.z = 189.0
+
+   book2 = Book
+   book2.title = "Pride & Prejudice"
+   book2.pageCount = 385
+   book2.x = -122.435
+   book2.y = 49.03246
+   book2.z = 189.0
+
+   bookcase = BookCase
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
+
+   bookcase.shelves[0].books += book1
+   bookcase.shelves[0].books += book2
+
+   book1.authors += herman
+   book2.authors += jane
+
+   transientDub bookcase "Bookcase 2"
