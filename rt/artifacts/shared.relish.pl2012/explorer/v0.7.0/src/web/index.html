@@ -36,7 +36,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	</script>
 </head>
 <body>
-<form action="playAction" method="POST"> 	
+	
   <div id="header">	
   <table>
 	<tr>
@@ -65,38 +65,41 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
             </td>
             <td>
             	<table>
+	<form action="exploreAction" method="POST"> 
             		<tr>
             			<td>
-                           <h3>Program name &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascrpt:help('program_name')"/> :</h3>            				
+                           <h3>Target Program URL &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('target_program_url')"/> :</h3>            				
             			</td>
-            			<td>
-                           <input type="text" size="30" name="artfctName" value="{{.name}}" />	            			
-            			</td>    
-            			<td>
-            			</td>              			        			
-            		</tr>
-            		<tr>
-            			<td>
-            			</td>
-            			<td>
-            				<select id="chosenArtfctName" onchange="loadProgram()">
-            					<option>-- Choose existing trial program --</option>
-            					{{range .programs}}
-            					  <option>{{.}}</option>
-            					{{end}}
-            				</select>
-            			</td>  
-            			<td>
-            			</td>              			          			
+            			<td colspan="2">
+                           <input type="text" size="40" name="programUrl" value="{{.programUrl}}" />	            			
+            			</td>                 			        			
             		</tr>
             		<tr>
             		    <td style="text-align: right;">
-               	           <h3>Description :</h3>            		    	
+               	           <h3>Object Name starts with:</h3>            		    	
             			</td>  
-            			<td colspan="2">
-            			   <input type="text" size="72" name="description" value="{{.description}}" />	
+            			<td>
+            			   <input type="text" size="30" name="prefix" value="{{.prefix}}" />	
+            			</td> 
+                        <td>
+	                    </td>          			
+            		</tr>            		
+            		<tr>
+            		    <td style="text-align: right;">
+               	           <h3>Data Type:</h3>            		    	
+            			</td>  
+<td>
+	<select name="type">
+		{{range .types}}
+		<option>{{.}}</option>
+		{{end}}
+    </select>		
+</td>
+            			<td>
+            			   Where: <input type="text" size="60" name="where" value="{{.where}}" />	
             			</td>           			
-            		</tr>            		            		
+            		</tr>    
+</form>        		            		
             	</table>
             </td>
           </tr>

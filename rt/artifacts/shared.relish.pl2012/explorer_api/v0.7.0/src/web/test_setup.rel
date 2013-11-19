@@ -62,11 +62,13 @@ Author <: Person
 Book 1 N -- 1 N Author
 
 
-main
+PERSISTENT = true
+
+
+makeObjects > bookcase BookCase
 """
- Create some objects.
+ Create test objects.
 """
-   // if not exists "Bookcase 1"
    herman = Author
    herman.givenName = "Herman"
    herman.familyName = "Melville"
@@ -101,5 +103,15 @@ main
 
    book1.authors += herman
    book2.authors += jane
+   
 
-   transientDub bookcase "Bookcase 2"
+main
+"""
+ Create some objects.
+"""
+   if not PERSISTENT 
+      bookcase = makeObjects
+      transientDub bookcase "Bookcase 2"      
+   elif not exists "Bookcase 1"
+      bookcase = makeObjects  
+      dub bookcase "Bookcase 1"

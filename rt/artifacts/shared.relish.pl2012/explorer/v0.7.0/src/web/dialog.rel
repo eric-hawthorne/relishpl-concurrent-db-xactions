@@ -15,76 +15,53 @@ package  web
 
 import
    reflect
+   http
 
 
-reflectId name String > String String String String
-"""
- Given an object name (a dubbed name in the persistence system, or a transientDub name)
- returns the reflectId by which the object can be fetched through this API.
- The response is a single line of plaintext containing either the reflectId (an integer)
- or if the name does not find an object, the line 
- NOT FOUND 
- is returned.
-"""
-   id = reflectIdByName name
-   if not id
-      id = "NOT FOUND"
-   => """
-HEADERS
-Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
-Pragma: no-cache
-Expires: 0  
-"""    
-      "MEDIA"
-      "text/plain"   
-      id
-
-
-simpleAttributes reflectId String 
+index 
 > 
-   String
-   String
-   [] reflect.SimpleAttrDescriptor 
+   String 
+   Any
 """
- Returns a JSON formatted list of attribute descriptors for 
- the simple (unary, atomic-primitive-valued) attributes of the object.
- An empty list is returned if the object is not found or has no simple attributes.
+ Handles a request for the root (i.e. empty path) url on the server and port.
+
+ Note: Should use artifact instead of package? and standard "test_program" package.
 """
-   attrs = getSimpleAttributes reflectId
-   => """
-HEADERS
-Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
-Pragma: no-cache
-Expires: 0
-"""   
-      "JSON"
-      attrs 
+
+   typesJson err = httpGet cat "types"
+   if err
+      print err
+      => errf err
+
+   args = {
+             "programUrl" => ""
+             "prefix" => ""
+             "types" => typeNames
+             "where" => ""
+          }String > Any
+
+   => "index.html"
+      args
 
 
-complexAttributes reflectId String
-> 
-   String
-   String
-   [] reflect.ComplexAttrDescriptor
+
+exploreAction 
+   programUrl String
+   prefix String  
+   type String
+   where String
+   action String
 """
- Returns a JSON formatted list of attribute descriptors of the complex attributes
- of the object: multi-valued attributes or attributes which are object-valued rather
- than primitive-valued.
- An empty list is returned if the object is not found or has no complex attributes.
+ Loads objects to be displayed.
+ Either does a search by object name or by type and where clause, depending
+ on action.
+ action : "name" | "type"
 """
-   attrs = getComplexAttributes reflectId
-   print "vals of attr"
-   for attr in attrs
-      for v in attr.vals
-         print v
-   => """
-HEADERS
-Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
-Pragma: no-cache
-Expires: 0
-"""   
-      "JSON"
-      attrs 
+
+
+
+
+
 
 
 
