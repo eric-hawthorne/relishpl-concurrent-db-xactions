@@ -38,7 +38,7 @@ func InitReflectMethods() {
     //
 	typeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"typeNames", 
 		                                    []string{"includeStructs","includeCollections","includePrimitive","includeReflect"}, 
-		                                    []string{"Bool","Bool","Bool""Bool"}, 
+		                                    []string{"Bool","Bool","Bool","Bool"}, 
 		                                    []string{"List_of_String"}, false, 0, false)
 	if err != nil {
 		panic(err)

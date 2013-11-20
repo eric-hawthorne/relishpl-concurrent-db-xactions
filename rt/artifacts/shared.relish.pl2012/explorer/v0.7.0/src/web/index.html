@@ -49,8 +49,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     function connectToProgram() {
       programURL = document.getElementById("programUrl").value
       programURL = programURL.trim()
-      if (programURL.lastIndexOf("/") == length(programURL) - 1) {
-         programURL = programURL.substring(0,length(programURL) - 1)
+      if (programURL.lastIndexOf("/") == programURL.length - 1) {
+         programURL = programURL.substring(0,programURL.length - 1)
       }
       if (programURL == "") {
          alert("Please supply the web service URL of the target program that is to be debugged.");
@@ -60,8 +60,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
          programURL = "http://" + programURL
       }
       $.ajax({
-        type: "GET",
-        url: programURL + "/types"
+        type: "POST",
+        url: "/types",
+        dataType: "json",         
+        data: {"url" : programURL}
       }).done( function(msg) {
         alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
@@ -192,9 +194,9 @@ $.ajax({
             			<td colspan="2">
                            <input type="text" size="40" id="programUrl" value="{{.programUrl}}" />	            			
             			</td>      
-                  <td>
-                     <input type="button" value="connect to program" onclick="connectToProgram()" />
-                  </td>           			        			
+                        <td>
+                           <input type="button" value="connect to program" onclick="connectToProgram()" />
+                        </td>           			        			
             		</tr>
             		<tr>
             		    <td style="text-align: right;">
@@ -203,29 +205,28 @@ $.ajax({
             			<td>
             			   <input type="text" size="30" name="prefix" value="{{.prefix}}" />	
             			</td> 
-                  <td>
-                        <input type="button" value="find named objects" onclick="findNamedObjects()" />
-	                </td>          			
+                        <td>
+                           <input type="button" value="find named objects" onclick="findNamedObjects()" />
+	                    </td>          			
             		</tr>            		
             		<tr>
             		    <td style="text-align: right;">
                	           <h3>Data Type :</h3>            		    	
             			</td>  
-                  <td>
-                  	<select name="type">
-                  		{{range .types}}
-                  		<option>{{.}}</option>
-                  		{{end}}
-                      </select>		
-                  </td>
+                        <td>
+                  	     <select name="type">
+                  		 {{range .types}}
+                  	 	 <option>{{.}}</option>
+                  	 	 {{end}}
+                        </select>		
+                        </td>
             			<td>
             			   Where: <input type="text" size="60" name="where" value="{{.where}}" />	
             			</td>      
-                  <td>
-                      <input type="button" value="find" onclick="selectObjectsOfType()" />
-                  </td>     			
-            		</tr>    
-</form>        		            		
+                        <td>
+                          <input type="button" value="find" onclick="selectObjectsOfType()" />
+                        </td>     			
+            		</tr>     		            		
             	</table>
             </td>
           </tr>
@@ -243,52 +244,17 @@ $.ajax({
 <table>	
 	<tr>
 		<td class="contentside">
-<div>
-	<h3>Imports &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('imports')"/></h3>
-		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
-	<h3>Constants &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('constants')"/></h3>
-    <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
-	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="thinbutton" value=" explore program data " onclick="javascript:help('types_and_relations')"/></h3>
-	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>
-	<p id="copydb">
-	<b>Advanced feature for debugging:</b> Copy existing database<br/>
-	from artifact: <input type="text" name="dbArtifact" size="33" /> <input type="submit" name="action" value="Copy DB"/>
-    </p>
-</div>
-</td>
-<td class="contentside">
-	<table>
-		<tr>
-			<td class="contentside">
-                <div>
-                  <h3>Methods &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('methods')"/></h3>
-	              <textarea class="code" id="methods" name="methods">{{.methodsFileContent}}</textarea>
-                </div>
-           </td>
-           <td class="contentside">
 			<div>
-				<h3>Statements of Main Method &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('main_method_statements')"/></h3>
-				<textarea class="code" id="main" name="main">{{.mainFileContent}}</textarea>	
-
-<br/>
-			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value="Clear DB">	
-			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-			&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="submit" name="action" value=" Run ">
-
+				<h3>Data Objects &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('data')"/></h3>
 			</div>
-			</td>
-		</tr>
-        <tr>  
-			<td class="contentside" colspan="2">
-				<h3>Output Console</h3>
-			    <textarea class="codewide" id="console" name="console">{{.consoleOutput}}</textarea>
-			</td>
-		</tr>
-	</table>
-</td>
-</tr>
+        </td>
+		<td class="contentside">
+			<div>
+				<h3>Choose Object</h3>
+			</div>	
+		</td>
+	 </tr>
 </table>
 </div>
-</form>	
 </body>
 </html>
