@@ -17,6 +17,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/playground.css" />
 
+<!-- Uncomment only one of the following 3 lines. -->
+<script type="text/javascript" src="jquery-2.0.3.js"></script> <!-- jquery for testing - 230kB -->
+<!-- <script type="text/javascript" src="jquery-2.0.3.min.js"></script> --> <!-- minified jquery for production - 81kB -->
+<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script> --> <!-- jquery loaded from a CDN -->
+
 	<script type="text/javascript">
 		
 		function help(topic) {
@@ -32,6 +37,121 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                location.href = "/?artfct=" + chosenArtfct 
             }
 		}
+
+    var programURL = "";  // Web services root url we are currently connected to. Excludes trailing /
+
+    /*
+    Makes a web service request to the explorer_api of the target program, which is assumed to be
+    listening for and responding to http requests to the explore_api.
+    Requests the list of (non-primitive) data types in the target program.
+    Populates the type select options.
+    */
+    function connectToProgram() {
+      programURL = document.getElementById("programUrl").value
+      programURL = programURL.trim()
+      if (programURL.lastIndexOf("/") == length(programURL) - 1) {
+         programURL = programURL.substring(0,length(programURL) - 1)
+      }
+      if (programURL == "") {
+         alert("Please supply the web service URL of the target program that is to be debugged.");
+         return
+      }
+      if (programURL.indexOf("http://") == -1 && programURL.indexOf("https://") == -1) {
+         programURL = "http://" + programURL
+      }
+      $.ajax({
+        type: "GET",
+        url: programURL + "/types"
+      }).done( function(msg) {
+        alert( "Data Received: " + msg );
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });
+    }
+
+    function findNamedObjects() {
+      if (programURL == "") {
+         alert("Please supply the web service URL of the target program that is to be debugged.");
+         return         
+      }    
+
+      var prefix = document.getElementById("prefix").value
+
+      $.ajax({
+        type: "POST",
+        url: programURL + "/names",
+        dataType: "json",         
+        data: {"prefix" : prefix}
+      }).done( function(msg) {
+        alert( "Data Received: " + msg );
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });
+    }
+
+    function selectObjectsOfType() {
+      if (programURL == "") {
+         alert("Please supply the web service URL of the target program that is to be debugged.")
+         return         
+      }      
+  
+      var typeSelect = document.getElementById("type")
+      if (typeSelect.selectedIndex == -1) {
+          alert("The target program does not appear to define or use\nany structured-object or collection datatypes.\nNothing to explore.");
+         return       
+      }
+      var objType = typeSelect.options[typeSelect.selectedIndex].value
+      var whereClause = document.getElementById("where").value
+      if (objType == "") {
+         alert("The target program does not appear to define or use\nany structured-object or collection datatypes.\nNothing to explore.");
+         return
+      }
+      $.ajax({
+        type: "POST",
+        url: programURL + "/list",
+        dataType: "json",        
+        data: {"type": objType, "where" : whereClause}
+      }).done( function(msg) {
+        alert( "Data Received: " + msg );
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });   
+
+    }    
+
+/*
+$.ajax({
+  type: "POST",
+  url: "example.php",
+  data: "name=John&location=Boston"
+}).done( function(msg) {
+  alert( "Data Saved: " + msg );
+}).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+  alert(
+    "Your form submission failed.\n\n"
+      + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+      + ",\nStatus Text: " + statusText
+      + ",\nError Thrown: " + errorThrown );
+});
+*/
+
+
+
+
+
+
         
 	</script>
 </head>
@@ -65,39 +185,45 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
             </td>
             <td>
             	<table>
-	<form action="exploreAction" method="POST"> 
             		<tr>
             			<td>
                            <h3>Target Program URL &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('target_program_url')"/> :</h3>            				
             			</td>
             			<td colspan="2">
-                           <input type="text" size="40" name="programUrl" value="{{.programUrl}}" />	            			
-            			</td>                 			        			
+                           <input type="text" size="40" id="programUrl" value="{{.programUrl}}" />	            			
+            			</td>      
+                  <td>
+                     <input type="button" value="connect to program" onclick="connectToProgram()" />
+                  </td>           			        			
             		</tr>
             		<tr>
             		    <td style="text-align: right;">
-               	           <h3>Object Name starts with:</h3>            		    	
+               	           <h3>Object Name starts with :</h3>            		    	
             			</td>  
             			<td>
             			   <input type="text" size="30" name="prefix" value="{{.prefix}}" />	
             			</td> 
-                        <td>
-	                    </td>          			
+                  <td>
+                        <input type="button" value="find named objects" onclick="findNamedObjects()" />
+	                </td>          			
             		</tr>            		
             		<tr>
             		    <td style="text-align: right;">
-               	           <h3>Data Type:</h3>            		    	
+               	           <h3>Data Type :</h3>            		    	
             			</td>  
-<td>
-	<select name="type">
-		{{range .types}}
-		<option>{{.}}</option>
-		{{end}}
-    </select>		
-</td>
+                  <td>
+                  	<select name="type">
+                  		{{range .types}}
+                  		<option>{{.}}</option>
+                  		{{end}}
+                      </select>		
+                  </td>
             			<td>
             			   Where: <input type="text" size="60" name="where" value="{{.where}}" />	
-            			</td>           			
+            			</td>      
+                  <td>
+                      <input type="button" value="find" onclick="selectObjectsOfType()" />
+                  </td>     			
             		</tr>    
 </form>        		            		
             	</table>
