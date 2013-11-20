@@ -58,7 +58,11 @@ Expires: 0
       id
 
 
-types > String String String
+types 
+> 
+   String 
+   String 
+   [] String
 """
  Return a lexicographically ordered list of the datatypes in the target program.
 """
@@ -69,7 +73,7 @@ Pragma: no-cache
 Expires: 0
 """   
       "JSON"
-      reflect.typeNames
+      typeNames true false false false 
          
 
 list type String where String 

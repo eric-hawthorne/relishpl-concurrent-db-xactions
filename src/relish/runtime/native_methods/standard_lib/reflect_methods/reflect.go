@@ -28,7 +28,7 @@ import (
 
 func InitReflectMethods() {
 
-    // typeNames > [] String
+    // typeNames includeStructs Bool includeCollections Bool includePrimitive Bool includeReflect Bool > [] String
     // """
     //  Should be alphabetical.
     //
@@ -36,7 +36,10 @@ func InitReflectMethods() {
     //   exclude builtin, exclude relish lib, exclude primitive, exclude collection types
     // """
     //
-	typeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"typeNames", []string{}, []string{}, []string{"List_of_String"}, false, 0, false)
+	typeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"typeNames", 
+		                                    []string{"includeStructs","includeCollections","includePrimitive","includeReflect"}, 
+		                                    []string{"Bool","Bool","Bool""Bool"}, 
+		                                    []string{"List_of_String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
@@ -353,7 +356,7 @@ func InitReflectMethods() {
 // Reflection functions
 
 
-    // typeNames > [] String
+    // typeNames includeStructs Bool includeCollections Bool includePrimitive Bool includeReflect Bool > [] String
     // """
     //  Should be alphabetical.
     //
@@ -363,14 +366,34 @@ func InitReflectMethods() {
     //
 func typeNames(th InterpreterThread, objects []RObject) []RObject {
 
+    includeStructs := bool(objects[0].(Bool))
+    includeCollections := bool(objects[1].(Bool))   
+    includePrimitive := bool(objects[2].(Bool))
+    includeReflect := bool(objects[3].(Bool))        
+
     typeNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
     if err != nil {
 	   panic(err)
     }
 
     var typeNameSlice []string
-    for typeName := range RT.Types {
-    	typeNameSlice = append(typeNameSlice, typeName)
+    for typeName,typ := range RT.Types {
+    	ok := false
+    	if includePrimitive && typ.IsPrimitive {
+    		ok = true
+    	}
+    	if includeStructs && typ.Less(StructType) {
+           ok = true
+    	}
+    	if includeCollections && typ.Less(CollectionType) {
+           ok = true
+    	} 	
+    	if (! includeReflect) && (strings.Index(typeName,"shared.relish.pl2012/relish_lib/pkg/reflect/") != -1) {
+           ok = false
+    	} 
+        if ok {
+    	   typeNameSlice = append(typeNameSlice, typeName)
+        }
     } 
     sort.Strings(typeNameSlice)
 
