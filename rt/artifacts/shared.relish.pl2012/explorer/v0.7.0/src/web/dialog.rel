@@ -1,5 +1,5 @@
 origin   shared.relish.pl2012
-artifact explorer_api
+artifact explorer
 package  web 
 
 """ 
@@ -14,6 +14,7 @@ package  web
 
 
 import
+   strings
    reflect
    http
 
@@ -28,16 +29,16 @@ index
  Note: Should use artifact instead of package? and standard "test_program" package.
 """
 
-   typesJson err = httpGet cat "types"
-   if err
-      print err
-      => errf err
+   // typesJson err = httpGet cat "types"
+   // if err
+   //   print err
+   //   => errf err
 
    args = {
              "programUrl" => ""
-             "prefix" => ""
-             "types" => typeNames
-             "where" => ""
+             "prefix"     => ""
+             "types"      => []String
+             "where"      => ""
           }String > Any
 
    => "index.html"
@@ -45,22 +46,147 @@ index
 
 
 
-exploreAction 
-   programUrl String
-   prefix String  
-   type String
-   where String
-   action String
+
+names url String prefix String > String String List
 """
- Loads objects to be displayed.
- Either does a search by object name or by type and where clause, depending
- on action.
- action : "name" | "type"
+ Returns a JSON formatted list of the names of objects that have been dubbed with a name
+ in the persistence system or have been transientDubbed with a name.
+ If the supplied prefix is non-empty, only names that start with the prefix are returned.
+"""
+   objNames = objectNames prefix
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      objNames 
+
+
+reflectId url String name String > String String String String
+"""
+ Given an object name (a dubbed name in the persistence system, or a transientDub name)
+ returns the reflectId by which the object can be fetched through this API.
+ The response is a single line of plaintext containing either the reflectId (an integer)
+ or if the name does not find an object, the line 
+ NOT FOUND 
+ is returned.
+"""
+   id = reflectIdByName name
+   if not id
+      id = "NOT FOUND"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0  
+"""    
+      "MEDIA"
+      "text/plain"   
+      id
+
+
+
+types url String
+> 
+   String 
+   String 
+   String
+"""
+ Return a lexicographically ordered list of the datatypes in the target program.
 """
 
+   response err = httpGet cat url "/types" 
+   if err
+      response = cat "[\"" err "\"]"
+      
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"
+      response
+         
+
+list url String type String where String 
+> 
+   String 
+   String 
+   String
+"""
+ Return a JSON-formatted list of partialTypeName:reflectId of objects compatible with the
+specified type and matching the query criteria.
+"""
+
+   response err = 
+      httpPost
+         cat url "/list"
+         {
+            "type"  => type
+            "where" => where
+         }String > Any
+         
+   if err
+      response = cat "[\"" err "\"]"
+      
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"
+      response
 
 
+simpleAttributes url String reflectId String 
+> 
+   String
+   String
+   [] reflect.SimpleAttrDescriptor 
+"""
+ Returns a JSON formatted list of attribute descriptors for 
+ the simple (unary, atomic-primitive-valued) attributes of the object.
+ An empty list is returned if the object is not found or has no simple attributes.
+"""
+   attrs = getSimpleAttributes reflectId
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      attrs 
 
+
+complexAttributes url String reflectId String
+> 
+   String
+   String
+   [] reflect.ComplexAttrDescriptor
+"""
+ Returns a JSON formatted list of attribute descriptors of the complex attributes
+ of the object: multi-valued attributes or attributes which are object-valued rather
+ than primitive-valued.
+ An empty list is returned if the object is not found or has no complex attributes.
+"""
+   attrs = getComplexAttributes reflectId
+   print "vals of attr"
+   for attr in attrs
+      for v in attr.vals
+         print v
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      attrs 
 
 
 
