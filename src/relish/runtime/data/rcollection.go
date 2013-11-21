@@ -362,8 +362,8 @@ func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]boo
             if visited[value] {
 	           continue
             }			
-            fmt.Println("coll",coll)
-            fmt.Println ("value",value)
+            // fmt.Println("coll",coll)
+            // fmt.Println ("value",value)
 	        val, err = value.ToMapListTree(includePrivate, visited)
 	        if err != nil {
 		       return
