@@ -95,7 +95,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
         dataType: "json",         
         data: {"url" : programURL, "prefix" : prefix}
       }).done( function(msg) {
-        alert( "Data Received: " + msg );
+           $("div#objectList").html("")
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
+           }
+          $("div#objectList").append(options)	
+          // alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
           "Your form submission failed.\n\n"
@@ -128,7 +134,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
         dataType: "json",        
         data: {"url" : programURL, "type": objType, "where" : whereClause}
       }).done( function(msg) {
-        alert( "Data Received: " + msg );
+           $("div#objectList").html("")
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
+           }
+          $("div#objectList").append(options)
+          // alert( "Data Received: " + msg );	
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
           "Your form submission failed.\n\n"
@@ -138,6 +150,16 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       });   
 
     }    
+
+
+    function focusOnObject(theDiv) {
+        var selectedObjectToken = $( theDiv ).text();
+        alert(selectedObjectToken);
+        return false;
+    }
+
+
+
 
 /*
 $.ajax({
@@ -247,20 +269,10 @@ $.ajax({
   </div> -->
 
 <div id="content">
-<table>	
-	<tr>
-		<td class="contentside">
-			<div>
-				<h3>Data Objects &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('data')"/></h3>
-			</div>
-        </td>
-		<td class="contentside">
-			<div>
-				<h3>Choose Object</h3>
-			</div>	
-		</td>
-	 </tr>
-</table>
+	<div id="dataPane">
+	</div>
+	<div id="objectList">		
+	</div>
 </div>
 </body>
 </html>

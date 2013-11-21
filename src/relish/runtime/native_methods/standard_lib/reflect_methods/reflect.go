@@ -15,6 +15,7 @@ import (
     "strconv"
     "relish"
     "strings"
+    "relish/dbg"
 )
 
 ///////////
@@ -1409,11 +1410,11 @@ func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryCond
     objs := []RObject{} 
     mayContainProxies, err := th.DB().FetchN(t, queryConditions, queryArgs, radius, &objs)		
     if err != nil {
-	    panic(err)
-    }	
-
-    objectList.ReplaceContents(objs)
-    objectList.SetMayContainProxies(mayContainProxies)
+	    dbg.Log(dbg.ALWAYS_,"Error in selectByTypeAndConditions: %s\n",err)
+    }	else {
+       objectList.ReplaceContents(objs)
+       objectList.SetMayContainProxies(mayContainProxies)
+    }
     return objectList
 }
  
