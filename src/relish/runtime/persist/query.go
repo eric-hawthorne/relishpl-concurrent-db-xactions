@@ -208,8 +208,8 @@ Given a type, and a set of attribute names that are included in where clause cri
 a map from table names to table aliases, and a map from attribute names to table-alias-qualified attribute names
 Returns an error if an attribute name is not found as a primitive-valued attribute in the type or its supertypes.
 
-If lazy is true, returns only table names which hold one of the attributes.
-If lay id false, returns tables for the type and all supertypes.
+If idsOnly is true, returns only table names which hold one of the attributes, plus the tableName for the argument type.
+If idsOnly is false, returns tables for the type and all supertypes.
 
 func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
    tableNamesToAliases = make(map[string]string)
@@ -257,7 +257,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsO
    aliasNum := 1
    var alias string
    typeTableName := db.TableNameIfy(typ.ShortName())
-   var foundAttribute bool
+   var foundAttribute bool  // Whether type has at least one primitive attribute
    var matchedAttribute bool
    for _, attr := range typ.Attributes {
 	  if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
@@ -278,12 +278,17 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsO
 	  }
    }
 
+   tableNamesToAliases[typeTableName] = alias  // original type must always be included in the join. 	
+   /*
    if (foundAttribute && ! idsOnly) || matchedAttribute {
       tableNamesToAliases[typeTableName] = alias	
    }
+   */
+
+   // TODO: Need to ensure that if idsOnly, the argument typ is included in tableNamesToAliases
 
    for _, superType := range typ.Up {	
-	  foundAttribute = false
+	  foundAttribute = false   // Whether at least one attribute of this type has been found in the query expression
 	  matchedAttribute = false
 	  alias = ""
       typeTableName = db.TableNameIfy(superType.ShortName())	
