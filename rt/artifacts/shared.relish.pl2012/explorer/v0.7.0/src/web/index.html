@@ -65,7 +65,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
         dataType: "json",         
         data: {"url" : programURL}
       }).done( function(msg) {
-        alert( "Data Received: " + msg );
+           $("select#type").html("")
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<option>" + msg[i] + "</option>\n";
+           }
+          $("select#type").append(options)              
+        // alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
           "Your form submission failed.\n\n"
@@ -85,9 +91,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
       $.ajax({
         type: "POST",
-        url: programURL + "/names",
+        url: "/names",
         dataType: "json",         
-        data: {"prefix" : prefix}
+        data: {"url" : programURL, "prefix" : prefix}
       }).done( function(msg) {
         alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
@@ -118,9 +124,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       }
       $.ajax({
         type: "POST",
-        url: programURL + "/list",
+        url: "/list",
         dataType: "json",        
-        data: {"type": objType, "where" : whereClause}
+        data: {"url" : programURL, "type": objType, "where" : whereClause}
       }).done( function(msg) {
         alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
@@ -203,7 +209,7 @@ $.ajax({
                	           <h3>Object Name starts with :</h3>            		    	
             			</td>  
             			<td>
-            			   <input type="text" size="30" name="prefix" value="{{.prefix}}" />	
+            			   <input type="text" size="30" id="prefix" value="{{.prefix}}" />	
             			</td> 
                         <td>
                            <input type="button" value="find named objects" onclick="findNamedObjects()" />
@@ -214,14 +220,14 @@ $.ajax({
                	           <h3>Data Type :</h3>            		    	
             			</td>  
                         <td>
-                  	     <select name="type">
+                  	     <select id="type">
                   		 {{range .types}}
                   	 	 <option>{{.}}</option>
                   	 	 {{end}}
                         </select>		
                         </td>
             			<td>
-            			   Where: <input type="text" size="60" name="where" value="{{.where}}" />	
+            			   Where: <input type="text" size="60" id="where" value="{{.where}}" />	
             			</td>      
                         <td>
                           <input type="button" value="find" onclick="selectObjectsOfType()" />

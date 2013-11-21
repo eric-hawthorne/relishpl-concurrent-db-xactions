@@ -414,10 +414,13 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
 	
    theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
    if err != nil {
-      // panic(err)
+
       sourceFilename := typeDeclFile[typeName] + ".rel"
 	  rterr.Stopf("Error creating type %s (%s): %s", typeName, sourceFilename, err.Error())
    }	
+   if ! theNewType.Less(data.CollectionType) {
+   	  theNewType.IsStruct = true
+   }   
 
    types[theNewType] = true	 // record that this is one of the new RTypes we generated !
 
