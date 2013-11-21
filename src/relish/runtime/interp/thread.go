@@ -417,8 +417,15 @@ func (t *Thread) Dump() {
 	LogMutex.Unlock()
 }
 
-func (t *Thread) CodeFile() *ast.File {
-   return t.ExecutingMethod.CodeFile()
+func (t *Thread) CodeFile() (file *ast.File) {
+   file = t.ExecutingMethod.CodeFile()
+   if file == nil {
+      caller := t.CallingMethod()   
+      if caller != nil {
+         file = caller.CodeFile()
+      }
+   }
+   return
 }
 
 /*
