@@ -73,7 +73,7 @@ Pragma: no-cache
 Expires: 0
 """   
       "JSON"
-      typeNames true true true true 
+      typeNames 1 -1 -1 -1 true
          
 
 list type String where String 

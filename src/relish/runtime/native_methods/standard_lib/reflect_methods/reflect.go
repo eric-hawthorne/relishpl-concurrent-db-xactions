@@ -28,17 +28,21 @@ import (
 
 func InitReflectMethods() {
 
-    // typeNames includeStructs Bool includeCollections Bool includePrimitive Bool includeReflect Bool > [] String
+    // typeNames structs Int collections Int primitives Int reflect Int reverseNames > [] String
     // """
     //  Should be alphabetical.
     //
-    //  Should I have options like
-    //   exclude builtin, exclude relish lib, exclude primitive, exclude collection types
+    //  Option semantics: -1 means must be not
+    //                     0 means don't care
+    //                     1 means must be
+    //
+    //   Other things to consider filtering on:
+    //      builtin, relish lib
     // """
     //
 	typeNamesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"typeNames", 
-		                                    []string{"includeStructs","includeCollections","includePrimitive","includeReflect"}, 
-		                                    []string{"Bool","Bool","Bool","Bool"}, 
+		                                    []string{"structs","collections","primitives","reflect","reverseNames"}, 
+		                                    []string{"Int","Int","Int","Int","Bool"}, 
 		                                    []string{"List_of_String"}, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -356,20 +360,25 @@ func InitReflectMethods() {
 // Reflection functions
 
 
-    // typeNames includeStructs Bool includeCollections Bool includePrimitive Bool includeReflect Bool > [] String
+    // typeNames structs Int collections Int primitives Int reflect Int reverseNames > [] String
     // """
     //  Should be alphabetical.
     //
-    //  Should I have options like
-    //   exclude builtin, exclude relish lib, exclude primitive, exclude collection types
+    //  Option semantics: -1 means must be not
+    //                     0 means don't care
+    //                     1 means must be
+    //
+    //   Other things to consider filtering on:
+    //      builtin, relish lib
     // """
     //
 func typeNames(th InterpreterThread, objects []RObject) []RObject {
 
-    includeStructs := bool(objects[0].(Bool))
-    includeCollections := bool(objects[1].(Bool))   
-    includePrimitive := bool(objects[2].(Bool))
-    includeReflect := bool(objects[3].(Bool))        
+    includeStructs := int(objects[0].(Int))
+    includeCollections := int(objects[1].(Int))   
+    includePrimitive := int(objects[2].(Int))
+    includeReflect := int(objects[3].(Int))       
+    reverseNames := bool(objects[4].(Bool))      
 
     typeNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
     if err != nil {
@@ -377,24 +386,62 @@ func typeNames(th InterpreterThread, objects []RObject) []RObject {
     }
 
     var typeNameSlice []string
+
+    fmt.Println("typeNames",includeStructs,includeCollections,includePrimitive,includeReflect)
     for typeName,typ := range RT.Types {
-    	ok := false
-    	if includePrimitive && typ.IsPrimitive {
-    		ok = true
+    	fmt.Println(typeName)
+
+        okStruct := false
+        isStruct :=  typ.Less(StructType)
+    	if includeStructs == 0 {
+            okStruct = true
+        } else if includeStructs == 1 && isStruct {
+            okStruct = true
+    	} else if includeStructs == -1 && ! isStruct {
+    		okStruct = true
     	}
-    	if includeStructs && typ.Less(StructType) {
-           ok = true
+
+        okColl := false
+        isColl :=  typ.Less(CollectionType)
+    	if includeCollections == 0 {
+            okColl = true
+        } else if includeCollections == 1 && isColl {
+            okColl = true
+    	} else if includeCollections == -1 && ! isColl {
+    		okColl = true
     	}
-    	if includeCollections && typ.Less(CollectionType) {
-           ok = true
-    	} 	
-    	if (! includeReflect) && (strings.Index(typeName,"shared.relish.pl2012/relish_lib/pkg/reflect/") != -1) {
-           ok = false
-    	} 
-        if ok {
+
+    	okPrim := false
+    	if includePrimitive == 0 {
+            okPrim = true
+        } else if includePrimitive == 1 && typ.IsPrimitive {
+            okPrim = true
+    	} else if includePrimitive == -1 && ! typ.IsPrimitive {
+    		okPrim = true
+    	}
+
+        okReflect := false
+        isReflect := (strings.Index(typeName,"shared.relish.pl2012/relish_lib/pkg/reflect/") != -1)
+    	if includeReflect == 0 {
+            okReflect = true
+        } else if includeReflect == 1 && isReflect {
+            okReflect = true
+    	} else if includeReflect == -1 && ! isReflect {
+    		okReflect = true
+    	}
+
+        if okStruct && okColl && okPrim && okReflect {
+           if reverseNames {
+           	  typeName = backwardsTypeName(typeName)
+           }
     	   typeNameSlice = append(typeNameSlice, typeName)
         }
     } 
+
+
+
+
+
     sort.Strings(typeNameSlice)
 
     for _,typeName := range typeNameSlice {
@@ -405,7 +452,69 @@ func typeNames(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
-    // type name String > ?DataType
+/*    
+    relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
+
+    becomes
+
+    BookCase, publishing/core, shareware/biblio_file, relish.pl2012
+*/
+func backwardsTypeName(typeName string) (backwardsName string) {
+   slashPos := strings.Index(typeName,"/")
+   if slashPos == -1 {
+       backwardsName = typeName
+       return
+   }
+   pkgPos := strings.Index(typeName,"/pkg/")
+
+   lastSlashPos := strings.LastIndex(typeName,"/")   
+   name := typeName[lastSlashPos+1:]
+   origin := typeName[:slashPos]
+   artifact := typeName[slashPos+1:pkgPos]
+   packagePath := typeName[pkgPos+5:lastSlashPos]
+   
+   backwardsName = name + " ~~~ " + packagePath + ", " + artifact + ", " + origin
+
+   return
+}
+
+/*    
+    BookCase, publishing/core, shareware/biblio_file, relish.pl2012
+
+    becomes
+  
+    relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
+*/
+func forwardsTypeName(backwardsTypeName string) (typeName string) {
+    pieces := strings.Split(backwardsTypeName,", ")
+    if len(pieces) == 1 {
+    	typeName = pieces[0]
+    } else {
+    	nameAndPackage := strings.Split( pieces[0]," ~~~ ")
+    	name := nameAndPackage[0]
+    	packagePath := nameAndPackage[1]
+    	artifact := pieces[1]
+    	origin := pieces[2]
+
+        typeName = origin + "/" + artifact + "/pkg/" + packagePath + "/" + name
+    }
+    return
+}
+
+/* Ensure the result is a forwards (official relish) type name,
+   whether or not the input name is in backwards (human readable) format.
+*/
+func normalizeTypeName(possiblyBackwardsTypeName string) (typeName string) {
+	if strings.Index(possiblyBackwardsTypeName,", ") != -1 {
+		typeName = forwardsTypeName(possiblyBackwardsTypeName)
+	} else {
+		typeName = possiblyBackwardsTypeName
+	}
+	return
+}
+
+
+// typ name String > ?DataType
 //
 func typ(th InterpreterThread, objects []RObject) []RObject {
 	
@@ -861,7 +970,9 @@ select typeName String queryConditions String > List
 func selectByTypeAndConditions(th InterpreterThread, objects []RObject) []RObject {
 
 	typeName := string(objects[0].(String))	
-	queryConditions := string(objects[1].(String))		
+	queryConditions := string(objects[1].(String))	
+
+	typeName = normalizeTypeName(typeName)	// typeName could be in backwards human readable order.
 
     objectList := selectByTypeAndConditions1(th, typeName, queryConditions)
 

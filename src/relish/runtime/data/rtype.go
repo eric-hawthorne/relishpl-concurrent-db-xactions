@@ -39,6 +39,9 @@ type RType struct {
 	shortName               string
 	IsPrimitive             bool
 	IsNative                bool  // instances are of type GoWrapper and have a reference to a Go object.
+	IsStruct                bool  // instances are of type runit. They can have attributes and if not native can be persisted.
+	                              // Question: Should native types like reflect.DataType be IsStruct?
+	                              // Right now, they will be.
 	Parents                 []*RType
 	Children                []*RType
 	Up                      []*RType                  // chain of supertypes in dispatch order. (Python-esque?) 
@@ -74,6 +77,10 @@ func (t *RType) Less(t2 *RType) bool {
 			return true
 		}
 	}
+	if t2 == StructType {
+		return t.IsStruct
+	}
+
 	return false
 }
 
