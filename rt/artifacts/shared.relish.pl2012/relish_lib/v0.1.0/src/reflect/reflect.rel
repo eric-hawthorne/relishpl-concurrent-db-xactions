@@ -114,10 +114,11 @@ populateObjectTree tree ObjectTree reflectId String depth Int
  Add object descriptors to the tree up to the needed depth.
  Recursive.
 """
-   if not tree.objects[? reflectId]
+   objectMap = tree.objects
+   if not objectMap[? reflectId]
       obj = objectByReflectId reflectId 
       objDesc = makeDescriptor obj reflectId depth
-      tree.objects[reflectId] = objDesc 
+      objectMap[reflectId] = objDesc 
       if gt depth 1
          depth = minus depth 1
          for complexAttrDesc in objDesc.complexAttrs
