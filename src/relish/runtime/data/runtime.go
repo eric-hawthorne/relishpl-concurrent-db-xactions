@@ -645,6 +645,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 		if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
 			minCardinality = 0
 			maxCardinality = -1 // largest possible collection is allowed - the attribute is not constraining it.	
+			panic("Should not rt.EnsureMultiValuedAttributeCollection on a collection-valued attribute.")
 		} else { // This is a multi-valued attribute. The collection is a hidden implementation detail. 
 			minCardinality = int64(attr.Part.ArityLow)
 			maxCardinality = int64(attr.Part.ArityHigh)

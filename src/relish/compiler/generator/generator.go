@@ -448,7 +448,9 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           if multiValuedAttribute {
 	         minCard = int32(attrDecl.Arity.MinCard)
 	         maxCard = int32(attrDecl.Arity.MaxCard)  // -1 means N
-          }
+          } else if attrDecl.Type.NilAllowed {
+	         minCard = 0
+	       }          
           
 
           var collectionType string 
@@ -456,11 +458,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           var orderFuncOrAttrName string = ""
           var isAscending bool 
 
-          if attrDecl.Type.CollectionSpec == nil {
-	          if attrDecl.Type.NilAllowed {
-		         minCard = 0
-		      }
-	      } else {
+	       if attrDecl.Type.CollectionSpec != nil {
               switch attrDecl.Type.CollectionSpec.Kind {
 	             case token.SET:
 			        if attrDecl.Type.CollectionSpec.IsSorting {

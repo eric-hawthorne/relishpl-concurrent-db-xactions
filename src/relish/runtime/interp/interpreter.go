@@ -704,7 +704,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 
    	   var found bool
    	   theMap := collection.(Map)
-       val,found = theMap.Get(idx) 
+         val,found = theMap.Get(idx) 
 
         t.PopN(2) // Pop off the collection and its index
 
@@ -2599,9 +2599,14 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				}
 
 
-			// TODO handle dot expressions and [ ] selector expressions. First lhsEvaluate lhsExpr to put a
+			// TODO handle dot (selector) expressions and [ ] (index) expressions. First lhsEvaluate lhsExpr to put a
 			// cell reference onto the stack, then pop it and assign to it.
 			case *ast.SelectorExpr:
+			   //
+			   // a.b =
+			   // a.b +=
+			   // a.b -=
+			   //
 				selector := lhsExpr.(*ast.SelectorExpr)
 				i.EvalExpr(t, selector.X) // Evaluate the left part of the selector expression.		          
 
@@ -2621,10 +2626,10 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					rterr.Stop1(t,selector,fmt.Sprintf("Attribute %s not found in type %v or supertypes.", selector.Sel.Name, assignee.Type()))
 				}
 
-
 				switch stmt.Tok {
 				case token.ASSIGN:
-	                if attr.Part.CollectionType != "" {
+	                if attr.Part.CollectionType != "" && attr.Part.ArityHigh != 1 {
+	                   // A multi-valued collection
 
 		                val := t.Pop()
 		                if val.IsCollection() {
@@ -2641,35 +2646,74 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		                } else if val == NIL {
 			                err := i.rt.ClearAttr(t, assignee, attr)
 			                if err != nil {
-							   panic(err)	
-							}	
-					    } else {
-			               rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
-						}
-	                } else {		
+							       panic(err)	
+							    }	
+					       } else {
+			                rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
+						    }
+	                } else { // Not a multi-valued attribute.		
 
-						err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
-						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") {
-								rterr.Stop1(t,selector, err)
-							} 
-							panic(err)
-						}
+						   err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
+						   if err != nil {
+							   if strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") {
+								   rterr.Stop1(t,selector, err)
+							   } 
+							   panic(err)
+						   }
 				    }
+				    		    
 				case token.ADD_ASSIGN:
-					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
-					if err != nil {
-						if strings.Contains(err.Error()," a value of type ") {
-							rterr.Stop1(t,selector,err)
-						} 					
-						panic(err)
-					}
+				   if attr.Part.ArityHigh != 1 {
+				      // A multi-valued attribute
+   					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
+   					if err != nil {
+   						if strings.Contains(err.Error()," a value of type ") {
+   							rterr.Stop1(t,selector,err)
+   						} 					
+   						panic(err)
+   					}
+				   } else {
+				      // A single-valued attribute whose value is a collection
+               	attrVal, found := RT.AttrVal(assignee, attr)
+               	if ! found {
+					      rterr.Stopf1(t,selector,"Can't add to collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
+               	}									
+																	
+               	coll,isAddColl := attrVal.(AddableCollection) 
+               	if ! isAddColl {
+					      rterr.Stopf1(t,selector,"%s.%s is not an appendable list or set.", selector.X, selector.Sel.Name)               								
+               	}
+                  val := t.Pop()
+               	if !val.Type().LessEq(coll.ElementType()) {
+					      rterr.Stopf1(t,selector,"Cannot append a '%v' to %s.%s. Elements must be of type '%v'.",  val.Type(), selector.X, selector.Sel.Name, coll.ElementType())                	   
+               		return
+               	}					
+               	// TODO The persistence aspect of appending to a collection
+                  coll.Add(val, t.EvalContext)					
+				   }
+					
 				case token.SUB_ASSIGN:
-					// TODO TODO	
-					err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
-					if err != nil {
-						panic(err)
-					}
+				   if attr.Part.ArityHigh != 1 {	
+				      // A multi-valued attribute				      			   
+   					// TODO TODO	
+   					err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
+   					if err != nil {
+   						panic(err)
+   					}
+				   } else {
+				   	// A single-valued attribute whose value is a collection
+               	attrVal, found := RT.AttrVal(assignee, attr)
+               	if ! found {
+					      rterr.Stopf1(t,selector,"Can't remove from collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
+               	}	
+               	coll,isRemColl := attrVal.(RemovableCollection) 
+               	if ! isRemColl {
+               		rterr.Stopf1(t, selector, "%s.%s is not a list or set allowing element removal.", selector.X, selector.Sel.Name)						
+               	}
+                  val := t.Pop()					
+               	// TODO The persistence aspect of removing from a collection
+                  coll.Remove(val)              				   	
+			   	}
 				default:
 					panic("Unrecognized assignment operator")
 				}
@@ -2695,116 +2739,143 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					rterr.Stopf1(t, indexExpr,"Cannot [index] into a non-collection of type %v.", assignee.Type())
 				}
 
-				if collection.IsIndexSettable() {
-                    coll := collection.(IndexSettable)
-                    var ix int
-                    switch idx.(type) {
-                    case Int:
-                    	ix = int(int64(idx.(Int)))
-                    case Int32:
-                    	ix = int(int32(idx.(Int32)))
-                    case Uint:
-                    	ix = int(uint64(idx.(Uint)))                    	                    
-                    case Uint32:
-                    	ix = int(uint32(idx.(Uint32)))
-                    default:
-					   rterr.Stop1(t,indexExpr,"Index value must be an Integer")
-					}
+				if collection.IsOrdered() { // Should also check to make sure is not ordered map.
+               // coll := collection.(IndexSettable)
+               
+               var ix int
+               switch idx.(type) {
+               case Int:
+               	ix = int(int64(idx.(Int)))
+               case Int32:
+               	ix = int(int32(idx.(Int32)))
+               case Uint:
+               	ix = int(uint64(idx.(Uint)))                    	                    
+               case Uint32:
+               	ix = int(uint32(idx.(Uint32)))
+               default:
+                 rterr.Stop1(t,indexExpr,"Index value must be an Integer")
+               }
 
 					switch stmt.Tok {
 					case token.ASSIGN:
-					   // No problem
+   				   if collection.IsIndexSettable() {
+                      coll := collection.(IndexSettable)					
+					       coll.Set(ix,t.Pop())						   
+					   } else {
+   					   if collection.IsList() { // Must be a sorting list
+   					      rterr.Stop1(t, indexExpr,"Cannot set element at [index] of a sorting list.")	
+   					   }					      
+      					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
+				      }
+				      
 					case token.ADD_ASSIGN:
-						rterr.Stop1(t, indexExpr,"[index] += val  is not supported yet.")
+		            defer indexErrHandle(t, indexExpr)
+		            
+                  coll := collection.(OrderedCollection)		            
+                  attrVal := coll.At(t, ix)
+
+                  if attrVal == nil {               	
+				         rterr.Stopf1(t,indexExpr,"Can't add to collection. %s[%s] has not been assigned a collection yet.", indexExpr.X, indexExpr.Index)	
+				      }               	        								
+																	
+               	innerColl,isAddColl := attrVal.(AddableCollection) 
+               	if ! isAddColl {
+				         rterr.Stopf1(t,indexExpr,"%s[%s] is not an appendable list or set.", indexExpr.X, indexExpr.Index)					                   								
+               	}
+                  val := t.Pop()
+               	if !val.Type().LessEq(innerColl.ElementType()) {                	   
+ 				         rterr.Stopf1(t,indexExpr,"Cannot append a '%v' to %s[%s]. Elements must be of type '%v'.", val.Type(), indexExpr.X, indexExpr.Index, innerColl.ElementType())	
+               		return
+               	}					
+               	// TODO The persistence aspect of appending to a collection
+                  innerColl.Add(val, t.EvalContext)					   
+					   
+					   
+						// rterr.Stop1(t, indexExpr,"[index] += val  is not supported yet.")
+						
+						
 					case token.SUB_ASSIGN:
-						rterr.Stop1(t, indexExpr,"[index] -= val  is not supported yet.")
+		            defer indexErrHandle(t, indexExpr)
+		            
+                  coll := collection.(OrderedCollection)		            	            
+                  attrVal := coll.At(t, ix)
+
+                  if attrVal == nil {               	
+				         rterr.Stopf1(t,indexExpr,"Can't remove from collection. %s[%s] has not been assigned a collection yet.", indexExpr.X, indexExpr.Index)	
+				      }					   
+					   	
+               	innerColl,isRemColl := attrVal.(RemovableCollection) 
+               	if ! isRemColl {
+               		rterr.Stopf1(t,indexExpr, "%s[%s] is not a list or set allowing element removal.", indexExpr.X, indexExpr.Index)						
+               	}
+                  val := t.Pop()					
+               	// TODO The persistence aspect of removing from a collection
+                  innerColl.Remove(val)					   
+					   
+					   
+						// rterr.Stop1(t, indexExpr,"[index] -= val  is not supported yet.")
+						
 					default:
 						panic("Unrecognized assignment operator")
 					}	
-
-					coll.Set(ix,t.Pop())	
-
-/* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
-					switch stmt.Tok {
-					case token.ASSIGN:
-						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") {
-								rterr.Stop(err)
-							} 
-							panic(err)
-						}
-					case token.ADD_ASSIGN:
-						err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") {
-								rterr.Stop(err)
-							} 					
-							panic(err)
-						}
-					case token.SUB_ASSIGN:
-						// TODO TODO	
-						err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
-						if err != nil {
-							panic(err)
-						}
-					default:
-						panic("Unrecognized assignment operator")
-					}	
-*/
 
 
 				} else if collection.IsMap() {
 
+               theMap := collection.(Map)
+               
 					switch stmt.Tok {
 					case token.ASSIGN:
 					   // No problem
+	               theMap.Put(idx, t.Pop(), t.EvalContext)	
+	               				   
 					case token.ADD_ASSIGN:
-						rterr.Stop("[Key] += val  is not supported yet.")
+					   
+                  attrVal,found := theMap.Get(idx)					   
+					     
+                  if ! found {               	
+   			         rterr.Stopf1(t,indexExpr,"Can't add to collection. %s[%s] has not been assigned a collection yet.", indexExpr.X, indexExpr.Index)	
+   			      }               	        								
+																
+               	innerColl,isAddColl := attrVal.(AddableCollection) 
+               	if ! isAddColl {
+   			         rterr.Stopf1(t,indexExpr,"%s[%s] is not an appendable list or set.", indexExpr.X, indexExpr.Index)					                   								
+               	}
+                  val := t.Pop()
+               	if !val.Type().LessEq(innerColl.ElementType()) {                	   
+   			         rterr.Stopf1(t,indexExpr,"Cannot append a '%v' to %s[%s]. Elements must be of type '%v'.", val.Type(), indexExpr.X, indexExpr.Index, innerColl.ElementType())	
+               		return
+               	}					
+               	// TODO The persistence aspect of appending to a collection
+                  innerColl.Add(val, t.EvalContext)					   
+					   
+						// rterr.Stop("[Key] += val  is not supported yet.")
+						
+			
 					case token.SUB_ASSIGN:
-						rterr.Stop1(t, indexExpr, "[Key] -= val  is not supported yet.")
+					   
+                  attrVal,found := theMap.Get(idx)					   
+					     
+                  if ! found {					                	
+   			         rterr.Stopf1(t,indexExpr,"Can't remove from collection. %s[%s] has not been assigned a collection yet.", indexExpr.X, indexExpr.Index)	
+   			      }					   
+				   	
+               	innerColl,isRemColl := attrVal.(RemovableCollection) 
+               	if ! isRemColl {
+               		rterr.Stopf1(t,indexExpr, "%s[%s] is not a list or set allowing element removal.", indexExpr.X, indexExpr.Index)						
+               	}
+                  val := t.Pop()					
+               	// TODO The persistence aspect of removing from a collection
+                  innerColl.Remove(val)					   
+					   
+						// rterr.Stop1(t, indexExpr, "[Key] -= val  is not supported yet.")
+						
 					default:
 						panic("Unrecognized assignment operator")
 					}			
 
-                    theMap := collection.(Map)
-	                theMap.Put(idx, t.Pop(), t.EvalContext) 
-
-	
-/* TODO If is an ADD_ASSIGN or SUB_ASSIGN evaluate through to get the other collection and do it !!
-					switch stmt.Tok {
-					case token.ASSIGN:
-						err := RT.SetAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") {
-								rterr.Stop(err)
-							} 
-							panic(err)
-						}
-					case token.ADD_ASSIGN:
-						err := RT.AddToAttr(assignee, attr, t.Pop(), true, t.EvalContext, false)
-						if err != nil {
-							if strings.Contains(err.Error()," a value of type ") {
-								rterr.Stop(err)
-							} 					
-							panic(err)
-						}
-					case token.SUB_ASSIGN:
-						// TODO TODO	
-						err := RT.RemoveFromAttr(assignee, attr, t.Pop(), false)
-						if err != nil {
-							panic(err)
-						}
-					default:
-						panic("Unrecognized assignment operator")
-					}	
-*/
-
 				} else {
-					if collection.IsList() { // Must be a sorting list
-					   rterr.Stop1(t, indexExpr,"Cannot set element at [index] of a sorting list.")	
-					} 				
-					rterr.Stopf1(t, indexExpr, "Can only set [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
+					rterr.Stopf1(t, indexExpr, "Can only set or get [index] of an index-settable ordered collection or a map; not a %v.", assignee.Type())					
 				}			
 
 			default:
