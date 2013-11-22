@@ -154,3 +154,24 @@ Expires: 0
 
 
 
+objectTree reflectId String depth Int > String String reflect.ObjectTree
+"""
+ Given either an object name, or "<Type>:#<reflectId>" e.g. "Author:#3", 
+ obtains the reflectId of the object, and
+ returns a JSON representation of the object tree out from that object,
+ to a certain depth.
+
+ Depths are interpreted as:
+ 1 - The focus object and its simple attrs only.
+ 2 - Focus object and directly associated objects (with their simple attributes)
+ 3 - 2 plus the next-level associates of the associated objects (with simple attributes) 
+""" 
+   tree = getObjectTree reflectId depth 
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      tree 

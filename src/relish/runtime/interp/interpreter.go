@@ -2921,6 +2921,9 @@ func (i *Interpreter) ExecReturnStatement(t *Thread, stmt *ast.ReturnStatement) 
 			// TODO IMPORTANT This type checking should first be sped up by a typetuple compatibility checking cache,
 			// Then eventually replaced by static type inference within the method body.
 
+            if val == nil {
+           	   rterr.Stopf1(t,stmt,"Returned value #%d is a local variable that has not been assigned a value.",j+1)
+            }
             if ! val.Type().LessEq(types[j]) {
             	rterr.Stopf1(t,stmt,"Returned value #%d has type '%v' - not compatible with method's declared return type '%v'.",j+1,val.Type(),types[j])
             }

@@ -151,10 +151,30 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
     }    
 
-
+    /*
+    Populate the dataPane with an object network centred on (focussed on) the selected object.
+    */
     function focusOnObject(theDiv) {
-        var selectedObjectToken = $( theDiv ).text();
-        alert(selectedObjectToken);
+      var selectedObjectToken = $( theDiv ).text();
+      // alert(selectedObjectToken);
+      $.ajax({
+        type: "POST",
+        url: "/objectTree",
+        dataType: "json",        
+        data: {"url" : programURL, "objectToken": selectedObjectToken, "depth": 3}
+      }).done( function(msg) {
+         $("div#dataPane").text(msg)
+         //alert( "Data Received: " + msg );  
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+
+
+
         return false;
     }
 
