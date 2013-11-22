@@ -72,8 +72,58 @@ Expires: 0
       response 
 
 
+objectTree url String objectToken String depth Int > String String String
+"""
+ Given either an object name, or "<Type>:#<reflectId>" e.g. "Author:#3", 
+ obtains the reflectId of the object, and
+ returns a JSON representation of the object tree out from that object,
+ to a certain depth.
+
+ Depths are interpreted as:
+ 1 - The focus object and its simple attrs only.
+ 2 - Focus object and directly associated objects (with their simple attributes)
+ 3 - 2 plus the next-level associates of the associated objects (with simple attributes) 
+"""
+   response = "" 
+   sepPos = index objectToken ":#"
+   if gt sepPos -1
+      reflectId = slice objectToken (plus sepPos 2)
+   else 
+      reflectId err = 
+         httpPost
+            cat url "/reflectId"
+            {
+               "name"  => objectToken
+            }String > Any
+            
+      if err
+         response = cat "{\"service error\" : \"" err "\"}"
+      
+   if not response
+      response err = 
+         httpPost
+            cat url "/objectTree"
+            {
+               "reflectId"  => reflectId
+               "depth"      => depth
+            }String > Any
+            
+      if err
+         response = cat "{\"service error\" : \"" err "\"}"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"
+      response 
+
+
 reflectId url String name String > String String String String
 """
+ TODO: NOT UPDATED FOR PROXY ROLE YET !!!
+
  Given an object name (a dubbed name in the persistence system, or a transientDub name)
  returns the reflectId by which the object can be fetched through this API.
  The response is a single line of plaintext containing either the reflectId (an integer)
@@ -156,6 +206,8 @@ simpleAttributes url String reflectId String
    String
    [] reflect.SimpleAttrDescriptor 
 """
+ TODO: NOT UPDATED FOR PROXY ROLE YET !!!
+
  Returns a JSON formatted list of attribute descriptors for 
  the simple (unary, atomic-primitive-valued) attributes of the object.
  An empty list is returned if the object is not found or has no simple attributes.
@@ -177,6 +229,8 @@ complexAttributes url String reflectId String
    String
    [] reflect.ComplexAttrDescriptor
 """
+ TODO: NOT UPDATED FOR PROXY ROLE YET !!!
+
  Returns a JSON formatted list of attribute descriptors of the complex attributes
  of the object: multi-valued attributes or attributes which are object-valued rather
  than primitive-valued.

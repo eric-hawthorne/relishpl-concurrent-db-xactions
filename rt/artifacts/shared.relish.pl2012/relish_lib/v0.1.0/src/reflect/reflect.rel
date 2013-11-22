@@ -64,3 +64,88 @@ ComplexAttrDescriptor
    inverseMinArity Int
    inverseMaxArity Int    
    vals 0 N [] String
+
+
+ObjectTree
+"""
+ Represents a whole tree of associated objects, out to the specified depth.
+ depth 1 is a single object with simple attributes only.
+ depth 2 includes directly associated objects
+ depth 3 includes associates of those.
+"""
+   depth Int
+   rootReflectId String
+   objects {} String > ObjectDescriptor
+
+
+ObjectDescriptor
+"""
+ A descriptor a relish structured object.
+ May include only the type and ids of the object,
+ or also the simple attributes (unary, atomic-primitive-valued attributes)
+ and/or also the complex attributes (multi-valued and/or object-valued attributes)
+"""
+   typeName String  // The full name of the type of the object, although in backwards (human readable) format.
+   reflectId String  // The id for the object that is used by the reflection api.
+   dbid String  // String representation of the dbid of the object, or "" if the object is not locally persistent.
+   uuid String  // The uuidStr() value of the object, or "" if the object is not persistent somewhere.
+   includesSimpleAttrs Bool
+   includesComplexAttrs Bool
+   simpleAttrs [] SimpleAttrDescriptor
+   complexAttrs [] ComplexAttrDescriptor 
+
+
+getObjectTree reflectId String depth Int > tree ObjectTree
+"""
+ Returns an object tree to the specified depth.
+ See definition of ObjectTree.
+"""
+   tree = ObjectTree
+   tree.rootReflectId = reflectId
+   tree.depth = depth
+   tree.objects = {}String > ObjectDescriptor
+
+   populateObjectTree tree reflectId depth        
+
+
+populateObjectTree tree ObjectTree reflectId String depth Int
+"""
+ Helper function.
+ Add object descriptors to the tree up to the needed depth.
+ Recursive.
+"""
+   if not tree.objects[? reflectId]
+      obj = objectByReflectId reflectId 
+      objDesc = makeDescriptor obj reflectId depth
+      tree.objects[reflectId] = objDesc 
+      if gt depth 1
+         depth = minus depth 1
+         for complexAttrDesc in objDesc.complexAttrs
+            if complexAttrDesc.valIsObject
+               for associatedReflectId in complexAttrDesc.vals
+                  populateObjectTree tree associatedReflectId depth
+
+
+makeDescriptor obj Struct reflectId String remainingDepth Int > objDesc ObjectDescriptor      
+"""
+ If remainingDepth is 0, does not even include simple attributes.
+ If remainingDepth is 1, includes only simple attributes
+ If remainingDepth is 2 or more, includes also complex attributes
+"""
+   objType = typeOf obj
+
+   objDesc = ObjectDescriptor
+   objDesc.typeName = backwardsTypeName objType.name
+   objDesc.reflectId = reflectId
+   if hasUuid obj
+      objDesc.dbid = String dbid obj
+      objDesc.uuid = uuidStr obj
+   else
+      objDesc.dbid = ""
+      objDesc.uuid = ""
+   if gt remainingDepth 0
+      objDesc.simpleAttrs = getSimpleAttributes reflectId
+      objDesc.includesSimpleAttrs = true
+   if gt remainingDepth 1
+      objDesc.complexAttrs = getComplexAttributes reflectId    
+      objDesc.includesComplexAttrs = true  

@@ -50,6 +50,40 @@ func InitReflectMethods() {
 	}
 	typeNamesMethod.PrimitiveCode = typeNames
 
+/*    
+    relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
+
+    becomes
+
+    BookCase ~~~ publishing/core, shareware/biblio_file, relish.pl2012
+*/
+	backwardsTypeNameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"backwardsTypeName", 
+		                                    []string{"typeName"}, 
+		                                    []string{"String"}, 
+		                                    []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	backwardsTypeNameMethod.PrimitiveCode = backwardsTypeNameNM
+
+
+
+/*    
+    BookCase ~~~ publishing/core, shareware/biblio_file, relish.pl2012
+
+    becomes
+  
+    relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
+*/
+ 	forwardsTypeNameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"forwardsTypeName", 
+		                                    []string{"reversedTypeName"}, 
+		                                    []string{"String"}, 
+		                                    []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	forwardsTypeNameMethod.PrimitiveCode = forwardsTypeNameNM  
+
 
     // type name String > ?DataType
 	typeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"type", []string{"name"}, []string{"String"}, []string{"shared.relish.pl2012/relish_lib/pkg/reflect/DataType"}, false, 0, false)
@@ -453,12 +487,27 @@ func typeNames(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+func backwardsTypeNameNM(th InterpreterThread, objects []RObject) []RObject {
+
+    typeName := string(objects[0].(String))
+    reversed := backwardsTypeName(typeName)
+	return []RObject{String(reversed)}
+}   
+
+func forwardsTypeNameNM(th InterpreterThread, objects []RObject) []RObject {
+
+    reversedTypeName := string(objects[0].(String))
+    typeName := forwardsTypeName(reversedTypeName)
+	return []RObject{String(typeName)}
+} 
+
+
 /*    
     relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
 
     becomes
 
-    BookCase, publishing/core, shareware/biblio_file, relish.pl2012
+    BookCase ~~~ publishing/core, shareware/biblio_file, relish.pl2012
 */
 func backwardsTypeName(typeName string) (backwardsName string) {
    slashPos := strings.Index(typeName,"/")
@@ -480,7 +529,7 @@ func backwardsTypeName(typeName string) (backwardsName string) {
 }
 
 /*    
-    BookCase, publishing/core, shareware/biblio_file, relish.pl2012
+    BookCase ~~~ publishing/core, shareware/biblio_file, relish.pl2012
 
     becomes
   
@@ -1454,7 +1503,6 @@ func ensureReflectId1(obj RObject) (reflectId string) {
    }
    return
 }
-
 
 
 
