@@ -16,6 +16,10 @@ package  reflect
 """
 
 
+import 
+   strings
+   
+   
 DataType
 """
  Represents a relish datatype.
@@ -125,8 +129,11 @@ populateObjectTree tree ObjectTree reflectId String depth Int
          depth = minus depth 1
          for complexAttrDesc in objDesc.complexAttrs
             if complexAttrDesc.valIsObject
-               for associatedReflectId in complexAttrDesc.vals
-                  populateObjectTree tree associatedReflectId depth
+               if not complexAttrDesc.vals
+                  print cat objDesc.typeName ":#" reflectId "." complexAttrDesc.attrName " has no vals."
+               else
+                  for associatedReflectId in complexAttrDesc.vals
+                     populateObjectTree tree associatedReflectId depth
 
 
 makeDescriptor obj Any reflectId String remainingDepth Int > objDesc ObjectDescriptor      

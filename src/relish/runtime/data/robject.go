@@ -858,17 +858,21 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	    	
    default:
 	   if typ.IsNative {
-		  w := &GoWrapper{nil,typ}
+		   w := &GoWrapper{nil,typ,0}
+  	      if ! markSense {
+  		      w.SetMarked()
+  	      }
+  	      Logln(GC3_,"NewObject: IsMarked",w.IsMarked())		  
 	      return w, nil		
 	   }
-       if typ.IsParameterized {
-       	   if typ == ChannelType || strings.HasPrefix(typeName, "Channel of ") {  // TODO May need to change to just == "Channel"
-              c := &Channel{} // this is an uninitialized Channel value
-              return c, nil   
-       	   }
-       	   // TODO Not handling other parameterized types yet.       	   
-           return nil, fmt.Errorf("Sorry. Parameterized data types are not handled yet.")
-       	   // TODO Not handling other parameterized types yet.
+      if typ.IsParameterized {
+    	   if typ == ChannelType || strings.HasPrefix(typeName, "Channel of ") {  // TODO May need to change to just == "Channel"
+           c := &Channel{} // this is an uninitialized Channel value
+           return c, nil   
+    	   }
+    	   // TODO Not handling other parameterized types yet.       	   
+        return nil, fmt.Errorf("Sorry. Parameterized data types are not handled yet.")
+    	   // TODO Not handling other parameterized types yet.
        } 
     }
 	// It's not a primitive type nor a parameterized type

@@ -13,6 +13,7 @@ import (
          "fmt"
          "sync"
          "strings"
+	      . "relish/dbg"	         
 )
 
 //"fmt"
@@ -311,7 +312,11 @@ func (t *RType) Zero() RObject {
 			
     default:
 	    if t.IsNative {
-	       z = &GoWrapper{nil,t}		
+	       z = &GoWrapper{nil,t,0}		
+	       if ! markSense {
+		       z.SetMarked()
+	       }
+	       Logln(GC3_,"Zero: IsMarked",z.IsMarked())	       
 		} else {
     	   z = NIL   // Hmmm. Do I need one Nil per RType???? With a KnownType attribute?
         }
@@ -4083,7 +4088,8 @@ sure that NewObject sets the marked flag properly on them.
 
 type GoWrapper struct {
 	GoObj interface{}
-	typ *RType
+	rtype *RType
+	flags byte
 }
 
 func (p GoWrapper) IsZero() bool {
@@ -4091,10 +4097,10 @@ func (p GoWrapper) IsZero() bool {
 }
 
 func (p GoWrapper) Type() *RType {
-	return p.typ
+	return p.rtype
 }
 
-func (p GoWrapper) This() RObject {
+func (p *GoWrapper) This() RObject {
 	return p
 }
 
@@ -4178,8 +4184,7 @@ func (p GoWrapper) RemoveUUID() {
 }
 
 func (p GoWrapper) Flags() int8 {
-	panic("A GoWrapper has no Flags.")
-	return 0
+	return int8(p.flags)
 }
 
 func (p GoWrapper) IsDirty() bool {
@@ -4209,19 +4214,59 @@ func (p GoWrapper) IsValid() bool { return true }
 func (p GoWrapper) SetValid()     {}
 func (p GoWrapper) ClearValid()   {}
 
-func (p GoWrapper) IsMarked() bool { return false }
-func (p GoWrapper) SetMarked()    {}
-func (p GoWrapper) ClearMarked()  {}
-func (p GoWrapper) ToggleMarked()  {}
+
+func (o GoWrapper) IsMarked() bool { return o.flags&FLAG_MARKED != 0 }
+func (o *GoWrapper) SetMarked()    { o.flags |= FLAG_MARKED }
+func (o *GoWrapper) ClearMarked()  { o.flags &^= FLAG_MARKED }
+func (o *GoWrapper) ToggleMarked()  { o.flags ^= FLAG_MARKED }
 
 /*
-TODO TODO TODO !!! What do we do about objects that are sitting in buffered-channel queues but are nowhere else referred to?
-
-Those should not be removed from the objects map nor the attributes maps !!!!!!
-Is this going to require a separate flag? Quite possibly, unless we, upon taking an object out of a channel,
-immediately mark it as reachable!
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
 */
-func (p GoWrapper) Mark() bool { return false }
+func (o *GoWrapper) Mark() bool { 
+   if o.IsMarked() == markSense {
+       Logln(GC3_,"Mark(): Already marked with",markSense)	
+   	   return false
+   } 
+   o.ToggleMarked()
+   Logln(GC3_,"Mark(): Marked with",o.IsMarked())
+	o.markAttributes()   
+   return true
+}
+
+
+
+func (o *GoWrapper) markAttributes()  {
+
+	for _, attr := range o.rtype.Attributes {
+
+		if !attr.Part.Type.IsPrimitive {
+
+			val, found := RT.AttrValue(o, attr, false, true)
+			if !found {
+				break
+			}
+			val.Mark()	
+		} 
+	}
+
+	for _, typ := range o.rtype.Up {
+		for _, attr := range typ.Attributes {
+			if !attr.Part.Type.IsPrimitive {
+
+				val, found := RT.AttrValue(o, attr, false, true)
+				if !found {
+					break
+				}
+			    val.Mark()				
+			} 
+		}
+	}
+	return
+}
+
+
 
 
 func (p GoWrapper) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 

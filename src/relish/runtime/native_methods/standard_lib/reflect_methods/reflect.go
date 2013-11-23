@@ -835,6 +835,8 @@ func ensureDataType(typeName string) (datatype RObject, err error) {
     	  return
        }
        RT.RestoreAttr(datatype,  nameAttr, String(typeName)) 
+    } else {
+       fmt.Println("datatype ",datatype,"was found in RT.ReflectedDataTypes[",typeName,"]")
     }
 	return 
 }
@@ -1317,16 +1319,16 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	          for obj := range valColl.Iter(th) {
 			      if primitive {
 				      valStr = obj.String()
-				  } else {
-					  valStr = ensureReflectId1(obj)
-				  }
+				    } else {
+					   valStr = ensureReflectId1(obj)
+				    }
 
-				  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+				    err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 				  
                   // fmt.Println("adding ",valStr)				  
 				  
-			      if err != nil {
-					 panic(err)
+			       if err != nil {
+					    panic(err)
 				  }
 		      }
 		   } else {
