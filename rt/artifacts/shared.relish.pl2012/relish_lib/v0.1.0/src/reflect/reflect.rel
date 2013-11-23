@@ -75,7 +75,8 @@ ObjectTree
 """
    depth Int
    rootReflectId String
-   objects {} String > ObjectDescriptor
+   // objects {} String > ObjectDescriptor
+   objects Map
 
 
 ObjectDescriptor
@@ -91,8 +92,8 @@ ObjectDescriptor
    uuid String  // The uuidStr() value of the object, or "" if the object is not persistent somewhere.
    includesSimpleAttrs Bool
    includesComplexAttrs Bool
-   simpleAttrs [] SimpleAttrDescriptor
-   complexAttrs [] ComplexAttrDescriptor 
+   simpleAttrs 0 N [] SimpleAttrDescriptor
+   complexAttrs 0 N [] ComplexAttrDescriptor 
 
 
 getObjectTree reflectId String depth Int > tree ObjectTree
@@ -104,6 +105,7 @@ getObjectTree reflectId String depth Int > tree ObjectTree
    tree.rootReflectId = reflectId
    tree.depth = depth
    tree.objects = {}String > ObjectDescriptor
+
 
    populateObjectTree tree reflectId depth        
 
@@ -127,7 +129,7 @@ populateObjectTree tree ObjectTree reflectId String depth Int
                   populateObjectTree tree associatedReflectId depth
 
 
-makeDescriptor obj Struct reflectId String remainingDepth Int > objDesc ObjectDescriptor      
+makeDescriptor obj Any reflectId String remainingDepth Int > objDesc ObjectDescriptor      
 """
  If remainingDepth is 0, does not even include simple attributes.
  If remainingDepth is 1, includes only simple attributes

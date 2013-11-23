@@ -630,7 +630,7 @@ with attribute values themselves converted to maps and slices.
 */
 func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
 	
-   fmt.Println("runit.ToMapListTree",o.String())
+   // fmt.Println("runit.ToMapListTree",o.String())
 	
 	// Record myself in the visited set so we don't infinitely loop.
 	visited[o] = true
@@ -648,9 +648,9 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
             key = attr.Part.Name
 
 			  value, found := RT.AttrValue(o, attr, true, true)
-			  fmt.Println(attr.Part.Name,":",value)			
+			  // fmt.Println(attr.Part.Name,":",value)			
 			  if !found {
-			     fmt.Println("attr val not found")
+			     //fmt.Println("attr val not found")
 				  value = NIL // TODO Decide how to really handle these !
 			  } else if visited[value] {
 	           continue
@@ -670,9 +670,9 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 	            key = attr.Part.Name
 
 				value, found := RT.AttrValue(o, attr, true, true)
-				fmt.Println(attr.Part.Name,":",value)
+				//fmt.Println(attr.Part.Name,":",value)
 				if !found {
-			      fmt.Println("attr val not found")				   
+			      //fmt.Println("attr val not found")				   
 				   value = NIL // TODO Decide how to really handle these !
  			   } else if visited[value] {
  	            continue
