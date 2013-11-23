@@ -206,16 +206,21 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
        // TODO - display simple attributes
 
-       htmlText += "<table class='simpleAttrs'>";  
        var simpleAttributes = obj.simpleAttrs;
+       
+       if (simpleAttributes != null) {
+          htmlText += "<table class='simpleAttrs'>"; 
+ 
+ 
 
-       for (var i = 0; i < simpleAttributes.length; i++) {
-          var sAttr = simpleAttributes[i];
-          var attrVal = sAttr.val;
-          htmlText += "<tr><td class='simpleAttrName'><b>" + sAttr.attrName + ":</b></td><td>" + primitiveValHtml(sAttr.typeName, sAttr.val) + "</td></tr>";                              
+          for (var i = 0; i < simpleAttributes.length; i++) {
+             var sAttr = simpleAttributes[i];
+             var attrVal = sAttr.val;
+             htmlText += "<tr><td class='simpleAttrName'><b>" + sAttr.attrName + ":</b></td><td>" + primitiveValHtml(sAttr.typeName, sAttr.val) + "</td></tr>";                              
+          }
+          htmlText += "</table>";   
        }
-       htmlText += "</table>";   
-
+       
        if (depth < 2) {
 
           htmlText += "</div>";           
@@ -228,26 +233,31 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
            // display complex attributes
            var complexAttributes = obj.complexAttrs;
-           for (var i = 0; i < complexAttributes.length; i++) {
-              htmlText += "<div class='complexAttr'>";    
+           
+           if (complexAttributes != null) {
+              for (var i = 0; i < complexAttributes.length; i++) {
+                 htmlText += "<div class='complexAttr'>";    
 
-              var cAttr = complexAttributes[i];
-              var nAttrVals = cAttr.vals.length;
-              htmlText += "<h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";          
-              for (var j = 0; j < nAttrVals; j++ ) {
-                if (nAttrVals > 1) {
-                    htmlText += j + ": ";                   
-                }
-                var val = cAttr.vals[j];
-                if (cAttr.valIsObject) {                 
-                  htmlText += displayTree(objects,val,depth-1,visitedObjects);
-                  htmlText += "<br/>";   
-                } else {
-                    htmlText += primitiveValHtml(cAttr.typeName, val);
-                    htmlText += "<br/>";                    
-                }
+                 var cAttr = complexAttributes[i];
+                 if (cAttr.vals != null) {
+                    var nAttrVals = cAttr.vals.length;
+                    htmlText += "<h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";          
+                    for (var j = 0; j < nAttrVals; j++ ) {
+                      if (nAttrVals > 1) {
+                          htmlText += j + ": ";                   
+                      }
+                      var val = cAttr.vals[j];
+                      if (cAttr.valIsObject) {                 
+                        htmlText += displayTree(objects,val,depth-1,visitedObjects);
+                        htmlText += "<br/>";   
+                      } else {
+                          htmlText += primitiveValHtml(cAttr.typeName, val);
+                          htmlText += "<br/>";                    
+                      }
+                    }
+                 }
+                 htmlText += "</div>"; 
               }
-              htmlText += "</div>"; 
            }
        }
 
@@ -290,7 +300,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     }
 
 
-/*
+/* AJAX Example Code
 $.ajax({
   type: "POST",
   url: "example.php",
@@ -343,47 +353,65 @@ $.ajax({
                &nbsp; &nbsp;
             </td>
             <td>
-            	<table>
+            	<table id="targetProgram">
             		<tr>
             			<td>
                            <h3>Target Program URL &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('target_program_url')"/> :</h3>            				
             			</td>
-            			<td colspan="2">
+            			<td>
                            <input type="text" size="40" id="programUrl" value="{{.programUrl}}" />	            			
             			</td>      
                         <td>
-                           <input type="button" value="connect to program" onclick="connectToProgram()" />
+                           &nbsp; <input type="button" value="connect to program" onclick="connectToProgram()" />
                         </td>           			        			
             		</tr>
+         		</table>
+            	<table>	
             		<tr>
-            		    <td style="text-align: right;">
-               	           <h3>Object Name starts with :</h3>            		    	
-            			</td>  
-            			<td>
-            			   <input type="text" size="30" id="prefix" value="{{.prefix}}" />	
-            			</td> 
-                        <td>
-                           <input type="button" value="find named objects" onclick="findNamedObjects()" />
-	                    </td>          			
-            		</tr>            		
-            		<tr>
-            		    <td style="text-align: right;">
-               	           <h3>Data Type :</h3>            		    	
-            			</td>  
-                        <td>
-                  	     <select id="type">
-                  		 {{range .types}}
-                  	 	 <option>{{.}}</option>
-                  	 	 {{end}}
-                        </select>		
-                        </td>
-            			<td>
-            			   Where: <input type="text" size="60" id="where" value="{{.where}}" />	
-            			</td>      
-                        <td>
-                          <input type="button" value="find" onclick="selectObjectsOfType()" />
-                        </td>     			
-            		</tr>     		            		
+            		   <td>
+            		      <table class="query">
+                     		<tr>
+                     		    <td colspan="2">
+                        	           <h3>Object Name starts with:</h3>            		    	
+                     			</td>  
+                  			</tr>
+                  			<tr>
+                     			<td>
+                     			   <input type="text" size="30" id="prefix" value="{{.prefix}}" />	
+                     			</td> 
+                                 <td>
+                                    <input type="button" value="find named objects" onclick="findNamedObjects()" />
+         	                    </td>          			
+                     		</tr>   
+                  		</table>
+            		   </td>
+            		   <td>
+            		      &nbsp; or &nbsp;
+         		      </td>
+                     <td>
+                  		<table class="query">         		
+                     		<tr>
+                     		    <td>
+                        	           <h3>Data Type: </h3>            		    	
+                     			</td>  
+                                 <td>
+                           	     <select id="type">
+                           		 {{range .types}}
+                           	 	 <option>{{.}}</option>
+                           	 	 {{end}}
+                                 </select>		
+                                 </td>
+                              </tr>
+                              <tr>
+                     			<td colspan="2">
+                     			   <span class="green3">Where:</span> <input type="text" size="60" id="where" value="{{.where}}" />	
+                                 &nbsp;
+                                   <input type="button" value="find" onclick="selectObjectsOfType()" />
+                              </td>     			
+                     		</tr> 
+                  		<table>
+            		   </td>
+            		</tr>    		            		
             	</table>
             </td>
           </tr>
