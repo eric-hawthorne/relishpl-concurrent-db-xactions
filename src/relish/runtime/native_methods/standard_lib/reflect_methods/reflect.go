@@ -422,9 +422,9 @@ func typeNames(th InterpreterThread, objects []RObject) []RObject {
 
     var typeNameSlice []string
 
-    fmt.Println("typeNames",includeStructs,includeCollections,includePrimitive,includeReflect)
+    // fmt.Println("typeNames",includeStructs,includeCollections,includePrimitive,includeReflect)
     for typeName,typ := range RT.Types {
-    	fmt.Println(typeName)
+    	// fmt.Println(typeName)
 
         okStruct := false
         isStruct :=  typ.Less(StructType)
@@ -1182,7 +1182,7 @@ getComplexAttributes reflectId >
 func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 
 	reflectId := string(objects[0].(String))	
-	 fmt.Println(reflectId)
+	// fmt.Println(reflectId)
     obj := objectByReflectId1(reflectId)
 
     complexAttrDescrType, typFound := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor"]
@@ -1195,12 +1195,12 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	   panic(err)
     }
 
-    fmt.Println(obj)
+    // fmt.Println(obj)
     
     if obj != nil && obj != NIL {
     	
        attrs,vals := complexAttrs(obj)
-       fmt.Println(len(attrs))
+       // fmt.Println(len(attrs))
        for i, attr := range attrs {
 
            val := vals[i]
@@ -1309,7 +1309,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	       var valStr string
 	
 	       if attr.IsMultiValued() {
-	          fmt.Println(attr.Part.Name, "is multivalued")
+	          // fmt.Println(attr.Part.Name, "is multivalued")
 			    primitive := attr.Part.Type.IsPrimitive
 		
 		      // val must be a collection - iterate over it !! TODO
@@ -1323,14 +1323,14 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 
 				  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 				  
-              fmt.Println("adding ",valStr)				  
+                  // fmt.Println("adding ",valStr)				  
 				  
 			      if err != nil {
 					 panic(err)
 				  }
 		      }
 		   } else {
-	          fmt.Println(attr.Part.Name, "is not multivalued")		      
+	          // fmt.Println(attr.Part.Name, "is not multivalued")		      
 			  valStr = ensureReflectId1(val)
 			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 		      if err != nil {

@@ -117,96 +117,51 @@ div.objectListEntry {
       padding-bottom: 0px;
       margin-bottom: 0px;
   }
-  p#copydb
-  {
-    font-size: 90%;
-  }
 
-@media screen and (max-device-height: 768px) and (orientation: landscape) {
-	textarea.code 
-	{
-		width: 450px;
-		background-color: #FFFF99;
-		font-family: "Monaco", "Lucida Console", monospace;
-	}
-
-	textarea.codewide 
-	{
-	  width: 910px;
-	  background-color: #FFFF99;
-	}
-
-	textarea#imports 
-	{
-		height: 5em;
-	}
-
-	textarea#constants 
-	{
-		height: 5em;
-	}
-
-	textarea#types 
-	{
-			height: 45em;
-	}
-
-	textarea#methods
-	{
-			height: 45em;
-	}
-
-	textarea#main 
-	{
-			height: 42em;	
-	}
-
-	textarea#console
-	{
-		height: 60em;
-	}
+.objNode3 
+{
+  background-color: #999999;
+  border:1px solid black;  
+  padding: 3px;
+  margin: 3px;
+  border-radius:0.5em;  
 }
-@media only screen and (min-device-height: 769px) and (orientation: landscape) {
-	textarea.code 
-	{
-		width: 450px;
-		background-color: #FFFF99;
-		font-family: "Monaco", "Lucida Console", monospace;			
-	}
+.objNode2 
+{
+  background-color: #BBBBBB;
+  border:1px solid black;  
+  padding: 3px;
+  margin: 3px;
+  border-radius:0.5em;    
+}
+.objNode1 
+{
+  background-color: #DEDEDE;
+  border:1px solid black;  
+  padding: 3px;
+  margin: 3px;
+  border-radius:0.5em;    
+}
+.objNode0 
+{
+  background-color: #EFEFEF;
+  border:1px solid black;  
+  padding: 3px;
+  margin: 3px;
+  border-radius:0.5em;    
+}
 
-	textarea.codewide 
-	{
-	  width: 910px;
-	  background-color: #FFFF99;
-	}
+div.complexAttr
+{
+  background-color: #E6FFF8;
+}
 
-	textarea#imports 
-	{
-		height: 5em;
-	}
+table.simpleAttrs 
+{
+  max-width: 300px;
+}
 
-	textarea#constants 
-	{
-		height: 5em;
-	}
-
-	textarea#types 
-	{
-			height: 50em;
-	}
-
-	textarea#methods
-	{
-			height: 50em;
-	}
-
-	textarea#main 
-	{
-			height: 47em;	
-	}
-
-	textarea#console
-	{
-		height: 60em;
-	}
+td.simpleAttrName 
+{
+   background-color: #CCCCCC;
 }

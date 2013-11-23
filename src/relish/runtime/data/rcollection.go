@@ -332,7 +332,8 @@ func (c rcollection) IsIndexSettable() bool {
 
 func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
 	
-	fmt.Println("rcollection.ToMapListTree")
+	//fmt.Println("rcollection.ToMapListTree")
+	
 	// Record myself in the visited set so we don't infinitely loop.
 	visited[c.This()] = true	
 	
@@ -371,7 +372,7 @@ func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]boo
 	        resultSlice = append(resultSlice, val)		
 		}
 		tree = resultSlice
-    	fmt.Println(resultSlice)		
+    	// fmt.Println(resultSlice)		
 	}
     return
 }

@@ -110,6 +110,10 @@ objectTree url String objectToken String depth Int > String String String
             
       if err
          response = cat "{\"service error\" : \"" err "\"}"
+
+   print "=========="
+   print "objectTree" objectToken depth
+   print response     
    => """
 HEADERS
 Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
