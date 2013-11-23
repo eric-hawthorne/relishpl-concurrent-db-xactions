@@ -239,8 +239,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                     htmlText += j + ": ";                   
                 }
                 var val = cAttr.vals[j];
-                if (cAttr.valIsObject) {
-                  htmlText += "<br/>";                     
+                if (cAttr.valIsObject) {                 
                   htmlText += displayTree(objects,val,depth-1,visitedObjects);
                   htmlText += "<br/>";   
                 } else {
@@ -278,7 +277,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
        if (complexAttr.minArity != 1) {
            minArity = complexAttr.minArity + " "
        }
-       return "--&gt;" +complexAttr.attrName + " " +  minArity + maxArity + " --&gt;";
+       return "--&gt; " +complexAttr.attrName + " " +  minArity + maxArity + " --&gt;";
     }
 
     function primitiveValHtml(typeName,val) {
