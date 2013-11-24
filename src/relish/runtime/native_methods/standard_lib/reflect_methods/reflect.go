@@ -1302,7 +1302,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 
 	       valsAttr, found := descr.Type().GetAttribute("vals")
 	       if ! found {
-	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have an vals attribute?")
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have a vals attribute?")
 	    	  panic(err)
 	       }
 	
@@ -1497,11 +1497,19 @@ a relish program variable directly or indirectly, you could retrieve a broken
 relish object (with no attribute values) when you get the object by reflectId later.
 */
 func ensureReflectId1(obj RObject) (reflectId string) {
+   if obj == NIL {
+      reflectId = "0"
+      return
+   }
+   if obj == nil {
+      panic("ensureReflectId1: Attempt to set a reflectId for RObject which is Go nil.")
+   }
    reflectId,found := reflectIdsByObject[obj]
    if ! found {
       reflectId = strconv.FormatUint(idGen.NextID(),10)
       objectsByReflectId[reflectId] = obj
       reflectIdsByObject[obj] = reflectId
+      //fmt.Println("Assigning reflectId",reflectId,"to object",obj)
    }
    return
 }

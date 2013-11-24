@@ -111,7 +111,7 @@ getObjectTree reflectId String depth Int > tree ObjectTree
    tree.objects = {}String > ObjectDescriptor
 
 
-   populateObjectTree tree reflectId depth        
+   populateObjectTree tree reflectId depth       
 
 
 populateObjectTree tree ObjectTree reflectId String depth Int
@@ -123,7 +123,9 @@ populateObjectTree tree ObjectTree reflectId String depth Int
    objectMap = tree.objects
    if not objectMap[? reflectId]
       obj = objectByReflectId reflectId 
-      objDesc = makeDescriptor obj reflectId depth
+      if eq obj nil
+         =>
+      objDesc = makeDescriptor obj reflectId depth 
       objectMap[reflectId] = objDesc 
       if gt depth 1
          depth = minus depth 1
@@ -136,7 +138,12 @@ populateObjectTree tree ObjectTree reflectId String depth Int
                      populateObjectTree tree associatedReflectId depth
 
 
-makeDescriptor obj Any reflectId String remainingDepth Int > objDesc ObjectDescriptor      
+makeDescriptor 
+   obj Any 
+   reflectId String 
+   remainingDepth Int 
+> 
+   objDesc ObjectDescriptor      
 """
  If remainingDepth is 0, does not even include simple attributes.
  If remainingDepth is 1, includes only simple attributes
