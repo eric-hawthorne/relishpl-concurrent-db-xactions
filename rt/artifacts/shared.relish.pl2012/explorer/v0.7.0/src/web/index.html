@@ -162,14 +162,14 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
         url: "/objectTree",
         dataType: "json",        
         data: {"url" : programURL, "objectToken": selectedObjectToken, "depth": 3}
-      }).done( function(tree) {
+      }).done( function(tree) { 
          $("div#dataPane").html("");
          if ("service error" in tree) {
             $("div#dataPane").append("<h3>service error</h3>");   
             $("div#dataPane").append("<p>" + tree["service error"] + "</p>");                       
          } else {
             var visitedObjects = {};          
-            var treeHtml = displayTree(tree.objects, tree.rootReflectId, tree.depth, visitedObjects);
+            var treeHtml = displayTree(tree.objects, tree.rootReflectId, tree.depth, tree.depth, visitedObjects,"");
             $("div#dataPane").append(treeHtml);               
          }
 
@@ -186,39 +186,78 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       return false;
     }
 
-
-    function displayTree(objects,reflectId,depth,visitedObjects) {
+    var maxNestedListLength = 20; // 2 to test
+    var maxElaboratedListLength = 40; // 3 to tes
+    function displayTree(objects,reflectId,depth,coloringDepth,visitedObjects,fromReflectId) {
        if (depth < 0) {
            return ""
        }
 
-       var htmlText = "<div class='objNode" + depth + "'>";       
-
+       var htmlText = "<div class='objNode" + coloringDepth + "'>";       
+       if (reflectId == "0") {
+          htmlText += " &nbsp; &nbsp; &nbsp; *nil* &nbsp; &nbsp; &nbsp; </div>";           
+          return htmlText          
+       }
+       
        var obj = objects[reflectId];  
 
        htmlText += objectTokenHtml(obj);         
        
+       var onlyNames = false;
+       
        if (depth < 1) {
 
-          htmlText += "</div>";           
-          return htmlText
+          // htmlText += "</div>";           
+          // return htmlText
+          
+          onlyNames = true;
        }
 
-       // TODO - display simple attributes
+       // Display simple attributes
 
+       var startedSimpleAttrs = false   
+       
        var simpleAttributes = obj.simpleAttrs;
        
        if (simpleAttributes != null) {
-          htmlText += "<table class='simpleAttrs'>"; 
- 
- 
-
+          
+          var simpleAttrsStartingHtml = "<table class='simpleAttrs'>"; 
+          
           for (var i = 0; i < simpleAttributes.length; i++) {
              var sAttr = simpleAttributes[i];
+             
+             if (onlyNames) {
+                var isaName = false;
+                if (sAttr.attrName == "title") {
+                   isaName = true;
+                   var nameStartPos = sAttr.attrName.length - 4;
+                   if (nameStartPos < 0) {
+                      nameStartPos = 0;
+                   }
+                } else if (sAttr.attrName.toLowerCase().indexOf("name") >= nameStartPos) {
+                   isaName = true;
+                }
+                if (! isaName) {
+                   continue;
+                }
+             }    
+             
              var attrVal = sAttr.val;
+             
+             if (! startedSimpleAttrs) {   
+                htmlText += simpleAttrsStartingHtml;
+                startedSimpleAttrs = true;
+             }         
+             
              htmlText += "<tr><td class='simpleAttrName'><b>" + sAttr.attrName + ":</b></td><td>" + primitiveValHtml(sAttr.typeName, sAttr.val) + "</td></tr>";                              
           }
-          htmlText += "</table>";   
+          
+          if (startedSimpleAttrs) {
+             if (onlyNames) {
+                htmlText += "<tr><td colspan='2' style='text-align:centre'> ... </td></tr>";                   
+             }
+             htmlText += "</table>";  
+          } 
        }
        
        if (depth < 2) {
@@ -235,28 +274,56 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
            var complexAttributes = obj.complexAttrs;
            
            if (complexAttributes != null) {
-              for (var i = 0; i < complexAttributes.length; i++) {
-                 htmlText += "<div class='complexAttr'>";    
-
+              for (var i = 0; i < complexAttributes.length; i++) {                 
                  var cAttr = complexAttributes[i];
+                 var hasInverse = (cAttr.inverseAttrName != "");                 
+                 var startedComplexAttr = false       
+                 var nextDepth = depth - 1;            
                  if (cAttr.vals != null) {
                     var nAttrVals = cAttr.vals.length;
-                    htmlText += "<h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";          
+                    if (nAttrVals > maxNestedListLength) {
+                       nextDepth = 1;  // A large collection does not show subdivided elements.
+                    }
+                    var singletonComplexAttr = (nAttrVals == 1);                    
+
+                    var complexAttrStartingHtml = "<div class='complexAttr'><h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";  
+                    
+                    // htmlText += "<h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";   
+                    
                     for (var j = 0; j < nAttrVals; j++ ) {
-                      if (nAttrVals > 1) {
-                          htmlText += j + ": ";                   
-                      }
                       var val = cAttr.vals[j];
-                      if (cAttr.valIsObject) {                 
-                        htmlText += displayTree(objects,val,depth-1,visitedObjects);
-                        htmlText += "<br/>";   
+                      if (cAttr.valIsObject) {    
+                         if ((! hasInverse) || (val != fromReflectId)) { 
+                            if (! startedComplexAttr) {
+                               htmlText += complexAttrStartingHtml;                             
+                               startedComplexAttr = true;
+                            }
+                            if (nAttrVals > 1) {
+                                htmlText += j + ": ";                   
+                            } 
+                            if (j > maxElaboratedListLength) { 
+                               nextDepth = 0;
+                            }                                     
+                            htmlText += displayTree(objects,val,nextDepth,coloringDepth-1,visitedObjects,reflectId);
+                            htmlText += "<br/>";   
+                         }
+                        
                       } else {
+                          if (! startedComplexAttr) {
+                             htmlText += complexAttrStartingHtml;       
+                             startedComplexAttr = true;
+                          }                                                  
+                          if (nAttrVals > 1) {
+                              htmlText += j + ": ";                   
+                          }                          
                           htmlText += primitiveValHtml(cAttr.typeName, val);
                           htmlText += "<br/>";                    
                       }
                     }
                  }
-                 htmlText += "</div>"; 
+                 if (startedComplexAttr) {
+                    htmlText += "</div>"; 
+                 }
               }
            }
        }
@@ -279,15 +346,30 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
 
     function attrNameAndPropertiesHtml(complexAttr) {
+       var s = "";
+       if (complexAttr.inverseAttrName != "") {
+          var inverseMaxArity = "N"
+          if (complexAttr.inverseMaxArity != -1) {
+             inverseMaxArity = "" + complexAttr.inverseMaxArity;
+          }
+          var inverseMinArity = ""
+          if (complexAttr.inverseMinArity != 1) {
+              inverseMinArity = "&nbsp;" + complexAttr.inverseMinArity;
+          }
+          s += "&lt;--&nbsp;" + inverseMaxArity + inverseMinArity + "&nbsp;" + complexAttr.inverseAttrName + "&nbsp;---&shy;";
+       } else {
+          s += "--";
+       }
+       
        var maxArity = "N"
        if (complexAttr.maxArity != -1) {
           maxArity = "" + complexAttr.maxArity
        }
        var minArity = ""
        if (complexAttr.minArity != 1) {
-           minArity = complexAttr.minArity + " "
+           minArity = complexAttr.minArity + "&nbsp;"
        }
-       return "--&gt; " +complexAttr.attrName + " " +  minArity + maxArity + " --&gt;";
+       return s += "---&nbsp;" +complexAttr.attrName + "&nbsp;" +  minArity + maxArity + "&nbsp;--&gt;";
     }
 
     function primitiveValHtml(typeName,val) {
@@ -409,7 +491,7 @@ $.ajax({
                                    <input type="button" value="find" onclick="selectObjectsOfType()" />
                               </td>     			
                      		</tr> 
-                  		<table>
+                  		</table>
             		   </td>
             		</tr>    		            		
             	</table>
