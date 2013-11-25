@@ -156,7 +156,17 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     */
     function focusOnObject(theDiv) {
       var selectedObjectToken = $( theDiv ).text();
-      // alert(selectedObjectToken);
+      focusOnObject1(selectedObjectToken)
+      return false;
+    } 
+    
+    function focusOnObject2(reflectId) {
+      focusOnObject1(":#" + reflectId);
+      cancelBubble();
+      return false;
+    }    
+      
+   function focusOnObject1(selectedObjectToken) {   
       $.ajax({
         type: "POST",
         url: "/objectTree",
@@ -166,7 +176,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
          $("div#dataPane").html("");
          if ("service error" in tree) {
             $("div#dataPane").append("<h3>service error</h3>");   
-            $("div#dataPane").append("<p>" + tree["service error"] + "</p>");                       
+            $("div#dataPane").append("<p>" + tree["service error"] + "</p>"); 
+         } else if (tree.rootReflectId == "NOT FOUND") {
+            $("div#dataPane").append("<h3>OBJECT NOT FOUND</h3>");                                    
          } else {
             var visitedObjects = {};          
             var treeHtml = displayTree(tree.objects, 
@@ -191,6 +203,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       return false;
     }
 
+
+
+
+
+
+
     var maxNestedListLength = 20; // 2 to test
     var maxElaboratedListLength = 40; // 3 to test
     
@@ -199,15 +217,19 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
            return ""
        }
 
-       var htmlText = "<div class='objNode" + coloringDepth + "'>";       
+       var htmlText = "<div class='objNode" + coloringDepth + "' ";       
        if (reflectId == "0") {
-          htmlText += " &nbsp; &nbsp; &nbsp; *nil* &nbsp; &nbsp; &nbsp; </div>";           
+          htmlText += "> &nbsp; &nbsp; &nbsp; *nil* &nbsp; &nbsp; &nbsp; </div>";           
           return htmlText          
        }
        
        var obj = objects[reflectId];  
 
-       htmlText += objectTokenHtml(obj);         
+       if (depth == 3) {
+          htmlText += ">" + objectTokenHtml(obj); 
+       } else {  
+          htmlText += 'onclick="focusOnObject2(\'' +  reflectId + '\')">' + objectTokenHtml(obj);         
+       }
        
        var onlyNames = false;
        
@@ -405,7 +427,11 @@ $.ajax({
 */
 
 
-
+   function cancelBubble(e) {
+    var evt = e ? e:window.event;
+    if (evt.stopPropagation)    evt.stopPropagation();
+    if (evt.cancelBubble!=null) evt.cancelBubble = true;
+   }
 
 
 
