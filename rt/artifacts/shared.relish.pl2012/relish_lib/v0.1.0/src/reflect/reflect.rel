@@ -131,9 +131,7 @@ populateObjectTree tree ObjectTree reflectId String depth Int
          depth = minus depth 1
          for complexAttrDesc in objDesc.complexAttrs
             if complexAttrDesc.valIsObject
-               if not complexAttrDesc.vals
-                  print cat objDesc.typeName ":#" reflectId "." complexAttrDesc.attrName " has no vals."
-               else
+               if complexAttrDesc.vals
                   for associatedReflectId in complexAttrDesc.vals
                      populateObjectTree tree associatedReflectId depth
 

@@ -835,9 +835,7 @@ func ensureDataType(typeName string) (datatype RObject, err error) {
     	  return
        }
        RT.RestoreAttr(datatype,  nameAttr, String(typeName)) 
-    } else {
-       fmt.Println("datatype ",datatype,"was found in RT.ReflectedDataTypes[",typeName,"]")
-    }
+    } 
 	return 
 }
 
