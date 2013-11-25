@@ -169,7 +169,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
             $("div#dataPane").append("<p>" + tree["service error"] + "</p>");                       
          } else {
             var visitedObjects = {};          
-            var treeHtml = displayTree(tree.objects, tree.rootReflectId, tree.depth, tree.depth, visitedObjects,"");
+            var treeHtml = displayTree(tree.objects, 
+                                       tree.rootReflectId, 
+                                       tree.depth, 
+                                       tree.depth, 
+                                       visitedObjects,
+                                       "");
             $("div#dataPane").append(treeHtml);               
          }
 
@@ -187,7 +192,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     }
 
     var maxNestedListLength = 20; // 2 to test
-    var maxElaboratedListLength = 40; // 3 to tes
+    var maxElaboratedListLength = 40; // 3 to test
+    
     function displayTree(objects,reflectId,depth,coloringDepth,visitedObjects,fromReflectId) {
        if (depth < 0) {
            return ""
@@ -206,10 +212,6 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
        var onlyNames = false;
        
        if (depth < 1) {
-
-          // htmlText += "</div>";           
-          // return htmlText
-          
           onlyNames = true;
        }
 
@@ -221,7 +223,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
        
        if (simpleAttributes != null) {
           
-          var simpleAttrsStartingHtml = "<table class='simpleAttrs'>"; 
+          var simpleAttrsStartingHtml = "<div class='simpleAttrs'><table class='simpleAttrs'>"; 
           
           for (var i = 0; i < simpleAttributes.length; i++) {
              var sAttr = simpleAttributes[i];
@@ -256,13 +258,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
              if (onlyNames) {
                 htmlText += "<tr><td colspan='2' style='text-align:centre'> ... </td></tr>";                   
              }
-             htmlText += "</table>";  
+             htmlText += "</table></div>";  
           } 
        }
        
        if (depth < 2) {
 
-          htmlText += "</div>";           
+          htmlText += "<div class='objNodeBottom'></div></div>";           
           return htmlText
        }
 
@@ -299,13 +301,15 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                                startedComplexAttr = true;
                             }
                             if (nAttrVals > 1) {
-                                htmlText += j + ": ";                   
+                                htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
                             } 
                             if (j > maxElaboratedListLength) { 
                                nextDepth = 0;
                             }                                     
                             htmlText += displayTree(objects,val,nextDepth,coloringDepth-1,visitedObjects,reflectId);
-                            htmlText += "<br/>";   
+                            if (nAttrVals > 1) {
+                               htmlText += "</div>";
+                            }   
                          }
                         
                       } else {
@@ -314,10 +318,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                              startedComplexAttr = true;
                           }                                                  
                           if (nAttrVals > 1) {
-                              htmlText += j + ": ";                   
+                              htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
                           }                          
                           htmlText += primitiveValHtml(cAttr.typeName, val);
-                          htmlText += "<br/>";                    
+                          if (nAttrVals > 1) {
+                             htmlText += "</div>";
+                          }                   
                       }
                     }
                  }
@@ -328,7 +334,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
            }
        }
 
-       htmlText += "</div>";
+       htmlText += "<div class='objNodeBottom'></div></div>";
 
        return htmlText   
     }
@@ -356,9 +362,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
           if (complexAttr.inverseMinArity != 1) {
               inverseMinArity = "&nbsp;" + complexAttr.inverseMinArity;
           }
-          s += "&lt;--&nbsp;" + inverseMaxArity + inverseMinArity + "&nbsp;" + complexAttr.inverseAttrName + "&nbsp;---&shy;";
+          s += "&nbsp;&lt;--&nbsp;" + inverseMaxArity + inverseMinArity + "&nbsp;" + complexAttr.inverseAttrName + "&nbsp;---&shy;";
        } else {
-          s += "--";
+          s += "&nbsp;--";
        }
        
        var maxArity = "N"
@@ -508,10 +514,18 @@ $.ajax({
   </div> -->
 
 <div id="content">
-	<div id="dataPane">
-	</div>
-	<div id="objectList">		
-	</div>
+   <table style="width:98%">
+      <tr>
+         <td class="contentSide">
+	         <div id="dataPane">
+	         </div>
+         </td>
+         <td class="contentSide">
+	         <div id="objectList">		
+	         </div>
+         </td>
+	   </tr>
+   </table>
 </div>
 </body>
 </html>
