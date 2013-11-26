@@ -175,3 +175,21 @@ Expires: 0
 """   
       "JSON"
       tree 
+      
+      
+resume > String String String String
+"""
+ Resumes execution of paused threads. 
+"""
+   reflect.resume
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+   "MEDIA"
+   "text/plain"   
+   "RESUMED" 
+      
+      
