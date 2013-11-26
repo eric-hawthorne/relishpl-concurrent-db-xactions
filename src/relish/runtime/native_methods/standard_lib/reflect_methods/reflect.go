@@ -16,6 +16,7 @@ import (
     "relish"
     "strings"
     "relish/dbg"
+    "sync"
 )
 
 ///////////
@@ -1634,6 +1635,24 @@ func clearTransientNameCache()  {
 
 var reflectIdsByName map[string]string = make(map[string]string)
 
+
+
+// pause resume
+
+var reflectPauseMutex sync.Mutex
+var reflectPauseCond = sync.NewCond(&reflectPauseMutex)
+
+func pause(th InterpreterThread, objects []RObject) []RObject {
+   reflectPauseCond.L.Lock()
+   reflectPauseCond.Wait() 
+   reflectPauseCond.L.Unlock()  
+   return []RObject{}
+}
+
+func resume(th InterpreterThread, objects []RObject) []RObject {
+   reflectPauseCond.Broadcast()
+   return []RObject{}
+}
 
 
 
