@@ -180,3 +180,15 @@ main
    elif not exists "Bookcase 1"
       bookcase = makeObjects  
       dub bookcase "Bookcase 1"
+   else
+      bookcase = summon "Bookcase 1"
+
+   explore bookcase
+   print "Yup. Resumed!"   
+
+   explore bookcase.shelves[0]
+   print "Yeah. Resumed Again!"  
+
+   transientUndub "**Object in Focus**"
+   explore nil 
+   print "And we're done."

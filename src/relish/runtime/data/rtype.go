@@ -1320,10 +1320,13 @@ func createTypeTuple(mObjects []RObject) *RTypeTuple {
 	tt := &RTypeTuple{Types: make([]*RType, len(mObjects))}
 	for i, obj := range mObjects {
 		if obj == nil {
-			fmt.Println("len mObjects = ",len(mObjects),"i =",i )			
-	        for _, ob := range mObjects {
-			   fmt.Println(ob)		       
-		    }			
+            errMsg := fmt.Sprintf("Argument %v is an uninitialized local variable.\nMethod Call Arguments:\n",i+1);
+  
+			//fmt.Println("len mObjects = ",len(mObjects),"i =",i )			
+	        for j, ob := range mObjects {
+			   errMsg += fmt.Sprintf("%d:%v\n", j+1,ob)		       
+		    }
+		    panic(errMsg)			
 		}
 		tt.Types[i] = obj.Type()
 	}

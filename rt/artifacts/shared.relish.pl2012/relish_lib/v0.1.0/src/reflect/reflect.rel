@@ -164,3 +164,18 @@ makeDescriptor
    if gt remainingDepth 1
       objDesc.complexAttrs = getComplexAttributes reflectId    
       objDesc.includesComplexAttrs = true  
+
+
+
+
+explore obj ?Any
+"""
+ Set an object of focus for the data explorer, then pause the relish runtime 
+ pending a resume call.
+ Should really be accepting an arg of type StructOrCollection, not Any.
+ Can call explore nil to not focus on an object, just pause.
+"""   
+   if obj
+      transientDub obj "**Object in Focus**"
+
+   pause

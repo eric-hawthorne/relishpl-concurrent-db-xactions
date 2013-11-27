@@ -177,7 +177,7 @@ Expires: 0
       tree 
       
       
-resume > String String String String
+resume > String String String
 """
  Resumes execution of paused threads. 
 """
@@ -188,8 +188,20 @@ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
 Pragma: no-cache
 Expires: 0
 """   
-   "MEDIA"
-   "text/plain"   
-   "RESUMED" 
+      "JSON"  
+      "RESUMED" 
       
+      
+paused > String String Bool
+"""
+ Returns whether the program is paused and needs a resume. 
+"""
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      reflect.paused
       

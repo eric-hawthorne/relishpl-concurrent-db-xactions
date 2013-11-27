@@ -204,6 +204,59 @@ Expires: 0
       response
 
 
+
+resume url String > String String String
+"""
+ Resumes execution of paused threads. 
+"""
+   response err = httpGet cat url "/resume" 
+   if err
+      response = cat "\"" err "\""
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"  
+      response 
+      
+      
+paused url String > String String String
+"""
+ Returns whether the program is paused and needs a resume. 
+"""
+   response err = httpGet cat url "/paused" 
+   if err
+      print err
+      response = "false"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"  
+      response 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 simpleAttributes url String reflectId String 
 > 
    String

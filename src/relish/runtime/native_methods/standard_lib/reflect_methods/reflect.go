@@ -231,6 +231,18 @@ func InitReflectMethods() {
 	}
 	transientDubMethod.PrimitiveCode = transientDub
  
+ /*
+ 	transientUndub name String
+*/   
+ 	transientUndubMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"transientUndub", 
+		                                    []string{"name"}, 
+			                                []string{"String"}, 	                                    
+		                                    []string{}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	transientUndubMethod.PrimitiveCode = transientUndub
  
    /*
    reflectIdByName name String > reflectId String
@@ -386,9 +398,41 @@ func InitReflectMethods() {
 	getComplexAttributesMethod.PrimitiveCode = getComplexAttributes
 
 
+
+	pauseMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"pause", 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	pauseMethod.PrimitiveCode = pause
+
+
+	resumeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"resume", 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	resumeMethod.PrimitiveCode = resume
+
+
+
+	pausedMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"paused", 
+		                                    []string{}, 
+		                                    []string{}, 
+		                                    []string{"Bool"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	pausedMethod.PrimitiveCode = paused
+
 }
-
-
 
 
  
@@ -954,6 +998,21 @@ func transientDub(th InterpreterThread, objects []RObject) []RObject {
 
 	return []RObject{String(reflectId)}
 }
+
+
+/*
+transientUndub name String 
+*/
+func transientUndub(th InterpreterThread, objects []RObject) []RObject {
+	
+	name := string(objects[0].(String))	
+    transientUndub1(name) 
+
+	return []RObject{}
+}
+
+
+
 
 /*
 clearReflectIds 
@@ -1590,6 +1649,10 @@ func transientDub1(obj RObject, name string) (reflectId string) {
    return
 }
 
+func transientUndub1(name string)  {
+   delete(reflectIdsByName,name)
+}
+
 func transientNames(prefix string) (names []string) {
    if prefix == "" {
 	   for name := range reflectIdsByName {
@@ -1641,18 +1704,33 @@ var reflectIdsByName map[string]string = make(map[string]string)
 
 var reflectPauseMutex sync.Mutex
 var reflectPauseCond = sync.NewCond(&reflectPauseMutex)
+var isReflectPaused bool = false;
 
 func pause(th InterpreterThread, objects []RObject) []RObject {
    reflectPauseCond.L.Lock()
+   isReflectPaused = true;
    reflectPauseCond.Wait() 
    reflectPauseCond.L.Unlock()  
    return []RObject{}
 }
 
 func resume(th InterpreterThread, objects []RObject) []RObject {
+   reflectPauseCond.L.Lock()
    reflectPauseCond.Broadcast()
+   isReflectPaused = false
+   reflectPauseCond.L.Unlock()
    return []RObject{}
 }
 
+
+/*
+Whether the relish runtime (at least one of its threads anyway) is
+paused and needs a resume.
+*/
+func paused(th InterpreterThread, objects []RObject) []RObject {
+   reflectPauseCond.L.Lock()
+   defer reflectPauseCond.L.Unlock()
+   return []RObject{Bool(isReflectPaused)}
+}
 
 
