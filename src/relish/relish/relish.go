@@ -97,6 +97,7 @@ func main() {
     var webListeningPort int
     var shareListeningPort int  // port on which source code will be shared by http    
     var sharedCodeOnly bool  // do not use local artifacts - only those in shared directory.
+    var explorerListeningPort int // port on which data explorer_api web service will be served.   
     var runningArtifactMustBeFromShared bool
     var dbName string 
     var cpuprofile string
@@ -105,7 +106,8 @@ func main() {
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
-	flag.IntVar(&webListeningPort, "web", 0, "The http listening port - if not supplied, does not listen for http requests")	
+	flag.IntVar(&webListeningPort, "web", 0, "The http listening port - if not supplied, does not listen for http requests")
+	flag.IntVar(&explorerListeningPort, "explore", 0, "The explorer_api web service listening port - if supplied, the data explorer tool can connect to this program on this port")		
 	flag.StringVar(&dbName, "db", "db1", "The database name. A SQLITE database file called <name>.db will be created/used in artifact data directory")			
 
 	flag.BoolVar(&sharedCodeOnly, "shared", false, "Use shared version of all artifacts - ignore local/dev copy of artifacts")		
@@ -374,7 +376,6 @@ func main() {
 
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
-
 	
 	if webListeningPort != 0 {
 	   if webListeningPort < 1024 && webListeningPort != 80 && webListeningPort != 443 {
@@ -397,7 +398,8 @@ func main() {
 			return	
 	   }
 	
-	   go g.Interp.RunMain(fullUnversionedPackagePath, quiet)
+	   // go g.Interp.RunMain(fullUnversionedPackagePath, quiet)
+	   
 	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
 	  
 	   if shareListeningPort == webListeningPort {
@@ -407,8 +409,24 @@ func main() {
 	         web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
 	      }			
 	      web.ListenAndServe(webListeningPort, "")	
-	   }	
-	} else {
-	   g.Interp.RunMain(fullUnversionedPackagePath,quiet)
-	}
+	   }
+	   	
+	} 
+	if explorerListeningPort != 0 {
+	   explorerApiOriginAndArtifact := "shared.relish.pl2012/explorer_api"
+	   explorerApiPackagePath := "web"
+      _, err = loader.LoadPackage(explorerApiOriginAndArtifact, "", explorerApiPackagePath, false)
+
+      if err != nil {
+		   fmt.Printf("Error loading package %s from current version of %s:  %v\n", 
+		              explorerApiPackagePath, 
+		              explorerApiOriginAndArtifact, 
+		              err)		
+   		return	
+      }	         
+      web.ListenAndServeExplorerApi(explorerListeningPort)	          
+   }
+   
+	g.Interp.RunMain(fullUnversionedPackagePath,quiet)
+
 }
