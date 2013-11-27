@@ -434,6 +434,161 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+
+/*
+Handles requests on the special explore port for methods of the explorer_api.
+TODO Really don't like that we have a separate, near duplicate handler function here for
+explorer_api serving. DRY violation!!
+*/
+func explorerHandler(w http.ResponseWriter, r *http.Request) {
+	
+   path := r.URL.Path
+	
+   pathSegments := strings.Split(path, "/") 
+   if len(pathSegments) > 0 && len(pathSegments[0]) == 0 {
+      pathSegments = pathSegments[1:]
+   }
+   var queryString string 
+   // Last one or last one -1 has to have ? removed from it
+   if len(pathSegments) > 0 {
+	   lastPiece := pathSegments[len(pathSegments)-1]	
+	   i := strings.Index(lastPiece,"?")	
+	   if i > -1 {
+	     queryString = lastPiece[i+1:]	
+	     if i == 0 {
+	        pathSegments = pathSegments[:len(pathSegments)-1]
+	     } else {
+		    pathSegments[len(pathSegments)-1] = lastPiece[:i]
+	     }
+	  } else if len(lastPiece) == 0 {
+	      pathSegments = pathSegments[:len(pathSegments)-1]		
+	  }
+   }
+   Logln(WEB_, pathSegments) 
+   Logln(WEB_, queryString)
+
+
+
+   var handlerMethod *RMultiMethod
+
+   pkgName := "shared.relish.pl2012/explorer_api/pkg/web"
+   var pkg *RPackage 
+   pkg = RT.Packages[pkgName]
+   if pkg == nil {
+	  rterr.Stop("No web package has been defined in shared.relish.pl2012/explorer_api")
+   }
+
+
+   //    /foo/bar
+
+   remainingPathSegments := pathSegments[:]
+   for len(remainingPathSegments) > 0 {
+      name := remainingPathSegments[0]
+      methodName := underscoresToCamelCase(name)
+
+      handlerMethod = findHandlerMethod(pkg,methodName) 
+      if handlerMethod != nil {
+        Log(WEB_, "1. %s %s\n",pkg.Name,methodName)  
+	      remainingPathSegments = remainingPathSegments[1:]
+        Log(WEB_, "    remainingPathSegments: %v\n",remainingPathSegments)       
+	      break
+	  }
+      pkgName += "/" + name
+      Log(WEB_, "2. pkgName: %s\n", pkgName)       
+      nextPkg := RT.Packages[pkgName]
+      if nextPkg != nil {
+	     remainingPathSegments = remainingPathSegments[1:]
+         pkg = nextPkg
+         continue  	   
+      }  
+      Logln(WEB_, "     package was not found in RT.Packages")           
+
+      if strings.HasSuffix(pkgName,"/pkg/web/favicon.ico") {
+         handlerMethod = findHandlerMethod(pkg,"icon")
+         if handlerMethod != nil {  
+            Log(WEB_, "%s %s\n",pkg.Name,methodName)  
+            remainingPathSegments = remainingPathSegments[1:]      
+            break
+         } else {
+            http.Error(w, "", http.StatusNotFound) 
+            return
+         }
+      } 
+
+      // Note that default only handles paths that do not proceed down to 
+      // a subdirectory controller package.
+      handlerMethod = findHandlerMethod(pkg,"default") 
+      if handlerMethod != nil {   
+	     // remainingPathSegments = remainingPathSegments[1:]     
+         Log(WEB_,"3. Found default handler method in %s\n",pkg.Name) 
+	     break
+	  }    
+      http.Error(w, "404 page or resource not found", http.StatusNotFound)	
+      return	
+   }
+   if handlerMethod == nil {
+      handlerMethod = findHandlerMethod(pkg,"index")        	
+   }	
+   if handlerMethod == nil {
+      http.Error(w, "404 page or resource not found", http.StatusNotFound) 
+      return       	
+   }   
+
+	
+   // RUN THE WEB DIALOG HANDLER METHOD 	
+
+   Log(WEB_,"Running dialog handler method: %s\n",handlerMethod.Name)   
+
+   positionalArgStringValues := remainingPathSegments
+   keywordArgStringValues, err := getKeywordArgs(r)
+   if err != nil {
+      fmt.Println(err)  
+      fmt.Fprintln(w, err)
+      return  
+   }     
+
+   //var files map[string] []*multipart.FileHeader
+   //if r.MultipartForm != nil {
+//	  files = r.MultipartForm.File  // Could still be nil
+//   }
+
+   // TODO TODO Should return the InterpreterThread out of here, and
+   // Do the commit or rollback later.
+   // Or I should demand a thread from the interpreter separately, first, pass it in to 
+   // RunServiceMethod, then commit or rollback later.
+
+   t := interpreter.NewThread(nil)
+
+   t.DB().BeginTransaction()
+
+   defer t.CommitOrRollback()
+	
+   resultObjects,err := interpreter.RunServiceMethod(t, 
+	                                                 handlerMethod, 
+	                                                 positionalArgStringValues, 
+	                                                 keywordArgStringValues,
+	                                                 r)   
+
+   interpreter.DeregisterThread(t)
+     
+   if err != nil {
+      fmt.Println(err)  
+      fmt.Fprintln(w, err)
+      return  
+   }   
+
+   
+   err = processResponse(w,r,pkg, handlerMethod.Name, resultObjects, t)
+   if err != nil {
+      fmt.Println(err)	
+      fmt.Fprintln(w, err)
+      return	
+   }	
+
+}
+
+
+
 /* Returns the arguments from the combination of the URL query string (part after the ?) and the form values in the request body, 
    if the request was POST or PUT.
    TODO Does not currently do anything with the file part of multipart formdata, if any.
@@ -878,7 +1033,7 @@ func findHandlerMethod(pkg *RPackage, methodName string) *RMultiMethod {
 /*
 Given a file path which is either relative to current src package directory 
 e.g. "foo.html" "bar/foo.html"
-or is "absloute" with respect to the web package source directory (the web content root)
+or is "absolute" with respect to the web package source directory (the web content root)
 e.g. "/bar/baz/foo.html"
 Return a filesystem absolute path.
 Assumes the files are stored in the /src/ directory tree of the artifact.
@@ -1092,6 +1247,12 @@ func ListenAndServe(portNumber int, sourceCodeShareDir string) {
 func ListenAndServeSourceCode(portNumber int, sourceCodeShareDir string) {
     http.ListenAndServe(fmt.Sprintf(":%d",portNumber), http.FileServer(http.Dir(sourceCodeShareDir)))
 }
+
+
+func ListenAndServeExplorerApi(portNumber int) { 
+   http.ListenAndServe(fmt.Sprintf(":%d",portNumber), http.HandlerFunc(explorerHandler))   
+}
+
 
 
 /*
