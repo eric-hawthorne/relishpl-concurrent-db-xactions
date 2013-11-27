@@ -376,7 +376,31 @@ func main() {
 
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
-	
+
+    // TODO the following rather twisty logic  (from here to end of main method) could be straightened out.
+    // One of its purposes is to ensure that the last http listener is run in this goroutine rather
+    // than in a background one. And there can be different numbers of listeners...
+
+    // Count how many separate listeners there will be.
+
+    numListeners := 0
+    numListening := 0  // how many of those are already listening?
+
+    if webListeningPort != 0 {
+    	numListeners += 1
+    	if shareListeningPort != 0 && shareListeningPort != webListeningPort {
+    		numListeners += 1
+    	}
+    }
+    if explorerListeningPort != 0 {
+    	numListeners += 1
+    }
+
+    // end counting listeners
+
+
+    // check for disallowed port numbers, and if not, load the packages needed for web app serving
+
 	if webListeningPort != 0 {
 	   if webListeningPort < 1024 && webListeningPort != 80 && webListeningPort != 443 {
 			fmt.Println("Error: The web listening port must be 80, 443, or > 1023")
@@ -397,36 +421,69 @@ func main() {
 		    }
 			return	
 	   }
-	
-	   // go g.Interp.RunMain(fullUnversionedPackagePath, quiet)
-	   
-	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
-	  
-	   if shareListeningPort == webListeningPort {
-	      web.ListenAndServe(webListeningPort, sourceCodeShareDir)
-	   } else {
-          if shareListeningPort != 0 {
-	         web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
-	      }			
-	      web.ListenAndServe(webListeningPort, "")	
-	   }
-	   	
-	} 
+	}
+
+    // check for disallowed port numbers, and if not, load the package needed for explorer_api web service serving
+
 	if explorerListeningPort != 0 {
+	   if explorerListeningPort < 1024 && explorerListeningPort != 80 && explorerListeningPort != 443 {
+			fmt.Println("Error: The explorer listening port must be 80, 443, or > 1023")
+			return		
+	   }
+
+
 	   explorerApiOriginAndArtifact := "shared.relish.pl2012/explorer_api"
 	   explorerApiPackagePath := "web"
-      _, err = loader.LoadPackage(explorerApiOriginAndArtifact, "", explorerApiPackagePath, false)
+       _, err = loader.LoadPackage(explorerApiOriginAndArtifact, "", explorerApiPackagePath, false)
 
-      if err != nil {
+       if err != nil {
 		   fmt.Printf("Error loading package %s from current version of %s:  %v\n", 
 		              explorerApiPackagePath, 
 		              explorerApiOriginAndArtifact, 
 		              err)		
-   		return	
-      }	         
+   		   return	
+       }	     
+    }
+
+	   
+	if numListeners > 0 {  // If we'll be listening for http requests, run main in a background goroutine.
+		go g.Interp.RunMain(fullUnversionedPackagePath, quiet)
+	}
+
+
+	if webListeningPort != 0 {
+
+	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
+	  
+	   if shareListeningPort == webListeningPort {
+          numListening += 1
+          if numListening == numListeners {
+	         web.ListenAndServe(webListeningPort, sourceCodeShareDir)
+	      } else {
+	         go web.ListenAndServe(webListeningPort, sourceCodeShareDir)	      	
+	      }
+	   } else {
+          if shareListeningPort != 0 {
+          	 numListening += 1
+	         go web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
+	      }		
+
+	      numListening += 1
+	      if numListening == numListeners {	
+	         web.ListenAndServe(webListeningPort, "")	
+	      } else {
+	         go web.ListenAndServe(webListeningPort, "")	      	
+	      }
+	   }
+	   	
+	} 
+	if explorerListeningPort != 0 {         
       web.ListenAndServeExplorerApi(explorerListeningPort)	          
    }
    
-	g.Interp.RunMain(fullUnversionedPackagePath,quiet)
-
+   // This will only be reached if numListeners == 0 or there is an error starting listeners.
+   // but don't want to re-run main if there was an error starting listeners.
+   if numListeners == 0 {
+      g.Interp.RunMain(fullUnversionedPackagePath,quiet)
+   }
 }
