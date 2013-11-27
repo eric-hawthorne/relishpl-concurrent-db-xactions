@@ -70,7 +70,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
            for (i = 0; i < msg.length; i++) {
                options += "<option>" + msg[i] + "</option>\n";
            }
-          $("select#type").append(options)              
+          $("select#type").append(options);
+          
+          checkIfPaused(false);   // determine if resume button is needed. If so, display it.
+
+          findNamedObjects1("**Object in Focus**", false); // pull up the in-focus object if any.
+
         // alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
@@ -89,18 +94,30 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
       var prefix = document.getElementById("prefix").value
 
+      findNamedObjects1(prefix, false);
+    }
+
+
+    function findNamedObjects1(prefix, isOnNewlyPaused) {
       $.ajax({
         type: "POST",
         url: "/names",
         dataType: "json",         
         data: {"url" : programURL, "prefix" : prefix}
       }).done( function(msg) {
-           $("div#objectList").html("")
+           if (msg.length >= 1 || ! isOnNewlyPaused) {
+              $("div#objectList").html("")
+           }
            var options = ""
            for (i = 0; i < msg.length; i++) {
                options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
            }
-          $("div#objectList").append(options)	
+          $("div#objectList").append(options) 
+         if (msg.length == 1) {
+             focusOnObject1(msg[0]);
+          } else if (! isOnNewlyPaused) {
+             $("div#dataPane").html("");  // clear the data pane pending choice of object ot focus on.
+          }          
           // alert( "Data Received: " + msg );
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
@@ -110,6 +127,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
             + ",\nError Thrown: " + errorThrown );
       });
     }
+
+
+
+
 
     function selectObjectsOfType() {
       if (programURL == "") {
@@ -140,6 +161,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
            }
           $("div#objectList").append(options)
+          if (msg.length == 1) {
+             focusOnObject1(msg[0]);
+          } else {
+             $("div#dataPane").html("");  // clear the data pane pending choice of object ot focus on.
+          }
           // alert( "Data Received: " + msg );	
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
@@ -203,9 +229,89 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       return false;
     }
 
+    var pausedTestNum = 0;
+    var maxPausedTests = 4;
+
+
+    /* determine if resume button is needed. If so, display it.
+    */
+    function checkIfPaused(testingAfterResumed) {
+      $.ajax({
+        type: "POST",
+        url: "/paused",
+        dataType: "json",
+        data: {"url" : programURL}        
+      }).done( function(isPaused) { 
+        if (isPaused) {
+          $("td#resume").css("display","block");
+          if (testingAfterResumed) {
+             pausedTestNum = 0;
+             findNamedObjects1("**Object in Focus**", true); // pull up the in-focus object if any.             
+          }
+        } else {
+           $("td#resume").css("display","none");    
+
+           if (testingAfterResumed) {
+              launchPausedTest();  // wait then test again  
+           }
 
 
 
+
+        }
+
+
+
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;      
+    }  
+
+
+    function resumeProgram() {
+      $.ajax({
+        type: "POST",
+        url: "/resume",
+        dataType: "json",
+        data: {"url" : programURL} 
+      }).done( function(status) { 
+        if (status != "RESUMED") {
+           alert(status);
+        }
+        $("td#resume").css("display","none");  
+        launchPausedTest();
+
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;     
+    }
+
+
+
+    function launchPausedTest() {
+       pausedTestNum += 1;
+       if (pausedTestNum > maxPausedTests) {
+          pausedTestNum = 0;
+       } else {
+          window.setTimeout(pausedTest,pausedTestNum * 2000);
+       }
+    }
+
+    function pausedTest() {
+       checkIfPaused(true);
+    }
 
 
 
@@ -477,7 +583,10 @@ $.ajax({
             			</td>      
                         <td>
                            &nbsp; <input type="button" value="connect to program" onclick="connectToProgram()" />
-                        </td>           			        			
+                        </td>           	
+                        <td id="resume" style="display: none">
+                           &nbsp; &nbsp; &nbsp; <input type="button" value="resume" onclick="resumeProgram()"/>
+                        </td>        		        			
             		</tr>
          		</table>
             	<table>	
