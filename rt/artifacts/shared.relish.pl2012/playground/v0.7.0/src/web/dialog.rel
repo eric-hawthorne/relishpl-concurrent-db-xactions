@@ -104,6 +104,12 @@ playAction
 
    metaContent = metadataFile artfctName description
 
+
+
+
+   if eq action " explore program data "  // make sure program has a reflect.pause in it
+      
+
    artfct.name = artfctName
    artfct.description = description
    artfct.importsFileContent = imports
@@ -192,6 +198,11 @@ playAction
       if err
          => errf err
       print "Debugging a copy of database from" dbArtifact 
+
+
+   elif eq action " explore program data "
+
+
 
    else  // " Run "
       if main
