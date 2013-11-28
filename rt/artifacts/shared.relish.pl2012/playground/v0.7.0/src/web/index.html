@@ -32,6 +32,23 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                location.href = "/?artfct=" + chosenArtfct 
             }
 		}
+
+    /*
+    Explore program data.
+
+    1. Append reflect to imports if not already there.
+    2. Append reflect.pause to the end of the main method statements if there is not already an explore call.
+       (with a comment to make it removable)
+    3. Submit the form with an "explore" action, which
+        a) Does the aforementioned appends, server-side   
+        b) execs (forks) the trial program but
+            i) with the -explore 8089 option so it hangs and serves
+            ii) in a manner that does not wait for the program to terminate, or in a background goroutine.
+        c) Loads the data explorer web application, with an argument that causes it to load the program,port 8089
+    */
+    function explore() {
+
+    }
         
 	</script>
 </head>
@@ -119,7 +136,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 		<textarea class="code" id="imports" name="imports">{{.importsFileContent}}</textarea>
 	<h3>Constants &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('constants')"/></h3>
     <textarea class="code" id="constants" name="constants">{{.constantsFileContent}}</textarea>
-	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="thinbutton" value=" explore program data " onclick="javascript:help('types_and_relations')"/></h3>
+	<h3>Data Types and Relations &nbsp; &nbsp; &nbsp; &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('types_and_relations')"/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 
+    <input type="submit" name="action" class="thinbutton" value=" explore program data " /></h3>
 	<textarea class="code" id="types" name="types">{{.typesFileContent}}</textarea>
 	<p id="copydb">
 	<b>Advanced feature for debugging:</b> Copy existing database<br/>
