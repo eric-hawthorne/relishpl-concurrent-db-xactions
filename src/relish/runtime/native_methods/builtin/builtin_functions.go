@@ -180,6 +180,48 @@ func InitBuiltinFunctions(relishRoot string) {
 	
 	
 		
+		
+	execNoWaitMethod, err := RT.CreateMethod("",nil,"execNoWait", []string{"p"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWaitMethod.PrimitiveCode = builtinExecNoWait
+
+	execNoWait2Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2"}, []string{"String", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait2Method.PrimitiveCode = builtinExecNoWait
+
+	execNoWait3Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2", "p3"}, []string{"String", "Any", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait3Method.PrimitiveCode = builtinExecNoWait
+
+	execNoWait4Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2", "p3", "p4"}, []string{"String", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait4Method.PrimitiveCode = builtinExecNoWait
+
+	execNoWait5Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2", "p3", "p4", "p5"}, []string{"String", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait5Method.PrimitiveCode = builtinExecNoWait
+
+	execNoWait6Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2", "p3", "p4", "p5", "p6"}, []string{"String", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait6Method.PrimitiveCode = builtinExecNoWait
+
+	execNoWait7Method, err := RT.CreateMethod("",nil,"execNoWait", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7"}, []string{"String", "Any", "Any", "Any", "Any", "Any", "Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	execNoWait7Method.PrimitiveCode = builtinExecNoWait		
 	
 	
 	
@@ -4991,7 +5033,27 @@ func builtinExec(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+/*
 
+err = execNoWait "commmand" "arg1" "arg2"  
+
+*/
+func builtinExecNoWait(th InterpreterThread, objects []RObject) []RObject {
+   command := string(objects[0].(String))	
+   var args []string
+   for _,obj := range objects[1:] {
+	  args = append(args, string(obj.String()))
+   }
+   cmd := exec.Command(command, args...)
+   err := cmd.Start()
+
+   var errStr string
+   if err != nil {
+      errStr = err.Error()
+   }
+
+   return []RObject{String(errStr)}
+}
 
 
 

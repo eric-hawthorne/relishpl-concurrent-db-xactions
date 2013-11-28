@@ -241,6 +241,24 @@ localDataPath artfct String > String
    => cat (env.rtPath) "/data/" artfct
 
 
+ensureReflectImport imports String > String
+"""
+ Add reflect package as an import if not there already.
+"""
+   if eq (index imports "reflect") -1
+      => cat imports "\nreflect"
+   => imports
+
+ensureReflectPause mainStatements String > String
+"""
+ Add reflect.pause call if not there already and if there is no explore call.
+"""
+   if and eq (index mainStatements "explore ") -1
+          eq (index mainStatements "reflect.pause") -1
+      => cat mainStatements "\nreflect.pause"
+   => mainStatements
+
+
 errf err String > String String
 """
  Return an html formatted error message as the second argument, and "HTML" as the first argument.
