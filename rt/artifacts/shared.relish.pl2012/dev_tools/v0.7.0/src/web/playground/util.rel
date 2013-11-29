@@ -1,6 +1,6 @@
 origin   shared.relish.pl2012
-artifact playground
-package  web 
+artifact dev_tools
+package  web/playground 
 
 """ 
  util.rel
@@ -249,13 +249,14 @@ ensureReflectImport imports String > String
       => cat imports "\nreflect"
    => imports
 
+
 ensureReflectPause mainStatements String > String
 """
  Add reflect.pause call if not there already and if there is no explore call.
 """
    if and eq (index mainStatements "explore ") -1
           eq (index mainStatements "reflect.pause") -1
-      => cat mainStatements "\nreflect.pause"
+      => cat mainStatements "\nexplore nil"
    => mainStatements
 
 

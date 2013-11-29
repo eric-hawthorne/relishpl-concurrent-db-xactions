@@ -20,7 +20,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<script type="text/javascript">
 		
 		function help(topic) {
-			mywindow = window.open ("/help/" + topic + ".html");
+			mywindow = window.open ("/playground/help/" + topic + ".html");
 			mywindow.moveTo(150,50);	
 			return false;		
 		}
@@ -29,7 +29,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 			var sel = document.getElementById("chosenArtfctName");
 			var chosenArtfct = sel.options[sel.selectedIndex].value;
 			if (chosenArtfct != "-- Choose existing trial program --") {
-               location.href = "/?artfct=" + chosenArtfct 
+               location.href = "/playground?artfct=" + chosenArtfct 
             }
 		}
 
@@ -38,7 +38,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	</script>
 </head>
 <body>
-<form action="playAction" method="POST"> 	
+<form action="/playground/playAction" method="POST"> 	
   <div id="header">	
   <table>
 	<tr>

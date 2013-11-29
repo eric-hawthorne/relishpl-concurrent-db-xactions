@@ -1,11 +1,11 @@
 origin   shared.relish.pl2012
-artifact playground
-package  web 
+artifact dev_tools
+package  web/playground 
 
 """ 
  dialog.rel
 
- Web dialog handling methods.
+ Web dialog handling methods for the playground (simple program trial environment) web app.
 """
 
 import
@@ -203,6 +203,7 @@ playAction
 
    elif eq action " explore program data "
 
+      originAndArtifact = cat "local.relish.pl2012/" artfctName
       err = execNoWait "relish" "-quiet" "-explore" 8089 originAndArtifact "playground"
  
       // Load the data explorer web application, with an argument that causes it to load the program,port 8089
@@ -215,13 +216,12 @@ Error when invoking relish program %s in -explore mode:
                                      artfctName
                                      err
          => "REDIRECT"
-            cat "/?artfct=" artfctName
+            cat "/playground?artfct=" artfctName
             
       // TODO There is a flaw here. We have to run the explorer as a separate relish program
       // to the playground first, before this will work.      
       => "REDIRECT"
-         "http://localhost:8080?url=http%3A%2F%2Flocalhost%3A8089
-
+         "/explorer?url=http%3A%2F%2Flocalhost%3A8089"
    else  // " Run "
       if main
          originAndArtifact = cat "local.relish.pl2012/" artfctName
@@ -235,7 +235,7 @@ Error when invoking relish program %s in -explore mode:
          artfct.consoleOutput = "No main program statements to run."
 
    => "REDIRECT"
-      cat "/?artfct=" artfctName    
+      cat "/playground?artfct=" artfctName    
 
 
 icon > String String

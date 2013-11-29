@@ -15,7 +15,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/default.css" />
  <link rel="stylesheet" type="text/css" id="stylesheet"
-       href="/styles/playground.css" />
+       href="/styles/explorer.css" />
 
 <!-- Uncomment only one of the following 3 lines. -->
 <script type="text/javascript" src="jquery-2.0.3.js"></script> <!-- jquery for testing - 230kB -->
@@ -25,18 +25,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<script type="text/javascript">
 		
 		function help(topic) {
-			mywindow = window.open ("/help/" + topic + ".html");
+			mywindow = window.open ("/explorer/help/" + topic + ".html");
 			mywindow.moveTo(150,50);	
 			return false;		
 		}
 
-		function loadProgram() {
-			var sel = document.getElementById("chosenArtfctName");
-			var chosenArtfct = sel.options[sel.selectedIndex].value;
-			if (chosenArtfct != "-- Choose existing trial program --") {
-               location.href = "/?artfct=" + chosenArtfct 
-            }
-		}
 
     var programURL = "";  // Web services root url we are currently connected to. Excludes trailing /
 
@@ -46,14 +39,16 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     Requests the list of (non-primitive) data types in the target program.
     Populates the type select options.
     */
-    function connectToProgram() {
+    function connectToProgram(expected) {
       programURL = document.getElementById("programUrl").value
       programURL = programURL.trim()
-      if (programURL.lastIndexOf("/") == programURL.length - 1) {
+      if (programURL.length > 0 && programURL.lastIndexOf("/") == programURL.length - 1) {
          programURL = programURL.substring(0,programURL.length - 1)
       }
       if (programURL == "") {
-         alert("Please supply the web service URL of the target program that is to be debugged.");
+         if (expected) {
+            alert("Please supply the web service URL of the target program that is to be debugged.");
+         }
          return
       }
       if (programURL.indexOf("http://") == -1 && programURL.indexOf("https://") == -1) {
@@ -61,7 +56,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       }
       $.ajax({
         type: "POST",
-        url: "/types",
+        url: "/explorer/types",
         dataType: "json",         
         data: {"url" : programURL}
       }).done( function(msg) {
@@ -101,7 +96,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     function findNamedObjects1(prefix, isOnNewlyPaused) {
       $.ajax({
         type: "POST",
-        url: "/names",
+        url: "/explorer/names",
         dataType: "json",         
         data: {"url" : programURL, "prefix" : prefix}
       }).done( function(msg) {
@@ -151,7 +146,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
       }
       $.ajax({
         type: "POST",
-        url: "/list",
+        url: "/explorer/list",
         dataType: "json",        
         data: {"url" : programURL, "type": objType, "where" : whereClause}
       }).done( function(msg) {
@@ -195,7 +190,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    function focusOnObject1(selectedObjectToken) {   
       $.ajax({
         type: "POST",
-        url: "/objectTree",
+        url: "/explorer/objectTree",
         dataType: "json",        
         data: {"url" : programURL, "objectToken": selectedObjectToken, "depth": 3}
       }).done( function(tree) { 
@@ -238,7 +233,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     function checkIfPaused(testingAfterResumed) {
       $.ajax({
         type: "POST",
-        url: "/paused",
+        url: "/explorer/paused",
         dataType: "json",
         data: {"url" : programURL}        
       }).done( function(isPaused) { 
@@ -254,13 +249,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
            if (testingAfterResumed) {
               launchPausedTest();  // wait then test again  
            }
-
-
-
-
         }
-
-
 
       }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
         alert(
@@ -277,7 +266,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     function resumeProgram() {
       $.ajax({
         type: "POST",
-        url: "/resume",
+        url: "/explorer/resume",
         dataType: "json",
         data: {"url" : programURL} 
       }).done( function(status) { 
@@ -546,6 +535,8 @@ $.ajax({
 </head>
 <body>
 	
+<!-- <body onload="connectToProgram(false)"> -->
+
   <div id="header">	
   <table>
 	<tr>
@@ -582,7 +573,7 @@ $.ajax({
                            <input type="text" size="40" id="programUrl" value="{{.programUrl}}" />	            			
             			</td>      
                         <td>
-                           &nbsp; <input type="button" value="connect to program" onclick="connectToProgram()" />
+                           &nbsp; <input type="button" value="connect to program" onclick="connectToProgram(true)" />
                         </td>           	
                         <td id="resume" style="display: none">
                            &nbsp; &nbsp; &nbsp; <input type="button" value="resume" onclick="resumeProgram()"/>

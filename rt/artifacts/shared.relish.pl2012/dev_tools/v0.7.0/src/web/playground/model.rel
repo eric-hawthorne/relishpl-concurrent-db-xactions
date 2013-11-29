@@ -1,6 +1,6 @@
 origin   shared.relish.pl2012
-artifact playground
-package  web 
+artifact dev_tools
+package  web/playground 
 
 """ 
  model.rel
