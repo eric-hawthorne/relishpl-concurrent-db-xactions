@@ -176,7 +176,7 @@ main
 """
    if not PERSISTENT 
       bookcase = makeObjects
-      transientDub bookcase "Bookcase 2"      
+      label bookcase "Bookcase 2"      
    elif not exists "Bookcase 1"
       bookcase = makeObjects  
       dub bookcase "Bookcase 1"
@@ -189,6 +189,6 @@ main
    explore bookcase.shelves[0]
    print "Yeah. Resumed Again!"  
 
-   transientUndub "**Object in Focus**"
+   unlabel "**Object in Focus**"
    explore nil 
    print "And we're done."
