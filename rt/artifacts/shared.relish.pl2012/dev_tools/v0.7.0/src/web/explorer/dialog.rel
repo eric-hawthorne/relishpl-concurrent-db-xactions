@@ -60,7 +60,7 @@ index
 names url String prefix String > String String String
 """
  Returns a JSON formatted list of the names of objects that have been dubbed with a name
- in the persistence system or have been transientDubbed with a name.
+ in the persistence system or have been labelled with a name.
  If the supplied prefix is non-empty, only names that start with the prefix are returned.
 """
    response err = 
@@ -138,7 +138,7 @@ reflectId url String name String > String String String String
 """
  TODO: NOT UPDATED FOR PROXY ROLE YET !!!
 
- Given an object name (a dubbed name in the persistence system, or a transientDub name)
+ Given an object name (a dubbed name in the persistence system, or a label name)
  returns the reflectId by which the object can be fetched through this API.
  The response is a single line of plaintext containing either the reflectId (an integer)
  or if the name does not find an object, the line 

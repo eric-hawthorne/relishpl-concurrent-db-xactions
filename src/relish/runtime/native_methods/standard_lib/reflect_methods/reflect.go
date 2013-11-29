@@ -220,9 +220,9 @@ func InitReflectMethods() {
 
  
 /*
- 	transientDub obj Any name String > reflectId String
+ 	label obj Any name String > reflectId String
 */   
- 	transientDubMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"transientDub", 
+ 	labelMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"label", 
 		                                    []string{"obj","name"}, 
 		                                    []string{"Any","String"}, 
 		                                    []string{"String"}, 
@@ -230,12 +230,12 @@ func InitReflectMethods() {
 	if err != nil {
 		panic(err)
 	}
-	transientDubMethod.PrimitiveCode = transientDub
+	labelMethod.PrimitiveCode = label
  
  /*
- 	transientUndub name String
+ 	unlabel name String
 */   
- 	transientUndubMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"transientUndub", 
+ 	unlabelMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"unlabel", 
 		                                    []string{"name"}, 
 			                                []string{"String"}, 	                                    
 		                                    []string{}, 
@@ -243,7 +243,7 @@ func InitReflectMethods() {
 	if err != nil {
 		panic(err)
 	}
-	transientUndubMethod.PrimitiveCode = transientUndub
+	unlabelMethod.PrimitiveCode = unlabel
  
    /*
    reflectIdByName name String > reflectId String
@@ -267,7 +267,7 @@ func InitReflectMethods() {
    /*
    objectNames prefix String > [] String
    """
-    Returns the list of dub'bed or transientDub'bed names of objects.
+    Returns the list of dub'bed or labelled names of objects.
     The names are returned in lexicographic order.
     If a non-empty prefix string is supplied, only names which start with the prefix are returned.
    """
@@ -1000,25 +1000,25 @@ func ensureAttribute(t *RType, attrName string) (attribute RObject, err error) {
 
 
 /*
-transientDub obj Any name String > reflectId String
+label obj Any name String > reflectId String
 */
-func transientDub(th InterpreterThread, objects []RObject) []RObject {
+func label(th InterpreterThread, objects []RObject) []RObject {
 	
 	obj := objects[0]
 	name := string(objects[1].(String))	
-    reflectId := transientDub1(obj, name) 
+    reflectId := label1(obj, name) 
 
 	return []RObject{String(reflectId)}
 }
 
 
 /*
-transientUndub name String 
+unlabel name String 
 */
-func transientUndub(th InterpreterThread, objects []RObject) []RObject {
+func unlabel(th InterpreterThread, objects []RObject) []RObject {
 	
 	name := string(objects[0].(String))	
-    transientUndub1(name) 
+    unlabel1(name) 
 
 	return []RObject{}
 }
@@ -1061,7 +1061,7 @@ objectNames prefix String > [] String
 """
  Given a prefix (which may be the empty String), return a lexicographically ordered list of 
  object names that match the prefix (or of all object names if the prefix is empty.)
- The names are made up of both dubbed and transientDubbed object names.
+ The names are made up of both dubbed and labelled object names.
 """
 */
 func objectNames(th InterpreterThread, objects []RObject) []RObject {
@@ -1458,7 +1458,7 @@ Returns the empty string, an invalid reflectId, if the object is not found by na
 */
 func reflectIdByName1(th InterpreterThread, objectName string) (reflectId string) {
 
-   // Try the transientDub namespace first...	
+   // Try the label namespace first...	
    reflectId,found := reflectIdsByName[objectName]
    if found {
    	  return
@@ -1486,7 +1486,7 @@ func reflectIdByName1(th InterpreterThread, objectName string) (reflectId string
 
 
 /*
-Sorted, transientDub names and persistent dub names, matching the prefix.
+Sorted, label names and persistent dub names, matching the prefix.
 */
 func objectNames1(th InterpreterThread, prefix string) (names []string) {
 
@@ -1655,13 +1655,13 @@ the object from being garbage-collected (its attribute associations removed etc)
 by the relish garbage collector. It does prevent the object from being collected
 by Go's garbage collector until the reflectIds maps are cleared.
 */
-func transientDub1(obj RObject, name string) (reflectId string) {
+func label1(obj RObject, name string) (reflectId string) {
    reflectId = ensureReflectId1(obj)
    reflectIdsByName[name] = reflectId
    return
 }
 
-func transientUndub1(name string)  {
+func unlabel1(name string)  {
    delete(reflectIdsByName,name)
 }
 
