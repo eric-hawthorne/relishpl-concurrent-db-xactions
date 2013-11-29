@@ -205,3 +205,17 @@ Expires: 0
       "JSON"
       reflect.paused
       
+      
+exit > String String String
+"""
+ Resumes execution of paused threads. 
+"""
+   go exitSoon 5 0
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"  
+      "EXITED"       
