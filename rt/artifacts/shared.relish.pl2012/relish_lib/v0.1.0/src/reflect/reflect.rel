@@ -176,6 +176,6 @@ explore obj ?Any
  Can call explore nil to not focus on an object, just pause.
 """   
    if obj
-      transientDub obj "**Object in Focus**"
+      label obj "**Object in Focus**"
 
    pause
