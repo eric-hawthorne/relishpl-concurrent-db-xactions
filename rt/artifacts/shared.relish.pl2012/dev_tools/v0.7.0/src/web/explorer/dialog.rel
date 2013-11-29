@@ -34,16 +34,21 @@ index
    
    targetProgramUrl = kw[! "url"]  // May be ""
 
+   artfctName artfctFound = kw["artfct"]  
+    
+    
    // typesJson err = httpGet cat "types"
    // if err
    //   print err
    //   => errf err
 
    args = {
-             "programUrl" => targetProgramUrl
-             "prefix"     => ""
-             "types"      => []String
-             "where"      => ""
+             "programUrl"     => targetProgramUrl
+             "artfctName"     => artfctName  
+             "fromPlayground" => artfctFound           
+             "prefix"         => ""
+             "types"          => []String
+             "where"          => ""
           }String > Any
 
    => "index.html"
@@ -245,7 +250,21 @@ Expires: 0
       response 
 
 
-
+exit url String > String String String
+"""
+ Terminates execution of the target program. 
+"""
+   response err = httpGet cat url "/exit" 
+   if err
+      response = cat "\"" err "\""
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON PRE"  
+      response 
 
 
 

@@ -17,6 +17,7 @@ import (
     "strings"
     "relish/dbg"
     "sync"
+    "os"
 )
 
 ///////////
@@ -431,6 +432,17 @@ func InitReflectMethods() {
 		panic(err)
 	}
 	pausedMethod.PrimitiveCode = paused
+
+
+	exitMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"exit", 
+		                                    []string{"code"}, 
+		                                    []string{"Int"}, 
+		                                    []string{}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	exitMethod.PrimitiveCode = exit
 
 }
 
@@ -1733,4 +1745,15 @@ func paused(th InterpreterThread, objects []RObject) []RObject {
    return []RObject{Bool(isReflectPaused)}
 }
 
+
+/*
+Causes the relish runtime to terminate, returning the code to the OS.
+Code 0 should be used to indicate normal termination.
+Code 1 for abnormal termination (due to error).
+*/
+func exit(th InterpreterThread, objects []RObject) []RObject {
+   code := int(int64(objects[0].(Int)))
+   os.Exit(code)
+   return []RObject{}
+}
 

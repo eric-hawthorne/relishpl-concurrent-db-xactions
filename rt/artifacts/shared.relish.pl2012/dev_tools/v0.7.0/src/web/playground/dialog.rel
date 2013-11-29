@@ -11,6 +11,7 @@ package  web/playground
 import
    strings
    files
+   datetime
 
 
 
@@ -205,8 +206,7 @@ playAction
 
       originAndArtifact = cat "local.relish.pl2012/" artfctName
       err = execNoWait "relish" "-quiet" "-explore" 8089 originAndArtifact "playground"
- 
-      // Load the data explorer web application, with an argument that causes it to load the program,port 8089
+
 
       if err
          artfct.consoleOutput = fill """
@@ -218,10 +218,11 @@ Error when invoking relish program %s in -explore mode:
          => "REDIRECT"
             cat "/playground?artfct=" artfctName
             
-      // TODO There is a flaw here. We have to run the explorer as a separate relish program
-      // to the playground first, before this will work.      
+      sleep seconds 5
+                  
+      // Load the data explorer web application, with an argument that causes it to load the program,port 8089     
       => "REDIRECT"
-         "/explorer?url=http%3A%2F%2Flocalhost%3A8089"
+         cat "/explorer?url=http%3A%2F%2Flocalhost%3A8089&artfct=" artfctName
    else  // " Run "
       if main
          originAndArtifact = cat "local.relish.pl2012/" artfctName
