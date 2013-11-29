@@ -1,0 +1,194 @@
+origin   shared.relish.pl2012
+artifact explorer_api
+package  web 
+
+""" 
+ test_setup.rel
+
+ Objects for testing.
+"""
+
+
+import
+   datetime
+
+
+BookCase
+"""
+ A bookshelf furniture unit.
+"""
+   shelves 1 9 [] BookShelf
+
+
+BookShelf
+"""
+ A single shelf in a bookcase.
+"""
+   books 0 N Book
+
+
+PhysObj
+"""
+ A physical object located in a 3D cartesian-coordinate space.
+"""
+   x Float
+   y Float
+   z Float
+
+
+Book <: PhysObj
+"""
+ A book.
+"""
+   title String
+   pageCount Int
+
+
+Person
+"""
+ A human being.
+"""
+   givenName String
+   familyName String
+   birthDate Time
+
+
+Author <: Person
+"""
+ A person who has written a book.
+"""
+
+
+Editor <: Person
+"""
+ A person who edits books.
+"""
+   
+
+Book 1 N -- 1 N Author
+
+
+Book 1 N -- 1 Editor
+
+
+PERSISTENT = true
+
+
+makeObjects > bookcase BookCase
+"""
+ Create test objects.
+"""
+   herman = Author
+   herman.givenName = "Herman"
+   herman.familyName = "Melville"
+   herman.birthDate err = Time "1819-08-01T14:23Z"
+
+   jane = Author
+   jane.givenName = "Jane"
+   jane.familyName = "Austin"
+   jane.birthDate err = Time "1775-12-16T10:00Z"
+   
+   albert = Editor
+   albert.givenName = "Albert"
+   albert.familyName = "Arnsworth"
+   albert.birthDate err = Time "1767-11-19T10:00Z"
+            
+   barny = Editor
+   barny.givenName = "Barnard"
+   barny.familyName = "Bartlesby"
+   barny.birthDate err = Time "1809-11-19T10:00Z"      
+   
+   cynthia = Editor
+   cynthia.givenName = "Cynthia"
+   cynthia.familyName = "Carlysle"
+   cynthia.birthDate err = Time "1779-08-19T10:00Z"   
+   
+
+   book1 = Book
+   book1.title = "Moby Dick"
+   book1.pageCount = 403
+   book1.x = -122.435
+   book1.y = 49.03245
+   book1.z = 189.0
+   book1.editor = barny
+
+   book2 = Book
+   book2.title = "Pride & Prejudice"
+   book2.pageCount = 385
+   book2.x = -122.435
+   book2.y = 49.03246
+   book2.z = 189.0
+   book2.editor = albert   
+   
+   book3 = Book
+   book3.title = "Sense & Sensibility"
+   book3.pageCount = 329
+   book3.x = -122.435
+   book3.y = 49.03245
+   book3.z = 189.0   
+   book3.editor = albert      
+  
+   book4 = Book
+   book4.title = "Persuasion"
+   book4.pageCount = 403
+   book4.x = -122.435
+   book4.y = 49.03244
+   book4.z = 189.0 
+   book4.editor = albert      
+  
+   book5 = Book
+   book5.title = "Mansfield Park"
+   book5.pageCount = 356
+   book5.x = -122.435
+   book5.y = 49.03243
+   book5.z = 189.0   
+   book5.editor = albert    
+
+   book6 = Book
+   book6.title = "Northanger Abbey"
+   book6.pageCount = 393
+   book6.x = -122.435
+   book6.y = 49.0322
+   book6.z = 189.0
+   book6.editor = cynthia   
+
+   bookcase = BookCase
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
+   bookcase.shelves += BookShelf
+
+   bookcase.shelves[0].books += book1
+   bookcase.shelves[0].books += book2
+
+   book1.authors += herman
+   book2.authors += jane
+   book3.authors += jane   
+   book4.authors += jane  
+   book5.authors += jane  
+   jane.books += book6
+              
+              
+              
+
+main
+"""
+ Create some objects.
+"""
+   if not PERSISTENT 
+      bookcase = makeObjects
+      transientDub bookcase "Bookcase 2"      
+   elif not exists "Bookcase 1"
+      bookcase = makeObjects  
+      dub bookcase "Bookcase 1"
+   else
+      bookcase = summon "Bookcase 1"
+
+   explore bookcase
+   print "Yup. Resumed!"   
+
+   explore bookcase.shelves[0]
+   print "Yeah. Resumed Again!"  
+
+   transientUndub "**Object in Focus**"
+   explore nil 
+   print "And we're done."
