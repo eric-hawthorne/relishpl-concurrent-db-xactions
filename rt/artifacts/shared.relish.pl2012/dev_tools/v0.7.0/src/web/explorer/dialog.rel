@@ -1,15 +1,17 @@
 origin   shared.relish.pl2012
-artifact explorer
-package  web 
+artifact dev_tools
+package  web/explorer
 
 """ 
- explorer_api_dialog.rel
+ dialog.rel
 
  Web dialog handling methods concerned with the data explorer application.
 
  NOTE: Can I import more dialog handler methods by importing another artifact's
  web package into a web package, renaming the imported package so it doesn't conflict?
  e.g. Can I import shared.relish.pl2012/explorer_api/pkg/web as explorer_services
+
+ Not currently! FUGEDABOUTIT !
 """
 
 
@@ -19,7 +21,8 @@ import
    http
 
 
-index 
+index
+   ...kw {} String > String 
 > 
    String 
    Any
@@ -28,6 +31,8 @@ index
 
  Note: Should use artifact instead of package? and standard "test_program" package.
 """
+   
+   targetProgramUrl = kw[! "url"]  // May be ""
 
    // typesJson err = httpGet cat "types"
    // if err
@@ -35,7 +40,7 @@ index
    //   => errf err
 
    args = {
-             "programUrl" => ""
+             "programUrl" => targetProgramUrl
              "prefix"     => ""
              "types"      => []String
              "where"      => ""
