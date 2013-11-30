@@ -1,0 +1,22 @@
+origin   shared.relish.pl2012
+artifact explorer_api
+package  web 
+
+""" 
+ util.rel
+ 
+ A delayed program-exit command.
+"""
+
+
+import
+   datetime
+   reflect
+   
+
+exitSoon delay Int code Int
+"""
+ Causes the relish program to exit (terminate) after delay seconds with the specified exit code.
+"""
+   sleep seconds delay
+   exit code
