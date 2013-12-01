@@ -1191,8 +1191,13 @@ func (subTT *RTypeTuple) SpecializationDistanceFrom(superTT *RTypeTuple) (float6
 						found = true
 						foundOnePathForTypeSpecialization = true
 					}
-				} else {
-
+   			} else if superType == StructType {
+   				if node.Type.IsStruct { // Special case 
+   					levelDiff = 98
+   					found = true
+   					foundOnePathForTypeSpecialization = true
+   				}
+   			} else {
 					for levelDiff = 0; ; levelDiff++ {
 						if node.Type == superType {
 							found = true
