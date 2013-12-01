@@ -2094,7 +2094,7 @@ urlPathPartDecode s > String
 	
 	uintInitMethod6, err := RT.CreateMethod("",nil,"initUint", []string{"i","v"}, []string{"Uint","Byte"},  []string{"Uint","String"}, false, 0, false)
 	if err != nil {
-		panic(err)
+		panic(err)  
 	}
 	uintInitMethod6.PrimitiveCode = builtinInitUintFromByte	
 	
@@ -2349,7 +2349,7 @@ func builtinEqObj(th InterpreterThread, objects []RObject) []RObject {
 
 
 /*
-Equality operator.
+Inequality operator.
 TODO !!!
 Really have to study which kinds of equality we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.

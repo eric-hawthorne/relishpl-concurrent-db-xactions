@@ -538,14 +538,25 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
    k2 err = Uint b
    m2 err = Uint32 b
    i5 err = Int b
-</pre></code>
+</pre></code>   
 <p>
-  Note that the error will never be set (never be non "") in these particular converters.
-  In integer-to-integer conversions, Signed values are infinitely sign-extended then the
-  value truncated to the size of the target type. Unsigned values are 0-extended.
-  Overflows (from converting a value that will not fit in the target type's number of bits) 
-  do not cause an error, so there is no warning of them. The truncated value is returned.
+     Note that the error will never be set (never be non "") in these particular converters.
+     In integer-to-integer conversions, Signed values are infinitely sign-extended then the
+     value truncated to the size of the target type. Unsigned values are 0-extended.
+     Overflows (from converting a value that will not fit in the target type's number of bits) 
+     do not cause an error, so there is no warning of them. The truncated value is returned.
 </p>
+<p>      
+   In summary we can create integer values any of these ways:
+</p>
+<code><pre>   
+	Int v,    v = String | Float | Int32 | Uint | Uint32 | Byte 
+	Uint v,   v = String | Int | Byte
+	Uint32 v, v =  String | Int | Byte
+	Int32 v,  v = String | Int
+	Byte v,   v = Int | Uint | Uint32
+</pre></code>
+
 
 <h4>Type casting to obtain a Float value</h4>
 <code><pre>
@@ -582,6 +593,8 @@ grudgingly unicode behaviours of Go strings, but relish Strings are stuck with t
 <code><pre>
    s = String obj
    s = String 195
+   b = Bytes 1000  
+   s = String b
 </pre></code>
 <p>
    All relish data values / objects / collections are convertable to a String representation in this manner.
@@ -599,6 +612,14 @@ initString s String obj MyType > String
   That method (or the method whose "MyType" is closest compatible with your object's type) will be
   selected and run to perform the conversion, when you call <code><pre>s = String objOfMyTypeOrASubType</pre></code>
 </p>
+
+<h4>Type casting to obtain a Bytes value</h4>
+<code><pre>
+   aString = "Hello There!"
+   b = Bytes aString
+   b = Bytes 1000 9000  // length, capacity of the byte-slice. See Go slices documentation.
+   b = Bytes 9000  // length and capacity same
+</pre></code>
 
 <h4>Type casting to obtain a Time value</h4>
 <code><pre>
@@ -2005,6 +2026,51 @@ clear c Collection
 """
 
 
+deferSorting c Collection
+"""
+ Applicable to collections which have been defined to maintain their elements in sorted order.
+ Defers sorting, so that multiple additions to the collection can be done quickly.
+ Note. This does not work correctly yet on persisted collections (multi-valued attributes).
+""" 
+ 
+ 
+resumeSorting c Collection
+"""
+ Should be called after deferSorting has been called on a sorting collection.
+ Sorts the collection and resumes automatic sorting upon each addition to the collection.
+  Note. This does not work correctly yet on persisted collections (multi-valued attributes).
+""" 
+
+
+asList coll Collection of T > List of T
+"""
+ Returns an independent list of the elements of the collection.
+ Currently, the "for element in collection" iteration in relish does not support 
+ removal of the current element from the collection as the collection is iterated through.
+ So instead, you can use:
+    for element in asList collection
+       if condition element
+          collection -= element
+ The collection itself may be for example a multi-valued attribute of an object,
+ but the returned list is a non-persistent and independent new list of the elements.
+"""
+
+
+sort coll Collection
+"""
+ Sorts the collection according to the natural ordering of the type of its elements.
+ Affects the argument collection itself, not a copy.
+ Only applies to ordered collections (List so far).
+"""
+
+
+swap coll Collection i Int j Int 
+"""
+ Swaps the ith and jth element of the collection, affecting the collection itself, not a copy.
+ Only applies to ordered collections (List so far). 
+"""
+
+
 
 // Concurrency and inter-goroutine communication methods
 
@@ -2016,7 +2082,8 @@ len c Channel > Int
 
 cap c Channel > Int
 """
- Returns the capacity channel. 0 means an unbuffered synchronous channel.
+ Returns the capacity of the channel. 0 means an unbuffered synchronous channel.
+ 1 or more means an asynchronous channel with a FIFO buffer able to hold up to 'cap' elements.
 """
 
 
@@ -2204,16 +2271,145 @@ set bytes Bytes i Int b Uint32
  First converts the last argument to Byte using truncation to least significant byte if necessary.
 """
 
+
+slice bytes Bytes start Int end Int > Byte
+"""
+ Return a slice of the Bytes; the portion of the Bytes between the start index (inclusive) and the 
+ end index (end-indexed byte excluded).
+ NOTE!! that Bytes objects are not currently persistable, so
+ this method returns a Bytes slice that <b>re-uses the memory of the argument Bytes</b>.
+ If Bytes are to become persistable, some kind of policy is going to be needed, such
+ as that only a primary Bytes can be persisted, and not a derived Bytes slice.
+ That would require a change in the Go representation of the relish Bytes type.
+ NOTE!! This method will likely be replaced by myBytes[start:end] syntax, as is
+ already implemented for lists.
+"""
+
+
+slice bytes Bytes start Int > Byte
+"""
+ Return a a slice of the Bytes; the portion of the Bytes beginning at the start index and 
+ continuing to the end of the Bytes.
+ <b>re-uses the memory of the argument Bytes</b>.
+ NOTE!! This method will likely be replaced by myBytes[start:end] syntax, as is
+ already implemented for lists.
+"""
+
+
+// Operating system methods
+
+exec command String ...args [] Any > output Bytes err String
+"""
+ Concatenates the command to the arguments (separated by spaces) and executes the result as if it were
+ an OS shell command-line command.
+ Waits until the invoked program terminates.
+ output will contain whatever the program output to its standard output or standard error streams. 
+ err will be a non-empty error message if the OS responded with an error upon invocation of the command.
+ The program is executed with the environment of the relish program (parent process).
+"""
+
+
+execNoWait command String ...args [] Any > err String
+"""
+ Concatenates the command to the arguments (separated by spaces) and executes the result as if it were
+ an OS shell command-line command.
+ Does not wait for the invoked program to terminate.
+ err will be a non-empty error message if the OS responded with an error upon invocation of the command.
+ The program is executed with the environment of the relish program (parent process).
+"""
+
 </pre></code>	
 <p>
-Three more built-in methods; <b>dub</b>, <b>summon</b>, and <b>exists</b>, are explained fully in the next section, 
-which explains relish's support for data persistence.
+More built-in methods, concerned with data persistence, are listed in the next section.
 </p>
 
 
 <br/>
 <a name="DataPersistence"><h3>Data Persistence</h3></a>   
-    <code><pre>
+
+<p>
+   relish's support for persistence is explained in four parts. First, the built-in methods that are used by the programmer to persist, fetch, and enquire about persistent objects are defined. Second, examples of the use of those persistence methods are given. Third, the use of transactions is illustrated and explained. And fourth, some implementation details of relish's persistence mechanism are described.
+   </p>
+<code><pre>
+// Persistence built-in methods
+
+dub obj Struct name String
+"""
+ Gives the object the specified unique canonical name in the local database,
+ and persists the object and all objects in the network of the object's attributes,
+ and their attributes, and so on.
+ Throws a runtime error if the name is already in use as a canonical object name
+ in the local database.
+ <em>Currently it appears it is possible to dub an object with several names
+ in several separate uses of dub. <span class="future">Not sure if this will continue to be allowed.</span></em>
+"""   
+
+
+summon name String > obj Struct
+"""
+ Fetches from the local database the object identified by the specified canonical name.
+ Throws a runtime error if there is no object of that name in the local database.
+ Object-valued attributes of the object will be fetched lazily from the database
+ upon first subsequent request for the attribute value in the program.
+ All summoned and also indirectly fetched or fetched-by-query persistent objects are 
+ placed in an in-memory cache so that there is only one in-memory instance of each 
+ persistent object. <span class="future">This will likely be generalized in future to 
+ support transaction-local mem-caches.</span>
+"""
+
+
+exists name String > Bool
+"""
+ Returns true if an object of the specified canonical name exists in the local
+ database, false otherwise.
+"""
+
+
+rename oldObjectName String newObjectName String > err String
+"""
+ Removes the old name for the object and gives it the new name.
+ Returns a non-blank err message if the old name is not the canonical name of an object
+ in the database, or if the new name is already in use as the canonical
+ name of an object in the database.
+"""
+
+
+delete obj Any 
+"""
+ Deletes the object from the database. Also removes all canonical names for it from
+ the database. Does not delete objects which are attributes of the deleted object,
+ so be careful not to leave orphaned attribute-value objects around in the database.
+ If attribute-value objects are logically wholly-owned parts of the whole object,
+ and have no other independent role or need for existence, then you should explicitly
+ delete the attribute-value objects before deleting the whole (main) object.
+ <span class="future">Eventually some form of deep delete might be implemented,
+ but that will require annotation of attributes as to whether they are wholly
+ owned or instead are semi-autonomous entities with their own right to independent
+ persistent existence.</span>
+ Note: If the object is not in the database, delete can still be called on it and 
+ does nothing.
+ Note: This method does not remove (garbage-collect) the object in memory,
+ though it does remove it from the memcache of persisted objects.
+"""
+
+
+isPersistedLocally obj Any > Bool
+"""
+ Returns true if the object is stored in the local database, whether it was persisted
+ by being dubbed with a canonical name, or was persisted automatically by being part 
+ of an object attribute network of another persisted object. The term "local database"
+ refers to the single relational database, currently restricted to being a SQLITE3
+ database, which is the persistence-store for the running relish software artifact.
+ It is called local in recognition that "cloudy" "big data" nosql datastores and/or 
+ distributed object passing may be integrated into relish, at which point there may 
+ well be a non-local persistent copy of an object.
+"""
+</pre></code>	
+<br/>
+<p>
+Example uses of the built-in persistence methods <b>dub</b>, <b>summon</b>, <b>exists</b>, <b>delete</b>, and <b>rename</b>:
+<p>
+<code><pre>
 car1 = Car  // Construct a Car object and assign it to variable car1
 car1.odometerReading = 182430
 engine1 = Engine
@@ -2279,7 +2475,7 @@ person.firstName = "Alice"
 alicesCar.owner = person
 </pre></code>
 <p>
-  Finally, in yet another run of a relish program using that database, lets
+  In yet another run of a relish program using that database, lets
   fetch from the database the fast cars that are not quite yet on their deathbed.</p>
 <code><pre>
 viableFastCars = []Car "odometerReading < 200000 and maxSpeed > 110 order by maxSpeed desc"
@@ -2289,8 +2485,28 @@ for car in viableFastCars
 // prints
 // Alice
 // Eric 
-
 </pre></code>
+<p>
+   Let's change the official name of an object in the database.
+</p>
+<code><pre>
+bobsCar = <span class="future">Car:</span> summon "NKL 288"
+err = rename "NKL 288" "BOBSCR"     
+if err
+   print err
+</pre></code>
+<p>
+   And in another run of the program, let's delete an object from the database.
+</p>
+<code><pre>
+bobsCar = <span class="future">Car:</span> summon "BOBSCR"
+delete bobsCar
+
+Note that deletion from the database does not also delete from the database those objects which 
+are attributes or relations of the deleted object. Be careful to avoid leaving orphaned objects 
+in the database. 
+</pre></code>
+
 <h4>Overview of relish's data persistence mechanism</h4>
 <p>
   relish's local data persistence mechanism currently uses a sqlite3 database to store data objects.
@@ -2322,6 +2538,50 @@ of a relish program.
   However, primitive values and collections which are reachable by reference from that object 
   are also persisted along with it.
 </p>
+
+<h4>Transactions</h4>
+<code><pre>
+doThingsToPersistentObjects rootObjName String > err String
+"""
+ Fetch from the database and process some persistent objects.
+ Make all the changes within a single database transaction.
+"""
+   err = begin
+   if err
+      => 
+
+   err = summonAndUpdateObjects rootObjName
+   if err
+      err2 = rollback
+      err = cat err " : " err2
+      => 
+
+   err = commit   
+</pre></code>
+<p>
+   Carrying out changes to multiple persistent objects will be significantly faster if done within a single transaction. 
+   Carrying out multiple additions to/removals from a multi-valued attribute of a persistent object will also be significantly faster if done in a single transaction.
+   Also and importantly for data consistency, either all of the changes will be stored in the database, or none of them will.
+</p>
+<p>
+   In a transparent-persistence programming language, each persistent data object has both an in-memory aspect 
+   and a stored-in-database aspect. <em>It is fair to say that not all issues implicit in rolling back a transaction that 
+   involves such dual-aspect objects have been handled yet at the current version of relish. Specifically, the in-memory attribute values of any persistent objects modified during the transaction can no longer be relied on in the program, and should be properly invalidated. TBD</em>
+</p>
+<p>
+   <span class="future">A variant of the</span></p><code><pre><span class="future">
+err = begin
+relish statements
+err = commit</span> 
+</pre></code>
+<p><span class="future">pattern is also contemplated:</span></p><code><pre><span class="future">
+err = local
+relish statements
+err = commit</span> 
+</pre></code>
+<p><span class="future">
+This would carry out a single transaction, but rather than summoning objects from database into the global in-memory object cache, it would summon them into a per-transaction in-memory cache. Relish statements outside the scope of the transaction block would therefore fetch a separate in-memory copy of the object than that copy being updated within the transaction code block.<br/> Stay tuned.
+</span></p>
 <h4>Data Persistence Implementation Details</h4>
 <p>
 Under the hood, relish's persistence mechanism stores data objects using multiple-table inheritance-mapping. Each object is represented by a row in the RObject table, and also by a row in perhaps several other tables; Each datatype declared in a relish program has a corresponding database table. An object occurs as a row in each type-table that corresponds to a data type in the object's type lattice.
@@ -2339,7 +2599,60 @@ The object's RObject table row holds the object's full universally unique id, th
   You can view a relish sqlite3 database using a properly functioning sqlite browser/manager tool, or with the sqlite3 command-line interface.
   Note that the popular free "Sqlite Database Browser" and "Sqliteman" tools are buggy with respect to complex database table names so do not work with relish databases. MesaSqlite for Mac (shareware) works well as does the Firefox Sqlite Browser Plug-in. It is inadvisable to modify a relish sqlite database with a database tool, and completely insane to do so while a relish program is running on it.
 </p>
+<br/>
+<code><pre>
+// Low-level persistent identity information methods
+//
+// These methods are not commonly needed to use relish's local persistence capability. 
+// The dub, summon, exists, rename, and delete methods, as well as the 
+// "list constructor from database query" language construct, 
+// should be all that are needed in most cases.
+//     
+   
+   
+hasUuid obj Any > bool
+"""
+ Returns true if the object has a uuid (universally unique identifier).
+ An object has a uuid if it is persisted locally, <span class="future">
+ or if it has been communicated to this relish program by another remote
+ relish process or has been fetched by this relish program from a remote
+ cloud nosql database.</span>
+"""
 
+
+uuid obj Any > Bytes
+"""
+ Returns the uuid of a persistent object (persistent somewhere anyway) as
+ a 16-byte byte-slice. 
+"""
+
+
+uuidStr obj Any > Bytes
+"""
+ Returns the uuid of a persistent object (persistent somewhere anyway) as
+ a hexadecimal string token with - separating sections of the id. (Example needed). 
+"""
+
+
+dbid obj Any > Int
+"""
+ Returns the dbid of a locally persisted object. The dbid is
+ a 64-bit signed integer representation of either the first 8 bytes,
+ or the second 8 bytes, of the object's 16 byte uuid.
+ The dbid is the local-relational-database unique primary key of the object.
+"""
+
+
+summon dbid Int > obj Any
+"""
+ An object can be fetched from the local database by its dbid, but you should
+ probably not do this. Why not dub an object with a meaningful name and
+ fetch it from the database by name. 
+"""
+
+
+
+</pre></code>
 
 <br/>
   <a name="DataTypeDeclarations"><h3>Data Type Declarations</h3></a>   
@@ -2757,7 +3070,7 @@ go foo
 ch = Channel <span class="future">of Car</span>  // an unbuffered, synchronous channel 
 
 ch2 = Channel <span class="future">of Car</span>  
-		100  // an asynchronous, buffered channel with a buffer capacity of 100
+         100  // an asynchronous, buffered channel with a buffer capacity of 100
 
 // Send the car object to the channel.
 
