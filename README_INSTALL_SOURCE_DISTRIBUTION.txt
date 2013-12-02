@@ -30,7 +30,7 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 
    or equivalent package installation procedure on your linux distribution.
 
-4. Install Go 1.0 or higher (from golang.org). binary distribution is available for some linuxes including Ubuntu. Or install and build the Go source distribution.
+4. Install Go 1.1 or higher (from golang.org). A binary distribution is available for some linuxes including Ubuntu. A package installer (.pkg file) is available for MACOSX. 
 
 5. Install the gosqlite package into the Go environment.
 

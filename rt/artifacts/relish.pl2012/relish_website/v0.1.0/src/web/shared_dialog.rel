@@ -361,3 +361,32 @@ uploadAction request http_srv.Request > String String
 Uploaded !
 </html>
 """
+
+
+setHostname > String String
+"""
+ Sets the hostname for the web app.
+"""
+   => "HTML"
+      """
+<html>
+<form action="setHostNameAction" method="POST">
+<p>
+Hostname: <input type="text" size="20" name="hostName">
+</p>
+</form>
+</html>
+"""
+
+
+setHostnameAction hostName String > String String
+"""
+ Sets the host name.
+"""
+   setToken hostName
+   => "HTML"
+      """
+<html>
+Done. Set hostname for webapp.
+</html>
+"""

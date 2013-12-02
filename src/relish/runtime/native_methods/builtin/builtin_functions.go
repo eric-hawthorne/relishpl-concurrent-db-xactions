@@ -4360,7 +4360,7 @@ func builtinBytesSet(th InterpreterThread, objects []RObject) []RObject {
 	s := []byte(objects[0].(Bytes))
 	i := int(int64(objects[1].(Int)))	
     var val byte
-    switch(objects[2].(type)) {
+    switch objects[2].(type) {
        case Byte:
           val = byte(objects[2].(Byte))	
        case Int:
@@ -5571,7 +5571,7 @@ func builtinInitBoolFromInteger(th InterpreterThread, objects []RObject) []RObje
     // ignore the first Bool argument	
 
     var val int64
-    switch(objects[1].(type)) {
+    switch objects[1].(type) {
        case Int:
           val = int64(objects[1].(Int))       	
        case Uint:

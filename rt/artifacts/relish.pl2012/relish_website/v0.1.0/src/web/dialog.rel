@@ -16,11 +16,15 @@ import
 index request http_srv.Request > String String
 """
  Handles a request for the root (i.e. empty path) url on the server and port.
- TODO Change "local" to "shared" below!
+ If "localhost" or "shared", serve the shared.relish.pl site else relish.pl site.
+ To locally test relish.pl site, use 127.0.0.1 rather than localhost.
 """
-   if hasPrefix (host request) "local"
+   if hasPrefix (host request) "shared"   
       => "HTML FILE"
          "shared_index.html"
+   elif hasPrefix (host request) "localhost"
+      => "HTML FILE"
+         "shared_index.html"          
    else
       => "HTML FILE"
          "index.html"

@@ -274,7 +274,7 @@ func main() {
 	   builtin.InitBuiltinFunctions(relishRoot)	
     }
 
-    crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.
+    crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.   
 
     if publish {
        if len(pathParts) < 2 {

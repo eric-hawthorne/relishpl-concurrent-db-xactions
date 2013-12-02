@@ -85,7 +85,7 @@ func EncodeSignaturePEM(binarySignature []byte) (pemBlock string, err error) {
 func EncodePEM(binary []byte, blockType string, password string) (pemBlock string, err error) {
 	
 	var blk *pem.Block
-/* Awaiting Go 1.2 
+/* Awaiting Go 1.1 */
 	if password != "" {
 	   passwordBytes := ([]byte)(password)
 	   blk, err = x509.EncryptPEMBlock(rand.Reader, blockType, binary, passwordBytes, x509.PEMCipherAES256) 
@@ -93,13 +93,13 @@ func EncodePEM(binary []byte, blockType string, password string) (pemBlock strin
 		  return
 	   }
     } else {
- */
+ /* */
        blk = new(pem.Block)
        blk.Type = blockType
        blk.Bytes = binary
-/* Awaiting Go 1.2  
+/* Awaiting Go 1.1 */
     }
-*/
+/* */
 
     buf := new(bytes.Buffer)
 
@@ -184,16 +184,16 @@ func DecodePEM(pemBlock string, password string) (decoded []byte, blockType stri
         return
  	}
 
-/* Awaiting Go 1.2 
+/* Awaiting Go 1.1 */
 	if password != "" {
 		passwordBytes := ([]byte)(password)
 		decoded, err = x509.DecryptPEMBlock(blk, passwordBytes)
     } else {
-*/    	
+/* */    	
         decoded = blk.Bytes
- /* Awaiting Go 1.2        
+ /* Awaiting Go 1.1 */        
     }
-    */
+/* */
 
     blockType = blk.Type
     return
@@ -262,7 +262,7 @@ func GenerateCertifiedKeyPair(keyLenBits int,
               err = errors.New("No. No. No. ") 	
               return
 	    } else {
-	       passwordForCertifyingPrivateKey = GetSharedRelishPlPrivateKeyPassword() 
+	       passwordForCertifyingPrivateKey = GetDefaultToken() 
         }
     } else if certifyingEntityName == entityNameAssociatedWithKeyPair && certifyingEntityType == entityType && certifyingPrivateKeyPEM == "" {
     	selfSigned = true
@@ -427,15 +427,15 @@ func VerifiedPublicKey(certifierPublicKeyPEM string,
 
 
 
-var sharedRelishPlPrivateKeyPassword string = "squeamish_surgeon_10"
+var defaultToken string
 
 /*
- Sets in the relish runtime the private key password for shared.relish.pl's code-signing private key.
- Of course this can only be called by a relish distribution that has the origin__shared.relish.pl2012__private_key.pem
- file. Also, this is only permitted to be called once in the relish runtime. 
+ Sets a default token for OAUTH.
 */
-func SetSharedRelishPlPrivateKeyPassword(pw string) {
-	sharedRelishPlPrivateKeyPassword = pw
+func SetDefaultToken(token string) {
+   if defaultToken == "" {
+	   defaultToken = token
+   }
 } 
 
 
@@ -450,11 +450,9 @@ func GetRelishRuntimeLocation() string {
 }
 
 /*
- Gets from the relish runtime the private key password for shared.relish.pl's code-signing private key.
- Only works if the corresponding set function has been called.
 */
-func GetSharedRelishPlPrivateKeyPassword() string {
-   return sharedRelishPlPrivateKeyPassword
+func GetDefaultToken() string {
+   return defaultToken
 }
 
 
