@@ -13,6 +13,7 @@ package data
 
 import (
 	"fmt"
+	"strings"
 	"hash"
 	"hash/adler32"
 	. "relish/dbg"
@@ -343,8 +344,11 @@ func (t RType) ShortName() string {
     return t.shortName
 }
 
-
-func LocalTypeName(typeFullNameOrShortName String) String {
+/*
+Given a full name or possibly package-abbreviation-qualified shortName of a type,
+return just the local (last) part of the type name.
+*/
+func LocalTypeName(typeFullNameOrShortName string) string {
    slashPos := strings.LastIndex(typeFullNameOrShortName,"/") 
    if slashPos == -1 {
       return typeFullNameOrShortName
@@ -356,7 +360,7 @@ func LocalTypeName(typeFullNameOrShortName String) String {
 Returns the short name of the package in which the type is defined.
 Returns "" if the type is a relish built-in type.
 */
-func PackageShortName(typeShortName String) String {
+func PackageShortName(typeShortName string) string {
    slashPos := strings.LastIndex(typeShortName,"/") 
    if slashPos == -1 {
       return ""

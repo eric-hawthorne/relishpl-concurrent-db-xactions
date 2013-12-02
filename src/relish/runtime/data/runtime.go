@@ -57,6 +57,7 @@ type RuntimeEnv struct {
 	idGen     *IdGenerator
 	db        DB
 	DatabaseURI string  // filepath (or eventually some other kind of db connection uri) of the database for persisting relish objects
+	Loader PackageLoader  // Loads code packages into the runtime.
 	
 	// Note about attribute values. An attribute may have a single value or be multi-valued,
 	// where the multi-valued attribute is implemented by an RCollection.
