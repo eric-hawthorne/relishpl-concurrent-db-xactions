@@ -377,6 +377,9 @@ func main() {
 
     g.Interp.SetRunningArtifact(originAndArtifact) 
 
+    g.Interp.SetPackageLoader(loader)
+
+
     // TODO the following rather twisty logic  (from here to end of main method) could be straightened out.
     // One of its purposes is to ensure that the last http listener is run in this goroutine rather
     // than in a background one. And there can be different numbers of listeners...

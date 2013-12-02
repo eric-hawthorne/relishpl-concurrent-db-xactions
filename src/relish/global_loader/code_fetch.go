@@ -10,12 +10,10 @@ package global_loader
 import (
     "fmt"
     "net/http"
-	"io/ioutil"
+	  "io/ioutil"
     "regexp"
-//	"bytes"
-   "strings"
+    "strings"
     "os"
-//	. "relish/runtime/data"
 )
 
 /*

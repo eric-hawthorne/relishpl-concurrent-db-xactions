@@ -49,6 +49,15 @@ func (i *Interpreter) SetRunningArtifact(originAndArtifact string) {
 	i.rt.RunningArtifact = originAndArtifact
 }
 
+
+/* 
+Give the runtime access to the package loader.
+*/
+func (i *Interpreter) SetPackageLoader(loader PackageLoader) {
+	i.rt.Loader = loader
+}
+
+
 /*
 Runs the main method found in the specified package. 
 Currently, when multimethods/methods are generated, "main" ones are prefixed by full unversioned package name, as should be zero arg methods.

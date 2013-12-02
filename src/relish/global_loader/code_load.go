@@ -10,14 +10,10 @@ package global_loader
 
 import (
     "fmt"
-//    "net/http"
 	"io/ioutil"
-//    "regexp"
     "strings"
     "bufio"
-//    "strconv"
     "os"
-//	. "relish/runtime/data"
     "relish/compiler/ast"
     "relish/compiler/parser"
     "relish/compiler/token"
@@ -59,6 +55,7 @@ type Loader struct {
     repositoryUrls []string  
     quiet bool
 }
+
 
 //
 // Note: Need in each relish database a Packages table with fields id and name.
@@ -962,7 +959,13 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
    return
 }
 
-
+/*
+Version of LoadPackage method compliant with relish.runtime.data.PackageLoader interface.
+*/
+func (ldr *Loader) LoadRelishCodePackage (originAndArtifactPath string, version string, packagePath string, mustBeFromShared bool) (err error) {
+    _,err = ldr.LoadPackage(originAndArtifactPath, version, packagePath, mustBeFromShared)
+    return
+} 
 
 
   	

@@ -30,6 +30,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	// "relish/global_loader"
 )
 
 const TIME_LAYOUT = "2006-01-02 15:04:05.000"
@@ -716,28 +717,30 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		}
 	}
 
-   // TODO: What do I do if I am fetching a data object for which I have not loaded into runtime
-   // the package in which its datatype is defined????
-    
-   // TODO Do we have to redo this for FetchN ???????
+   // If I am fetching a data object for which I have not loaded into runtime
+   // the package in which its datatype is defined, I load that package now.
+   // Note that the package must have been loaded previously in SOME run of the program
+   // that used the same local database, so that the package's short name has been recorded 
+   // in the artifact local database.
     
    typ := RT.Typs[typeName]
    if typ == nil {
-      
+   
       pkgShortName := PackageShortName(typeName)  
-      localTypeName := LocalTypeName(typeName)   
+//      localTypeName := LocalTypeName(typeName)   
       pkgFullName := RT.PkgShortNameToName[pkgShortName]
       originAndArtifact := OriginAndArtifact(pkgFullName) 
       packagePath := LocalPackagePath(pkgFullName)      
       
-      // Where do we get the loader from ???
-      
       // TODO Dubious values of version and mustBeFromShared here!!!
-      _,err = loader.LoadPackage(originAndArtifact,"",packagePath,false)
+      err = RT.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
+     
       if err != nil {
          return
       }
          
+      typ = RT.Typs[typeName]    
+          
       // Alternate strategy!!    
 	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
     }
@@ -909,7 +912,28 @@ func (db *SqliteDB) fetchMultiple(query string, queryArgObjs []RObject, idsOnly 
 				}
 			}
 
-	        fullTypeName := RT.Typs[typeName].Name
+		    typ := RT.Typs[typeName]
+		    if typ == nil {
+		   
+		      pkgShortName := PackageShortName(typeName)  
+		//      localTypeName := LocalTypeName(typeName)   
+		      pkgFullName := RT.PkgShortNameToName[pkgShortName]
+		      originAndArtifact := OriginAndArtifact(pkgFullName) 
+		      packagePath := LocalPackagePath(pkgFullName)      
+		      
+		      // TODO Dubious values of version and mustBeFromShared here!!!
+		      err = RT.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
+		     
+		      if err != nil {
+		         return
+		      }
+		         
+              typ = RT.Typs[typeName]    		  
+                     
+		      // Alternate strategy!!    
+			   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
+		    }
+		    fullTypeName := typ.Name
 
 		    obj, err = RT.NewObject(fullTypeName)
 			if err != nil {
