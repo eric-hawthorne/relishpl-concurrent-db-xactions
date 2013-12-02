@@ -69,8 +69,13 @@ func InitCryptoMethods() {
 	signMethod.PrimitiveCode = sign
 
 
-
-
+     // setToken token
+     // 
+ 	setTokenMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/crypto",nil,"setToken", []string{"token"}, []string{"String"}, []string{}, false, 0, false)
+ 	if err != nil {
+ 		panic(err)
+ 	}
+ 	setTokenMethod.PrimitiveCode = setToken
 }
 
 
@@ -201,6 +206,16 @@ func sign (th InterpreterThread, objects []RObject) []RObject {
     }
 	return []RObject{String(signaturePEM), String(errStr)}    
 }
+
+
+func setToken (th InterpreterThread, objects []RObject) []RObject {
+   token := string(objects[0].(String))
+   crypto_util.SetDefaultToken(token)
+	return []RObject{}    
+}
+
+     
+    
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Type init functions
