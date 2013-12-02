@@ -65,6 +65,25 @@ func (p *RPackage) LocalPackagePath() string {
 }
 
 
+func Origin(packageFullName string) string {
+	return packageFullName[:strings.Index(packageFullName,"/")]
+}
+
+func Artifact(packageFullName string) string {
+	return packageFullName[strings.Index(packageFullName,"/")+1:strings.Index(packageFullName,"/pkg/")]	
+}
+
+func OriginAndArtifact(packageFullName string) string {
+	return packageFullName[:strings.Index(packageFullName,"/pkg/")]	
+}
+
+func LocalPackagePath(packageFullName string) string {
+	return packageFullName[strings.Index(packageFullName,"/pkg/")+5:]	
+}
+
+
+
+
 /*
 Debugging function. Prints the names of multimethods visible from the package.
 */
@@ -144,11 +163,16 @@ func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPa
 		if err != nil {
 			panic(fmt.Sprintf("Unable to create package uuid: %v", err))
 		}
-		candidateShortName := pkg.Name[strings.LastIndex(pkg.Name,"/")+1:]
-		if _, found := rt.Pkgs[candidateShortName]; found {
+		
+		simpleShortName := pkg.Name[strings.LastIndex(pkg.Name,"/")+1:]		
+		candidateShortName := simpleShortName
+
+	
+		if _, found := rt.PkgShortNameToName[candidateShortName]; found {		
+//		if _, found := rt.Pkgs[candidateShortName]; found {
 			for i := 2; i <= len(uuidAbbrev); i += 2 {
-				candidateShortName = "P" + uuidAbbrev[0:i] + "_" + pkg.Name
-				_, found = rt.Pkgs[candidateShortName]
+				candidateShortName = "P" + uuidAbbrev[0:i] + "_" + simpleShortName
+				_, found = rt.PkgShortNameToName[candidateShortName]
 				if !found {
 					break
 				}

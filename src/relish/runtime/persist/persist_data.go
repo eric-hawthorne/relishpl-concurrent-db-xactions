@@ -716,7 +716,32 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		}
 	}
 
-    fullTypeName := RT.Typs[typeName].Name
+   // TODO: What do I do if I am fetching a data object for which I have not loaded into runtime
+   // the package in which its datatype is defined????
+    
+   // TODO Do we have to redo this for FetchN ???????
+    
+   typ := RT.Typs[typeName]
+   if typ == nil {
+      
+      pkgShortName := PackageShortName(typeName)  
+      localTypeName := LocalTypeName(typeName)   
+      pkgFullName := RT.PkgShortNameToName[pkgShortName]
+      originAndArtifact := OriginAndArtifact(pkgFullName) 
+      packagePath := LocalPackagePath(pkgFullName)      
+      
+      // Where do we get the loader from ???
+      
+      // TODO Dubious values of version and mustBeFromShared here!!!
+      _,err = loader.LoadPackage(originAndArtifact,"",packagePath,false)
+      if err != nil {
+         return
+      }
+         
+      // Alternate strategy!!    
+	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
+    }
+    fullTypeName := typ.Name
 
 	obj, err = RT.NewObject(fullTypeName)
 	if err != nil {

@@ -329,7 +329,9 @@ func (t *RType) subtypeClosure1(subtypes *[]*RType) {
     }
 }
 
-
+/*
+The universally unique full artifact-and-package-qualified name of the type.
+*/
 func (t RType) String() string {
 	return t.Name
 }
@@ -341,13 +343,26 @@ func (t RType) ShortName() string {
     return t.shortName
 }
 
-/*
-A universally unique name for the type.
 
-func (t RType) FullName() string {
-	return t.Package.Name + "/" + t.Name
+func LocalTypeName(typeFullNameOrShortName String) String {
+   slashPos := strings.LastIndex(typeFullNameOrShortName,"/") 
+   if slashPos == -1 {
+      return typeFullNameOrShortName
+   }
+   return typeFullNameOrShortName[slashPos+1:]
 }
+
+/*
+Returns the short name of the package in which the type is defined.
+Returns "" if the type is a relish built-in type.
 */
+func PackageShortName(typeShortName String) String {
+   slashPos := strings.LastIndex(typeShortName,"/") 
+   if slashPos == -1 {
+      return ""
+   }
+   return typeShortName[:slashPos]   
+}
 
 /*
    Return the sqlite column type name of a primitive type.

@@ -370,9 +370,9 @@ setHostname > String String
    => "HTML"
       """
 <html>
-<form action="setHostNameAction" method="POST">
+<form action="setHostnameAction" method="POST">
 <p>
-Hostname: <input type="text" size="20" name="hostName">
+Hostname: <input type="text" size="20" name="hostName"><input type="submit" value="submit"/>
 </p>
 </form>
 </html>
