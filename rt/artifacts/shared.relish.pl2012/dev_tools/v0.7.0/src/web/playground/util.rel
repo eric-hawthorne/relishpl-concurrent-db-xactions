@@ -245,8 +245,10 @@ ensureReflectImport imports String > String
 """
  Add reflect package as an import if not there already.
 """
-   if eq (index imports "reflect") -1
-      => cat imports "\nreflect"
+   if not contains imports "reflect"
+      if imports
+         => cat imports "\nreflect"
+      => "reflect"
    => imports
 
 
