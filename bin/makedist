@@ -68,5 +68,5 @@ cp -p $SRCDIR/rt/keys/public/origin__shared.relish.pl2012__public_key.pem $RELEA
 
 cd $RELEASEDIR
 TARBALL=relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}.tar.gz
-tar -czvf ../$TARBALL pl README_INSTALL_BINARY_DISTRIBUTION.txt
+tar -czvf ../$TARBALL pl README_INSTALL_BINARY_DISTRIBUTION.txt keys
 echo created $DISTDIR/$TARBALL
