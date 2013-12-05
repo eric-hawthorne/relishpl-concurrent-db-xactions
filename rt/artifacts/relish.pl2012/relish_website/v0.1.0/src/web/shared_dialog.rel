@@ -136,7 +136,7 @@ See http://relish.pl if you have more questions.
       cat "registerContinue?originId=" originId
 
 
-registerContinue originId String > String String 
+registerContinue originId String > String Any 
 """
  Simply advise the user to look for their verification email.
 """
