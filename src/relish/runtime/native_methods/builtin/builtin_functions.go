@@ -4500,7 +4500,8 @@ func builtinSendEmail(th InterpreterThread, objects []RObject) []RObject {
    if colonPos > 0 {
       serverName = serverAddr[:colonPos]	
    } else {
-      serverName = serverAddr	
+      serverName = serverAddr
+      serverAddr += ":25"	
    }
   
    if len(objects) == 7 { // username and password authentication 
