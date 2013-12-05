@@ -18,6 +18,7 @@ import (
 	. "relish/dbg"
 	"sync"
 	"strings"
+	"rterr"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -58,7 +59,7 @@ type RuntimeEnv struct {
 	db        DB
 	DatabaseURI string  // filepath (or eventually some other kind of db connection uri) of the database for persisting relish objects
 	Loader PackageLoader  // Loads code packages into the runtime.
-	
+
 	// Note about attribute values. An attribute may have a single value or be multi-valued,
 	// where the multi-valued attribute is implemented by an RCollection.
 	// But how do we tell if we have a single-valued attribute whose value is an ROject that
@@ -646,7 +647,9 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 		if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
 			minCardinality = 0
 			maxCardinality = -1 // largest possible collection is allowed - the attribute is not constraining it.	
-			panic("Should not rt.EnsureMultiValuedAttributeCollection on a collection-valued attribute.")
+			// panic("Should not rt.EnsureMultiValuedAttributeCollection on a collection-valued attribute.")
+			// We will allow this. but we should not allow persisting of such collections really.
+			// This all has to be checked.
 		} else { // This is a multi-valued attribute. The collection is a hidden implementation detail. 
 			minCardinality = int64(attr.Part.ArityLow)
 			maxCardinality = int64(attr.Part.ArityHigh)

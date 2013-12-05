@@ -84,7 +84,7 @@ registerAction
    pwHash = base64Hash password
    emailVerificationToken = base64Hash cat pwHash email originId
 
-   smtpServer = "mail.bcit.ca:25"
+   smtpServer = ""
 
    requestToConfirmRegistration = 
       fill """
