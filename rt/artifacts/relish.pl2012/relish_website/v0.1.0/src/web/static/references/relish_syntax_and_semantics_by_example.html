@@ -2230,7 +2230,7 @@ len s String > Int
 """	
 
 
-at s Strings i Int > Byte
+at s String i Int > Byte
 """
  Return the byte-value at index i in the String. 0 &lt;= i &lt; len s
 """
@@ -2510,15 +2510,15 @@ in the database.
 <h4>Overview of relish's data persistence mechanism</h4>
 <p>
   relish's local data persistence mechanism currently uses a sqlite3 database to store data objects.
-  Transaction control (deferral of commit) is not yet implemented, but is in the language roadmap.
   relish's local persistence mechanism MAY be extended to work with other rdbms systems, and these
   would most likely be done in the order postgresql, mysql, ...?
 </p>
 <p>
   relish's persistence mechanism is transparent (also known as orthogonal). This means that once
   you have dubbed a data object with an official (canonical) name, to make it persistent, the object's state
-  is automatically saved to the database at that point, and is automatically re-saved whenever its
-  state changes. Other objects reachable in the object's attribute or relation network are also
+  is automatically saved to the database at that point, and is automatically re-saved whenever the object is modified by program statements such as assignment of values to its attributes. 
+</p>
+<p>Other objects reachable in the object's attribute or relation network are also
   infected with persistence by their reachability from the newly persistent object, and are similarly
   automatically saved to the database when their state is updated. 
 </p>
@@ -2534,9 +2534,22 @@ of a relish program.
 </ul>
 </p>
 <p>
-  Currently, only a structured object can be dubbed with an official name to make it persistent.
-  However, primitive values and collections which are reachable by reference from that object 
-  are also persisted along with it.
+  Currently, only a structured object can be dubbed with an official name to make it persistent.<br/>
+  To persist primitive values, you must make them an attribute of a structured object type and persist an object instance.<br/>
+  Note that a structured object can have multi-valued attributes, and these are effectively collections which
+  are persisted along with the object. In fact, the only way to persist collections (in the current version of relish) is to define a structured object type with one or more multi-valued attributes declared. The following example structured object type illustrates these points:
+  </p>
+<code><pre>
+Company
+   name String
+   grossRevenue Int
+   president Person
+   employees 0 N Person"  // an unordered multi-valued attribute represented by a Set collection.
+   topSalespeople 0 10 [>currentMonthSales] SalesRepresentative  // a sorted List multi-valued attribute.
+</pre></code>
+<p>
+If a Company object is persisted, by dubbing or indirectly, then its name and grossRevenue values are persisted with it of course. The company's president (a Person) is also persisted with it, as are its 
+collection of employees, and its collection of top sales representatives.
 </p>
 
 <h4>Transactions</h4>
