@@ -132,8 +132,23 @@ See http://relish.pl if you have more questions.
 
    dub o originId
 
-   => "HTML FILE"
-      "register_continue.html"
+   => "REDIRECT"
+      cat "registerContinue?originId=" originId
+
+
+registerContinue originId String > String String 
+"""
+ Simply advise the user to look for their verification email.
+"""
+   if not exists originId
+      => errf "invalid origin id"
+   o = summon originId
+   => "register_continue.html"
+      {
+         "originId" => originId
+         "email"    => o.email
+      }String > Any
+
 
 
 verifyRegistration originId String token String > String String 
