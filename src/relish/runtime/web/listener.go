@@ -1232,7 +1232,7 @@ func underscoresToCamelCase(s string) string {
 */
 func ListenAndServe(portNumber int, sourceCodeShareDir string) {
 	if sourceCodeShareDir != "" {
-		http.Handle("/relish", http.FileServer(http.Dir(sourceCodeShareDir + "/relish")))
+		http.Handle("/relish/", http.FileServer(http.Dir(sourceCodeShareDir + "/relish")))
 	}
     http.HandleFunc("/", handler)
     http.ListenAndServe(fmt.Sprintf(":%d",portNumber), nil)
