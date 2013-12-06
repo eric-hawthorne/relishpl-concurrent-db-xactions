@@ -389,7 +389,12 @@ directory > String String
       "shared_artifacts_directory.html"
 
 
-
+featured > String String
+"""
+ Directory of featured artifacts uploaded to shared.relish.pl
+"""
+   => "HTML FILE"
+      "featured_artifacts_directory.html"
 
 
 
