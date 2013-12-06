@@ -378,6 +378,25 @@ Uploaded !
 """
 
 
+directory > String String
+"""
+ Directory of artifacts uploaded to shared.relish.pl
+
+ This needs to become a search tool for this repository.
+ Right now it's just a simple listing.
+"""
+   => "HTML FILE"
+      "shared_artifacts_directory.html"
+
+
+
+
+
+
+
+
+
+
 setHostname > String String
 """
  Sets the hostname for the web app.
