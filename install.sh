@@ -17,15 +17,22 @@
 # sudo ./install.sh
 #
 # Make relish command available in default PATH 
+# and make sure relish directory tree is writeable and commands are executable.
 #
+mkdir -p /usr/local/bin 
 if [ -d /opt/devel/relish ] # It is a source distribution  
+   chmod +x /opt/devel/relish/bin/*
    ln -s /opt/devel/relish/bin/relish /usr/local/bin/relish
    ln -s /opt/devel/relish/bin/rmdb /usr/local/bin/rmdb   
    ln -s /opt/devel/relish/bin/clean /usr/local/bin/clean    
-   ln -s /opt/devel/relish/bin/makedist /usr/local/bin/makedist        
+   ln -s /opt/devel/relish/bin/makedist /usr/local/bin/makedist     
+   chmod -R -go+w /opt/devel/relish       
 else
+   chmod +x /opt/relish/bin/*   
    ln -s /opt/relish/pl/bin/relish /usr/local/bin/relish
    ln -s /opt/relish/pl/bin/rmdb /usr/local/bin/rmdb   
-   ln -s /opt/relish/pl/bin/clean /usr/local/bin/clean      
+   ln -s /opt/relish/pl/bin/clean /usr/local/bin/clean   
+   chmod -go+w /opt/relish      
+   chmod -R -go+w /opt/relish/keys      
 fi 
 

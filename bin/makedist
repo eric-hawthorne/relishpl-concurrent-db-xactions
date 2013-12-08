@@ -61,6 +61,9 @@ cp -p $SRCDIR/COPYING* $RELEASEDIR/pl
 
 cp -p $SRCDIR/README_INSTALL_BINARY_DISTRIBUTION.txt $RELEASEDIR
 
+cp -p $SRCDIR/install.sh $RELEASEDIR
+chmod +x $RELEASEDIR/install.sh
+
 mkdir -p $RELEASEDIR/keys/private
 mkdir -p $RELEASEDIR/keys/public
 cp -p $SRCDIR/rt/keys/private/README.txt $RELEASEDIR/keys/private 
@@ -68,5 +71,5 @@ cp -p $SRCDIR/rt/keys/public/origin__shared.relish.pl2012__public_key.pem $RELEA
 
 cd $RELEASEDIR
 TARBALL=relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}.tar.gz
-tar -czvf ../$TARBALL pl README_INSTALL_BINARY_DISTRIBUTION.txt keys
+tar -czvf ../$TARBALL pl README_INSTALL_BINARY_DISTRIBUTION.txt install.sh keys
 echo created $DISTDIR/$TARBALL

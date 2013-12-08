@@ -41,13 +41,16 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </div>
   <a id="tutorials_button" class="menubutton" href="/tutorials/">
 	Tutorials
-  </div>
+  </a>
   <a id="references_button" class="menubutton" href="/references/">
 	References
-  </div>
+  </a>
   <a id="packages_button" class="menubutton" href="/packages/">
 	Packages
-  </div>
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
   <a id="download_button" class="menubutton" href="/download/">
 	DOWNLOAD
   </a>	
@@ -56,25 +59,45 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<tr>
 		<td class="contentside">
 <div id="content_left">
+	<h3>Binary Distributions</h3>
+	<p>
+		Click one of the links below to download a relish binary distribution for your computing platform. Note that the linux binary distributions require separate installation of sqlite3 (version 3.5 or greater) if sqlite3 is not already present on the computer. Apple computers already have sqlite3 installed.
+	</p>
+	<p>
+       <a href="binary?file=relish_0.0.9.darwin_amd64.tar.gz">relish_0.0.9.darwin_amd64.tar.gz</a> (MAC OSX)
+	</p>  
+	<p>	 
+       <a href="binary?file=relish_0.0.9.linux_amd64.tar.gz">relish_0.0.9.linux_amd64.tar.gz</a> (64-bit linux - if uname -a reports x86-64)
+	</p>
+	<p>	
+       <a href="binary?file=relish_0.0.9.linux_i386.tar.gz">relish_0.0.9.linux_i386.tar.gz</a> (32-bit linux)
+	</p>
+	<p><pre>
+sudo mkdir -p /opt/relish
+sudo mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz /opt/relish
+cd /opt/relish
+sudo tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz 
+   </pre>
+	</p>		
+	<p>
+		Further installation instructions can be found in README_INSTALL_BINARY_DISTRIBUTION.txt in the root directory of the binary distribution.
+	</p>	
 	<h3>Source Code Distribution</h3>
 	<p>
 		The relish software project is hosted at
 	 <a href="http://code.google.com/p/relish/">http://code.google.com/p/relish/</a>
-	</p>	
+	</p><pre>	
+sudo mkdir -p /opt/devel/relish
+cd /opt/devel/relish
+sudo hg clone https://code.google.com/p/relish/   
+</pre>	
 	<p>
-		To compile the relish programming language, you will first have to install the Go programming language (http://golang.org), the gosqlite package,  sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
+		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org), the gosqlite package,  sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
 	</p>
 	<p>
-		Installation and build instructions can be found in README_INSTALL.txt in the root directory of the source distribution.
+		Installation and build instructions can be found in README_INSTALL_SOURCE_DISTRIBUTION.txt in the root directory of the source distribution.
 	</p>
-	<h3>Binary Distributions</h3>
-	<p>
-		It should shortly be possible to download a relish binary distribution. Initially, these binary distributions will still require separate installation of sqlite3 (version 3.5 or greater) if sqlite3 is not already present on the platform, but will not require the installation of the Go programming language.
-	</p>
-	<p>
-		Binary distributions are planned in the relatively near term for 
-		linux i386, linux amd64, and macosx.
-	</p>
+
 </div>
 </td>
 <td class="contentside">

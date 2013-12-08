@@ -11,6 +11,7 @@ package  model
 
 import
    strings
+   datetime
 
 
 Origin
@@ -46,3 +47,56 @@ originIdError originId String > String
    if exists originId
       => cat "The origin '" originId "' is already registered. Please choose another origin id."
    => ""
+
+
+RelishDistribution  
+"""
+ Keeps track of the number of downloads of a given version and platform of relish binary distribution
+"""
+   majorVersion Int
+   minorVersion Int
+   patchVersion Int
+   platform String
+   numDownloads Int
+   firstDownload Time
+   hundredthDownload Time
+   lastDownload Time
+   
+
+recordDownload fileName String
+"""
+ Record a download of a relish binary distribution file. 
+"""
+   t = now "UTC"
+   if exists fileName
+      dist = summon fileName
+      dist.numDownloads = plus dist.numDownloads 1
+      if eq dist.numDownloads 100
+         dist.hundredthDownload = t
+   else
+      // relish_0.0.9.darwin_amd64.tar.gz
+      tarPos = index fileName ".tar.gz"
+      if gt tarPos 0
+         fileRoot = slice fileName 7 tarPos
+      else  // must be .zip
+         fileRoot = slice fileName 7 -4
+      lastDotPos = lastIndex fileRoot "."
+      platform = slice fileRoot (plus lastDotPos 1)
+      version = slice fileRoot 0 lastDotPos
+      dotPos = index version "."
+      lastDotPos = lastIndex version "."  
+      major err = Int slice version 0 dotPos
+      minor err = Int slice version (plus dotPos 1) lastDotPos
+      patch err = Int slice version (plus lastDotPos 1)          
+
+      dist = RelishDistribution
+      dist.majorVersion = major
+      dist.minorVersion = minor
+      dist.patchVersion = patch
+      dist.platform = platform
+      dist.numDownloads = 1
+      dist.firstDownload = t      
+      dub dist fileName
+      
+   dist.lastDownload = t
+      
