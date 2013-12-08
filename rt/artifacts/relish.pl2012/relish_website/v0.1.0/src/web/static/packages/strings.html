@@ -317,6 +317,9 @@ replace s String old String new String n Int > String
 <a name="slice">slice s String start Int end Int > String</a>
 """
  Returns the substring of s beginning at index 'start' (counting in bytes) and ending just before 'end'.
+ If 'end' is negative, the substring ends at the position such that the -'end' last bytes of
+ the original string are not included in the substring. So to remove ".doc" use 
+ slice fileName 0 -4
 """
 
 

@@ -9,6 +9,11 @@ package  web/download
 """
 
 
+import
+   model
+   strings
+   
+
 index > String String
 """
  Handles a request for the root (i.e. empty path) url on the server and port.
@@ -17,3 +22,16 @@ index > String String
       "index.html"
 
 
+binary file String > String String String
+"""
+ Download a relish binary distribution file.
+"""
+   recordDownload file
+   => fill """
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="%s"
+"""
+           file
+      "MEDIA FILE" 
+      file 
