@@ -159,117 +159,68 @@ func main() {
     var originAndArtifact string
     var version string
     var packagePath string
+    isSubDir := false
+    isSourceDist := false
 
-    relishIndexInWd := strings.Index(workingDirectory,"/rt/artifacts") 
+    relishIndexInWd := strings.Index(workingDirectory,"/relish/")
     if relishIndexInWd > -1 {
-	   relishRoot = workingDirectory[:relishIndexInWd] + "/rt" 
+       isSubDir = true
     } else {
-       relishIndexInWd := strings.Index(workingDirectory,"/rt/shared/relish/artifacts") 
-       if relishIndexInWd > -1 {
-	      relishRoot = workingDirectory[:relishIndexInWd] + "/rt"
-	      runningArtifactMustBeFromShared = true
-	   } else {
-          relishIndexInWd := strings.Index(workingDirectory,"/relish/shared/relish/artifacts") 
-          if relishIndexInWd > -1 {
-	         relishRoot = workingDirectory[:relishIndexInWd] + "/relish"
- 	         runningArtifactMustBeFromShared = true 
- 	      } else {
-             relishIndexInWd := strings.Index(workingDirectory,"/relish/artifacts") 
-             if relishIndexInWd > -1 {
-	            relishRoot = workingDirectory[:relishIndexInWd] + "/relish" 
-	         }	      	
- 	      }	
-	   }
-    }    
-
-	if relishRoot != "" && ! publish {   
-       match := reVersionedPackage.FindStringSubmatchIndex(workingDirectory)
-       if match != nil {
-	      version = workingDirectory[match[2]:match[3]]
-          
-	      originAndArtifact = workingDirectory[relishIndexInWd+18:match[0]]
-	      packagePath = workingDirectory[match[3]+1:]	
-       } else {
-	       match := reVersionAtEnd.FindStringSubmatch(workingDirectory)
-	       if match != nil {
-		      version = match[1]	
-	          originAndArtifact = workingDirectory[relishIndexInWd+18:len(workingDirectory)-len(version)-2]		
-		   }
+       relishIndexInWd := strings.Index(workingDirectory,"/relish")
+       if relishIndexInWd == -1 || relishIndexInWd != len(workingDirectory) - 7 {
+    		fmt.Printf("relish command must be run from within a relish directory tree.\n")
+    		return          
        }
     }
-	
-	if relishRoot == "" { // did not find it in the working directory
-		
-	    relishRoot = os.Getenv("RELISH_HOME")  // See if the environment variable is defined
-	    if relishRoot != "" {
-			slashPos := strings.LastIndex(relishRoot,"/")
-			if slashPos != -1 {
-			    if relishRoot[slashPos+1:] != "relish" {
-				   fmt.Printf("RELISH_HOME directory must be named relish\n")
-				   return			
-			    }
-			} else {
-			   slashPos := strings.LastIndex(relishRoot,`\`)
-			   if slashPos != -1 {
-			      if relishRoot[slashPos+1:] != "relish" {
-				     fmt.Printf("RELISH_HOME directory must be named relish\n")
-				     return			
-			      }			
-			   } else {
-			      fmt.Printf("RELISH_HOME directory path is ill-formed\n")				
-			   }
-			}
-	        _,err := os.Stat(relishRoot)	
-	        if err != nil {
-	            if ! os.IsNotExist(err) {
-				   fmt.Printf("Can't stat RELISH_HOME directory '%s' : %v\n", relishRoot, err)
-		  	       return		       
-		        }
-		        fmt.Printf("RELISH_HOME directory '%s' does not exist\n")
-		        return	
-	         }	
-				
-	    } else { // RELISH_HOME not defined. Try standard locations.
-			var relishRoots []string
-			if os.IsPathSeparator('/') {
-				relishRoots = []string{"/opt/relish","/usr/local/relish","~/relish","~/devel/relish","/opt/devel/relish","Library/relish"}
-			} else { // Windows? This part is untested	
-				relishRoots = []string{`C:\relish`}	
-			}
-			for _,potentialInstallLocation := range relishRoots {
-		        _,err := os.Stat(potentialInstallLocation)	
-		        if err != nil {
-			        if ! os.IsNotExist(err) {
-						fmt.Printf("Can't stat potential relish install location '%s': %v\n", potentialInstallLocation, err)
-						return		       
-			        }
-		        } else {
-		            relishRoot = potentialInstallLocation
-		            break
-		        }	
-	        }				
-	   }
+    relishRoot = workingDirectory[:relishIndexInWd + 7]
+    
+    _,err := os.Stat(relishRoot + "/rt")	
+    if err == nil {
+       relishRoot += "/rt"
+       isSourceDist = true
+    } else if ! os.IsNotExist(err) {
+		fmt.Printf("Can't stat '%s' : %v\n", relishRoot + "/rt", err)
+ 	   return		       	
+    }    
+    
+    // relishRoot is now established
+    
+    if isSubDir { // See where we are more specifically
+       if isSourceDist {
+          idx := strings.Index(workingDirectory,"/rt/shared") 
+          if idx > -1 {
+             runningArtifactMustBeFromShared = true
+          } else 
+       } else {
+          idx := strings.Index(workingDirectory,"/relish/shared") 
+          if idx > -1 {
+             runningArtifactMustBeFromShared = true
+          }   
+       }
+     
+   	 if ! publish {   
+   	    originPos := strings.Index(workingDirectory,"/artifacts/") + 11
+   	    if originPos == 10 {
+   	       originPos = strings.Index(workingDirectory,"/replicas/") + 10	       
+	       }
+	       if originPos >= 10 {
+             match := reVersionedPackage.FindStringSubmatchIndex(workingDirectory)
+             if match != nil {
+      	       version = workingDirectory[match[2]:match[3]]
+             
+      	       originAndArtifact = workingDirectory[originPos:match[0]]
+      	       packagePath = workingDirectory[match[3]+1:]	
+             } else {
+      	       match := reVersionAtEnd.FindStringSubmatch(workingDirectory)
+      	       if match != nil {
+      		       version = match[1]	
+      	          originAndArtifact = workingDirectory[originPos:len(workingDirectory)-len(version)-2]		
+      		    }
+             }
+          }
+       }
+   }
 
-       if relishRoot != "" {
-		   // determine if is source distribution or binary by searching for "/rt/"
-		   // if source, move relishRoot to the /rt subdir	   
-
-		   _,err := os.Stat(relishRoot + "/rt")	
-		   if err == nil {
-		   	   relishRoot += "/rt"
-		   } else {
-		      if ! os.IsNotExist(err) {
-					   fmt.Printf("Can't stat RELISH_HOME subdirectory '%s/rt' : %v\n", relishRoot, err)
-			  	       return		       
-			  }
-		   } 	
-	   }
-	}
-	if relishRoot == "" {
-		fmt.Printf("RELISH_HOME environment variable is not defined and relish is not installed in a default location and working directory is not within a relish directory tree.\n")
-		return		
-	}
-	
     if ! publish {
 	   builtin.InitBuiltinFunctions(relishRoot)	
     }
@@ -278,7 +229,7 @@ func main() {
 
     if publish {
        if len(pathParts) < 2 {
-          fmt.Println("Usage (example): relish -publish somorigin.com2013/artifact_name 1.0.23")
+          fmt.Println("Usage (example): relish -publish someorigin.com2013/artifact_name 1.0.23")
           return
        }
 	   originAndArtifact = pathParts[0]
@@ -319,7 +270,7 @@ func main() {
 	
 	if originAndArtifact == "" {
 		
-       if len(pathParts) == 3 {  // originAndArtifact version npackagePath
+       if len(pathParts) == 3 {  // originAndArtifact version packagePath
 	
 		    originAndArtifact = pathParts[0]
 		    version = pathParts[1]
@@ -329,9 +280,20 @@ func main() {
 		
 		    originAndArtifact = pathParts[0]
 		    packagePath = pathParts[1]
+		    
+		    // TODO Should actually determine if is a version by regexp or a package path has been supplied
+		    // if a version, check for default package to execute
 		
 	   } else if shareListeningPort == 0 || webListeningPort != 0 {
-	      fmt.Println("Usage: relish [-log n] [-web 80] originAndArtifact [version] path/to/package")
+	      if len(pathParts) == 1 {
+            // TODO check for default package to execute
+            // see if there is a main package, if so, execute its main method
+            // else see if there is a controller package,
+            // else see if there is a web package and webListeningPort != 0
+            // else
+	         fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]")            
+	      }
+	      fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]")
 	      return
 	   }		
 	
@@ -340,14 +302,16 @@ func main() {
 	} else if packagePath == "" {
 		
        if len(pathParts) != 1 {
-  	      fmt.Println("Usage (when in an artifact version directory): relish [-log n] [-web 80] path/to/package")
+         // check for main, controller, or web 
+          //else
+  	      fmt.Println("Usage (when in an artifact version directory): relish [-web 80] [path/to/package]")
 	      return
        }	
        packagePath = pathParts[0]
 	
 	} else {
        if len(pathParts) != 0 {
-	         fmt.Println("Usage (when in a package directory): relish [-log n] [-web 80]")
+	         fmt.Println("Usage (when in a package directory): relish [-web 80]")
 	         return
        }		
     }
