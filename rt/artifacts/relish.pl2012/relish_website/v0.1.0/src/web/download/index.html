@@ -72,13 +72,31 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<p>	
        <a href="binary?file=relish_0.0.9.linux_i386.tar.gz">relish_0.0.9.linux_i386.tar.gz</a> (32-bit linux)
 	</p>
-	<p><pre>
-sudo mkdir -p /opt/relish
-sudo mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz /opt/relish
-cd /opt/relish
-sudo tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz 
+	<p>You can install relish under your home directory, or, perhaps better, especially for production servers, you can install it in /opt/relish .
+   </p>
+   <p>Home directory installation:<br/><pre>
+   mkdir ~/relish
+   cd ~/Downloads   # or wherever your binary tarball file was downloaded to.
+   mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz ~/relish
+   cd ~/relish
+   tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz 
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to ~/relish/bin/ executables
+   relish shared.relish.pl/hello_application hello
    </pre>
-	</p>		
+   </p>	
+	<p>opt directory installation:<br/><pre>
+   sudo mkdir -p /opt/relish
+   sudo chmod go+wx /opt/relish   
+   cd ~/Downloads    # or wherever your binary tarball file was downloaded to.
+   mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz /opt/relish
+   cd /opt/relish
+   tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz 
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/relish/bin/ executables
+   relish shared.relish.pl/hello_application hello
+   </pre>
+	</p>	
+
+		
 	<p>
 		Further installation instructions can be found in README_INSTALL_BINARY_DISTRIBUTION.txt in the root directory of the binary distribution.
 	</p>	
@@ -86,16 +104,25 @@ sudo tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz
 	<p>
 		The relish software project is hosted at
 	 <a href="http://code.google.com/p/relish/">http://code.google.com/p/relish/</a>
-	</p><pre>	
-sudo mkdir -p /opt/devel/relish
-cd /opt/devel/relish
-sudo hg clone https://code.google.com/p/relish/   
-</pre>	
-	<p>
-		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org), the gosqlite package,  sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
 	</p>
 	<p>
-		Installation and build instructions can be found in README_INSTALL_SOURCE_DISTRIBUTION.txt in the root directory of the source distribution.
+		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org),  and if on linux, sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
+	</p>	
+	<pre>	
+   sudo mkdir -p /opt/devel
+   sudo chmod go+wx /opt/devel
+   cd /opt/devel
+   hg clone https://code.google.com/p/relish/ 
+   export GOPATH=/opt/devel/relish
+   go get code.google.com/p/gosqlite/sqlite  
+   cd relish
+   go install relish/relish
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables
+   relish shared.relish.pl/hello_application hello
+</pre>	
+
+	<p>
+		Further installation and build instructions can be found in README_INSTALL_SOURCE_DISTRIBUTION.txt in the root directory of the source distribution.
 	</p>
 
 </div>
