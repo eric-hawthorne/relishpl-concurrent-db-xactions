@@ -252,6 +252,8 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	   parserDebugMode |= parser.Trace
 	}
 
+
+
     // First, see if the package is already loaded. If so, return 
 
     packageIdentifier := originAndArtifactPath + "/pkg/" + packagePath   
@@ -288,6 +290,17 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
     if ! ldr.quiet {
         Log(ALWAYS_,"Loading package %s\n",packageIdentifier)
     }
+
+
+    Log(LOAD2_,"LoadPackage: ldr.RelishRuntimeLocation=%s\n",ldr.RelishRuntimeLocation)  
+    Log(LOAD2_,"LoadPackage: originAndArtifactPath=%s\n",originAndArtifactPath)  
+    Log(LOAD2_,"LoadPackage: version=%s\n",version) 
+    Log(LOAD2_,"LoadPackage: packagePath=%s\n",packagePath) 
+
+
+
+
+
     mustBeFromShared = mustBeFromShared || ldr.SharedCodeOnly  // Set whether will consider local code for this package.
     var mustBeFromLocal bool                 // We may end up constrained to load from local artifact.
 
