@@ -25,7 +25,7 @@ then
    chmod +x /opt/devel/relish/bin/*
    ln -s /opt/devel/relish/bin/relish /usr/local/bin/relish
    ln -s /opt/devel/relish/bin/rmdb /usr/local/bin/rmdb   
-   ln -s /opt/devel/relish/bin/clean /usr/local/bin/clean    
+   ln -s /opt/devel/relish/bin/cleanr /usr/local/bin/cleanr    
    ln -s /opt/devel/relish/bin/makedist /usr/local/bin/makedist     
    chmod -R go+w /opt/devel/relish      
 elif [ -d ~/relish ] # It is a home directory binary distribution
@@ -33,14 +33,14 @@ then
    chmod +x ~/relish/pl/bin/*   
    ln -s ~/relish/pl/bin/relish /usr/local/bin/relish
    ln -s ~/relish/pl/bin/rmdb /usr/local/bin/rmdb   
-   ln -s ~/relish/pl/bin/clean /usr/local/bin/clean   
+   ln -s ~/relish/pl/bin/cleanr /usr/local/bin/cleanr   
    chmod go+w ~/relish      
    chmod -R go+w ~/relish/keys   
 else
    chmod +x /opt/relish/pl/bin/*   
    ln -s /opt/relish/pl/bin/relish /usr/local/bin/relish
    ln -s /opt/relish/pl/bin/rmdb /usr/local/bin/rmdb   
-   ln -s /opt/relish/pl/bin/clean /usr/local/bin/clean   
+   ln -s /opt/relish/pl/bin/cleanr /usr/local/bin/cleanr   
    chmod go+w /opt/relish      
    chmod -R go+w /opt/relish/keys      
 fi 
