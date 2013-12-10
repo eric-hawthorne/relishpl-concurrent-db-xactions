@@ -90,7 +90,7 @@ import (
 
 var reVersionAtEnd *regexp.Regexp = regexp.MustCompile("/v([0-9]+\\.[0-9]+\\.[0-9]+)$")
 var reVersionedPackage *regexp.Regexp = regexp.MustCompile("/v([0-9]+\\.[0-9]+\\.[0-9]+)/pkg/")
-
+var reVersion *regexp.Regexp = regexp.MustCompile("([0-9]+\\.[0-9]+\\.[0-9]+)")
 
 func main() {
     var loggingLevel int
@@ -144,9 +144,9 @@ func main() {
 //    	builtin.InitBuiltinFunctions()	
 //	}
 
-	var g *generator.Generator
+	  var g *generator.Generator
 	
-	var relishRoot string  // This actually has to be the root of the runtime environment
+	  var relishRoot string  // This actually has to be the root of the runtime environment
 	                       // i.e. /opt/relish if this is a binary distribution,
 	                       // or /opt/relish/rt if this is a source distribution
 	
@@ -166,7 +166,7 @@ func main() {
     if relishIndexInWd > -1 {
        isSubDir = true
     } else {
-       relishIndexInWd := strings.Index(workingDirectory,"/relish")
+       relishIndexInWd = strings.Index(workingDirectory,"/relish")
        if relishIndexInWd == -1 || relishIndexInWd != len(workingDirectory) - 7 {
     		fmt.Printf("relish command must be run from within a relish directory tree.\n")
     		return          
@@ -174,13 +174,13 @@ func main() {
     }
     relishRoot = workingDirectory[:relishIndexInWd + 7]
     
-    _,err := os.Stat(relishRoot + "/rt")	
+    _,err = os.Stat(relishRoot + "/rt")	
     if err == nil {
        relishRoot += "/rt"
        isSourceDist = true
     } else if ! os.IsNotExist(err) {
-		fmt.Printf("Can't stat '%s' : %v\n", relishRoot + "/rt", err)
- 	   return		       	
+		   fmt.Printf("Can't stat '%s' : %v\n", relishRoot + "/rt", err)
+ 	     return		       	
     }    
     
     // relishRoot is now established
@@ -190,7 +190,7 @@ func main() {
           idx := strings.Index(workingDirectory,"/rt/shared") 
           if idx > -1 {
              runningArtifactMustBeFromShared = true
-          } else 
+          } 
        } else {
           idx := strings.Index(workingDirectory,"/relish/shared") 
           if idx > -1 {
@@ -198,132 +198,130 @@ func main() {
           }   
        }
      
-   	 if ! publish {   
-   	    originPos := strings.Index(workingDirectory,"/artifacts/") + 11
-   	    if originPos == 10 {
-   	       originPos = strings.Index(workingDirectory,"/replicas/") + 10	       
+   	   if ! publish {   
+
+        // See if the current directory is a particular artifact version directory,
+        // or even is a particular package directory.
+
+   	     originPos := strings.Index(workingDirectory,"/artifacts/") + 11
+   	     if originPos == 10 {
+   	        originPos = strings.Index(workingDirectory,"/replicas/") + 10	       
 	       }
 	       if originPos >= 10 {
              match := reVersionedPackage.FindStringSubmatchIndex(workingDirectory)
              if match != nil {
-      	       version = workingDirectory[match[2]:match[3]]
+      	        version = workingDirectory[match[2]:match[3]]
              
-      	       originAndArtifact = workingDirectory[originPos:match[0]]
-      	       packagePath = workingDirectory[match[3]+1:]	
+      	        originAndArtifact = workingDirectory[originPos:match[0]]
+      	        packagePath = workingDirectory[match[3]+1:]	
              } else {
-      	       match := reVersionAtEnd.FindStringSubmatch(workingDirectory)
-      	       if match != nil {
-      		       version = match[1]	
-      	          originAndArtifact = workingDirectory[originPos:len(workingDirectory)-len(version)-2]		
-      		    }
+      	        match := reVersionAtEnd.FindStringSubmatch(workingDirectory)
+      	        if match != nil {
+      		         version = match[1]	
+      	           originAndArtifact = workingDirectory[originPos:len(workingDirectory)-len(version)-2]		
+      		      }
              }
           }
        }
-   }
+    }
 
     if ! publish {
-	   builtin.InitBuiltinFunctions(relishRoot)	
+	    builtin.InitBuiltinFunctions(relishRoot)	
     }
 
     crypto_util.SetRelishRuntimeLocation(relishRoot)  // So that keys can be fetched.   
 
     if publish {
-       if len(pathParts) < 2 {
+      if len(pathParts) < 2 {
           fmt.Println("Usage (example): relish -publish someorigin.com2013/artifact_name 1.0.23")
           return
-       }
-	   originAndArtifact = pathParts[0]
-	   version = pathParts[1]
+      }
+	    originAndArtifact = pathParts[0]
+	    version = pathParts[1]
 
-       err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
-	   if err != nil {
-		  fmt.Println(err)
-       }
-       return
+      err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
+	    if err != nil {
+		    fmt.Println(err)
+      }
+      return
     }
 
  
-	sourceCodeShareDir := ""
+    sourceCodeShareDir := ""
     if shareListeningPort != 0 {
-       // sourceCodeShareDir hould be the "relish/shared" 
-       // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
-	   sourceCodeShareDir = relishRoot + "/shared"
+      // sourceCodeShareDir hould be the "relish/shared" 
+      // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
+      sourceCodeShareDir = relishRoot + "/shared"
     }
     onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0)
 
     if onlyCodeSharing {
-	
-	   if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
-			fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
-			return		
-	   }		
-	
-	   // go g.Interp.RunMain(fullUnversionedPackagePath)	
 
-       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
-	}
+      if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
+         fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+         return		
+      }  		
+
+      web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
+    }
 
 
-	var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db", quiet)
-	
-	
-	
-	if originAndArtifact == "" {
-		
-       if len(pathParts) == 3 {  // originAndArtifact version packagePath
-	
-		    originAndArtifact = pathParts[0]
-		    version = pathParts[1]
-		    packagePath = pathParts[2]		
-	
-       } else if len(pathParts) == 2 {  // originAndArtifact packagePath	
-		
-		    originAndArtifact = pathParts[0]
-		    packagePath = pathParts[1]
-		    
-		    // TODO Should actually determine if is a version by regexp or a package path has been supplied
-		    // if a version, check for default package to execute
-		
-	   } else if shareListeningPort == 0 || webListeningPort != 0 {
-	      if len(pathParts) == 1 {
-            // TODO check for default package to execute
-            // see if there is a main package, if so, execute its main method
-            // else see if there is a controller package,
-            // else see if there is a web package and webListeningPort != 0
-            // else
-	         fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]")            
-	      }
-	      fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]")
-	      return
-	   }		
-	
+    var loader = global_loader.NewLoader(relishRoot, sharedCodeOnly, dbName + ".db", quiet)
+  	
+  	
+    if originAndArtifact == "" {
+  		
+         if len(pathParts) == 3 {  // originAndArtifact version packagePath
+  	
+  		    originAndArtifact = pathParts[0]
+  		    version = pathParts[1]
+  		    packagePath = pathParts[2]		
+  	
+         } else if len(pathParts) == 2 {  // originAndArtifact packagePath	
+  		
+  		    originAndArtifact = pathParts[0]
+  		    packagePathOrVersion := pathParts[1]
+  		    
+          // Determine if is a version by regexp or a package path has been supplied
+         
+          version = reVersion.FindString(packagePathOrVersion)
+          if version == "" {
+             packagePath = packagePathOrVersion
 
-		
-	} else if packagePath == "" {
-		
-       if len(pathParts) != 1 {
-         // check for main, controller, or web 
-          //else
-  	      fmt.Println("Usage (when in an artifact version directory): relish [-web 80] [path/to/package]")
-	      return
+          } 
+  	   } else if shareListeningPort == 0 || webListeningPort != 0 {
+         if len(pathParts) != 1 {
+  	       fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]\n# package path defaults to main")            
+  	       return
+         }
+         originAndArtifact = pathParts[0]       
+      }
+    } else if packagePath == "" {
+       if len(pathParts) == 1 {
+          packagePath = pathParts[0]        
+       } else if len(pathParts) > 1 {
+  	      fmt.Println("Usage (when in an artifact version directory): relish [-web 80] [path/to/package]\n# package path defaults to main")
+          return
        }	
-       packagePath = pathParts[0]
-	
-	} else {
+    } else {  // both originAndArtifact and packagePath are defined (non "")
        if len(pathParts) != 0 {
-	         fmt.Println("Usage (when in a package directory): relish [-web 80]")
-	         return
+           fmt.Println("Usage (when in a package directory): relish [-web 80]")
+           return
        }		
     }
 
 
-	if strings.HasSuffix(originAndArtifact,"/") {  // Strip trailing / if present
-	   originAndArtifact = originAndArtifact[:len(originAndArtifact)-1]	
-	}
+  	if strings.HasSuffix(originAndArtifact,"/") {  // Strip trailing / if present
+  	   originAndArtifact = originAndArtifact[:len(originAndArtifact)-1]	
+  	}
     if strings.HasSuffix(packagePath,"/") {  // Strip trailing / if present
        packagePath = packagePath[:len(packagePath)-1]	
     }
 
+    if packagePath == "" {
+       packagePath = "main"  // substitute a default.
+    }
+    
     fullPackagePath := fmt.Sprintf("%s/v%s/pkg/%s",originAndArtifact,version, packagePath)
     fullUnversionedPackagePath := fmt.Sprintf("%s/pkg/%s",originAndArtifact, packagePath)
     

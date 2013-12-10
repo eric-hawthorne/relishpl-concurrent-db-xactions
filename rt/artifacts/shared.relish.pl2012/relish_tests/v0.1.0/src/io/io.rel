@@ -30,19 +30,22 @@ testIo
    file err = files.File "testIo.txt"
    if err
       print err
+      print "Skipping further io tests"
+      =>
+
+   buf = Bytes 150
+   n err = read file buf
+   if err
+      print err
    else
-      buf = Bytes 150
-      n err = read file buf
-      if err
-         print err
-      else
-         print "I read" n "bytes." 
-         print "------------"
-         s = String buf
-         s1 = slice s 0 n
-         print s1
-         print "------------"
-      close file
+      print "I read" n "bytes." 
+      print "------------"
+      s = String buf
+      s1 = slice s 0 n
+      print s1
+      print "------------"
+   close file
+   
 
    file err = files.File "testIo2.txt" "w"
    n err = write file "Gangnam Style!"
