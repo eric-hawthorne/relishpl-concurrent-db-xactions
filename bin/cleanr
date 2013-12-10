@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# clean
+# cleanr
+#
+# NOTE: Must be run from within a relish installation directory tree or
+# a relish project directory tree. i.e. At .../relish or below.
 #
 # Removes all pkg directories in the local (unshared) artifacts directories,
 # thus forcing all local artifacts and packages to be recompiled from relish source code
@@ -9,16 +12,19 @@
 #
 # You can also clean only a single local artifact by issuing a command like
 # 
-# clean shared.relish.pl2012/relish_tests
+# cleanr shared.relish.pl2012/relish_tests
 # 
 # which will clean all versions of the artifact.
 #
-# clean shared.relish.pl2012/relish_tests 1.0.23
+# cleanr shared.relish.pl2012/relish_tests 1.0.23
 #
 # Cleans only version 1.0.23 of the specified artifact.
 #
 #
 # See also the rmdb script.
+
+
+# A="/opt/devel/relish/rt/artifacts";echo ${A/%relish*/relish}
 
 # 
 # IMPORTANT
