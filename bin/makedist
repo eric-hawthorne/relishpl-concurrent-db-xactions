@@ -24,19 +24,18 @@ if [ $# -lt 2 ] ; then
 	echo "usage (by example): makedist 1.0.2 darwin_amd64" ; exit 0
 fi
 
-# 
-# IMPORTANT
-#
-# If you have not set the RELISH_HOME environment variable and don't want to,
-# then edit the following two variable value to match where your relish source distribution working directory is 
-#
-DEFAULT_RELISH_HOME=~/devel/relish   # e.g. of alternate DEFAULT_RELISH_HOME=/opt/relish
 
-# Use the environment variable preferentially, but if not set, use the default above.
-RELISH_HOME=${RELISH_HOME:=$DEFAULT_RELISH_HOME}
+RELISHDIR=${PWD/%relish*/relish}
 
-SRCDIR=$RELISH_HOME     
-DISTDIR=${RELISH_HOME}_dist  
+if [ ! -d $RELISHDIR/rt ] # It is not a relish source distribution  
+then
+   echo "You must run makedist from a working directory at root of or inside a relish source distribution directory tree."
+   exit
+fi
+
+
+SRCDIR=$RELISHDIR     
+DISTDIR=${RELISHDIR}_dist  
 
 
 # Create release directory if does not exist.
@@ -52,7 +51,7 @@ RELEASEDIR=$DISTDIR/relish_${RELEASE_VERSION}.${RELEASE_ARCHITECTURE}
 mkdir -p $RELEASEDIR/pl/bin
 
 cp -p $SRCDIR/bin/relish $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
-cp -p $SRCDIR/bin/clean $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
+cp -p $SRCDIR/bin/cleanr $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 cp -p $SRCDIR/bin/rmdb $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 
 cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
