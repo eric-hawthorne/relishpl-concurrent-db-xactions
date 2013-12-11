@@ -25,6 +25,7 @@ index
 
  Note: Should use artifact instead of package? and standard "test_program" package.
 """
+   ensureExampleSimplePrograms     
    
    artifactName artifactNameFound = kw["artfct"]
    if artifactNameFound 
