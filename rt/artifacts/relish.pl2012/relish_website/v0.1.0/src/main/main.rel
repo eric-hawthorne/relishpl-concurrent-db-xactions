@@ -1,6 +1,6 @@
 origin   relish.pl2012
 artifact relish_website
-package  web
+package  main
 
 """
  main.rel
