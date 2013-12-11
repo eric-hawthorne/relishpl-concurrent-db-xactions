@@ -80,8 +80,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz ~/relish   # on MACOSX, the .gz has already been stripped
    cd ~/relish
    tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz  # on MACOSX, xf relish_&lt;version&gt;.&lt;platform&gt;.tar
-   sudo ./install.sh    # creates symbolic links in /usr/local/bin to ~/relish/bin/ executables
-   relish shared.relish.pl/hello_application hello
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to ~/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl/hello_application
    </pre>
    </p>	
 	<p>opt directory installation:<br/><pre>
@@ -91,8 +92,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz /opt/relish   # on MACOSX, the .gz has already been stripped
    cd /opt/relish
    tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz  # on MACOSX, xf relish_&lt;version&gt;.&lt;platform&gt;.tar
-   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/relish/bin/ executables
-   relish shared.relish.pl/hello_application hello
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl/hello_application
    </pre>
 	</p>	
 
@@ -117,8 +119,9 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    go get code.google.com/p/gosqlite/sqlite  
    cd relish
    go install relish/relish
-   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables
-   relish shared.relish.pl/hello_application hello
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl/hello_application
 </pre>	
 
 	<p>
