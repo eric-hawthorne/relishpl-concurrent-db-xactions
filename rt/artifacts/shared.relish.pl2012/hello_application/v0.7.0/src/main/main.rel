@@ -1,6 +1,6 @@
 origin   shared.relish.pl2012
 artifact hello_application
-package  hello
+package  main
 
 """
  main.rel
