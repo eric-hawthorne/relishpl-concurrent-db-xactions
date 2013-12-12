@@ -1418,6 +1418,224 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+         collType minArity maxArity keyIsObject valIsObject keyType valType keys vals =
+            getCollectionInfo reflectId
+
+   collectionKind String  // "Map" "List" "Set"
+   minArity Int
+   maxArity Int
+   keyIsObject Bool
+   valIsObject Bool
+   keyType String
+   valType String
+   keys 0 N [] String  // Will be empty if not a map  
+   vals 0 N [] String  
+            
+
+/*
+getCollectionElements reflectId >
+
+[ [attrName, minArity, maxArity, 
+   inverseAttrName, inverseMinArity, inversMaxArity, 
+   typeName, valIsObject, valIsCollection
+   [val1, val2, ...] 
+  ]
+  ...
+]
+
+			ComplexAttrDescriptor
+			"""
+			 Temporary
+			"""
+			   attrName String
+			   typeName String
+			   minArity Int
+			   maxArity Int
+			   valIsObject Bool
+			   valIsCollection Bool
+			   inverseAttrName String
+			   inverseMinArity Int
+			   inverseMaxArity Int
+			   vals [] String
+
+func getCollectionElements(th InterpreterThread, objects []RObject) []RObject {
+
+	reflectId := string(objects[0].(String))	
+	// fmt.Println(reflectId)
+    obj := objectByReflectId1(reflectId)
+
+    complexAttrDescrType, typFound := RT.Types["shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor"]
+    if ! typFound {
+    	panic("reflect.ComplexAttrDescriptor is not defined.")
+    }
+
+    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+
+    // fmt.Println(obj)
+    
+    if obj != nil && obj != NIL {
+    	
+       attrs,vals := complexAttrs(obj)
+       // fmt.Println(len(attrs))
+       for i, attr := range attrs {
+
+           val := vals[i]
+
+	       descr, err := RT.NewObject("shared.relish.pl2012/relish_lib/pkg/reflect/ComplexAttrDescriptor")
+	       if err != nil {
+	    	  panic(err)
+	       }
+
+	       attrNameAttr, found := descr.Type().GetAttribute("attrName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an attrName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  attrNameAttr, String( attr.Part.Name )   )  
+
+	       typeNameAttr, found := descr.Type().GetAttribute("typeName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an typeName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  typeNameAttr, String( attr.Part.Type.Name )   )
+
+
+	       minArityAttr, found := descr.Type().GetAttribute("minArity")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an minArity attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  minArityAttr, Int( int64(attr.Part.ArityLow) )   )
+
+
+	       maxArityAttr, found := descr.Type().GetAttribute("maxArity")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have a maxArity attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  maxArityAttr, Int( int64(attr.Part.ArityHigh) )   )
+	       
+	       
+	       valIsObjectAttr, found := descr.Type().GetAttribute("valIsObject")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an valIsObject attribute?")
+	    	  panic(err)
+	       }
+	       isObject := ! attr.Part.Type.IsPrimitive
+	       RT.RestoreAttr(descr,  valIsObjectAttr, Bool(isObject)   )
+
+	       valIsCollectionAttr, found := descr.Type().GetAttribute("valIsCollection")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an valIsCollection attribute?")
+	    	  panic(err)
+	       }       
+	       isIndependentCollection := false
+	       if val.IsCollection() {
+	          if val.(RCollection).Owner() == nil {
+                isIndependentCollection = true
+             }
+          }
+	       RT.RestoreAttr(descr,  valIsCollectionAttr, Bool(isIndependentCollection)   )
+
+	       
+
+           inverseAttr := attr.Inverse
+           inverseAttrName := ""
+           if inverseAttr != nil {
+	           inverseAttrName = inverseAttr.Part.Name
+
+		       inverseMinArityAttr, found := descr.Type().GetAttribute("inverseMinArity")
+		       if ! found {
+		    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an inverseMinArity attribute?")
+		    	  panic(err)
+		       }
+		       RT.RestoreAttr(descr,  inverseMinArityAttr, Int( int64(inverseAttr.Part.ArityLow) )   )
+
+
+		       inverseMaxArityAttr, found := descr.Type().GetAttribute("inverseMaxArity")
+		       if ! found {
+		    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have a inverseMaxArity attribute?")
+		    	  panic(err)
+		       }
+		       RT.RestoreAttr(descr,  inverseMaxArityAttr, Int( int64(inverseAttr.Part.ArityHigh) )   )		
+		   }       
+
+	       inverseAttrNameAttr, found := descr.Type().GetAttribute("inverseAttrName")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.ComplexAttrDescriptor not have an inverseAttrName attribute?")
+	    	  panic(err)
+	       }
+	       RT.RestoreAttr(descr,  inverseAttrNameAttr, String( inverseAttrName )   )
+
+
+
+
+           // TODO NOW HANDLE MULTIPLE VALS ETC
+
+
+	       valsAttr, found := descr.Type().GetAttribute("vals")
+	       if ! found {
+	    	  err = fmt.Errorf("Hmm. Why does reflect.simpleAttrDescriptor not have a vals attribute?")
+	    	  panic(err)
+	       }
+	
+
+	
+	       var valStr string
+	
+	       if attr.IsMultiValued() {
+	          // fmt.Println(attr.Part.Name, "is multivalued")
+			    primitive := attr.Part.Type.IsPrimitive
+		
+		      // val must be a collection - iterate over it !! TODO
+	          valColl := val.(RCollection)
+	          for obj := range valColl.Iter(th) {
+			      if primitive {
+				      valStr = obj.String()
+				    } else {
+					   valStr = ensureReflectId1(obj)
+				    }
+
+				    err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+				  
+                  // fmt.Println("adding ",valStr)				  
+				  
+			       if err != nil {
+					    panic(err)
+				  }
+		      }
+		   } else {
+	          // fmt.Println(attr.Part.Name, "is not multivalued")		      
+			  valStr = ensureReflectId1(val)
+			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
+		      if err != nil {
+				 panic(err)
+			  }		   
+		   }
+
+           attrDescrList.AddSimple(descr)
+       }
+    }
+
+	return []RObject{attrDescrList}
+}
+
+
+*/
+
+
+
+
+
+
+
+
+
+
 
 
 

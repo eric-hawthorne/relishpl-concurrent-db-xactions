@@ -52,7 +52,7 @@ SimpleAttrDescriptor
 
 ComplexAttrDescriptor
 """
- A descriptor of an attribute and its value for som object instance,
+ A descriptor of an attribute and its value for some object instance,
  where the attribute is not a unary attribute or does not have a atomic primitive as value type.
  The values have been converted to type String.
  If valIsObject is true, the values are reflectIds of objects, from which other reflection libary methods
@@ -70,6 +70,9 @@ ComplexAttrDescriptor
    vals 0 N [] String
 
 
+
+
+
 ObjectTree
 """
  Represents a whole tree of associated objects, out to the specified depth.
@@ -80,7 +83,7 @@ ObjectTree
    depth Int
    rootReflectId String
    // objects {} String > ObjectDescriptor
-   objects Map
+   objects Map  // Map from reflectId to ObjectDescriptor
 
 
 ObjectDescriptor
@@ -96,8 +99,32 @@ ObjectDescriptor
    uuid String  // The uuidStr() value of the object, or "" if the object is not persistent somewhere.
    includesSimpleAttrs Bool
    includesComplexAttrs Bool
+   isCollection Bool
+   includesCollectionMembers Bool
    simpleAttrs 0 N [] SimpleAttrDescriptor
    complexAttrs 0 N [] ComplexAttrDescriptor 
+
+
+CollectionDescriptor <: ObjectDescriptor
+"""
+ A descriptor of a Map, List, or Set.
+ The keys and values have been converted to type String.
+ If keyIsObject is true, the map keyd are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes. 
+ If valIsObject is true, the values are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes.
+"""
+   collectionKind String  // "Map" "List" "Set"
+   minArity Int
+   maxArity Int
+   keyIsObject Bool
+   valIsObject Bool
+   keyType String
+   valType String
+   keys 0 N [] String  // Will be empty if not a map  
+   vals 0 N [] String   
+
+
 
 
 getObjectTree reflectId String depth Int > tree ObjectTree
@@ -134,6 +161,17 @@ populateObjectTree tree ObjectTree reflectId String depth Int
                if complexAttrDesc.vals
                   for associatedReflectId in complexAttrDesc.vals
                      populateObjectTree tree associatedReflectId depth
+         if objDesc.isCollection
+            // Should do a typecast here
+            collDesc = objDesc
+            if collDesc.keyIsObject
+               if collDesc.keys
+                  for key in collDesc.keys
+                     populateObjectTree tree key depth
+            if collDesc.valIsObject
+               if collDesc.vals
+                  for val in collDesc.vals
+                     populateObjectTree tree val depth
 
 
 makeDescriptor 
@@ -149,7 +187,21 @@ makeDescriptor
 """
    objType = typeOf obj
 
-   objDesc = ObjectDescriptor
+   if hasPrefix objType.name "List_of_"
+      objDesc = CollectionDescriptor
+      objDesc.keyIsObject = false
+      objDesc.isCollection = true
+   elif hasPrefix objType.name "Set_of_"   
+      objDesc = CollectionDescriptor  
+      objDesc.keyIsObject = false
+      objDesc.isCollection = true             
+   elif hasPrefix objType.name "Map_of_" 
+      objDesc = CollectionDescriptor      
+      objDesc.isCollection = true      
+   else 
+      objDesc = ObjectDescriptor
+      objDesc.isCollection = false
+
    objDesc.typeName = backwardsTypeName objType.name
    objDesc.reflectId = reflectId
    if hasUuid obj
@@ -161,6 +213,23 @@ makeDescriptor
    if gt remainingDepth 0
       objDesc.simpleAttrs = getSimpleAttributes reflectId
       objDesc.includesSimpleAttrs = true
+
+      if objDesc.isCollection
+         getCollectionMembers objDesc
+         collType minArity maxArity keyIsObject valIsObject keyType valType keys vals =
+            getCollectionInfo reflectId
+
+         objDesc.collectionKind = collType
+         objDesc.minArity = minArity
+         objDesc.maxArity = maxArity
+         objDesc.keyIsObject = keyIsObject 
+         objDesc.valIsObject = valIsObject
+         objDesc.keyType = keyType
+         objDesc.valType = valType
+         objDesc.keys = keys
+         objDesc.vals = vals
+         objDesc.includesCollectionMembers = true
+
    if gt remainingDepth 1
       objDesc.complexAttrs = getComplexAttributes reflectId    
       objDesc.includesComplexAttrs = true  
