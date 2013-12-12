@@ -70,11 +70,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#numCodePoints" class="alt">numCodePoints</a><br/>
   <a href="#replace">replace</a><br/>
 	<a href="#slice" class="alt">slice</a><br/>			
-  <a href="#title">title</a><br/>   
-  <a href="#trimSpace" class="alt">trimSpace</a><br/>
-  <a href="#upper">upper</a><br/>
-  <a href="#urlPathPartEncode" class="alt">urlPathPartEncode</a><br/>
-  <a href="#urlPathPartDecode">urlPathPartDecode</a><br/>
+  <a href="#split">split</a><br/>     
+  <a href="#title" class="alt">title</a><br/>   
+  <a href="#trimSpace">trimSpace</a><br/>
+  <a href="#upper" class="alt">upper</a><br/>
+  <a href="#urlPathPartEncode">urlPathPartEncode</a><br/>
+  <a href="#urlPathPartDecode" class="alt">urlPathPartDecode</a><br/>
 </div>  
 <div id="content_manual">
 <a name="Summary"><h3>Summary</h3></a>
@@ -131,6 +132,9 @@ As well as the methods in the strings package, listed below, relish also provide
 </tr>
 <tr>
 	<td><a href="#slice">slice</a></td><td> - substring of the string, specified by an inclusive start and (optional) exclusive end index</td>
+</tr>
+<tr>
+  <td><a href="#split">split</a></td><td> - splits the string into a list of substrings that were separated by the specified separator.</td>
 </tr>
 <tr>
 	<td><a href="#title">title</a></td><td> - a copy of the string with first letters of words title-cased and other letters lowercased</td>
@@ -327,6 +331,26 @@ slice s String start Int > String
 """
  Returns the substring of s beginning at index 'start' (counting in bytes) and including all
  subsequent bytes of the string.
+"""
+
+
+<a name="slice">slice s String start Int end Int > String</a>
+"""
+ Returns the substring of s beginning at index 'start' (counting in bytes) and ending just before 'end'.
+ If 'end' is negative, the substring ends at the position such that the -'end' last bytes of
+ the original string are not included in the substring. So to remove ".doc" use 
+ slice fileName 0 -4
+"""
+
+
+split s String sep String > [] String
+"""
+ Returns the list of substrings of s which were separated in s by the specified separator.
+ If the separator occurs at the beginning of s, an empty string is the first list member.
+ If the separator occurs at the end of s, an empty string is the last list member.
+ If the separator does not occur in s, returns a list containing s.
+ If the separator is the empty string "", s is split into each UTF-8 sequence 
+ (i.e. each unicode character)
 """
 
 

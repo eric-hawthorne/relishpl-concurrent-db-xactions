@@ -4109,10 +4109,11 @@ func builtinStringFill(th InterpreterThread, objects []RObject) []RObject {
 		}
         rterr.Stopf("fill: String '%s' contains %d %%s slots but there are %d objects to fill slots.",snippet, nSlots, nFillers)
 	} 
+    s = strings.Replace(s,"%s","|!@|?!|@?|",-1)
 
 	for i := 1; i <= nSlots; i++ {
        filler := objects[i].String()
-       s = strings.Replace(s,"%s", filler, 1)
+       s = strings.Replace(s,"|!@|?!|@?|", filler, 1)
 	}
     return []RObject{String(s)}
 }
