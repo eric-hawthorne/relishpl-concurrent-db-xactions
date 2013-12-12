@@ -1,14 +1,41 @@
-RELISH INSTALLATION AND BUILD INSTRUCTIONS
-==========================================
+RELISH INSTALLATION NOTES - BINARY DISTRIBUTION
+===============================================
 
-BINARY DISTRIBUTION
+The following notes are in moderately technical linux/unix administration language.
+They are included to help you cure any issues you encounter in trying to follow
+the list of installation command-line commands given in the main DOWNLOAD page.
+That list of commands should be sufficient, but you can check here if you need 
+motivating discussion or further explanation of each installation step.
 
 
-1. Make sure it is the correct binary distribution for your platform.
-  Choices are: darwin_amd64    - for Apple Macs
-               linux_amd64     - for 64-bit linux OS installs on recent PC hardware
-               linux_386       - for 32-bit linux OS installs on Atom subnotebooks/netbooks 
-                                 or older PC hardware
+1. Make sure you download the correct binary distribution for your computing platform.
+   Choices are: darwin_amd64    - for Apple Macs
+                linux_amd64     - for 64-bit linux OS installs on recent PC hardware
+                linux_386       - for 32-bit linux OS installs on Atom subnotebooks/netbooks 
+                                  or older PC hardware or 32-bit linux virtual machines (client slices) on a virtualized server.
+
+   Determining whether you have 64-bit linux or 32-bit:
+   You'd think this would be straightforward. But here are some suggested ways, thanks to linuxquestions.org:
+   a) getconf LONG_BIT will show you the number of bits in a LONG, which typically matches the architecture type of the OS (i.e. 32 bits for a 32 bit OS and 64 bits for a 64 bit OS).
+   b) uname -a
+   Output may look somewhat like: Linux <hostname> 3.2.0-35-generic #55-Ubuntu SMP Wed Dec 5 17:42:16 UTC 2012 x86_64 x86_64 x86_64 GNU/Linux
+   for 64-bit Linux, 
+   versus something like:
+   Linux <hostname> 2.6.24-16-server #1 SMP Thu Apr 10 13:58:00 UTC 2008 i686 GNU/Linux
+   or
+   Linux <hostname> 2.6.9-22.ELsmp #1 SMP Mon Sep 19 18:32:14 EDT 2005 i686 athlon i386 GNU/Linux
+   for 32-bit Linux
+   c) vi /boot/config-$(uname -r)
+   If 64-bit Linux, this kernel configuration file should contain:
+   CONFIG_X86_64=y
+   CONFIG_64BIT=y
+   CONFIG_X86=y
+
+   Windows is not a supported platform for relish yet. Maybe once Windows adopts sensible filesystem path conventions, it will be,
+   or maybe after the grumbling developer generalizes all the path-convention dependent code in relish. 
+   relish is currently mostly for developing server-side internet applications, and why would you want
+   to be doing that on a Windows PC anyway? 
+
 
 Steps for Linux    (See Apple Mac steps below this subsection)
 ---------------
@@ -29,29 +56,29 @@ Steps for Linux    (See Apple Mac steps below this subsection)
 4. Create your desired relish home directory.
    Reference is made from here on in these instructions to a relish home directory. 
    You must CREATE this directory manually if you do not already have one. 
-   Several standard locations are recognized by the relish tools, so that if you
-   choose to create a standard-location relish home directory you don't have to set
-   an environment variable to tell relish where the relish home is.
 
-   Standard locations (create one of these directories if it does not exist already):
+   It is strongly recommended that you stick to using either a direct subdirectory
+   of your home directory i.e. ~/relish or else create /opt/relish as your relish home.
 
-   sudo mkdir /opt/relish
-   sudo chmod go+w /opt/relish     - make the relish home directory writable by other than root
-         
-   mkdir ~/relish             - creates relish subdirectory of your user home dir e.g. /home/eric/relish   
+   Some relish tools in future MAY depend on these locations. In any case,
+   difference is dangerous (because complexity of a whole system generally increases 
+   as an exponential function of the number of differences in different parts)
+   so why do you want to be different if you don't have to be?
 
-   sudo mkdir /usr/local/lib/relish
-   sudo chmod go+w /usr/local/lib/relish     - make the relish home directory writable by other than root
+5. Extract the downloaded binary distribution tarball in the relish directory you
+   created, as described in the list of installation commands in the main DOWNLOAD page.
 
-   sudo mkdir /usr/local/relish  
-   sudo chmod go+w /usr/local/relish     - make the relish home directory writable by other than root
+6. As root, run the ./install.sh script in the relish directory. This will place
+   links in /usr/local/bin to the relish command and other commands you need to develop
+   and run relish programs. /usr/local/bin is already in your PATH, so after this,
+   you are able to run the command: relish ... to run a relish program.
+   If you prefer, you can append ~/relish/bin (or /opt/relish/bin) to your PATH
+   environment variable in your ~/.bashrc or similar file, instead of running ./install.sh
 
-   If you choose a different directory, be aware that the directory must be named relish.
-   Also, in this case, you must edit your ~/.profile or ~/.bashrc file or similar to add a line that sets an 
-   environment variable to tell relish tools where to find your relish home:
-   Add a line like this to your profile file:
+7.    
 
-   export RELISH_HOME=/my/random/location/relish
+
+
 
    We will use /opt/relish as an example relish home directory in further instruction steps
 
