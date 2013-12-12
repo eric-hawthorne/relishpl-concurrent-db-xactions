@@ -1,0 +1,216 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web/playground 
+
+""" 
+ init.rel
+
+ Ensures that simple program examples are defined so they can be tried in the playground.
+"""
+
+
+import
+   strings
+
+
+ensureExampleSimplePrograms
+"""
+ Ensures that simple program examples are defined so they can be tried in the playground.
+ These examples should correspond to the simple programs defined in the 
+ shared.relish.pl2012/simple_programs artifact.
+ 
+ 
+"""
+   if not exists "example1_output"
+      p = Artifact
+      p.name = "example1_output"
+      p.description "Demonstrates the print statement."
+      p.importsFileContent = "" 
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+print “Hello, 世界”      
+"""
+      p.consoleOutput = ""    
+      dub p "example1_output"
+
+
+   if not exists "example2_loops"
+      p = Artifact
+      p.name = "example2_loops"
+      p.description "Demonstrates loop and enumeration of collection elements."
+      p.importsFileContent = """ 
+strings      
+      """
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+friends = [“john” “pat” “gary” “michael”]
+for i name in friends
+   print fill "iteration %s is %s" i name    
+"""
+      p.consoleOutput = ""    
+      dub p "example2_loops"
+
+
+   if not exists "example3_fibonacci"
+      p = Artifact
+      p.name = "example3_fibonacci"
+      p.description "Demonstrates while loop and multiple-assignment statement."
+      p.importsFileContent = """ 
+strings      
+      """
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+parents babies = 1 1 
+while lt babies 100
+   print fill “This generation has %s babies” babies
+   parents babies = babies 
+                    plus parents babies  
+"""
+      p.consoleOutput = ""    
+      dub p "example3_fibonacci"
+
+
+   if not exists "example4_methods"
+      p = Artifact
+      p.name = "example4_methods"
+      p.description "Demonstrates method declaration and method call."
+      p.importsFileContent = "" 
+      p.constantsFileContent = "" 
+      p.typesFileContent = ""
+      p.methodsFileContent = """
+greet name String 
+\"\"\"
+ Issue a greeting to the named person.
+\"\"\"
+   print “Hello” name  
+"""       
+      p.mainFileContent = """
+greet “Jack”
+greet “Jill”
+"""
+      p.consoleOutput = ""    
+      dub p "example4_methods"
+
+
+   if not exists "example5_maps"
+      p = Artifact
+      p.name = "example5_maps"
+      p.description "Demonstrates maps and map literals with a 'for' generator inside."
+      p.importsFileContent = """ 
+strings      
+      """ 
+      p.constantsFileContent = "" 
+      p.typesFileContent = ""
+      p.methodsFileContent = ""      
+      p.mainFileContent = """
+prices = {"apple"=>0.40 "banana"=>0.50 "orange"=>0.45}
+myPurchase = {
+                "apple"  => 1
+                "banana" => 6
+             }
+groceryBill = sum [
+                     for fruit in myPurchase
+                        times prices[! fruit] myPurchase[! fruit]
+                  ]Float
+
+print fill "I owe the grocer $%s" groceryBill
+
+roundFruitPrices = {
+                      for fruit price in prices
+                         if not eq fruit "banana"
+                            fruit 
+                            price
+                   }String > Float
+
+print len roundFruitPrices
+"""
+      p.consoleOutput = ""    
+      dub p "example5_maps"
+
+
+   if not exists "example6_constants_strings"
+      p = Artifact
+      p.name = "example6_constants_strings"
+      p.description "Demonstrates constants, multi-line strings, and while loops."
+      p.importsFileContent = """ 
+strings      
+"""
+      p.constantsFileContent = """
+REFRAIN = \"\"\"
+%s bottles of beer on the wall,
+%s bottles of beer,
+take one down, pass it around,
+%s bottles of beer on the wall!
+\"\"\"   
+"""    
+      p.typesFileContent = ""
+      p.methodsFileContent = ""      
+      p.mainFileContent = """
+bottlesOfBeer = 99
+while gt bottlesOfBeer 1
+   print fill REFRAIN bottlesOfBeer bottlesOfBeer (minus bottlesOfBeer 1)
+   bottlesOfBeer = minus bottlesOfBeer 1
+"""
+      p.consoleOutput = ""    
+      dub p "example6_constants_strings"
+
+
+   if not exists "example7_datatypes"
+      p = Artifact
+      p.name = "example7_datatypes"
+      p.description "Demonstrates programmer-defined data types, and constructor functions."
+      p.importsFileContent = "" 
+      p.constantsFileContent = ""
+      p.typesFileContent = """
+BankAccount
+\"\"\"
+ A simple bank account data-type.
+ Has one attribute; its balance.
+\"\"\"
+   balance Float
+"""      
+      p.methodsFileContent = """
+initBankAccount acc BankAccount initialBalance Float > BankAccount
+\"\"\"
+ Constructor method for a bank account. Gives it an initial balance.
+\"\"\"
+   acc.balance = initialBalance
+   => acc
+
+
+deposit acc BankAccount amount Float
+\"\"\"
+ Deposit an amount of money in the bank account.
+\"\"\"
+   acc.balance = plus acc.balance amount
+
+
+withdraw acc BankAccount amount Float
+\"\"\"
+ Withdraw an amount of money from the bank account.
+\"\"\"
+   acc.balance = minus acc.balance amount
+
+
+overdrawn acc BankAccount > Bool
+\"\"\"
+ Return true if the bank account has a negative balance.
+ Return false otherwise.
+\"\"\"
+   => lt acc.balance 0.0      
+"""      
+      p.mainFileContent = """
+myAccount = BankAccount 15
+withdraw myAccount 5
+print myAccount.balance      
+"""
+      p.consoleOutput = ""    
+      dub p "example7_datatypes"   
+   
+
