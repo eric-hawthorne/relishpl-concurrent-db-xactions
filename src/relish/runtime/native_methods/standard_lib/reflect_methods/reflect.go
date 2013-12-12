@@ -1418,18 +1418,69 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
-         collType minArity maxArity keyIsObject valIsObject keyType valType keys vals =
-            getCollectionInfo reflectId
+func getCollectionInfo(th InterpreterThread, objects []RObject) []RObject {
 
-   collectionKind String  // "Map" "List" "Set"
-   minArity Int
-   maxArity Int
-   keyIsObject Bool
-   valIsObject Bool
-   keyType String
-   valType String
-   keys 0 N [] String  // Will be empty if not a map  
-   vals 0 N [] String  
+	reflectId := string(objects[0].(String))	
+	// fmt.Println(reflectId)
+    obj := objectByReflectId1(reflectId)
+
+    coll, isColl := obj.(RCollection)
+    if ! isColl {
+       panic("getCollectionInfo called on a non-collection object")
+    }
+
+    keyList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }    
+    
+    valList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    if err != nil {
+	   panic(err)
+    }
+    
+    collectionKind, minArity, maxArity, keyIsObject, valIsObject, keyType, valType, keys, vals := getCollectionInfo1(coll)
+    
+    if collectionKind == "Map" {
+       if keyIsObject {
+          for _,key := range keys {
+             keyList.AddSimple(String(ensureReflectId1(key)))
+          }       
+       } else {
+          for _,key := range keys {
+             keyList.AddSimple(String(key.String()))
+          }
+       }
+    }
+    if valIsObject {
+       for _,val := range vals {
+          valList.AddSimple(String(ensureReflectId1(val)))
+       }       
+    } else {
+       for _,val := range vals {
+          valList.AddSimple(String(val.String()))
+       }
+    }    
+    
+	return []RObject{String(collectionKind),
+	                 Int(minArity),
+	                 Int(maxArity),
+	                 Bool(keyIsObject),
+	                 Bool(valIsObject),
+	                 String(keyType),
+	                 String(valType),
+	                 keyList, 
+	                 valList}    
+}
+    
+func getCollectionInfo1(coll RCollection)
+    (collectionKind string, 
+     minArity int, maxArity int, 
+     keyIsObject bool, valIsObject bool, 
+     keyType string, valType string, 
+     keys []RObject, vals []RObject) {
+
+}
             
 
 /*
