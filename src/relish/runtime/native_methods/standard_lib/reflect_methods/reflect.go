@@ -1470,16 +1470,17 @@ func getCollectionInfo(th InterpreterThread, objects []RObject) []RObject {
 	                 String(keyType),
 	                 String(valType),
 	                 keyList, 
-	                 valList}    
+	                 valList,
+	                }    
 }
     
-func getCollectionInfo1(coll RCollection)
-    (collectionKind string, 
+
+func getCollectionInfo1(coll RCollection) (collectionKind string, 
      minArity int, maxArity int, 
      keyIsObject bool, valIsObject bool, 
      keyType string, valType string, 
      keys []RObject, vals []RObject) {
-
+   return
 }
             
 

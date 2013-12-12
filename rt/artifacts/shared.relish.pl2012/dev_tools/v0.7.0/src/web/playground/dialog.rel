@@ -229,7 +229,7 @@ Error when invoking relish program %s in -explore mode:
          originAndArtifact = cat "local.relish.pl2012/" artfctName
          outputBytes err = exec "relish" "-quiet" originAndArtifact "playground"
 
-         artfct.consoleOutput = String outputBytes
+         artfct.consoleOutput = fixErrorLocation String outputBytes
 
          if and err (neq err "exit status 1")
             artfct.consoleOutput = cat artfct.consoleOutput "\n" err

@@ -24,13 +24,13 @@ ensureExampleSimplePrograms
    if not exists "example1_output"
       p = Artifact
       p.name = "example1_output"
-      p.description "Demonstrates the print statement."
+      p.description = "Demonstrates the print statement."
       p.importsFileContent = "" 
       p.constantsFileContent = "" 
       p.typesFileContent = "" 
       p.methodsFileContent = "" 
       p.mainFileContent = """
-print “Hello, 世界”      
+print "Hello, 世界"      
 """
       p.consoleOutput = ""    
       dub p "example1_output"
@@ -39,15 +39,15 @@ print “Hello, 世界”
    if not exists "example2_loops"
       p = Artifact
       p.name = "example2_loops"
-      p.description "Demonstrates loop and enumeration of collection elements."
+      p.description = "Demonstrates loop and enumeration of collection elements."
       p.importsFileContent = """ 
 strings      
-      """
+"""
       p.constantsFileContent = "" 
       p.typesFileContent = "" 
       p.methodsFileContent = "" 
       p.mainFileContent = """
-friends = [“john” “pat” “gary” “michael”]
+friends = ["john" "pat" "gary" "michael"]
 for i name in friends
    print fill "iteration %s is %s" i name    
 """
@@ -58,17 +58,17 @@ for i name in friends
    if not exists "example3_fibonacci"
       p = Artifact
       p.name = "example3_fibonacci"
-      p.description "Demonstrates while loop and multiple-assignment statement."
+      p.description = "Demonstrates while loop and multiple-assignment statement."
       p.importsFileContent = """ 
 strings      
-      """
+"""
       p.constantsFileContent = "" 
       p.typesFileContent = "" 
       p.methodsFileContent = "" 
       p.mainFileContent = """
 parents babies = 1 1 
 while lt babies 100
-   print fill “This generation has %s babies” babies
+   print fill "This generation has %s babies" babies
    parents babies = babies 
                     plus parents babies  
 """
@@ -79,20 +79,22 @@ while lt babies 100
    if not exists "example4_methods"
       p = Artifact
       p.name = "example4_methods"
-      p.description "Demonstrates method declaration and method call."
+      p.description = "Demonstrates method declaration and method call."
       p.importsFileContent = "" 
       p.constantsFileContent = "" 
       p.typesFileContent = ""
-      p.methodsFileContent = """
+      p.methodsFileContent = fill """
 greet name String 
-\"\"\"
+%s
  Issue a greeting to the named person.
-\"\"\"
-   print “Hello” name  
-"""       
+%s
+   print "Hello" name  
+""" 
+                                  "\"\"\"" 
+                                  "\"\"\""
       p.mainFileContent = """
-greet “Jack”
-greet “Jill”
+greet "Jack"
+greet "Jill"
 """
       p.consoleOutput = ""    
       dub p "example4_methods"
@@ -101,10 +103,10 @@ greet “Jill”
    if not exists "example5_maps"
       p = Artifact
       p.name = "example5_maps"
-      p.description "Demonstrates maps and map literals with a 'for' generator inside."
+      p.description = "Demonstrates maps and map literals with a 'for' generator inside."
       p.importsFileContent = """ 
 strings      
-      """ 
+""" 
       p.constantsFileContent = "" 
       p.typesFileContent = ""
       p.methodsFileContent = ""      
@@ -137,24 +139,34 @@ print len roundFruitPrices
    if not exists "example6_constants_strings"
       p = Artifact
       p.name = "example6_constants_strings"
-      p.description "Demonstrates constants, multi-line strings, and while loops."
+      p.description = "Demonstrates constants, multi-line strings, and while loops."
       p.importsFileContent = """ 
 strings      
 """
-      p.constantsFileContent = """
-REFRAIN = \"\"\"
+      consts = fill """
+REFRAIN = %s
 %s bottles of beer on the wall,
 %s bottles of beer,
 take one down, pass it around,
 %s bottles of beer on the wall!
-\"\"\"   
+%s   
 """    
+                    "\"\"\"" 
+                    "%s"
+                    "%s"             
+                    "%s"
+                    "\"\"\""
+      // print consts
+      p.constantsFileContent = consts                                    
       p.typesFileContent = ""
       p.methodsFileContent = ""      
       p.mainFileContent = """
 bottlesOfBeer = 99
 while gt bottlesOfBeer 1
-   print fill REFRAIN bottlesOfBeer bottlesOfBeer (minus bottlesOfBeer 1)
+   print fill REFRAIN 
+              bottlesOfBeer 
+              bottlesOfBeer 
+              minus bottlesOfBeer 1
    bottlesOfBeer = minus bottlesOfBeer 1
 """
       p.consoleOutput = ""    
@@ -164,50 +176,61 @@ while gt bottlesOfBeer 1
    if not exists "example7_datatypes"
       p = Artifact
       p.name = "example7_datatypes"
-      p.description "Demonstrates programmer-defined data types, and constructor functions."
+      p.description = "Demonstrates programmer-defined data types, and constructor functions."
       p.importsFileContent = "" 
       p.constantsFileContent = ""
-      p.typesFileContent = """
+      p.typesFileContent = fill """
 BankAccount
-\"\"\"
+%s
  A simple bank account data-type.
  Has one attribute; its balance.
-\"\"\"
+%s
    balance Float
-"""      
-      p.methodsFileContent = """
-initBankAccount acc BankAccount initialBalance Float > BankAccount
-\"\"\"
+"""   
+                                "\"\"\"" 
+                                "\"\"\""  
+      p.methodsFileContent = fill """
+initBankAccount acc BankAccount initialBalance Float 
+> BankAccount
+%s
  Constructor method for a bank account. Gives it an initial balance.
-\"\"\"
+%s
    acc.balance = initialBalance
    => acc
 
 
 deposit acc BankAccount amount Float
-\"\"\"
+%s
  Deposit an amount of money in the bank account.
-\"\"\"
+%s
    acc.balance = plus acc.balance amount
 
 
 withdraw acc BankAccount amount Float
-\"\"\"
+%s
  Withdraw an amount of money from the bank account.
-\"\"\"
+%s
    acc.balance = minus acc.balance amount
 
 
 overdrawn acc BankAccount > Bool
-\"\"\"
+%s
  Return true if the bank account has a negative balance.
  Return false otherwise.
-\"\"\"
+%s
    => lt acc.balance 0.0      
 """      
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""   
       p.mainFileContent = """
-myAccount = BankAccount 15
-withdraw myAccount 5
+myAccount = BankAccount 15.0
+withdraw myAccount 5.0
 print myAccount.balance      
 """
       p.consoleOutput = ""    

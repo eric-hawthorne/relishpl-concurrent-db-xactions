@@ -87,18 +87,18 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <br/>
 <a name="Output"><h3>Output</h3></a>
 <code><pre>
-   print “Hello, 世界”
+   print "Hello, 世界"
 </pre></code>
 <br/>
 <a name="InputAssignment"><h3>Input, assignment</h3></a>
 <code><pre>
-   name = input “What is your name?\n”
-   print fill “Hi, %s.” name
+   name = input "What is your name?\n"
+   print fill "Hi, %s." name
 </pre></code>
 <br/>
 <a name="LoopsEnumeration"><h3>For loop, built-in enumeration of elements of a collection</h3></a>
 <code><pre>
-   friends = [“john” “pat” “gary” “michael”]
+   friends = ["john" "pat" "gary" "michael"]
    for i name in friends
       print fill "iteration %s is %s" i name
 </pre></code>
@@ -108,7 +108,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <code><pre>
    parents babies = 1 1 
    while lt babies 100
-      print fill “This generation has %s babies” babies
+      print fill "This generation has %s babies" babies
       parents babies = babies 
                        plus parents babies
 </pre></code>
@@ -119,15 +119,15 @@ greet name String
 """
  Issue a greeting to the named person.
 """
-   print “Hello” name
+   print "Hello" name
 
 
 main
 """
  Be polite.
 """
-   greet “Jack”
-   greet “Jill”
+   greet "Jack"
+   greet "Jill"
 </pre></code>
 <br/>
 <!--
@@ -307,8 +307,8 @@ main
 """
  Create, modify and check a bank account.
 """
-   myAccount = BankAccount 15
-   withdraw myAccount 5
+   myAccount = BankAccount 15.0
+   withdraw myAccount 5.0
    print myAccount.balance
 </pre></code>
 <br/>
