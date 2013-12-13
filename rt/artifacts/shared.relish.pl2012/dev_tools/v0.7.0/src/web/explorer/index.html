@@ -486,6 +486,96 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                  }
               }
            }
+
+
+/*
+              isCollection Bool
+              includesCollectionMembers Bool
+              collectionKind String  // "Map" "List" "Set"
+              minArity Int
+              maxArity Int
+              keyIsObject Bool
+              valIsObject Bool
+              keyType String
+              valType String
+              keys 0 N [] String  // Will be empty if not a map  
+              vals 0 N [] String
+*/
+           if (obj.isCollection) {
+              // display collection elements
+           
+              var collectionStartingHtml = "<div class='complexAttr'>";            
+              var startedCollection = false
+                   
+              var nextDepth = depth - 1;            
+              if (obj.vals != null) {
+                 var nVals = obj.vals.length;
+                 if (nVals > maxNestedListLength) {
+                    nextDepth = 1;  // A large collection does not show subdivided elements.
+                 }   
+              
+                 for (var j = 0; j < nVals; j++ ) {
+                   var val = obj.vals[j];
+                   if (obj.valIsObject) {    
+                      if (! startedCollection) {
+                         htmlText += collectionStartingHtml;                             
+                         startedCollection = true;
+                      }
+                      if (obj.collectionKind == "Map") {
+                         var key = obj.keys[j]                         
+                         if (obj.keyIsObject) {
+                             htmlText += "<div class='ordinal'>" 
+                                         + 
+                                         displayTree(objects,key,0,coloringDepth-1,visitedObjects,reflectId)
+                                         + 
+                                         " =&gt;  &nbsp; &nbsp; <br/>";                                      
+                         } else {
+                             htmlText += "<div class='ordinal'>" 
+                                         + primitiveValHtml(obj.keyType, key) 
+                                         + " =&gt; &nbsp; &nbsp; <br/>";                                                         
+                         }                                                
+                      } else {
+                          htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                      } 
+                      if (j > maxElaboratedListLength) { 
+                         nextDepth = 0;
+                      }                                     
+                      htmlText += displayTree(objects,val,nextDepth,coloringDepth-1,visitedObjects,reflectId);
+
+                      htmlText += "</div>";
+  
+                   } else {
+                      if (! startedCollection) {
+                         htmlText += collectionStartingHtml;       
+                         startedCollection = true;
+                      }                                                  
+                      if (obj.collectionKind == "Map") {
+                         var key = obj.keys[j]
+                         if (obj.keyIsObject) {
+                             htmlText += "<div class='ordinal'>" 
+                                         + 
+                                         displayTree(objects,key,0,coloringDepth-1,visitedObjects,reflectId)
+                                         + 
+                                         " =&gt; &nbsp; &nbsp; <br/>";                                      
+                         } else {
+                             htmlText += "<div class='ordinal'>" 
+                                         + primitiveValHtml(obj.keyType, key) 
+                                         + " =&gt; &nbsp; &nbsp; <br/>";                                                         
+                         }                                                
+                      } else {
+                          htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                      }                               
+                      htmlText += primitiveValHtml(obj.valType, val);
+
+                      htmlText += "&nbsp; </div>";                  
+                   }
+                 }
+              }
+              if (startedCollection) {
+                 htmlText += "</div>"; 
+              }
+           }
+
        }
 
        htmlText += "<div class='objNodeBottom'></div></div>";
@@ -502,6 +592,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
        if (commaPos > 0) {
           return typeName.substring(0,commaPos);
        }
+       return typeName;
     }
 
 

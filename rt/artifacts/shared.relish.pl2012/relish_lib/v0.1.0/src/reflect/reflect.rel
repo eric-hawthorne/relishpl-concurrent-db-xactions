@@ -215,7 +215,7 @@ makeDescriptor
       objDesc.includesSimpleAttrs = true
 
       if objDesc.isCollection
-         getCollectionMembers objDesc
+
          collType minArity maxArity keyIsObject valIsObject keyType valType keys vals =
             getCollectionInfo reflectId
 

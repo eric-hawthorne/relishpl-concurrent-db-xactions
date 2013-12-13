@@ -399,6 +399,18 @@ func InitReflectMethods() {
 	getComplexAttributesMethod.PrimitiveCode = getComplexAttributes
 
 
+	getCollectionInfoMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"getCollectionInfo", 
+		                                    []string{"reflectId"}, 
+		                                    []string{"String"}, 
+		                                    []string{"String","Int","Int","Bool","Bool","String","String","List_of_String","List_of_String"}, 
+		                                    false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	getCollectionInfoMethod.PrimitiveCode = getCollectionInfo
+
+
+
 
 	pauseMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/reflect",nil,"pause", 
 		                                    []string{}, 
@@ -1439,7 +1451,7 @@ func getCollectionInfo(th InterpreterThread, objects []RObject) []RObject {
 	   panic(err)
     }
     
-    collectionKind, minArity, maxArity, keyIsObject, valIsObject, keyType, valType, keys, vals := getCollectionInfo1(coll)
+    collectionKind, minArity, maxArity, keyIsObject, valIsObject, keyType, valType, keys, vals := getCollectionInfo1(th, coll)
     
     if collectionKind == "Map" {
        if keyIsObject {
@@ -1475,12 +1487,38 @@ func getCollectionInfo(th InterpreterThread, objects []RObject) []RObject {
 }
     
 
-func getCollectionInfo1(coll RCollection) (collectionKind string, 
-     minArity int, maxArity int, 
+func getCollectionInfo1(th InterpreterThread, coll RCollection) (collectionKind string, 
+     minArity int64, maxArity int64, 
      keyIsObject bool, valIsObject bool, 
      keyType string, valType string, 
      keys []RObject, vals []RObject) {
-   return
+        
+    minArity = coll.MinCard() 
+    maxArity = coll.MaxCard() 
+	 valType = coll.ElementType().Name   
+    valIsObject = ! coll.ElementType().IsPrimitive	     
+    if coll.IsMap() {
+       collectionKind = "Map"
+       theMap := coll.(Map)
+       keyType = theMap.KeyType().Name
+       keyIsObject = ! theMap.KeyType().IsPrimitive
+       for key := range coll.Iter(th) {
+          keys = append(keys, key)
+       	 val,_ := theMap.Get(key)       
+          vals = append(vals, val)           
+       }  
+    } else if coll.IsSet() {
+       collectionKind = "Set"
+       for val := range coll.Iter(th) {
+          vals = append(vals, val)          
+       }       
+    } else {
+       collectionKind = "List"
+       for val := range coll.Iter(th) {
+          vals = append(vals, val)
+       }       
+    }                
+    return
 }
             
 
