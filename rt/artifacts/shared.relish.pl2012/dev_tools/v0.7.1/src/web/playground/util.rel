@@ -15,25 +15,6 @@ import
    env
 
 
-
-
-
-IMPORTS_FILE_HEADER = """
-origin   local.relish.pl2012
-artifact %s
-package  playground
-
-%s 
- imports.rel
-
- List of imported packages.
-%s
-
-
-import
-"""
-
-
 CONSTANTS_FILE_HEADER = """
 origin   local.relish.pl2012
 artifact %s
@@ -91,6 +72,7 @@ package  playground
 %s
 
 
+%s
 main
 %s
  The main program.
@@ -126,55 +108,60 @@ metadataFile artfct String description String > String
            description
 
 
-fixImports raw String artfct String > String
+importSection raw String > String
 """
- Indents each line of the content, and prepends the file header info and a line with "import"
+ Generates an import section to insert into another source code file.
+ If there are no imports, returns the empty string.
 """
-   => cat fill IMPORTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
-          indentWithSpaces 3 (replace raw "\r" "")
-          """
+   if raw
+      => fill """
+import    
+%s
 
 
-
-DUMMY = "A dummy constant is here as a kludge until source code files are allowed to only have import."
 """
+              indentWithSpaces 3 (replace raw "\r" "")              
+   else 
+      => ""
 
 
-fixConstants raw String artfct String > String
+fixConstants raw String artfct String imports String > String
 """
  Prepends the file header info.
 """
    => cat fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          importSection imports
           replace raw "\r" ""
 
 
-fixTypes raw String artfct String > String
+fixTypes raw String artfct String imports String > String
 """
  Prepends the file header info.
 """
    => cat fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          importSection imports   
           replace raw "\r" ""
 
 
 
-fixMethods raw String artfct String > String
+fixMethods raw String artfct String imports String > String
 """
  Prepends the file header info.
 """
    => cat fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          importSection imports   
           replace raw "\r" ""
 
 
-fixMain raw String artfct String > String
+fixMain raw String artfct String imports String > String
 """
  Prepends the file header info.
 """
-   => cat fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" "\"\"\"" "\"\"\""
+   => cat fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" (importSection imports) "\"\"\"" "\"\"\""   
           indentWithSpaces 3 (replace raw "\r" "")
 
 
-
-fixErrorLocation output String > String
+fixErrorLocation output String importRows Int > String
 """
  Given relish program execution output, determines if there is an error message in it.
  If so, repairs the line number reference to account for the hidden file headers.
@@ -182,45 +169,86 @@ fixErrorLocation output String > String
    // print cat "|" output "|"
    if hasPrefix output "\nplayground/main.rel:"
       row col remainder = errorMessageParts output
-      => cat "Statements of Main Method:"
-             minus row 15
-             ":"
-             minus col 3
-             ":"
-             remainder
-   elif hasPrefix output "\nplayground/imports.rel:"
-      row col remainder = errorMessageParts output
-      => cat "Imports:"
-             minus row 12
-             ":"
-             minus col 3
-             ":"
-             remainder
+      if not importRows
+         importRows = 1
+      headerRows = plus 15 importRows
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 12
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else
+         => cat "Statements of Main Method:"
+                minus row headerRows
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder
    elif hasPrefix output "\nplayground/constants.rel:"
       row col remainder = errorMessageParts output
-      => cat "Constants:"
-             minus row 11
-             ":"
-             col
-             ":"
-             remainder       
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else
+         => cat "Constants:"
+                minus row headerRows
+                ":"
+                col
+                ":"
+                remainder       
    elif hasPrefix output "\nplayground/types_and_relations.rel:"
       row col remainder = errorMessageParts output
-      => cat "Data Types and Relations:"
-             minus row 11
-             ":"
-             col
-             ":"
-             remainder                
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else        
+         => cat "Data Types and Relations:"
+                minus row 11
+                ":"
+                col
+                ":"
+                remainder                
    elif hasPrefix output "\nplayground/methods.rel:"
       row col remainder = errorMessageParts output
-      => cat "Methods:"
-             minus row 11
-             ":"
-             col
-             ":"
-             remainder                      
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else          
+         => cat "Methods:"
+                minus row 11
+                ":"
+                col
+                ":"
+                remainder                      
    => output
+
+
+shiftLeft col Int cols Int > Int
+"""
+ Helper for fixErrorLocation. Fixes column position of error message to account
+ for different formatting in playground text areas.
+"""
+   if lte col cols
+      => 1
+   else
+      => minus col cols  
 
 
 errorMessageParts output String > row Int col Int remainder String

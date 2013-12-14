@@ -138,22 +138,19 @@ playAction
    write file metaContent
    close file
 
-   path = cat root "/imports.rel"  
-   if imports
-      file err = files.File path "w"
-      if err
-         => errf err
-      write file (fixImports imports artfctName)
-      close file
+   importLines = split imports "\n"
+   nImports = len importLines
+   if nImports
+      importRows = plus nImports 3
    else
-      remove path
+      importRows = 0 
 
    path = cat root "/constants.rel"  
    if constants
       file err = files.File path "w"
       if err
          => errf err
-      write file (fixConstants constants artfctName)
+      write file (fixConstants constants artfctName imports)
       close file
    else
       remove path
@@ -163,7 +160,7 @@ playAction
       file err = files.File path "w"
       if err
          => errf err
-      write file (fixTypes types artfctName)
+      write file (fixTypes types artfctName imports)
       close file
    else
       remove path
@@ -173,7 +170,7 @@ playAction
       file err = files.File path "w"
       if err
          => errf err
-      write file (fixMethods methods artfctName)
+      write file (fixMethods methods artfctName imports)
       close file
    else
       remove path
@@ -183,7 +180,7 @@ playAction
       file err = files.File path "w"
       if err
          => errf err
-      write file (fixMain main artfctName)
+      write file (fixMain main artfctName imports)
       close file
    else
       remove path
@@ -232,7 +229,7 @@ Error when invoking relish program %s in -explore mode:
          originAndArtifact = cat "local.relish.pl2012/" artfctName
          outputBytes err = exec "relish" "-quiet" originAndArtifact "playground"
 
-         artfct.consoleOutput = fixErrorLocation String outputBytes
+         artfct.consoleOutput = fixErrorLocation (String outputBytes) importRows
 
          if and err (neq err "exit status 1")
             artfct.consoleOutput = cat artfct.consoleOutput "\n" err
