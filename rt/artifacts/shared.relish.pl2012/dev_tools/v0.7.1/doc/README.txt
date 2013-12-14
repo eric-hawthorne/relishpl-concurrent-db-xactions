@@ -124,7 +124,7 @@ data explorer, so the explorer will display the object and its
 associated object network.
 
 Find Persistent or Non-Persistent Objects by Name
-=================================================
+-------------------------------------------------
 
 Some persistent data objects in the target program were persisted by being dubbed
 with a name. dub myObject "Official Name"
@@ -192,8 +192,6 @@ until either it ends or encounters the next pause/explore statement.
 
 
 
-
-
 ~~~~~~~~~~~~~~~~~~~~~~~~
 EXPLORER FROM PLAYGROUND
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -243,6 +241,7 @@ c) Now use the [find named objects] button in the explorer and click on "People"
 to see these data objects in the explorer.
 
 
+
 ~~~~~~~~~~~~~~~~~~
 ADVANCED DEBUGGING
 ~~~~~~~~~~~~~~~~~~
@@ -264,10 +263,13 @@ relish -web 8080 shared.relish.pl2012/dev_tools playground
 In a web browser, browse to localhost:8080
 
 Enter a program name, such as "test_mywebapp_data"
+
 At the bottom left of the trial environment screen, enter the full name
 of the artifact you wish to debug.
 e.g. myorigin.org2014/mywebapp
-Press the [Copy DB] button. This copies the local database of your full-scale
+Press the [Copy DB] button. 
+
+This copies the local database of your full-scale
 web application to be the database of the current simple program in the
 playground. Your simple program can summon or query for those data objects,
 as long as you make sure to add the packages that define their data types
@@ -278,8 +280,8 @@ to explore the object-network of the web application's data model, or at least
 to explore the snapshot-copy of the web application's data model.
 
 The database is copied into the playground rather than referred to for safety,
-to prevent unwanted experimental data modifications from corrupting the state
-of the real database of the web application. 
+to prevent unwanted experimental data modifications you make in your playground test
+program from corrupting the state of the real database of the web application. 
 
 
 
