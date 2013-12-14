@@ -180,10 +180,10 @@ when the data explorer next connects to that target program.
 
 Note that you can place multiple 
 
-label obj name
-unlabel name
-reflect.pause
-explore obj
+   label obj name
+   unlabel name
+   reflect.pause
+   explore obj
 
 statements throughout a target program you are debugging, 
 to explore at multiple breakpoints. The [resume] button on the data explorer screen
