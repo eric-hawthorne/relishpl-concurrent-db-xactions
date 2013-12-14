@@ -14,68 +14,61 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/default.css" />
-
-
 </head>
-<body>
+<body>	
   <div id="header">	
   <table>
 	<tr>
 	  <td>	
-        <a href="http://relish.pl"><img src="/relish_logo4_small.png"></a>
+        <a href="/"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1><a href="http://relish.pl">relish<span class="trademark">&#8482;</span></a></h1>
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
-      </td>
+      </td>  
 	  <td>	
-        <h2>The relish Programming Language Shared Code Repository</h2>
+        <h2>Trial-Program Name</h2>	
       </td>
     </tr>
   </table>
+	 
   </div>
-  <a id="artifacts_button" class="menubutton" href="/directory">
-	Artifacts
-  </a>
-  <a id="featured_button" class="menubutton" href="/featured">
-	Featured
-  </a>
-  <a id="register_button" class="menubutton" href="/register">
-	Register
-  </a>
-  <a id="upload_button" class="menubutton" href="/upload">
-	Upload Code
-  </a>	
   <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
 	DOWNLOAD
   </div> -->
 
-<div id="content">	
-<table>	
-	<tr>
-		<td class="contentside">
-<div id="content_left">
-	<h3>Featured Software Artifacts</h3>
-  <dl>
-    <dt><a href="relish/artifacts/shared.relish.pl2012/dev_tools">shared.relish.pl2012/dev_tools</a></dt>
-    <dd>A playground environment to try out simple relish programs, and a data explorer that lets you visualize networks of interlinked data objects and values inside a running relish program. See the /doc/README.txt file in the dev_tools artifact's directory tree for instructions on using these tools.</dd>
-  </dl>
-</div>
-</td>
-<td class="contentside">
-<div id="content_right">
-	<h2></h2>
-	<p> 
-	</p>
-</div>
-</td>
-</tr>
-</table>	
+<div id="content">
+<p>
+Identify your simple trial relish program by giving it a program name. You can also type in a brief description of your program.
+</p>
+<p>
+	Program names must conform to the following syntax rules: lowercase alphanumeric name with first character a letter, and only underscores '_' permitted between words in the name.
+</p>
+<h3>Examples</h3>
+<code><pre>
+	mathfun
+	program1
+	my_simple_trial_program
+	test_for_loops
+</pre></code>
+<p>
+Each differently named program in the trial environment gets its own database, in which its persistent data is stored. 
+</p>
+<h3>Advanced Feature:</h3>
+<p>
+If you ran the relish simple program trial environment with a relish command like:<br/><br/>
+<code>
+relish -web 8080 relish.pl2012/playground web
+</code><br/><br/>
+and you typed in a trial program that you named <b>mathfun</b>,
+then browsing to http://localhost:8080/?artfct=mathfun will start up the trial environment with the mathfun program loaded, and your new run of the program  will still have access to whatever persistent data was created by that previous run of the mathfun program.<br/>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#DataPersistence">Data Persistence Reference Manual section</a>.
+</p>
 </div>
 </body>
 </html>

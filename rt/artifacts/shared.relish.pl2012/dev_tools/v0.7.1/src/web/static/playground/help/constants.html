@@ -14,68 +14,55 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
  <link rel="stylesheet" type="text/css" id="stylesheet"
        href="/styles/default.css" />
-
-
 </head>
-<body>
+<body>	
   <div id="header">	
   <table>
 	<tr>
 	  <td>	
-        <a href="http://relish.pl"><img src="/relish_logo4_small.png"></a>
+        <a href="/"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1><a href="http://relish.pl">relish<span class="trademark">&#8482;</span></a></h1>
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
-      </td>
+      </td>  
 	  <td>	
-        <h2>The relish Programming Language Shared Code Repository</h2>
+        <h2>Constant declarations</h2>	
       </td>
     </tr>
   </table>
+	 
   </div>
-  <a id="artifacts_button" class="menubutton" href="/directory">
-	Artifacts
-  </a>
-  <a id="featured_button" class="menubutton" href="/featured">
-	Featured
-  </a>
-  <a id="register_button" class="menubutton" href="/register">
-	Register
-  </a>
-  <a id="upload_button" class="menubutton" href="/upload">
-	Upload Code
-  </a>	
   <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
 	DOWNLOAD
   </div> -->
 
-<div id="content">	
-<table>	
-	<tr>
-		<td class="contentside">
-<div id="content_left">
-	<h3>Featured Software Artifacts</h3>
-  <dl>
-    <dt><a href="relish/artifacts/shared.relish.pl2012/dev_tools">shared.relish.pl2012/dev_tools</a></dt>
-    <dd>A playground environment to try out simple relish programs, and a data explorer that lets you visualize networks of interlinked data objects and values inside a running relish program. See the /doc/README.txt file in the dev_tools artifact's directory tree for instructions on using these tools.</dd>
-  </dl>
-</div>
-</td>
-<td class="contentside">
-<div id="content_right">
-	<h2></h2>
-	<p> 
-	</p>
-</div>
-</td>
-</tr>
-</table>	
+<div id="content">
+<p>
+You can assign names to unchanging values, using <b>constant declaration</b> statements. Place your constant statements one after the other, each starting on a separate line, with either no blank lines separating them, or at least two blank lines separating them to mark logically related groups of constants. Of course, constant declarations are optional. If you have some to declare in your trial program, declare them in the text box labelled "Constants".
+</p>
+<p>Names whose letters are all uppercase, including those names with underscores between words, are automatically considered to be constants, in a relish program.
+</p>
+<h3>Example</h3>
+<code><pre>
+N = 2
+MAX_WIDTH = 25
+
+
+MOTTO = "E Pluribus Unum"
+ADVICE = "Trust no one!"
+</pre></code>
+<h3>Reference</h3>
+<p><a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#Constants">constants syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#ConstantDeclarations">constant declarations syntax and semantics by example</a>
+</p>
 </div>
 </body>
 </html>
