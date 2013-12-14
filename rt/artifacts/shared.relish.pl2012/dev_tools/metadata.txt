@@ -1,8 +1,8 @@
-relish artifact metadata: 2013/11/28
+relish artifact metadata: 2013/12/13
 origin: shared.relish.pl2012
 artifact: dev_tools
-current version: 0.7.0
-release date: 2013/11/28
+current version: 0.7.1
+release date: 2013/12/13
 tags: web application,relish,debugging,development
 
 Web application which serves as a suite of software development tools to support 
@@ -34,3 +34,5 @@ Queries can be performed in the explorer's user interface
 to select objects for potential focus of the explorer.
 This explorer runs as one program (process), and the relish program being debugged is another program, 
 which must be invoked with the relish -explore <port> option to allow the explorer to query its data.
+
+See /doc/README.txt in the artifact for instructions on use of these tools.
