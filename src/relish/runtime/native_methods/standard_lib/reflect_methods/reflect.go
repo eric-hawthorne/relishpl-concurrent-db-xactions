@@ -1392,7 +1392,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	
 	       var valStr string
 	
-	       if attr.IsMultiValued() {
+	       if attr.IsMultiValued() && val != NIL {
 	          // fmt.Println(attr.Part.Name, "is multivalued")
 			    primitive := attr.Part.Type.IsPrimitive
 		
@@ -1413,8 +1413,8 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 					    panic(err)
 				  }
 		      }
-		   } else {
-	          // fmt.Println(attr.Part.Name, "is not multivalued")		      
+		   } else { // not multi-valued, or multi-valued attribute that is uninitialized so far.
+	          // fmt.Println(attr.Part.Name, "is not multivalued or is an uninitialized multi-valued attribute")		      
 			  valStr = ensureReflectId1(val)
 			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 		      if err != nil {
