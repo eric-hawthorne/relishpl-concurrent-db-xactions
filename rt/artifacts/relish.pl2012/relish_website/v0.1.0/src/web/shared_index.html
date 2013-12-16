@@ -60,21 +60,45 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<tr>
 		<td class="contentside">
 <div id="content_left">
-	<h3>Register your relish code origin</h3>
-<p>
-</p>
+	<h3>relish software artifacts available to run or to integrate into your application</h3>
+   <p>
+   relish code is organized into coherent units called relish software artifacts. The software artifact, consisting of its metadata file and one or more packages, is the unit of code that
+   is distributed; the unit that is released in a sequence of versions. A relish software artifact can represent a software application,
+   a software library, or a software framework.
+   </p>
 	<p>
-Share your code.
+This is a repository of relish software artifacts which have been uploaded to shared.relish.pl. Some are standalone applications and some are libraries or frameworks whose packages you can import into your own relish applications.
 	</p>
+<h4>
+   Browse the artifact repository
+</h4>
+<p>Click on the <b>Artifacts</b> or <b>Featured</b> buttons to browse the available software artifacts. Currently, these are almost all from the shared.relish.pl2012 code origin (developer of relish language), but it is hoped that more people or oranizations will contribute relish artifacts to this repository.
+</p>
 
 </div>
 </td>
 <td class="contentside">
 <div id="content_right">
-	<h2>What is a Code Origin Identifier?</h2>
+	<h2>All artifacts come with source code</h2>
 	<p>
-	ns to be the same year 
+	relish will not execute code that does not have its source code available in the artifact directory tree. This is based on a philosophy that code should be easy to understand, maintain, and modify, and there's not enough time in life to debug without access to source code, or to hunt source code down if you find a problem in a library or framework you are using.
 	</p>
+	
+<h2>
+Register your code origin
+</h2>	
+<p>
+If you register a relish code origin, such as mydomain.com2011 or freeworks.mydomain.org2014, you will obtain a code-signing encryption-key pair (a private key and certified public key). By installing these keys in your relish installation directory tree, you will be able to use the relish -publish option to create code-signed versions of any software artifact that you wish to share on the internet. Such signing is necessary to allow others' relish installations to download and run your artifact code, or to allow others' relish programs to automatically download and link in your artifact if it is a library or framework.
+</p>
+
+<h2>
+Upload your shared relish software artifacts
+</h2>	
+<p>
+If you have a registered origin, and have relish -publish'ed an artifact, you can and should host it at your own web server, at a web hostname corresponding to your originID (without the year part). However, you also have the option to, and are encouraged to, upload a copy of your published artifact to this repository: shared.relish.pl. That way, we can build a growing and easily searchable  repository of useful software artifacts. And others can download your artifact either from your own website, or from shared.relish.pl. It is encouraged that you license your shared artifact as GPL, LGPL, or a GPL-compatible license. Certainly by uploading your artifact to shared.relish.pl you are implicitly giving permission for other relish installations and programmers that know about your origin and artifact to download and run your code, and to view your source code.
+</p>
+
+
 </div>
 </td>
 </tr>

@@ -84,7 +84,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz    # on MACOSX, tar xf relish_&lt;version&gt;.&lt;platform&gt;.tar
    sudo ./install.sh    # creates symbolic links in /usr/local/bin to ~/relish/bin/ executables 
                         # (puts relish command in your PATH)
-   relish shared.relish.pl/hello_application
+   relish shared.relish.pl2012/hello_application
    </pre>
    </p>	
 	<p>opt directory installation:<br/><pre>
@@ -104,31 +104,42 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<p>
 		<a href="README_INSTALL_BINARY_DISTRIBUTION.txt">Further installation notes</a> for relish binary installation.
 	</p>	
+	<br/>
 	<h3>Source Code Distribution</h3>
 	<p>
 		The relish software project is hosted at
-	 <a href="http://code.google.com/p/relish/">http://code.google.com/p/relish/</a>
+	 <a href="http://code.google.com/p/relish/">https://code.google.com/p/relish/</a>
 	</p>
 	<p>
-		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org),  and if on linux, sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files). 
+		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org).<br/>
+		If on linux, you also need sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files) installed.<br/>
+		On MACOSX, sqlite3 is already installed but you need the libsqlite3-dev library, which should be obtainable 
+		by downloading and installing Apple's full <b>Xcode</b> toolkit, or by downloading and installing
+		the <b>Command Line Developer Tools</b> subset of Xcode, which is currently described and available at 
+		developer.apple.com/technologies/tools/features. Note you need an AppleID to download these.
 	</p>	
 	<pre>	
    sudo mkdir -p /opt/devel
    sudo chmod go+wx /opt/devel
    cd /opt/devel
    hg clone https://code.google.com/p/relish/ 
-   export GOPATH=/opt/devel/relish
+   export GOPATH=/opt/devel/relish              # You should add this export statement to your ~/.bashrc file 
+                                                # in linux, or create a ~/.bash_profile file in MACOSX and edit
+                                                # it to contain the export statement
+                                                
+   # Make sure sqlite3 and libsqlite3-dev are installed before next step.                                             
    go get code.google.com/p/gosqlite/sqlite  
    cd relish
    go install relish/relish
    sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables 
                         # (puts relish command in your PATH)
-   relish shared.relish.pl/hello_application
+   relish shared.relish.pl2012/hello_application
 </pre>	
 
-	<p>
-		Further installation and build instructions can be found in README_INSTALL_SOURCE_DISTRIBUTION.txt in the root directory of the source distribution.
-	</p>
+<p>
+	<a href="README_INSTALL_SOURCE_DISTRIBUTION.txt">Further installation and build notes</a> for working with the relish source code.
+</p>	
+<br/>
 
 </div>
 </td>
