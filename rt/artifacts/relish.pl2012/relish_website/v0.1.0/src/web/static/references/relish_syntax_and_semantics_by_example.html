@@ -3240,9 +3240,13 @@ import
 	<b>Syntax:</b>
 </p>
 <p>
-	Every relish source code file must be located in a package directory under a version directory of a software artifact directory.
+	Every relish source code file must be located in a package directory under a versioned src directory (such as v0.1.0/src/) of a software artifact directory.
 	Source code files, which must be called some_name.rel, must begin with an origin, artifact, and package declaration, which
 	identifies which package of which software artifact from which code-originating organization this file is part of.
+</p>
+<p>
+   So here is an example of the full pathname of a source code file in a package in an artifact.<br/>
+   <b>shared.relish.pl2012/dev_tools/v0.7.1/src/web/playground/dialog.rel</b>
 </p>
 <p>
 	A source code file can use data types, methods, and constants from other packages, provided those other packages are
@@ -3262,7 +3266,7 @@ import
 <br/>
   <a name="SoftwareArtifacts"><h3>Software Artifacts</h3></a>
 <p>
-relish code must be organized into coherent units called relish software artifacts. The software artifact is the unit of code that
+relish code must be organized into coherent units called relish software artifacts. The software artifact, consisting of its metadata file and one or more packages, is the unit of code that
 is distributed; the unit that is released in a sequence of versions. A relish software artifact can represent a software application,
 a software library, or a software framework.
 </p>
@@ -3277,16 +3281,16 @@ the domain name. Third-level or fourth-level domain names may be used. e.g. gene
 	or generous.opensource.developer.org2011/energy_apps/cool_app
 </p>
 <p>
-	relish software artifacts must be released in numbered versions, each resident in a subdirectory of the artifact directory, beginning with the v0.1.0 directory e.g. generous.opensource.developer.org2011/energy_apps/cool_app/v0.1.0. relish artifact versioning follows the semantic versioning conventions defined at <a href="http://semver.org" target="_blank">http://semver.org</a>.
+	relish software artifacts must be released in numbered versions, each resident in a subdirectory of the artifact directory. The earliest version could be in the v0.1.0 directory e.g. generous.opensource.developer.org2011/energy_apps/cool_app/v0.1.0. relish artifact versioning follows the MAJOR.MINOR.PATCH semantic versioning conventions defined at <a href="http://semver.org" target="_blank">http://semver.org</a> except that version modifiers such as alpha, beta, rc are not (yet) allowed.
 </p>
 <p>
-	Below the version directory must reside the software packages that make up the software artifact. Each software package must reside in a directory whose path below the version directory corresponds to the full package name, which must consist of package name parts like phys_obj or gravity, separated by slashes.
+	Below the version directory is the /src directory, in which must reside the software packages that make up the software artifact. Each software package must reside in a directory whose path in /src/ corresponds to the full package name, which must consist of package name parts like phys_obj or gravity, separated by slashes.
 	</p>
 	<p>
-		In addition to its version directories, each with their packages, a relish software artifact must have a metadata.txt file in the artifact directory. This file, examples of which are included in the relish distribution, gives the name of the originating organization and the name of the artifact, its current release version number, its latest date of release, some standard and some optional classifying tags, and a text description of the context of use, purpose, and functionality of the artifact.
+		In addition to its version directories, each with their packages, a relish software artifact must have a metadata.txt file in the artifact directory. This file gives the name of the originating organization and the name of the artifact, its current release version number, its latest date of release, some classifying tags, and a text description of the context of use, purpose, and functionality of the artifact. To see examples of metadata.txt files, download and run some of the shared.relish.pl2012 artifacts such as dev_tools, hello_application or simple_programs.
 		</p>
 <p>
-	relish insists on this discipline of software organization to ensure that relish software artifacts and packages are, and will remain over long software lifecycles, globally interoperable. <span class="future">The mandatory code organization conventions are used as the basis for a version-sensitive Internet code fetching and loading system. The relish code fetching and loading system should allow a relish program to find and load its dependencies, in the proper version required, automatically over the Internet, provided the dependencies are named fully and correctly in the dependent code.</span>
+	relish insists on this discipline of software organization to ensure that relish software artifacts and packages are globally interoperable, and will remain so over long software lifecycles. The mandatory code organization conventions are used as the basis for a version-sensitive Internet code fetching and loading system. The relish code fetching and loading system should allow a relish program to find and load its dependencies, in the proper version required, automatically over the Internet, provided the external packages are named fully (as in origin/artifact/pkg/path/to/package) in the import section of dependent code.
 	</p>
 </div>
 
