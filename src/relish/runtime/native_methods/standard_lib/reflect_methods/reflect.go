@@ -579,6 +579,11 @@ func forwardsTypeNameNM(th InterpreterThread, objects []RObject) []RObject {
     BookCase ~~~ publishing/core, shareware/biblio_file, relish.pl2012
 */
 func backwardsTypeName(typeName string) (backwardsName string) {
+   if strings.Contains(typeName,"Map_of_") {
+      backwardsName = typeName
+      return
+   }	
+   collectionPrefixes,typeName := extractCollectionPrefixes(typeName)
    slashPos := strings.Index(typeName,"/")
    if slashPos == -1 {
        backwardsName = typeName
@@ -592,7 +597,7 @@ func backwardsTypeName(typeName string) (backwardsName string) {
    artifact := typeName[slashPos+1:pkgPos]
    packagePath := typeName[pkgPos+5:lastSlashPos]
    
-   backwardsName = name + " ~~~ " + packagePath + ", " + artifact + ", " + origin
+   backwardsName = collectionPrefixes + name + " ~~~ " + packagePath + ", " + artifact + ", " + origin
 
    return
 }
@@ -605,9 +610,14 @@ func backwardsTypeName(typeName string) (backwardsName string) {
     relish.pl2012/shareware/biblio_file/pkg/publishing/core/BookCase
 */
 func forwardsTypeName(backwardsTypeName string) (typeName string) {
+    if strings.Contains(backwardsTypeName,"Map_of_") {
+    	typeName = backwardsTypeName
+    	return
+    } 	
+    collectionPrefixes,backwardsTypeName := extractCollectionPrefixes(backwardsTypeName)	
     pieces := strings.Split(backwardsTypeName,", ")
     if len(pieces) == 1 {
-    	typeName = pieces[0]
+    	typeName = collectionPrefixes + pieces[0]
     } else {
     	nameAndPackage := strings.Split( pieces[0]," ~~~ ")
     	name := nameAndPackage[0]
@@ -615,9 +625,30 @@ func forwardsTypeName(backwardsTypeName string) (typeName string) {
     	artifact := pieces[1]
     	origin := pieces[2]
 
-        typeName = origin + "/" + artifact + "/pkg/" + packagePath + "/" + name
+        typeName = collectionPrefixes + origin + "/" + artifact + "/pkg/" + packagePath + "/" + name
     }
     return
+}
+
+/*
+Extract any List_of_Set_of_List_of from beginning of type name.
+TODO: Does not work for maps !!!!!
+*/
+func extractCollectionPrefixes(typeName string) (collectionPrefixes string, restOfTypeName string) {
+   setPos := strings.LastIndex(typeName,"Set_of_")
+   listPos := strings.LastIndex(typeName,"List_of_")
+   var splitPos int
+   if setPos > listPos {
+   	   splitPos = setPos + 7
+   } else if setPos < listPos {
+   	   splitPos = listPos + 8   	
+   } else {
+   	 restOfTypeName = typeName
+   	 return
+   }
+   collectionPrefixes = typeName[0:splitPos]
+   restOfTypeName = typeName[splitPos:]
+   return
 }
 
 /* Ensure the result is a forwards (official relish) type name,
@@ -1392,7 +1423,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	
 	       var valStr string
 	
-	       if attr.IsMultiValued() {
+	       if attr.IsMultiValued() && val != NIL {
 	          // fmt.Println(attr.Part.Name, "is multivalued")
 			    primitive := attr.Part.Type.IsPrimitive
 		
@@ -1413,8 +1444,8 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 					    panic(err)
 				  }
 		      }
-		   } else {
-	          // fmt.Println(attr.Part.Name, "is not multivalued")		      
+		   } else { // not multi-valued, or multi-valued attribute that is uninitialized so far.
+	          // fmt.Println(attr.Part.Name, "is not multivalued or is an uninitialized multi-valued attribute")		      
 			  valStr = ensureReflectId1(val)
 			  err = RT.AddToAttr(th, descr, valsAttr, String(valStr), false, th.EvaluationContext(), false) 
 		      if err != nil {
