@@ -1,0 +1,180 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  arithmetic
+
+""" 
+ arithmetic_and_logic.rel
+
+ Test arithmetic and boolean logic operators.
+"""
+
+import
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+
+
+
+// This is an example of a comment at the top-level of the file.
+// It must be separated from other things by oat least 
+// one blank/empty line before it and one after it.
+
+
+MAX_RADIUS = 10
+
+
+circleCircumference radius Float > Float
+"""
+ Calculates the circumference of a circle of a given radius.
+"""
+   => times 2 (times phys.PI radius) 
+
+
+circleArea radius Float > Float
+"""
+ Calculates the area of a circle of a given radius.
+ Has a maximum allowed radius. Adjusts the argument radius to the maximum
+ if it is greater before calculating the area.
+"""
+   if gt radius MAX_RADIUS
+      radius = MAX_RADIUS
+   r2 = times radius radius
+   => times phys.PI r2
+
+
+circleProperty radius Float prop String > Float
+"""
+ If prop is "a" calculates the area otherwise the circumference of a circle.
+"""
+   if eq "a" prop
+      => circleArea radius
+   else
+      => circleCircumference radius
+
+
+testReturns2More > Int Int
+"""
+ Returns two items. This is really part of a test of returning multiple values
+ and passing them through as the return values of another two-value returning
+ method.
+"""
+   => 4 5
+
+
+testReturns2 > Int Int
+"""
+ Returns two items. This is really part of a test of returning multiple values
+ and passing them through as the return values of another two-value returning
+ method.
+"""
+   => testReturns2More
+
+
+testReturnsTheTwoItGotMultiplied x Int y Int > Int 
+"""
+ Testing returning multiple values and receiving multiple values from
+ another method call.
+"""
+   => times x y
+
+
+Basic
+"""
+ Dummy structured object data type.
+"""
+   b Bool
+   n Int
+   f Float
+
+
+main
+"""
+ Main program.
+"""
+   testArithmeticAndLogic
+
+
+testArithmeticAndLogic
+"""
+ Tests arithmetic and boolean logic functions/operators.
+ All "operators" on any type in relish are just ordinary method calls, with the exception
+ of assignment, collection-add/remove, and channel send/receive which are infix operators.
+"""
+   cp = circleProperty 9.0 
+                       "a"
+   print cp
+               
+   print circleProperty 9.0 
+                        "a" 
+
+   print circleProperty 
+            9.0 
+            "a"                             
+   print 
+      circleProperty 
+         9.0 
+         "a"
+   print circleProperty 9.0 "c"
+
+   v1 v2 = testReturns2
+   print v1 v2
+   print testReturns2
+   print testReturnsTheTwoItGotMultiplied testReturns2
+
+   if not 0
+      print "0 is zero"
+   else
+      print "0 is non-zero"
+
+   basic1 = Basic
+   basic1.b = true
+   basic1.n = 0
+   basic1.f = 0.
+  
+   print not basic1  // Should return false
+   print not basic1.n  // Should return true
+   print not basic1.b  // Should return false
+   print not basic1.f  // Should return true
+   print eq basic1 nil  // Should return false
+
+   basic2 = nil  
+
+   print not basic2  // should return true
+   
+   theBasics = [basic1]Basic
+   moreBasics = []Basic
+   
+   print not theBasics   // Should return false since not an empty list
+   print eq (len moreBasics) 1  // Should return false - it's 0
+   print not moreBasics  // Should return true since it is an empty list
+
+   // Test "boolean" "and" operator.
+   // Note that the function returns either false or its last argument, which is guaranteed
+   // at that point to be a non-false-equivalent object/value.
+   // All argument expressions, however, are evaluated, regardless if one is found to be false-equivalent.
+   // This is unlike a LISP "and", which lazily evaluates its argument exprs from left to right and
+   // stops evaluating arg exprs upon encountering the first false-equivalent argument.
+   lastOne = and 2 "three" true "five"
+   print lastOne
+
+   // Test "boolean" "or" operator.
+   // Note that the function returns either false or its left-most non-false-equivalent argument.
+   // All argument expressions, however, are evaluated, unlike a LISP "or".
+   firstOne = or 0 0.0 "" "this one" "is true"
+   print firstOne
+
+   print plus 2 2
+
+   print plus 2 2.3
+
+   print minus 2.3 2
+
+   print minus 3 2
+
+   print div 8 3
+
+   print div 8 3.0
+
+   print mod 7 3
+
+   print neg 4
+
+   print plus -4 -5

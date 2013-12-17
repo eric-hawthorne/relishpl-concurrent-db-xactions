@@ -1,0 +1,9 @@
+relish artifact metadata: 2013/09/25
+origin: shared.relish.pl2012
+artifact: relish_test_support/things
+current version: 0.1.0
+release date: 2012/07/27
+tags: library,test,relish
+
+Various entity data types in support of the relish_tests test suite.
+Includes a rather silly and incomplete library of physical objects.

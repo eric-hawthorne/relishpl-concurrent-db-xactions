@@ -1,0 +1,554 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish web application tutorial
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Tutorial (Intermediate-Level) - Writing a Web Application</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#BackgroundNeeded">Background Needed</a><br/>	
+	<a href="#Definition" class="alt">Web App Definition</a><br/>
+	<a href="#RoleOfRelish"></a>The Role of relish<br/>
+	<a href="#LoopsEnumeration" class="alt">Loops,Enumeration</a><br/>	
+	<a href="#FibonacciMultiAssign">Fibonacci,Multiple-Assignment</a><br/>	
+	<a href="#Methods" class="alt">Methods</a><br/>	
+	<!-- <a href="#ImportRegexp">Import,Regular Expressions</a><br/>	-->	
+	<!-- <a href="#TimeConditionals">Time,Conditionals</a><br/> -->			
+  <a href="#MapsGenerators" >Maps,'for' Generators</a><br/>   
+  <a href="#ConstRawStringsWhile" class="alt">Constants,Multi-line Strings,While Loop</a><br/>
+  <a href="#DataTypesConstructors">Programmer-defined Data Types,Constructors</a><br/>
+</div>  
+<div id="content_manual">
+	<a name="BackgroundNeeded"><h3>Background Knowledge Needed to Use This Document</h3></a>
+	This is not a tutorial intended to teach beginning programmers how to create their first web application. This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Ruby on Rails, PHP, or ASP.NET. 
+
+
+
+	<a name="Definition"><h3>Working Definition of Web Application</h3></a>
+	<p>
+		For purposes of this tutorial, a web application is defined as a computer program, with persistent data storage, that uses web pages as its user interface, and/or provides a web services API to other applications. 
+	</p>
+	<p>
+		The UI web pages may be simple HTML with HTML forms, or they may include client-side javascript for such purposes as:
+		   <ul>
+		   	<li>input validation,</li>
+		   <li>content layout, interaction, or animation,</li>  
+		   <li>AJAX asynchronous loading of page element content or data for the client-side,</li>
+		   <li>AJAX asynchronous communication of user commands to the server.</li>
+		</ul>
+	</p>
+
+	<a name="RoleOfRelish"><h3>Role of relish in a Web Application</h3></a>
+	<p>
+		relish is for programming the server-side aspects of a web application:
+		   <ul>
+		   	<li>business logic</li>
+		   	<li>domain data model</li>		   	
+		   <li>data persistence and querying</li>  
+		   <li>template-based dynamic web-page generation</li>
+		   <li>JSON or XML responses to web service requests</li>
+		   <li>static web-page or static image/media content serving</li>
+		   <li>email message sending from application (if an SMTP server is available)</li>
+		   <li>making http GET/POST requests to downstream web services</li>
+		</ul>		
+		relish does not replace client-side javascript programming, if such is needed for your application.
+	</p>
+	
+
+    <a name="RoleOfRelish"><h3>The Simplest Case - Serving Static Web Pages and Images</h3></a>
+	<p>
+
+	</p>
+	
+    <a name="RoleOfRelish"><h3>Starting the Web Application</h3></a>
+	<p>
+
+	</p>
+
+    <a name="RoleOfRelish"><h3>Changing Code and Restarting the Web Application</h3></a>
+	<p>
+         If you edit and change any of your .rel files in the application, you must shut down the web application (Ctrl-c),
+         and then start the web application again by re-issuing the relish -web 8080 ... command.<br/>
+         <em>Captain Obvious Tip: Shutting down is best done during at a moment in time when no web requests are being processed.</em> 
+	</p>
+	<p>
+		You can modify html template files without shutting down the web application. Just reload the web page in the browser after changing the html template file.
+	</p>	
+
+    <a name="RoleOfRelish"><h3>Making Web Pages Dynamic - Filling Page Content from the Program</h3></a>
+	<p>
+
+	</p>
+
+    <a name="RoleOfRelish"><h3>Adding Data-Persistence</h3></a>
+	<p>
+
+	</p>	
+
+    <a name="RoleOfRelish"><h3>Processing submitted HTML Form values</h3></a>
+	<p>
+
+	</p>		
+
+    <a name="RoleOfRelish"><h3>...And replying to continue the dialog with the user</h3></a>
+	<p>
+
+	</p>	
+
+
+
+    <a name="RoleOfRelish"><h3>Role of relish in a Web Application</h3></a>
+	<p>
+
+	</p>
+
+    <a name="RoleOfRelish"><h3>Role of relish in a Web Application</h3></a>
+	<p>
+
+	</p>				
+
+
+
+			<p>
+			Here is a collection of simple relish&#8482; program examples. 
+			</p>
+			<p>
+				 <span class="future">relish language features or built-in methods or standard library methods that are planned but not yet implemented are shown in text of this colour.</span>
+				</p>				
+				</p>
+			<p>All relish programs must live in a file called some_filename.rel, which must be located in a package directory within a version directory of a relish software artifact directory. To execute an example program below, you would have to place it in a source code file in the right context. You would also have to give each code snippet a source code preamble, because all relish source code files must have some standard header information at the top of the file. Additionally, the snippet of code would have to be placed in a main function to run. 
+			</p>
+				<p>The purpose of these rules is to ensure interoperability of large codebases, and to ensure that code files are findable and self-explanatory.
+			</p>
+			<p>
+				Each of the code examples excerpted below can be found in runnable form within the relish distribution directory structure, in the shared.relish.pl2012/simple_programs software artifact. This can be found in the relish/artifacts/ directory if you have a binary distribution of relish, or in the relish/rt/artifacts/ directory if you have a source distribution of relish. Running instructions: 1. cd to the artifacts directory. 2. Issue command e.g.: relish shared.relish.pl2012/simple_programs fibonacci
+				</p>
+			
+
+<br/>
+<a name="Output"><h3>Output</h3></a>
+<code><pre>
+   print “Hello, 世界”
+</pre></code>
+<br/>
+<a name="InputAssignment"><h3>Input, assignment</h3></a>
+<code><pre>
+   name = input “What is your name?\n”
+   print fill “Hi, %s.” name
+</pre></code>
+<br/>
+<a name="LoopsEnumeration"><h3>For loop, built-in enumeration of elements of a collection</h3></a>
+<code><pre>
+   friends = [“john” “pat” “gary” “michael”]
+   for i name in friends
+      print fill "iteration %s is %s" i name
+</pre></code>
+
+<br/>
+<a name="FibonacciMultiAssign"><h3>Fibonacci, multiple assignment</h3></a>
+<code><pre>
+   parents babies = 1 1 
+   while lt babies 100
+      print fill “This generation has %s babies” babies
+      parents babies = babies 
+                       plus parents babies
+</pre></code>
+<br/>
+<a name="Methods"><h3>Methods</h3></a>
+<code><pre>
+greet name String 
+"""
+ Issue a greeting to the named person.
+"""
+   print “Hello” name
+
+
+main
+"""
+ Be polite.
+"""
+   greet “Jack”
+   greet “Jill”
+</pre></code>
+<br/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"XML" "mime/type" AnyObjectToBeConverted      -NOT IMPLEMENTED - Convert structs, collections, maps to XML in some default way.
+
+
+"XML PRE" 
+"mime/type"                          
+"""
+<?xml version="1.0"?>
+<sometag>
+</sometag>
+"""
+
+// Can we live without the xml tag at beginning? For literal string, for file? Do we add it? probably?
+
+"XML FILE" "mime/type" "some/file/path.xml"
+
+
+"HTML"
+
+"HTML FILE" "foo.html"
+
+
+"JSON" AnyObjectToBeConverted
+
+"JSON PRE" "{'John Smith':[2,6,4]}"  
+
+"JSON FILE" "some/file/path.json"
+
+
+"IMAGE" ["jpeg"] ObjectPossiblyToBeConverted
+
+"IMAGE FILE" ["jpeg"] "some/file/path.jpg"
+
+
+"VIDEO" ["mpeg4"] ObjectPossiblyToBeConverted  
+
+"VIDEO FILE" ["mpeg4"] "some/file/path.mp4"
+
+
+"MEDIA" "mime/type" ObjectPossiblyToBeConverted
+
+"MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
+
+
+
+"REDIRECT"  [code] UrlOrString
+
+
+"path/to/template.html" SomeObjToPassToTemplate
+
+"TEMPLATE" "literal template text" SomeObjToPassToTemplate
+
+
+"HTTP ERROR" 404 ["Resource Not Found"]  // or 403 (no permission) etc  
+
+"HTTP CODE" 200 ["OK"]  // Same as HTTP ERROR except ERROR only accepts error codes i.e. 4XX through 5XX.
+
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+"BODY"
+obj              // literally serialized out
+
+
+NOT IMPLEMENTED
+
+
+Or HEADERS can prefix any of the other forms, to add additional http headers. Should not be inconsistent. What if is?
+
+"""
+HEADERS 
+Content-Disposition: attachment; filename="fname.png"
+"""
+"MEDIA FILE" 
+"image/png" 
+"some/file/path.png"
+
+
+NOT IMPLEMENTED
+
+
+
+
+
+
+-------------------------------
+OLDER IDEA
+
+
+Decisions: 
+
+1. web or webservice dialog handler functions are public-section functions found
+   in the web package or web/something, web/something/else packages.
+
+2. These methods must have a pattern of return arguments which directs the relish runtime as to how
+to find, format, and return the response to a web request. The return argument pattern are as follows:
+
+"XML" AnyObjectToBeConverted
+
+"XML"  // pre-formatted if a string 
+"""
+<?xml version="1.0"?>
+<sometag>
+</sometag>
+"""
+
+// Can we live without the xml tag at beginning? For literal string, for file? Do we add it? probably?
+
+"XML FILE" "some/file/path.xml"
+
+
+"HTML" "some html string"
+
+"HTML FILE" "foo.html"
+
+
+"JSON" AnyObjectToBeConverted
+
+"JSON" "literal JSON string"
+
+"JSON FILE" "some/file/path.json"
+
+
+"MEDIA image/jpeg" AnyObjectPossiblyToBeConverted
+
+"MEDIA FILE image/jpeg" "some/file/path.jpg"
+
+
+"REDIRECT" [301,302,303,or 307] UrlOrString  http response code defaults to 303 POST-Redirect-GET style.
+
+
+"path/to/template.html" SomeObjToPassToTemplate
+
+TEMPLATE "literal template text" SomeObjToPassToTemplate
+
+
+"HTTP ERROR" 404  ["message"] // or 403 (no permission) etc - message defaults to ""
+
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+obj              // literally serialized out
+
+Or HEADERS can prefix any of the other forms, to add additional http headers. Should not be inconsistent. What if is?
+
+"""
+HEADERS 
+Content-Type: application/octetstream
+Content-Disposition: attachment; filename="fname.ext"
+"""
+"MEDIA FILE image/png" 
+"some/file/path.png"
+
+
+
+
+--------------------------
+OLDEST STUFF
+
+
+
+TODO
+
+Here are some possibilities for how exposed handler methods are recognized
+
+1. All (public-section) methods in files named [some_thing_]handlers.rel
+or maybe [some_thing_]dialog.rel
+or maybe [some_thing_]interface.rel
+
+2. Variant on 1 where only public methods (no __private__ or __protected__) are allowed
+in those files, if the files occur in subdirs of web directory.
+
+(Sub-question: should it really be called web?? is it only for http protocol?)
+
+3. Have an __exposed__ code section marker which if it occurs in a file takes the place of 
+the implicit __exported__ i.e. __public__ section. You cannot have a file which has both
+__exposed__ methods in it and also  __exported__ i.e. __public__ ones.
+So a file can either contain default (public),__protected__,__private__
+or it can contain __exposed__,__protected__,__private
+
+(Note: we don't actually know the definition of protected, private yet! Oops!)
+
+4. Have the methods explicitly annotated in source code, such as
+web foo a1 Int a2 String
+
+5. Have any public method which occurs under the web package tree and which
+returns as its first return arg a token that indicates the kind of
+return value type / processing that is to take place !!!!!!!
+Like the special strings below except constants, like
+
+foo a1 Int a2 String > web.ResponseType vehicles.Car
+"""
+"""
+   => web.XML 
+      car1   
+
+bar a1 Int a2 String > 
+   how web.ResponseType
+   what SomeType
+"""
+"""
+   how = web.JSON
+   what = car1
+
+baz a1 Int a2 String > 
+   how web.ResponseType
+   name String
+   what SomeType
+"""
+"""
+   how = web.TEMPLATE
+   name = "foo.html"  // the template file name (or do we figure out if it is an actual template)
+   what = car1   
+
+                      // allow filenames like foo.txt a/b/foo.xml etc otherwise is a raw template string
+
+boz a1 Int a2 String > 
+   how web.ResponseType
+   name String
+   what SomeType
+"""
+"""
+   how = web.MEDIA
+   type = "image/jpeg"
+
+   what = car1      
+
+Automatically is an exposed web handler function. also allow args such as disposition encoding etc    
+*/
+
+
+
+// TODO Implement Post/Redirect/Get webapp pattern http://en.wikipedia.org/wiki/Post/Redirect/Get
+//
+// functions in web/handlers.rel web/subpackage/handlers.rel etc must have this pattern:
+//
+// => "XML" obj 
+//
+// => "JSON" obj
+//
+// => "MEDIA application/octetstream" obj
+//
+// => "MEDIA text/plain" obj
+//
+// => "MEDIA image/jpeg" obj
+//
+// => "MEDIA mime/type" obj
+//
+// => """
+// HEADERS 
+// Content-Type: application/octetstream
+// Content-Disposition: attachment; filename="fname.ext"
+//    """
+//    obj
+//
+// => "path/to/template" obj          OOPS! Can't distinguish this from mime type
+//
+// => "REDIRECT" "/path/on/my/webapp/site?a1=v1&a2=v2"
+//
+// => "REDIRECT" "http://www.foo.com/some/path"
+//
+// => "REDIRECT" 
+//     Url
+//        protocol = "https"                  // defaults to http
+//        host = "www.foo.com"                // if not specified, creates a path-only url
+//        port = 8080                         // defaults to 80 or 443 depending on protocol
+//        path = "/some/path"                 // relative paths not supported?
+//        kw = { 
+//                "a1" => v1
+//                "a2" => v2
+//             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+relish artifact metadata: 2013/09/25
+origin: shared.relish.pl2012
+artifact: relish_tests
+current version: 0.1.0
+release date: 2012/11/11  
+tags: application,test,relish
+
+A test suite for the relish programming language.

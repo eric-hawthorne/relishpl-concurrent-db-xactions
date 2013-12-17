@@ -1,0 +1,8 @@
+relish artifact metadata: 2013/09/25
+origin: relish.pl2012
+artifact: relish_website
+current version: 0.1.0
+release date: 2012/09/29
+tags: web application,relish
+
+The relish.pl website.

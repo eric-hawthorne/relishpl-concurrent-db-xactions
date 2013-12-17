@@ -1,0 +1,155 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish roadmap
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Roadmap <span class="h2small">- future language features and changes</span></h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Introduction">Introduction</a><br/>	
+	<a href="#DefiniteFeatures" class="alt">Definitely Planned Features</a><br/>
+	<a href="#PossibleFeatures">Possible Features</a><br/>
+</div>  
+<div id="content_manual">
+	<a name="Introduction"><h3>Introduction</h3></a>
+
+			<p>
+			Here is an overview of the current plan for expansion or refinement of the relish programming language and runtime environment. The plan is subject to change. Feedback on the roadmap or its prioritization is welcome. Additional development suggestions or change suggestions are also welcome. Feedback can be recorded as issues at http://code.google.com/p/relish or sent to relishpl [AT] gmail.com.
+ 			</p>
+<p>
+	The roadmap is separated into definitely planned features and possible features.
+	</p>
+
+<br/>
+<a name="DefiniteFeatures"><h3>Definitely Planned Features</h3></a>
+
+<h4>Definitely Planned Major Features</h4>
+<dl>
+
+	<dt>Transactions</dt> 
+	<dd>Implementation of deferred-commit and abortable transactions in the transparent local persistence support. The tricky bit is how this interacts with relish's in-memory cache of persistent objects. It would be bad to have a db transaction abort but the in-memory cached objects retain their changed state (where the changes were made in the context of the transaction that is now aborted). So in-memory objects need to be declarable (automatically by a transaction abort) as dirty and needing to be refreshed from the db. <br/>One likely decision is that web handler method executions will automatically be one-db-transaction-per-http-request</dd>
+	
+	<dt>Global code fetch over Internet</dt> 
+	<dd>The plan is for the relish complation and runtime environment to be able to find and download and locally cache relish software artifacts (of the correct version) over the Internet automatically, if the correct names of the artifacts your code depends on are placed into your local relish source code. Two mechanisms would be used. First, an attempt to fetch from a server at the domain listed as the artifact's origin. Second, eventually, an ability to use Google search to find candidate mirrors of the artifact. The latter would require some kind of checksum/signature check to ensure that the authentic code has been downloaded.</dd>	
+
+	<dt>Data-hiding (Encapsulation)</dt> 
+	<dd>Private attributes, getter and setter methods, private methods</dd>
+
+	<dt>Schema Migration</dt> 
+	<dd>Schema migration support will be provided by the language environment, so that data in an artifact's local database can be upgraded when data type and relation schemas are changed in relish source code. Schema migration will take place by means of relish-code methods written by the developer. The relish runtime environment will detect schema-migration code via strong conventions for the naming and placement of such code. The runtime environment will also detect that there is a need for schema migration code to be run, due to a detected difference in the database's schema version compared to the loaded relish code's schema version. Data reversion to compatibility with earlier schema versions may also be supported.</dd>
+	
+	<dt>Type Inference and Stricter Type Checking</dt> 
+	<dd>Currently, type checking is limited and dynamic (checked at program runtime). Collections have element-type specifications and potential elements are checked for type-compatibility as they are inserted into the collection. Also, methods are dispatched based on the runtime (dynamic) type of each argument to the method call. If there is no method that can handle the type tuple of the arguments, that is a type compatibility error. The language however has been designed to accommodate stricter type checking, including some static type checking and type inference. Some of this may eventually be implemented.</dd>	
+	
+	<dt>Variadic functions</dt> 
+	<dd>A method will be able to be declared with an extra parameter e.g. <code>...a SomeType</code> whose type will be a list of SomeType. This argument will hold any number of additional arguments supplied to the method after required positional parameter slots have
+	 been filled by arguments. An accompanying expression <code>someList...</code> or equivalent may also be introduced, which allows a collection to be used to supply arguments to the variadic parameter of a method.</dd>	
+
+	<dt>Feature N</dt> 
+	<dd>Description.</dd>		
+</dl>
+<h4>Definitely Planned Minor Features</h4>
+<dl>
+	<dt>Channel select</dt> 
+	<dd>Implementation of Go's <b>select</b> control construct allowing proceeding with a random ready-to-execute channel communication and abandonment of alternate channel communications/waits.</dd>	
+
+	<dt>Feature N</dt> 
+	<dd>Description.</dd>		
+</dl>
+
+
+<br/>		
+
+
+<a name="PossibleFeatures"><h3>Possible Features</h3></a>
+
+<dl>
+	<dt>One-step Installer of binary relish-language distributions</dt> 
+	<dd>relish is supposed to make programming of high-level applications easy and hassle-free. This is somewhat defeated by the need to go through a many-step installation process of relish itself, including the need to install the appropriate version of sqlite3 if it is not already on your computer. We need pre-built relish executables that statically link in sqlite3, and can be installed in one or two instruction steps at least on common platforms.</dd>	
+	<dt>Immutable types, attributes, methods, values, and references</dt> 
+	<dd>Different forms of immutability are hoped for:
+		<ul>
+			<li>a type may be declared to be not inheritable from</li>
+			<li>a named method may de declared to be not redefinable (no other typetuples allowed for the arity)
+			<li>a type may be declared to have values/objects which are immutable to one degree or another. Dimensions of variation here are: deeply or shallowly immutable; deeply immutable via the object reference; deeply immutable entirely though any reference, once attached to the object (i.e. infectious deep freezing)</li>
+			<li>A particular constructed object instance may be given various levels of immutability when created,
+				or perhaps at a later time. shallow read-only, deeply read-only, infectiously freezing (1 level down? or all the way down the object-reference tree? )
+			<li>a variable may (not sure if this makes sense yet) be declarable during its assignment to have a shallowly or deeply read-only reference to the object it refers to</li>
+			<li>a method input parameter may be declarable to: have a read-only reference; have a deeply read-only reference; to the object argument that is passed in to the method.</li>
+			<li>an attribute may be declared to be: assign-once; have a shallow read-only reference; have a deeply read-only reference; have a deeply immutable (infectious freezing) reference. Is infected freezing permanent? Or only true while the objects are attached to the freezing attribute?</li>	
+			<li>Explore different levels and types of immutability of collections/multi-valued attributes too.</li>	
+																								
+		</ul></dd>
+
+<dt>Cloud-storage persistence and/or cloud-computing</dt> 
+<dd>Using some kind of nosql / network cloud database infrastructure. Not sure whether to support several of these; have a standard cloud storage abstraction layer mappable to several different cloudy infrastructures. There is probably a distinction between relish software libraries/frameworks/language support for independent peer-to-peer cloud storage vs support for various existing commercial cloud storage/computing infrastructures such as Google, Amazon etc.</dd>
+<dt>Local persistence on postgresql, mysql</dt> 
+<dd>"Upgraded" local persistence options. Need to figure out how to not make it complicated for the programmer.</dd>
+
+<dt>Directory of registered relish code origins</dt> 
+<dd>The plan is to allow relish code authors/authoring organizations to register their relish code origin in an official directory of origins. Also to allow code authors who don't have a domain name to obtain a subdomain of relish.pl to use as their code origin. The registry would establish the connection of the relish origin-id with a person or legal entity. It would ensure uniqueness of (at least registered) relish origin-ids. It would allow relish artifact originators to advertise their artifacts in the directory, using standard code-topic tags as well as their own tags and metadata to assist others to search for their code. It is possible that the directory could also be used for metadata about the renaming of code origins and/or artifacts. It is possible that the directory could be used as metadata listing official authorized mirror sites at which relish-runtimes can obtain an origin's artifacts.</dd>
+
+<dt>Code quality "inner circle" </dt> 
+<dd>The plan is to have vetted and peer-reviewed relish software artifacts (applications, libraries, frameworks) promoted into concentric circles of code quality, reliability, and usefulness, with such artifacts tagged according to standard tags.</dd>
+
+	<dt>Keyword-style parameters and arguments to methods</dt> 
+	<dd>Similar to Python, some parameters to methods may be declarable to have a default value to be used if the corresponding argument is not supplied in the method call. Unlike in Python, there will likely be a clear distinction between keyword-style parameters and required positional parameters. keyword-style parameters MUST be called using <code>keyword = expr</code> syntax in the method call. Positional
+	parameters are not allowed to be supplied with that style, but rather, take only an expression in the call.</dd>	
+
+	<dt>Feature N</dt> 
+	<dd>Description.</dd>		
+</dl>	
+</div>
+
+</body>
+</html>
