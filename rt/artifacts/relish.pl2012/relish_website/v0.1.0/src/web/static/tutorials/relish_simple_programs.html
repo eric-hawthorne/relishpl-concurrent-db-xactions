@@ -72,19 +72,22 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<a name="Introduction"><h3>Introduction</h3></a>
 
 			<p>
-			Here is a collection of simple relish&#8482; program examples. 
+			Below, and listed at left, is a collection of simple relish&#8482; program examples. 
+			</p>				
+			<p>How to actually find and run these program examples: All relish programs must live in a file called some_filename.rel, which must be located in a package directory within a version directory of a relish software artifact directory. To execute one of the example program code sniippets below, you would have to place it in a source code file in the right context. You would also have to give each code snippet a source code preamble, because all relish source code files must have some standard header information at the top of the file. Additionally, the snippet of code would have to be placed in a main function to run. 
+			</p>
+				<p>The purpose of these rules is to ensure interoperability of large codebases, and to ensure that code files are findable by library-using programmers and findable automatically by the relish global code loader.
 			</p>
 			<p>
-				 <span class="future">relish language features or built-in methods or standard library methods that are planned but not yet implemented are shown in text of this colour.</span>
-				</p>				
-				</p>
-			<p>All relish programs must live in a file called some_filename.rel, which must be located in a package directory within a version directory of a relish software artifact directory. To execute an example program below, you would have to place it in a source code file in the right context. You would also have to give each code snippet a source code preamble, because all relish source code files must have some standard header information at the top of the file. Additionally, the snippet of code would have to be placed in a main function to run. 
-			</p>
-				<p>The purpose of these rules is to ensure interoperability of large codebases, and to ensure that code files are findable and self-explanatory.
+				Each of the code examples excerpted below can be found in runnable form at the shared.relish.pl repository, so you can download and run them simply by issuing the appropriate relish command (while your working directory is in or under a relish directory.)
 			</p>
 			<p>
-				Each of the code examples excerpted below can be found in runnable form within the relish distribution directory structure, in the shared.relish.pl2012/simple_programs software artifact. This can be found in the relish/artifacts/ directory if you have a binary distribution of relish, or in the relish/rt/artifacts/ directory if you have a source distribution of relish. Running instructions: 1. cd to the artifacts directory. 2. Issue command e.g.: relish shared.relish.pl2012/simple_programs fibonacci
-				</p>
+			To download and run one of these programs, issue a relish command such as<br/><br/>
+			<code>relish shared.relish.pl2012/simple_programs fibonacci</code><br/><br/>
+		   Once you've run one of these programs, you'll find its source code installed in your local relish directory tree at<br/>
+		   .../relish/shared/relish/replicas/shared.relish.pl2012/simple_programs/<br/>   (or at .../relish/rt/shared/relish/replicas/shared.relish.pl2012/simple_programs/ if you have a relish source distribution.)<br/><br/>
+		   You'll find in the simple_programs artifact's src/ tree a relish package for each simple program. You can run each package (each simple program example) by issuing the command<br/><br/><code>relish shared.relish.pl2012/simple_programs <em>package_name</em></code>
+		</p>
 			
 
 <br/>
