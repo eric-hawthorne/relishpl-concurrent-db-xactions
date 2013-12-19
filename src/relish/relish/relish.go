@@ -54,8 +54,13 @@ Command line options:
                present it as port 80 or port 8421. It is ok for the share port to be the same as the web port.
 
 TODO 
--renew  [origin...] delete all shared replicas (or just all from the specified origins]
-                    so they will be re-fetched from their originating (or other replica) servers.
+-initproject origin/artifact 
+-initwebproject origin/artifact
+
+-refresh origin[/artifact] delete the local replica metadata.txt files for the specified origin, or 
+ just the single metadata.txt file for the specified artifact, so that a newest metadata.txt file will
+ be downloaded from from their originating (or other replica) server. Actually, just move the 
+ metadata.txt file, and have it do a comparison of metadata dates to see which one to keep.
 
 TODO Further future, speculative:
 Note that maybe there should also be a special relish method which does this, universally, or by origin or originAndArtifact.
@@ -103,6 +108,7 @@ func main() {
     var cpuprofile string
     var publish bool
     var quiet bool
+    var projectPath string
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
@@ -120,6 +126,8 @@ func main() {
 
     flag.BoolVar(&quiet, "quiet", false, "do not show package loading info or interpreter version in program output")
 
+    flag.StringVar(&projectPath, "init", "", "<artifactpath> [webapp] - create directory tree and template files for a relish software project")    
+    
     flag.Parse()
 
 
@@ -132,7 +140,7 @@ func main() {
         if err != nil {
 		     fmt.Println(err)
 		     return 
-		}
+		  }
         pprof.StartCPUProfile(f)
         defer pprof.StopCPUProfile()
     }
@@ -168,11 +176,23 @@ func main() {
     } else {
        relishIndexInWd = strings.Index(workingDirectory,"/relish")
        if relishIndexInWd == -1 || relishIndexInWd != len(workingDirectory) - 7 {
-    		fmt.Printf("relish command must be run from within a relish directory tree.\n")
-    		return          
+         if projectPath != "" {  // Must be creating a relish dir under a new project dir
+            relishRoot = workingDirectory + "/relish"
+         
+            err = os.MkdirAll(relishRoot,0777)       
+            if err != nil {
+              fmt.Printf("Error making relish project directory %s: %s\n", relishRoot,err)
+              return 
+            }                  
+         } else { 
+    		   fmt.Printf("relish command must be run from within a relish directory tree.\n")
+    		   return  
+    		}        
        }
     }
-    relishRoot = workingDirectory[:relishIndexInWd + 7]
+    if relishRoot == "" {
+       relishRoot = workingDirectory[:relishIndexInWd + 7]
+    }
     
     _,err = os.Stat(relishRoot + "/rt")	
     if err == nil {
@@ -184,6 +204,31 @@ func main() {
     }    
     
     // relishRoot is now established
+    
+    if projectPath != "" {
+       if len(pathParts) < 1 {
+          err = initProject(relishRoot, projectPath, "")
+          if err == nil {
+            fmt.Printf("Created relish project template %s/artifacts/%s\n", relishRoot,projectPath)           
+            fmt.Printf("To run your project template's dummy main program, relish %s\n", projectPath)                 
+          } else {          
+            fmt.Printf("Error initializing project %s: %s\n", projectPath, err)
+          }                 
+       } else { 
+          projectType := pathParts[0]
+          err = initProject(relishRoot, projectPath, projectType)
+          if err == nil {
+             fmt.Printf("Created relish web-app project template %s/artifacts/%s.\n", relishRoot,projectPath)          
+             fmt.Printf("To run the web-app, relish -web 8080 %s\n", projectPath) 
+             fmt.Printf("Then enter localhost:8080 into your browser's address bar to view the web app.\n", projectPath)              
+          } else {          
+            fmt.Printf("Error initializing project %s: %s\n", projectPath, err)
+          }                 
+       }       
+       return    
+    }
+    
+    
     
     if isSubDir { // See where we are more specifically
        if isSourceDist {
