@@ -57,6 +57,8 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </a>	
 <div id="index">
 	<a href="#Summary">Summary</a><br/>	
+	<a href="#base64Decode">base64Decode</a><br/>	
+	<a href="#base64Encode" class="alt">base64Encode</a><br/>	
 	<a href="#base64Hash">base64Hash</a><br/>	
 	<a href="#cat" class="alt">cat</a><br/>
 	<a href="#contains">contains</a><br/>
@@ -88,6 +90,12 @@ As well as the methods in the strings package, listed below, relish also provide
 </p>	
 	<center>
 <table>
+<tr>	
+	<td><a href="#base64Decode">base64Decode</a></td><td> - decodes a base-64 encoded string; returns Bytes</td>
+</tr>
+<tr>	
+	<td><a href="#base64Encode">base64Encode</a></td><td> - encodes Bytes to produce a base-64 encoded String</td>
+</tr>      
 <tr>	
 	<td><a href="#base64Hash">base64Hash</a></td><td> - the SHA-256 hash of the string as a base-64 encoded string</td>
 </tr>
@@ -163,6 +171,29 @@ As well as the methods in the strings package, listed below, relish also provide
 <br/>
 <h3>Methods</h3>
 <code><pre>
+
+
+<a name="base64Decode">base64Decode s String urlSafe Bool > decoded Bytes err String</a>
+"""
+ Decodes a base-64 encoded string; returns Bytes.
+ If urlSafe is true, assumes the string was encoded with the URL-safe and filename-safe encoding 
+ format which uses an alphabet in which codes 62 and 63 are -_
+ If urlSafe is false, assumes the string was encoded with the original base-64 encoding format 
+ which uses an alphabet in which codes 62 and 63 are +/ 
+"""
+
+
+<a name="base64Encode">base64Encode s String urlSafe Bool > decoded Bytes err String</a>
+base64Encode s String urlSafe Bool lineLength Int > decoded Bytes err String
+"""
+ Encodes Bytes to produce a base-64 encoded String.
+ If urlSafe is true, uses the URL-safe and filename-safe encoding format which
+ uses an alphabet in which codes 62 and 63 are -_
+ If urlSafe is false, uses the original base-64 encoding format which
+ uses an alphabet in which codes 62 and 63 are +/ 
+ If lineLength is supplied, the output string is justified into lines of the specified number
+ of characters.
+"""
 
 
 <a name="base64Hash">base64Hash s String > String</a>

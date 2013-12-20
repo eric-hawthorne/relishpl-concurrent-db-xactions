@@ -1712,8 +1712,33 @@ urlPathPartDecode s > String
 
 
 
+	/*
+	    returns a String - the base64-encoded version of the input argument Bytes
+	*/
+	stringBase64EncodeMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"base64Encode", []string{"b","urlSafe"}, []string{"Bytes","Bool"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringBase64EncodeMethod.PrimitiveCode = builtinStringBase64Encode
+
+	/*
+	    returns a String - the base64-encoded version of the input argument Bytes
+	*/
+	stringBase64EncodeMethod2, err := RT.CreateMethod("relish/pkg/strings",nil,"base64Encode", []string{"b","urlSafe","lineLen"}, []string{"Bytes","Bool","Int"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringBase64EncodeMethod2.PrimitiveCode = builtinStringBase64Encode
 
 
+	/*
+	    returns a Bytes - the decoding of the input argument base-64 String
+	*/
+	stringBase64DecodeMethod, err := RT.CreateMethod("relish/pkg/strings",nil,"base64Decode", []string{"s","urlSafe"}, []string{"String","Bool"}, []string{"Bytes","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	stringBase64DecodeMethod.PrimitiveCode = builtinStringBase64Decode
 
 	
 	
@@ -1734,6 +1759,12 @@ urlPathPartDecode s > String
 		panic(err)
 	}
 	stringHexHashMethod.PrimitiveCode = builtinStringHashSha256Hex			
+	
+	
+	
+	
+	
+	
 	
 	
 	
@@ -4266,6 +4297,65 @@ func builtinStringTrimSpace(th InterpreterThread, objects []RObject) []RObject {
 	trimmed := strings.TrimSpace(s)  
     return []RObject{String(trimmed)}	
 }	
+
+
+func builtinStringBase64Encode(th InterpreterThread, objects []RObject) []RObject {
+	b := ([]byte)(objects[0].(Bytes))
+	urlSafe := bool(objects[1].(Bool)) 
+	var lineLen int = -1
+	if len(objects) == 3 {
+	   lineLen = int(int64(objects[2].(Int)))
+   }
+	
+   var b64 string	
+	if urlSafe {
+	   b64 = base64.URLEncoding.EncodeToString(b)   
+	} else {
+	   b64 = base64.StdEncoding.EncodeToString(b)      
+   }
+   
+   
+   if lineLen > 0 {
+      var buf bytes.Buffer
+      var s string
+      var n int
+      for b64 != "" {
+         n = len(b64)
+         if n <= lineLen {
+            s = b64
+            b64 = ""
+         } else {
+            s = b64[0:lineLen]
+            b64 = b64[lineLen:]
+         } 
+         buf.WriteString(s)
+         buf.WriteString("\n")
+      }
+      b64 = buf.String()
+   }
+   
+   return []RObject{String(b64)}	
+}
+
+
+func builtinStringBase64Decode(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	urlSafe := bool(objects[1].(Bool)) 	
+
+   var errStr string
+   var err error
+   var decoded []byte
+   
+   if urlSafe {
+	   decoded,err = base64.URLEncoding.DecodeString(s)  
+   } else {
+	   decoded,err = base64.StdEncoding.DecodeString(s)        
+   }
+	if err != nil {
+	   errStr = err.Error()
+	}   
+   return []RObject{Bytes(decoded),String(errStr)}	
+}
 
 
 
