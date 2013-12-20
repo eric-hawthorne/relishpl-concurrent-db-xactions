@@ -632,7 +632,6 @@ func forwardsTypeName(backwardsTypeName string) (typeName string) {
 
 /*
 Extract any List_of_Set_of_List_of from beginning of type name.
-TODO: Does not work for maps !!!!!
 */
 func extractCollectionPrefixes(typeName string) (collectionPrefixes string, restOfTypeName string) {
    setPos := strings.LastIndex(typeName,"Set_of_")
