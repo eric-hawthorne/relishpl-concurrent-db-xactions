@@ -2884,7 +2884,9 @@ func builtinMinus(th InterpreterThread, objects []RObject) []RObject {
 		case Int32:
 			val = Int(int64(obj1.(Int)) - int64(obj2.(Int32)))
 		case Float:
-			val = Float(float64(obj2.(Float)) - float64(obj1.(Int)))
+			val = Float(float64(obj1.(Int)) - float64(obj2.(Float)))
+
+
 		default:
 		    rterr.Stop("minus is not defined for argument types")
 		}
@@ -2895,7 +2897,7 @@ func builtinMinus(th InterpreterThread, objects []RObject) []RObject {
 		case Int:
 			val = Int(int64(obj1.(Int32)) - int64(obj2.(Int)))
 		case Float:
-			val = Float(float64(obj2.(Float)) - float64(obj1.(Int32)))
+			val = Float(float64(obj1.(Int32)) - float64(obj2.(Float)))
 		default:
 		    rterr.Stop("minus is not defined for argument types")
 		}
@@ -2932,7 +2934,7 @@ func builtinDiv(th InterpreterThread, objects []RObject) []RObject {
 		case Int32:
 			val = Int(int64(obj1.(Int)) / int64(obj2.(Int32)))
 		case Float:
-			val = Float(float64(obj2.(Float)) / float64(obj1.(Int)))
+			val = Float(float64(obj1.(Int)) / float64(obj2.(Float)))
 		default:
 		    rterr.Stop("div is not defined for argument types")
 		}
@@ -2943,7 +2945,7 @@ func builtinDiv(th InterpreterThread, objects []RObject) []RObject {
 		case Int:
 			val = Int(int64(obj1.(Int32)) / int64(obj2.(Int)))
 		case Float:
-			val = Float(float64(obj2.(Float)) / float64(obj1.(Int32)))
+			val = Float(float64(obj1.(Int32)) / float64(obj2.(Float)))
 		default:
 		    rterr.Stop("div is not defined for argument types")
 		}
