@@ -220,7 +220,7 @@ func main() {
           if err == nil {
              fmt.Printf("Created relish web-app project template %s/artifacts/%s.\n", relishRoot,projectPath)          
              fmt.Printf("To run the web-app, relish -web 8080 %s\n", projectPath) 
-             fmt.Printf("Then enter localhost:8080 into your browser's address bar to view the web app.\n", projectPath)              
+             fmt.Printf("Then enter localhost:8080 into your browser's address bar to view the web app.\n")              
           } else {          
             fmt.Printf("Error initializing project %s: %s\n", projectPath, err)
           }                 
