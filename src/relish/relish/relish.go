@@ -209,20 +209,20 @@ func main() {
        if len(pathParts) < 1 {
           err = initProject(relishRoot, projectPath, "")
           if err == nil {
-            fmt.Printf("Created relish project template %s/artifacts/%s\n", relishRoot,projectPath)           
-            fmt.Printf("To run your project template's dummy main program, relish %s\n", projectPath)                 
+            fmt.Printf("\nCreated relish project template\n%s/artifacts/%s\n", relishRoot,projectPath)           
+            fmt.Printf("\nTo run your project template's dummy main program, relish %s\n\n", projectPath)                 
           } else {          
-            fmt.Printf("Error initializing project %s: %s\n", projectPath, err)
+            fmt.Printf("\nError initializing project %s: %s\n", projectPath, err)
           }                 
        } else { 
           projectType := pathParts[0]
           err = initProject(relishRoot, projectPath, projectType)
           if err == nil {
-             fmt.Printf("Created relish web-app project template %s/artifacts/%s.\n", relishRoot,projectPath)          
-             fmt.Printf("To run the web-app, relish -web 8080 %s\n", projectPath) 
-             fmt.Printf("Then enter localhost:8080 into your browser's address bar to view the web app.\n")              
+             fmt.Printf("\nCreated relish web-app project template\n%s/artifacts/%s\n", relishRoot,projectPath)          
+             fmt.Printf("\nTo run the web-app, relish -web 8080 %s\n", projectPath) 
+             fmt.Printf("Then enter localhost:8080 into your browser's address bar to view the web app.\n\n")              
           } else {          
-            fmt.Printf("Error initializing project %s: %s\n", projectPath, err)
+            fmt.Printf("\nError initializing project %s: %s\n", projectPath, err)
           }                 
        }       
        return    
