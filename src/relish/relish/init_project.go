@@ -118,7 +118,25 @@ const INDEX_HTML_FILE = `<html>
         <br/>
         <p>
         <a href="example.html">An example static web page</a>
+        
+        
         </p>
+        <br/>
+        <p>
+        The fruit on special is {{.fruit}}s.
+        </p>                
+        <br/>
+        <p>
+        <a href="visitCount">Number of times this web site has been visited</a>
+        </p>      
+        <br/>
+        <p>
+        <form action="guessingGameAction" method="POST">
+           Guess a number between 1 and 10 : &nbsp;
+           <input type="text" name="guess" size="4" /> &nbsp;
+           <input type="submit" value="submit your guess" />           
+        </form>
+        </p>          
      </center>
   </body>
 </html>
@@ -144,19 +162,113 @@ import
    datetime
 
 
+FRUITS = ["apple" "pear" "banana" "orange"]
+
+
+VisitLog
+"""
+ An object that remembers the number of visits to the main page of the web app.
+ Also, on a completely different note, stores a secret number that the web app user
+ must guess, and the number of guesses in total so far.
+ This whole thing is just to show the concept of storing data from the web app in
+ relish local persistent storage.
+"""
+   numVisits Int
+   secretNumber Int
+   numGuesses Int
+
+
+
 index > String Map
 """
- Handles a request for the root (i.e. empty path) url on the server and port.
+ Handles a request for the root (i.e. empty path) url on the server and port, or a request for /index.html
 """
    t = now "Local"
    ts = format t "3:04PM"
    
+   if exists "Visit Log"
+      visitLog = summon "Visit Log"
+      visitLog.numVisits = plus visitLog.numVisits 1
+   else
+      visitLog = VisitLog
+      visitLog.numVisits = 1
+      visitLog.secretNumber = 5
+      visitLog.numGuesses = 0
+      dub visitLog "Visit Log"
+   
    => "index.html"
       {
-         "time" => ts
+         "time"  => ts
+         "fruit" => FRUITS[mod visitLog.numVisits (len FRUITS)]
       }String > String
 
 
+visitCount > String Any
+"""
+ Prints the number of visits to the main page of the web app.
+"""
+   if not exists "Visit Log"
+      => "REDIRECT"
+         "/"
+         
+   visitLog = summon "Visit Log"
+   => "visit_count.html"
+      visitLog.numVisits
+
+
+guessingGameAction guess Int > String String
+"""
+ Accepts a guess for a number between 1 and 10.
+ Reports whether it is the right number or not.
+ "right" is defined as one more than the last entered number, except wrapping around at 10.
+"""
+   if not exists "Visit Log"
+      => "REDIRECT"
+         "/"
+         
+   visitLog = summon "Visit Log"
+   visitLog.numGuesses = plus visitLog.numGuesses 1   
+
+   currentSecret = visitLog.secretNumber
+   offset = 1
+   if eq guess visitLog.secretNumber
+      => "REDIRECT"
+         "gotIt"
+             
+   => "REDIRECT"
+      "tryAgain"
+           
+      
+tryAgain > String Int
+"""
+ Displays that the user guessed wrong. Show the number anyway. Invite to try again.
+""" 
+   visitLog = summon "Visit Log"  
+   oldNumber = visitLog.secretNumber
+   visitLog.secretNumber = plus 
+                              mod 
+                                 plus visitLog.numVisits visitLog.numGuesses
+                                 10
+                              1
+   => "try_again.html"
+      oldNumber
+
+
+gotIt > String Int
+"""
+ Displays that the user guessed correctly. Show the number. Invite to play again.
+""" 
+   visitLog = summon "Visit Log"  
+   oldNumber = visitLog.secretNumber
+   visitLog.secretNumber = plus 
+                              mod 
+                                 plus visitLog.numVisits visitLog.numGuesses
+                                 10
+                              1
+   => "got_it.html"
+      oldNumber
+
+   
 default > String String
 """
  Handles all url paths on this server and port which are not otherwise handled.
@@ -198,6 +310,71 @@ const STATIC_HTML_FILE = `<html>
   </body>
 </html>
 `
+
+
+const VISIT_COUNT_HTML_FILE = `<html>
+  <head>
+  <title>Visit Count</title>
+  </head>
+  <body>
+     <center>
+     <h1>Visit Count</h1>
+     <p>
+     Wow. This web site has been visited {{.}} times.
+     </p>
+     <p>
+         <input type="button" value="&lt; back" onclick="history.back()"/>
+     </p>
+     </center>
+  </body>
+</html>
+`
+
+
+const GOT_IT_HTML_FILE = `<html>
+  <head>
+  <title>You Got It!</title>
+  </head>
+  <body>
+     <center>
+     <h1>You Got It!</h1>
+     <p>
+     The number is {{.}}
+     </p>
+     <p>
+         I know, this is the worst game ever. It's just a dummy web app demo.
+      </p>
+         <p>
+             Press the <input type="button" value="&lt; back" onclick="history.back()"/> button to play again.
+         </p>         
+     </p>
+     </center>
+  </body>
+</html>
+`
+
+
+const TRY_AGAIN_HTML_FILE = `<html>
+  <head>
+  <title>Try Again</title>
+  </head>
+  <body>
+     <center>
+     <h1>Sorry. That's not the number.</h1>
+     <p>
+     The number was {{.}}
+     </p>   
+     <p>
+         I know, this is the worst game ever. It's just a dummy web app demo.
+     </p>
+     <p>
+         Press the <input type="button" value="&lt; back" onclick="history.back()"/> button to try again.
+     </p>
+     </center>     
+  </body>
+</html>
+`
+
 
 
 const RELISH_ICON_PNG = `iVBORw0KGgoAAAANSUhEUgAAAAsAAAAQCAYAAADAvYV-AAAA_UlEQVR42mNgwAL8CutaN9zK_chAFGhg-L_-P8N_ohTCFG_4x4lF
@@ -379,7 +556,29 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       err = ioutil.WriteFile(indexPath, ([]byte)(INDEX_HTML_FILE), 0777)  
       if err != nil {
          return 
+      }    
+      
+      visitCountPath := webPackageDir + "/visit_count.html"
+      
+      err = ioutil.WriteFile(visitCountPath, ([]byte)(VISIT_COUNT_HTML_FILE), 0777)  
+      if err != nil {
+         return 
       }      
+      
+      
+      gotItPath := webPackageDir + "/got_it.html"
+      
+      err = ioutil.WriteFile(gotItPath, ([]byte)(GOT_IT_HTML_FILE), 0777)  
+      if err != nil {
+         return 
+      }     
+      
+      tryAgainPath := webPackageDir + "/try_again.html"
+      
+      err = ioutil.WriteFile(tryAgainPath, ([]byte)(TRY_AGAIN_HTML_FILE), 0777)  
+      if err != nil {
+         return 
+      }         
       
       dialogPath := webPackageDir + "/dialog.rel"
       

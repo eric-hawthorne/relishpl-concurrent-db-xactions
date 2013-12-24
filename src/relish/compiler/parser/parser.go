@@ -3080,7 +3080,7 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
     if p.parseOneLineLiteral(x) {
 	   return true
     }
-
+/*
     var constant *ast.Ident
     if p.parseConstName(true,&constant) {
 	   // translate
@@ -3092,6 +3092,11 @@ func (p *parser) parseOneLineExpression(x *ast.Expr, isOneOfMultiple bool, isIns
     if p.parseOneLineVariableReference(false, false, true, x) {
 	   return true
     }
+*/    
+    if p.parseOneLineVariableOrConstReference(false, false, false, true, x) {
+      return true
+    }    
+    
 
     // if isInsideBrackets can't have a method call of any kind nor a constructor invocation of any kind. 
 
@@ -3188,7 +3193,7 @@ func (p *parser) parseIndentedExpression(x *ast.Expr) bool {
        return true	
     }
 
-    if p.parseIndentedVariableReference(false, true, x) {  
+    if p.parseIndentedVariableOrConstReference(false, false, true, x) {  
 	   return true
     }
 
@@ -4551,7 +4556,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
   	    emptyMapOrSet = true
   	} else if p.Match1('{') {
         if p.parseIndentedForGenerator(st.RuneColumn, &rangeStmt) {		
-	        p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {}")  
+	        p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket } aligned exactly below opening {")  
 	    } else {	
 	        // Get the list of expressions inside the map or set literal squiggly-brackets
 	        // Note that one of these must exist, because it is not {}
@@ -4563,7 +4568,7 @@ func (p *parser) parseIndentedMapOrSetConstruction(mapStmt **ast.MapConstruction
 	  		  }
 
 	        if mapEntriesFound || setEntriesFound {
-	           p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket ] aligned exactly below opening {") 
+	           p.required(p.Below(st.RuneColumn) && p.Match1('}'), "closing squiggly-bracket } aligned exactly below opening {") 
 	        }
   		
 	        knownToBeMap = mapEntriesFound
@@ -4911,7 +4916,7 @@ func (p *parser) parseLHSList(mustBeLocalVar bool, lhsList *[]ast.Expr) bool {
 
     var x ast.Expr
 
-    if ! p.parseOneLineVariableReference(mustBeLocalVar, true, false, &x) {
+    if ! p.parseOneLineVariableOrConstReference(true, mustBeLocalVar, true, false, &x) {
 	    return false
     }
 
@@ -4919,7 +4924,7 @@ func (p *parser) parseLHSList(mustBeLocalVar bool, lhsList *[]ast.Expr) bool {
 	*lhsList = append(*lhsList,x)
 	
     st2 := p.State()
-    for p.Space() && p.parseOneLineVariableReference(mustBeLocalVar, true, false, &x) {
+    for p.Space() && p.parseOneLineVariableOrConstReference(true, mustBeLocalVar, true, false, &x) {
 	
 	   // translate
 	   *lhsList = append(*lhsList,x)
@@ -4929,6 +4934,7 @@ func (p *parser) parseLHSList(mustBeLocalVar bool, lhsList *[]ast.Expr) bool {
     p.Fail(st2)
     return true
 }
+
 
 /*
 Note. It is difficult to tell the difference between a variable name
@@ -4944,6 +4950,85 @@ so they cannot be the start of a method call.
 NEED TO PASS AN IDENT OUT OF THIS ESPECIAlLY IF A NEW VARIABLE
 BECAUSE in parseLHSList we are not collecting the variables correctly yet!!!!!!!!!
 */
+func (p *parser) parseOneLineVariableOrConstReference(mustBeVar bool, mustBeLocalVar bool, mustBeAssignable bool, mustBeDefined bool, expr *ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "OneLineVariableOrConstReference"))
+    }
+    
+    var varOrConstName *ast.Ident
+    var isConst bool
+    
+    if ! mustBeVar {
+       isConst = p.parseConstName(true,&varOrConstName) 
+    }
+    if ! isConst {
+       if ! p.parseVarName(&varOrConstName, mustBeDefined) {
+	       return false
+       }
+    } 
+
+    var x ast.Expr = varOrConstName
+
+    for p.parseOneLineIndexOrSliceExpression(x,&x) {	
+	    p.required(! mustBeLocalVar, "a simple local variable name, not an indexed expression")	
+    }
+
+    if p.Match("...") {
+	
+    }
+
+    for p.Match1('.') {
+	    p.required(! mustBeLocalVar, "a simple local variable name, not an object attribute selection expression")
+	    p.required(p.parseOneLineVariableReference1(x,&x),"a variable or accessor-method name")
+    }
+
+	*expr = x
+
+    // Check to make sure the reference is an assignable storage location if needed.
+    return true
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+OBSOLETED BY parseOneLineVariableOrConstReference
+Note. It is difficult to tell the difference between a variable name
+and a method name, thus it is difficult to know whether
+we are starting a prefix method call, or have a list of variables.
+
+One clue is that we have to keep track of all local-var and parameter names when 
+in a method body, and only those could possibly be (beginning) variable references.
+
+Note that the "method" names we encounter in dot notation have no arguments, in the usual sense,
+so they cannot be the start of a method call.
+
+NEED TO PASS AN IDENT OUT OF THIS ESPECIAlLY IF A NEW VARIABLE
+BECAUSE in parseLHSList we are not collecting the variables correctly yet!!!!!!!!!
+
 func (p *parser) parseOneLineVariableReference(mustBeLocalVar bool, mustBeAssignable bool, mustBeDefined bool, expr *ast.Expr) bool {
     if p.trace {
        defer un(trace(p, "OneLineVariableReference"))
@@ -4974,6 +5059,10 @@ func (p *parser) parseOneLineVariableReference(mustBeLocalVar bool, mustBeAssign
     return true
 }
 
+*/
+
+
+
 func (p *parser) parseOneLineVariableReference1(exprSoFar ast.Expr, expr *ast.Expr) bool {
     if p.trace {
        defer un(trace(p, "OneLineVariableReference1"))
@@ -4998,6 +5087,41 @@ func (p *parser) parseOneLineVariableReference1(exprSoFar ast.Expr, expr *ast.Ex
 }
 
 
+
+func (p *parser) parseIndentedVariableOrConstReference(mustBeVar bool, mustBeAssignable bool,mustBeDefined bool, expr *ast.Expr) bool {
+    if p.trace {
+       defer un(trace(p, "IndentedVariableOrConstReference"))
+    }
+
+    var varOrConstName *ast.Ident
+    var isConst bool
+
+    if ! mustBeVar {
+       isConst = p.parseConstName(true,&varOrConstName) 
+    }
+    if ! isConst {
+       if ! p.parseVarName(&varOrConstName, mustBeDefined) {
+          return false
+       }
+    } 
+
+    var x ast.Expr = varOrConstName
+
+
+    for p.parseIndexOrSliceExpression(x,&x) {	
+    }
+    for p.Match1('.') {
+	    p.required(p.parseIndentedVariableReference1(x,&x),"a variable or accessor-method name")
+    }
+    // Check to make sure the reference is an assignable storage location if needed.
+
+	*expr = x
+	
+    return true
+}
+
+
+/* OBSOLETED BY ABOVE
 func (p *parser) parseIndentedVariableReference(mustBeAssignable bool,mustBeDefined bool, expr *ast.Expr) bool {
     if p.trace {
        defer un(trace(p, "IndentedVariableReference"))
@@ -5020,6 +5144,7 @@ func (p *parser) parseIndentedVariableReference(mustBeAssignable bool,mustBeDefi
 	
     return true
 }
+*/
 
 func (p *parser) parseIndentedVariableReference1(exprSoFar ast.Expr, expr *ast.Expr) bool {
     if p.trace {
