@@ -802,9 +802,29 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
 	   }
 
 
-	  case "IMAGE":
-       fmt.Println("IMAGE response not implemented yet.")			
-	     fmt.Fprintln(w, "IMAGE response not implemented yet.")		
+	  case "IMAGE":	
+		var mediaContent string
+        var mimeType string	
+        var mimeSubtype string          	
+	    if len(results) < 3 {
+	        err = fmt.Errorf("%s IMAGE response requires an image-data-type (MIME subtype) then a content string", methodName) 
+	        return       
+        } else if len(results) == 3 {
+            mimeSubtype = strings.ToLower(string(results[1].(String)))
+            if mimeSubtype == "jpg" {
+               mimeSubtype = "jpeg"
+            }
+            mimeType = "image/" + mimeSubtype    
+
+            // TODO Need to be more flexible about the type conversions here!!!!!!!!!!!!!!!!!!
+	          mediaContent = string(results[2].(String)) 
+            w.Header().Set("Content-Type", mimeType)	
+        } else {
+             err = fmt.Errorf("%s IMAGE response has too many return values. Should be 'IMAGE' then a image-data-type (MIME subtype) then a content string", methodName) 
+             return               
+        }		
+        fmt.Fprint(w, mediaContent)	     
+	     
 
     case "IMAGE FILE":  // [mime subtype] filePath
        var filePath string
@@ -821,7 +841,10 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
           if results[2].IsZero() {           
             filePath = string(results[1].(String))              
           } else {
-             mimeSubtype = string(results[1].(String))
+             mimeSubtype = strings.ToLower(string(results[1].(String)))
+             if mimeSubtype == "jpg" {
+                mimeSubtype = "jpeg"
+             }             
              mimeType = "image/" + mimeSubtype
              filePath = string(results[2].(String))   
           } 
@@ -835,8 +858,27 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
         filePath = makeAbsoluteFilePath(methodName, filePath)        
         http.ServeFile(w,r,filePath)
 	  case "VIDEO":
-       fmt.Println("VIDEO response not implemented yet.")			
-	   fmt.Fprintln(w, "VIDEO response not implemented yet.")		
+  		var mediaContent string
+          var mimeType string	
+          var mimeSubtype string            	
+  	    if len(results) < 3 {
+  	        err = fmt.Errorf("%s VIDEO response requires an image-data-type (MIME subtype) then a content string", methodName) 
+  	        return       
+          } else if len(results) == 3 {
+              mimeSubtype = strings.ToLower(string(results[1].(String)))
+              if mimeSubtype == "mpeg4" {
+                 mimeSubtype = "mp4"
+              }
+              mimeType = "video/" + mimeSubtype    
+
+              // TODO Need to be more flexible about the type conversions here!!!!!!!!!!!!!!!!!!
+  	          mediaContent = string(results[2].(String)) 
+              w.Header().Set("Content-Type", mimeType)	
+          } else {
+               err = fmt.Errorf("%s VIDEO response has too many return values. Should be 'VIDEO' then a image-data-type (MIME subtype) then a content string", methodName) 
+               return               
+          }		
+          fmt.Fprint(w, mediaContent)	
 	  case "VIDEO FILE":
        var filePath string
        var mimeSubtype string       
@@ -849,9 +891,12 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
 
         } else if len(results) == 3 {
           if results[2].IsZero() {           
-            filePath = string(results[1].(String))              
+            filePath = string(results[1].(String))           
           } else {
-            mimeSubtype = string(results[1].(String))
+            mimeSubtype = strings.ToLower(string(results[1].(String)))
+            if mimeSubtype == "mpeg4" {
+               mimeSubtype = "mp4"
+            }            
             mimeType = "video/" + mimeSubtype
             filePath = string(results[2].(String))  
           }  
