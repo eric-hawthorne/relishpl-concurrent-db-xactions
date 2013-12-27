@@ -57,7 +57,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <div id="index">
 	<a href="#BackgroundNeeded">Background Needed</a><br/>	
 	<a href="#Definition" class="alt">Web App Definition</a><br/>
-	<a href="#RoleOfRelish"></a>The Role of relish<br/>
+	<a href="#RoleOfRelish">The Role of relish</a><br/>
 	<a href="#GetStarted" class="alt">Create Web App</a><br/>	
 	<a href="#StartApp">Start Web App</a><br/>	
 	<a href="#DynamicPages" class="alt">Dynamic Web Pages</a><br/>		
@@ -67,7 +67,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#Templates" class="alt">Templates</a><br/>
   <a href="#TemplateSyntax">HTML Template Syntax</a><br/>    
   <a href="#FormatType" class="alt">Format-type Directives</a><br/>  
-  <a href="#Restarting">Development Workflow</a><br/>    
+  <a href="#Restarting">Development Workflow</a><br/>   
+  <a href="#Uploading" class="alt">File Uploading</a><br/>   
+  <a href="#RequestObj">Request Headers</a><br/>     
+  <a href="#VarArgs" class="alt">Variable # of Args</a><br/>     
 </div>  
 <div id="content_manual">
 	<a name="BackgroundNeeded"><h3>Background Knowledge Needed to Use This Document</h3></a>
@@ -138,7 +141,17 @@ Look at the relish source code file
 It has examples of the subjects discussed below, although currently, its example code is not identical to the code examples in the tutorial below. Still, if you want to see an analogous and working example to what is discussed below, that dialog.rel file is your best bet currently, until the documentation and example suite improves.
 </p>
 <p>
-The general pattern of execution of a web application is that a web client (a browser, or web service client) makes a GET or POST http-request to a server. The server-side program has defined a set of web request handler methods, or just handler methods for short, each designed to process a different kind of request from a web client (i.e. each handler method knows how to process a different requested URL path on the server). The server routes the request (according to the request's URL path-parts) to the appropriate handler method in the server-side programming language. The GET query-arguments and/or POSTed data of the request are mapped to arguments of the method. The handler method, often using the argument data as lookup keys, typically looks up some data from persistent storage (or an in-memory cache corresponding to persistent storage.) Then it may perform some processing on the persistent data or just look up requested values from the persistent data store. The method then decides what the http response to the web client will be (for example an error message, or the requested data, or confirmation of a requested action). Finally, the handler method specifies how the response data will be formatted to create a valid http response of the kind expected by the client. The response may be formatted as an html web page with data values from the program/persistent store mixed into the web page, or the response could be pure data, formatted in any number of formats such as image/png, text/csv, text/xml, text/json.
+The general pattern of execution of a web application is that 
+<ul>
+<li>a web client (a browser, or web service client) makes a GET or POST http-request to a server.</li>
+<li>The server-side program has defined a set of web request handler methods, or just handler methods for short, each designed to process a different kind of request from a web client (i.e. each handler method knows how to process a different requested URL path on the server).</li>
+<li>The server routes the request (according to the request's URL path-parts) to the appropriate handler method in the server-side programming language.</li>
+<li>The GET query-arguments and/or POSTed data of the request are mapped to arguments of the method.</li>
+<li>The handler method, often using the argument data as lookup keys, typically looks up some data from persistent storage (or an in-memory cache corresponding to persistent storage.)</li>
+<li>Then it may perform some processing on the persistent data or just look up requested values from the persistent data store.</li>
+<li>The method then decides what the http response to the web client will be (for example an error message, or the requested data, or confirmation of a requested action).</li>
+<li>Finally, the handler method specifies how the response data will be formatted to create a valid http response of the kind expected by the client. The response may be formatted as an html web page with data values from the program/persistent store mixed into the web page, or the response could be pure data, formatted in any number of formats such as image/png, text/csv, text/xml, text/json.</li>
+</ul>
 <p>
  In the following sections, the relish way of setting up URL routing and handler methods will be explained.
 </p>
@@ -687,7 +700,231 @@ Content-Disposition: attachment; filename="fname.png"
 	<p>
 	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop
    </p>
+   
+   
+   
+<a name="Uploading"><h3>Accepting uploaded files</h3></a>   
 
+<p>
+Imagine you write a web page to allow the web app user to upload a file to the server. A snippet of the web page might look like:
+<code><pre>
+&lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
+    &lt;fieldset>
+      &lt;input type="file" name="myfiles" id="myfile">
+      &lt;input type="submit"  value="upload file">
+  &lt;/fieldset>
+&lt;/form>
+&lt;/p>
+</pre></code>   
+</p>
+<p>
+Here is an example relish dialog.rel request-handler method which handles a file upload:
+<code><pre>
+   
+import
+   http_srv
+   
+      
+uploadAction request http_srv.Request > String String
+"""
+ Processes an upload of a single file.
+"""
+   file err = uploadedFile request "myfile"
+   if err
+      => errf "Error: No uploaded file" "myfile" err  
+
+   fileName = name file
+   err = open file
+   if err
+      => errf "Error opening uploaded file" fileName err
+     
+   content err = readAllBinary file
+   if err
+      => errf "Error reading uploaded file" fileName err
+
+   close file
+      
+   if eq fileName "metadata.txt"
+      ...
+   elif hasSuffix fileName ".zip"
+      ...
+
+   => "HTML"
+      """
+&lt;html>
+Uploaded !
+&lt;/html>
+"""
+
+
+errf preamble String name String err String > String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => "HTML"
+      fill """
+&lt;html>
+&lt;center>
+&lt;p style="max-width: 800px; padding: 30px">
+%s %s: %s
+&lt;/p>
+&lt;/center>
+&lt;/html>
+"""
+           preamble
+           name
+           err
+</pre></code> 
+</p>   
+
+
+<p>
+What if you need to write a web page to allow the web app user to upload multiple files to the server all in one go. A snippet of the web page might look like:
+<code><pre>
+&lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
+    &lt;fieldset>
+      &lt;input type="file" name="myfiles" id="myfiles" multiple="multiple">
+      &lt;input type="submit"  value="upload files">
+  &lt;/fieldset>
+&lt;/form>
+&lt;/p>
+</pre></code>   
+</p>
+<p>
+Here is an example relish dialog.rel request-handler method which handles multi-file upload:
+<code><pre>
+   
+import
+   http_srv
+   
+      
+uploadAction request http_srv.Request > String String
+"""
+ Processes an upload of multiple files.
+"""
+   fileList = uploadedFiles request "myfiles"
+   for file in fileList
+      fileName = name file
+      err = open file
+      if err
+         => errf "Error opening uploaded file" fileName err
+     
+      content err = readAllBinary file
+      if err
+         => errf "Error reading uploaded file" fileName err
+
+      close file
+      
+      if eq fileName "metadata.txt"
+         ...
+      elif hasSuffix fileName ".zip"
+         ...
+
+   => "HTML"
+      """
+&lt;html>
+Uploaded !
+&lt;/html>
+"""
+</pre></code> 
+</p>   
+   
+<a name="RequestObj"><h3>Examining the http request metadata (headers)</h3></a>   
+<p>
+   You saw in the file upload example above the inclusion of a special "request" parameter to the handler method.
+   Such a parameter can ALWAYS be included as the first parameter of a handler method, and it does
+   not match with URL arguments, URL path elements, or posted argument values.     
+<code><pre>
+import
+   http_srv
+      
+      
+myHandlerMethod request http_srv.Request otherFormInput1 String otherFormInput2 String > String String
+</pre></code>
+Instead, it gives you an object representing the http request. You can apply methods to this object
+to obtain the http request headers that were set with the request. Here's the current list
+of header accessor methods available for http_src.Request objects:
+<code><pre>
+// These methods are defined in the relish standard-library http_srv package:
+   
+
+uploadedFiles r Request key String > fs [] UploadedFile
+"""
+Return a list of uploaded files or an empty list if no file upload input of the
+given name (the key) was found in this http request.
+
+An http_srv.UploadedFile object can be used in the same way as
+a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+uploadedFile r Request key String > f UploadedFile err String
+"""
+ Return a single uploaded file or an error if no file upload input of the
+ given name (the key) was found in this http request.
+ 
+ An http_srv.UploadedFile object can be used in the same way as
+ a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+cookies r Request > c [] Cookie
+"""
+ NOT IMPLEMENTED YET
+"""
+
+
+cookie r Request key String > c Cookie err String
+"""
+ NOT IMPLEMENTED YET
+ """
+ 
+ 
+requestUri r Request > String 
+"""
+ The entire request URL including arguments, unmodified i.e.
+ raw as it appeared in the http request data stream.
+"""
+
+
+referer r Request > String 
+"""
+ URL of page from which the present URL link was clicked on.
+ Note: Misspelling of "referrer" is carried over from http specification.
+"""
+
+
+method r Request > String 
+"""
+ GET POST PUT
+"""
+
+
+host r Request > String 
+"""
+ host or host:port
+"""
+
+
+remoteAddr r Request > String 
+"""
+ The client address
+ IP:port
+"""
+
+</pre></code>
+</p>   
+   
+<a name="VarArgs"><h3>Handling requests with a variable number of GET/POST arguments</h3></a>   
+<p>
+   TBD
+</p>
+<br/>
+<br/>
 
 
 </div>
