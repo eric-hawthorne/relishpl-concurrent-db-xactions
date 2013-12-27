@@ -20,13 +20,34 @@ Request
 
 // NATIVE METHODS
 //
-// files r Request key String > fs [] UploadedFile
+// uploadedFiles r Request key String > fs [] UploadedFile
 //
-// file r Request key String > f UploadedFile err String
+// uploadedFile r Request key String > f UploadedFile err String
 //
 // cookies r Request > c [] Cookie
-//
+//  NOT IMPLEMENTED YET
 // cookie r Request key String > c Cookie err String
+//  NOT IMPLEMENTED YET
+//
+// requestUri r Request > String 
+//
+// referer r Request > String 
+//
+// method r Request > String 
+// """
+//  GET POST PUT
+// """
+//
+// host r Request > String 
+// """
+//  host or host:port
+// """
+//
+// remoteAddr r Request > String 
+// """
+//  The client address
+//  IP:port
+// """
 
 
 Cookie
