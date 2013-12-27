@@ -93,18 +93,22 @@ relish -init willy-wonka.commons.relish.pl2012/online_chocolate_shop webapp
 </pre></code>
 </p>
 <p>
-You will then see as a response the following three lines:
+You will then see as a response the following confirmation and instructions:
 </p>
 <p>
    <code><pre>
-Created relish project template /Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop
+Created relish web-app project template 
+/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop
+
 To run the web-app, relish -web 8080 willy-wonka.commons.relish.pl2012/online_chocolate_shop
 Then enter localhost:8080 into your browser's address bar to view the web app.
 </pre></code>
-      </p>
+</p>
 <p>
-All of the web-application source material (request handler methods, html templates, resources such as images and css files) can be found in or under the directory 
+All of the web-application source material (request handler methods, html templates, resources such as images and css files) can be found in or under the directory
+<code><pre> 
 /Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop/v0.1.0/src/web/
+</pre></code>
 </p>
 <p>
 The request handler methods are in dialog.rel, the html template is index.html. Note the index.html file's {{.time}} variable which gets replaced by the value of the time calculated and formatted by the index method in dialog.rel.
@@ -113,7 +117,8 @@ The request handler methods are in dialog.rel, the html template is index.html. 
       To go further in understanding how to modify the dummy web application into your real one, you should read the 
          <a href="relish_web_app_tutorial.html">Writing Web Applications in relish</a> tutorial.
    </p>
-
+<br/>
+<br/>
 </div>
 
 </body>
