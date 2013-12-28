@@ -919,9 +919,68 @@ remoteAddr r Request > String
 </pre></code>
 </p>   
    
-<a name="VarArgs"><h3>Handling requests with a variable number of GET/POST arguments</h3></a>   
+<a name="VarArgs"><h3>Handling requests with a variable number of GET/POST/path-segment arguments</h3></a>   
 <p>
-   TBD
+Imagine you have a URL which if the user is logged in has a token argument, and has no arguments if not.
+To handle that, we might make a dialog.rel handler method like this:
+<code><pre>   
+listAccounts
+   ...kw {} String > String 
+> 
+   String 
+   Any
+"""
+ Displays the user's bank accounts showing balance of each.
+
+ There may be a token argument. If so, look up the Visit object of the logged in
+ user. If not, redirect to the login page.
+"""
+
+   token tokenFound = kw["token"]
+   if tokenFound
+      if not exists token  // Invalid token - doesn't correspond to a user visit.
+         => "HTTP ERROR" 404
+      visit = summon token
+   else
+      => "REDIRECT" "login"  
+      
+   => "list_accounts.html"   
+      visit.user.accounts
+</pre></code>  
+The ...kw parameter's declared type is a Map from String to String. If such an parameter, with the ... form,
+is found in a handler method declaration, any leftover name=value arguments 
+from the request URI and the POSTed data are put into the kw Map. That is, kw gets any arguments
+which are not matched to other method parameters by the usual matching rules.
+</p>
+<p>
+As another case, imagine you want to handle RESTful resource requests. In that case, you may
+wish to process all of the path elements of the URL, to see which resource is being referred to.
+<code><pre>   
+index
+   ...args [] String 
+> 
+   String 
+   Any
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+  if args 
+     resourceType = args[0]  
+       
+     if gt (len args) 1
+        resourceId = args[1]
+        => "JSON" 
+           getResource resourceType resourceId        
+     else
+        => "JSON" 
+           listResources resourceType
+  => "JSON" 
+     listResourceTypes           
+</pre></code>
+The ...args parameter's declared type is List of String.
+If such an parameter, with the ... form,
+is found in a handler method declaration, any leftover arguments from the request URI and the POSTed data are put into the 
+args List. That is, args gets any arguments which are not matched to other method parameters by the usual matching rules.
 </p>
 <br/>
 <br/>
