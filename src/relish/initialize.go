@@ -1,4 +1,4 @@
-// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // This package serves as a dependency reduction bridge between other packages that need to
