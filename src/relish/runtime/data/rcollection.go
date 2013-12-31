@@ -2392,6 +2392,9 @@ func (f FakeInterpreterThread) AllowGC()  {
 func (f FakeInterpreterThread) DisallowGC()  {
 }
 
+func (f FakeInterpreterThread) GC() {
+}
+
 func (f FakeInterpreterThread) EvaluationContext() MethodEvaluationContext {
 	return nil
 }

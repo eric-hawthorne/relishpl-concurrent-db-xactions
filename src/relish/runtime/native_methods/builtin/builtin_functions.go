@@ -853,6 +853,14 @@ func InitBuiltinFunctions(relishRoot string) {
 		panic(err)
 	}
 	tickMethod.PrimitiveCode = builtinTick
+	
+    // gc
+    //
+	gcMethod, err := RT.CreateMethod("",nil,"gc", []string{}, []string{},  []string{}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	gcMethod.PrimitiveCode = builtinGC
 
 
     // plus t Time durationNs Int > Time
@@ -3065,7 +3073,10 @@ func builtinTick(th InterpreterThread, objects []RObject) []RObject {
 	return []RObject{c}
 }	
 
-
+func builtinGC(th InterpreterThread, objects []RObject) []RObject {
+   th.GC()
+	return []RObject{}
+}
 
 
 

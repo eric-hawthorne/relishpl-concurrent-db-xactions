@@ -50,7 +50,8 @@ type RuntimeEnv struct {
 	PkgNameToShortName map[string]string
 	InbuiltFunctionsPackage *RPackage      // shortcut to package containing inbuilt functions
 	RunningArtifact string                 // Full origin-qualified name of the artifact one of whose package main functions was run in relish command
-	TypeTupleTree *TypeTupleTreeNode
+	TypeTupleTree *TypeTupleTreeNode  // Obsolete
+	TypeTupleTrees []*TypeTupleTreeNode  // New
 	objects       map[int64]RObject // persistable objects by DBID()
 	// objects map[string] RObject // persistable objects by uuidstr - do we need this for distributed computing?
 	objectIds map[RObject]uint64 // non-persistable object to its local numeric id (for debug printing the object)
@@ -200,6 +201,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		PkgShortNameToName: make(map[string]string),   
 		PkgNameToShortName: make(map[string]string),		
 		TypeTupleTree: &TypeTupleTreeNode{},
+		TypeTupleTrees: make([]*TypeTupleTreeNode,20),
 		objects:       make(map[int64]RObject),
 		objectIds:     make(map[RObject]uint64),
 		idGen:         NewIdGenerator(),
@@ -210,6 +212,11 @@ func NewRuntimeEnv() *RuntimeEnv {
 	    ReflectedAttributes: make(map[string]RObject),
 		evalContexts:  make(map[RObject]MethodEvaluationContext),
 	}
+	for i := 0; i < 20; i++ {
+	   tttn := &TypeTupleTreeNode{}
+	   tttn.LastTypeTuple = make(map[*RType]*RTypeTuple)
+	   rt.TypeTupleTrees[i] = tttn
+   }
 	rt.PkgNameToShortName["relish.pl2012/core/inbuilt"] = "inbuilt"
 	rt.PkgShortNameToName["inbuilt"] = "relish.pl2012/core/inbuilt"	
 	return rt
