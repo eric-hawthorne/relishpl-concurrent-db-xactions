@@ -1,4 +1,4 @@
-// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU LESSER GPL v3 license, found in the LICENSE_LGPL3 file.
 
 package native_methods
@@ -11,7 +11,6 @@ import (
 	"relish/runtime/native_methods/standard_lib/files_methods"
 	"relish/runtime/native_methods/standard_lib/http_methods"
    "relish/runtime/native_methods/standard_lib/crypto_methods"   	
-   "relish/runtime/native_methods/standard_lib/reflect_methods"     
    "relish/runtime/native_methods/extensions/protocols/modbus_methods"
 )
 
@@ -30,8 +29,7 @@ with the corresponding wrapper-creating function.
 var nativeMethodPackageMap = map [string] func() {
 	"shared.relish.pl2012/relish_lib/pkg/files" : files_methods.InitFilesMethods,
 	"shared.relish.pl2012/relish_lib/pkg/http_srv" : http_methods.InitHttpMethods,	  
-   "shared.relish.pl2012/relish_lib/pkg/crypto" : crypto_methods.InitCryptoMethods,    
-   "shared.relish.pl2012/relish_lib/pkg/reflect" : reflect_methods.InitReflectMethods,           
+   "shared.relish.pl2012/relish_lib/pkg/crypto" : crypto_methods.InitCryptoMethods,        
     "gait.bcit.ca2012/protocols/pkg/modbus" : modbus_methods.InitModbusMethods,   
 }
 
