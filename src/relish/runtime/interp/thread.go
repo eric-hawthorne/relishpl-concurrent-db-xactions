@@ -112,6 +112,8 @@ const MAX_GC_LOCKED_STACK_OPS = 100  // Do this many pops and pushes before reli
                                      // So GC has opportunity to run and block this thread, after this many pops/pushes.
 
 
+
+
 func (t *Thread) Push(obj RObject) {		
 	defer UnM(t, TraceM(t, INTERP_TR3, "Push", obj))
 	t.Pos++
@@ -365,6 +367,13 @@ func (t *Thread) DisallowGC() {
     }
     GCMutexRLock("")
     t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
+}
+
+
+func (t *Thread) GC() {
+   t.AllowGC()
+   t.EvalContext.GC()
+   t.DisallowGC()
 }
 
 

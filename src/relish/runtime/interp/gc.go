@@ -16,9 +16,8 @@ import (
    "time"
    "runtime"
    "relish/runtime/data"
+   "relish/params"
 )
-
-const GC_INTERVAL_MINUTES = 10 
 
 var m runtime.MemStats
 
@@ -36,7 +35,7 @@ func (i *Interpreter) GCLoop() {
     var prevA uint64
 
     for {
-	    time.Sleep(GC_INTERVAL_MINUTES * time.Minute)
+	    time.Sleep(time.Duration(params.GcIntervalSeconds) * time.Second)
 	    // time.Sleep(4 * time.Second)    
 		    
 	    runtime.ReadMemStats(&m)
@@ -45,6 +44,7 @@ func (i *Interpreter) GCLoop() {
 		
 	       i.GC()
 	
+	       runtime.ReadMemStats(&m)	
 	       prevA = m.Alloc
 	
 	    } else if m.Alloc < prevA {
@@ -64,6 +64,7 @@ func (i *Interpreter) GC() {
     defer Un(Trace(GC2_,"GC"))    
     i.mark()
     i.sweep()
+    runtime.GC()  // Go garbage collector.
 }
 
 
@@ -87,6 +88,8 @@ func (i *Interpreter) mark() {
     i.rt.MarkDataTypes()
 
     i.rt.MarkAttributes()
+    
+    i.rt.MarkAttributeVals()    
 }
 
 

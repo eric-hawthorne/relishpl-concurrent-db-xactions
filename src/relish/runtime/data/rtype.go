@@ -1031,7 +1031,7 @@ func (rt *RuntimeEnv) getTypeTupleFromTypes(typeNames []string) (*RTypeTuple, er
 		}
 		mTypes[i] = typ
 	}
-	return rt.TypeTupleTree.GetTypeTupleFromTypes(mTypes), nil
+	return rt.TypeTupleTrees[len(mTypes)].GetTypeTupleFromTypes(mTypes), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1254,6 +1254,7 @@ type TypeTupleTreeNode struct {
 	mType    *RType                          // nil if root node - this is just documentation
 	nextType map[*RType][]*TypeTupleTreeNode // empty map if end of tree
 	tuple    *RTypeTuple                     // nil if no typetuple ends here.
+	LastTypeTuple  map[*RType]*RTypeTuple  // The most recent tuple that started here.
 }
 
 /*
@@ -1279,7 +1280,27 @@ type TypeTupleTreeNode struct {
 
 */
 func (tttn *TypeTupleTreeNode) GetTypeTuple(mObjects []RObject) *RTypeTuple {
-	return tttn.findOrCreateTypeTuple(mObjects, mObjects)
+
+   var typ *RType
+   m := len(mObjects)
+   if m > 0 {
+      typ = mObjects[0].Type()      
+      last := tttn.LastTypeTuple[typ]
+      if  last != nil {
+         for i := 1; i < m; i++ {
+            if mObjects[i].Type() != last.Types[i] {
+               goto find
+            }
+         }
+         return last
+      }
+   }   
+   find:
+	tuple := tttn.findOrCreateTypeTuple(mObjects, mObjects)
+	if m > 0 {
+	   tttn.LastTypeTuple[typ] = tuple
+   }
+	return tuple
 }
 
 /*

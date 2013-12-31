@@ -19,13 +19,17 @@ import (
 
 
 type dispatcher struct {
-   typeTupleTree *TypeTupleTreeNode
+   // typeTupleTree *TypeTupleTreeNode  // obsolete
+   typeTupleTrees []*TypeTupleTreeNode  // new   
    emptyTypeTuple *RTypeTuple // a cached type tuple, to speed dispatch in special cases.
+
 }
 
-func newDispatcher(rt *RuntimeEnv) *dispatcher {
-   emptyTypeTuple := rt.TypeTupleTree.GetTypeTuple([]RObject{})
-   return &dispatcher{rt.TypeTupleTree, emptyTypeTuple}
+func newDispatcher(rt *RuntimeEnv) (d *dispatcher) {
+   emptyTypeTuple := rt.TypeTupleTrees[0].GetTypeTuple([]RObject{})
+   d =  &dispatcher{rt.TypeTupleTrees, emptyTypeTuple}
+   
+   return
 }
 
 /*
@@ -43,7 +47,7 @@ func newDispatcher(rt *RuntimeEnv) *dispatcher {
    report the lack of a compatible method.
 */
 func (d *dispatcher) GetMethod(mm *RMultiMethod, args []RObject) (*RMethod,*RTypeTuple) {
-   typeTuple := d.typeTupleTree.GetTypeTuple(args)
+   typeTuple := d.typeTupleTrees[len(args)].GetTypeTuple(args)
    method,found := mm.CachedMethods[typeTuple]
    if !found {
       method = d.dynamicDispatch(mm,typeTuple)
@@ -85,7 +89,7 @@ func (d *dispatcher) GetSingletonMethod(mm *RMultiMethod) *RMethod {
    Same as GetMethod but for types instead of object instances.
 */
 func (d *dispatcher) GetMethodForTypes(mm *RMultiMethod, types ...*RType) (*RMethod,*RTypeTuple) {
-   typeTuple := d.typeTupleTree.GetTypeTupleFromTypes(types)
+   typeTuple := d.typeTupleTrees[len(types)].GetTypeTupleFromTypes(types)
    method,found := mm.CachedMethods[typeTuple]
    if !found {
       method = d.dynamicDispatch(mm,typeTuple)

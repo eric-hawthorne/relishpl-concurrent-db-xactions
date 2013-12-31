@@ -86,7 +86,8 @@ import (
 		"relish/runtime/web"	  
 		"relish/dbg"
 		"relish/global_loader"
-		"relish/global_publisher"		
+		"relish/global_publisher"
+		"relish/params"		
 		"util/crypto_util"
 		"regexp"
 //		"strconv"
@@ -109,6 +110,7 @@ func main() {
     var publish bool
     var quiet bool
     var projectPath string
+    // var gcIntervalSeconds int
 
     //var fset = token.NewFileSet()
 	flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
@@ -127,6 +129,8 @@ func main() {
     flag.BoolVar(&quiet, "quiet", false, "do not show package loading info or interpreter version in program output")
 
     flag.StringVar(&projectPath, "init", "", "<artifactpath> [webapp] - create directory tree and template files for a relish software project")    
+    
+    flag.IntVar(&params.GcIntervalSeconds, "gc", 600, "The garbage collection interval (seconds): defaults to 600")	
     
     flag.Parse()
 

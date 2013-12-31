@@ -23,7 +23,15 @@ var DeferGC int32  // if > 0 means do not GC
 
 var markSense bool = true  // What value of object Marked flag means "is reachable" - if true, 1, if false, 0
 
-
+/*
+For debugging of GC.
+At all times except in GC between mark and sweep, objects encountered in the program 
+should have opposite IsMarked as the current GCMarkSense. During the mark phase, if reachable they
+will be given the same IsMarked value as the GCMarkSense, then those with opposite will be swept.
+*/
+func GCMarkSense() bool { 
+   return markSense
+}
 
 func GCMutexRLock(msg string) {
    //Logln(GC_,">>> GCMutex.RLock()")		
@@ -113,6 +121,28 @@ func (rt *RuntimeEnv) MarkInTransit() {
     Logln(GC2_,"Marked",len(rt.inTransit),"objects in channels, and their associates.")		
 }
 
+
+func (rt *RuntimeEnv) MarkAttributeVals() {
+   n := 0
+	for rt.markAttributeValsRound() {  Logln(GC2_,n) }
+}
+
+func (rt *RuntimeEnv) markAttributeValsRound() bool {
+   newMarks := 0
+	for attr,attrMap := range rt.attributes {
+	   if ! attr.Part.Type.IsPrimitive {
+   		for obj,val := range attrMap {
+   		   if obj.IsMarked() == markSense {  // Object is marked as reachable
+   			   if val.IsMarked() != markSense {
+   			      val.Mark() 
+   			      newMarks++
+			      }
+   		   }			
+   		}
+	   }
+	}
+	return newMarks > 0
+}
 
 /*
 Remove from runtime-global maps, those objects which are unreachable from thread stacks or from constants.
