@@ -1,4 +1,4 @@
-// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU LESSER GPL v3 license, found in the LICENSE_LGPL3 file.
 
 package files_methods

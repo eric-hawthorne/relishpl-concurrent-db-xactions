@@ -1,4 +1,4 @@
-// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // convenience functions for working with zip files
@@ -35,8 +35,11 @@ func ExtractFileFromZipFileContents(zipFileContents []byte, innerFileName string
    // looking for the named file
    for _, fWrapper := range rWrapper.File {
 
-      fileInfo := fWrapper.FileHeader.FileInfo()  
-      if fileInfo.Name() == innerFileName {
+      //fileInfo := fWrapper.FileHeader.FileInfo()  
+      //if fileInfo.Name() == innerFileName {
+      // replaced with following line to be Go1.2 compatible.
+      if fWrapper.FileHeader.Name == innerFileName {
+
 
          var zippedFileReader io.ReadCloser
          zippedFileReader, err = fWrapper.Open()
@@ -83,7 +86,10 @@ func ExtractZipFileContents(zipFileContents []byte, dirPath string) (err error) 
    for _, f := range r.File {
 
       fileInfo := f.FileHeader.FileInfo()  
-      if strings.Index(fileInfo.Name(),"__MACOSX") == 0 {
+      // if strings.Index(fileInfo.Name(),"__MACOSX") == 0 {
+      // replaced with following line to be Go1.2 compatible.      
+      if strings.Index(f.FileHeader.Name,"__MACOSX") == 0 {
+
          continue
       }
       if fileInfo.IsDir() {  

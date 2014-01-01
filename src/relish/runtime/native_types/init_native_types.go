@@ -1,4 +1,4 @@
-// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
+// Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU LESSER GPL v3 license, found in the LICENSE_LGPL3 file.
 
 package native_types
@@ -25,7 +25,8 @@ var NativeType = map [string] bool {
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile" : true,	
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie" : true,	
 	"shared.relish.pl2012/relish_lib/pkg/http_srv/Request" : true,
-	
+	"shared.relish.pl2012/relish_lib/pkg/reflect/DataType" : true,	
+	"shared.relish.pl2012/relish_lib/pkg/reflect/Attribute" : true,		
 				
 	// OK TO MODIFY THE ENTRIES FROM HERE DOWN !!
 	// Add extensions types which need a GoWrapper as the instance here. 
