@@ -4,7 +4,7 @@
 // license that can be found in the GO_LICENSE file.
 
 // Modifications and additions which convert code to be part of a relish-language interpreter 
-// are Copyright 2012-2013 EveryBitCounts Software Services Inc. All rights reserved.
+// are Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of such source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
 // this package is concerned with the expression and management of runtime data (objects and values) 
