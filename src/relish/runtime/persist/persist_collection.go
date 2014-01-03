@@ -42,7 +42,50 @@ func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObje
 
 	if attr.Part.Type.IsPrimitive {
 
-		// TODO Have to handle different types, string, bool, int, float in different clauses
+
+		
+		valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
+				
+      switch attr.Part.CollectionType {
+      case "set": // id,val
+      
+      
+         stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
+
+         valParts := db.primitiveValSQL(val) 
+         stmt.Args(valParts)						
+
+         db.QueueStatements(stmt)      
+  
+
+
+      case "list": // id, val, ord1
+      
+
+			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, insertIndex))
+				
+			valParts := db.primitiveValSQL(val) 
+			stmt.Args(valParts)
+				
+			db.QueueStatements(stmt)
+
+
+
+      case "sortedlist", "sortedset": //, "sortedmap": // id, val, ord1
+      
+   
+      	db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 + 1 WHERE id0=%v AND ord1 >= %v",table, obj.DBID(), insertIndex))
+      	      
+      	stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, insertIndex))
+		
+      	valParts := db.primitiveValSQL(val) 
+      	stmt.Args(valParts)
+		
+      	db.QueueStatements(stmt)      
+      
+      
+      	//	     case "sortedstringmap":	// id0,id1,key1		
+      }		
 
 	} else { // Non-Primitive part type
 
@@ -87,6 +130,24 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 	if attr.Part.Type.IsPrimitive {
 
 		// TODO Have to handle different types, string, bool, int, float in different clauses
+		
+		if removedIndex == -1 {	
+		   
+		   sqlFragment := attr.Part.Type.DbCollectionRemove() 
+      	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  obj.DBID(), sqlFragment))
+		
+      	valParts := db.primitiveValSQL(val) 
+      	stmt.Args(valParts)
+		
+      	db.QueueStatements(stmt)			
+			
+			
+		} else {
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, obj.DBID(), val.DBID(), removedIndex))
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, obj.DBID(), removedIndex))
+		}
+			
+		
 
 	} else { // Non-Primitive part type
 

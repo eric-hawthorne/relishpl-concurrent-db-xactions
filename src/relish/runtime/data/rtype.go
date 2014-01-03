@@ -700,6 +700,50 @@ func (end RelEnd) DbCollectionColumnDef() (colDef string) {
 	return
 }
 
+
+/*
+   Return the sqlite column name or names needed to construct a collection element insert statement.
+   Also return the SQL variables part of the insert statement appropriate for inserting that type 
+   of val into the table.
+*/
+func (typ *RType) DbCollectionColumnInsert() (sqlFragment string,varsFragment String) {
+	if typ == ComplexType {
+		sqlFragment = "val_r,val_i"
+		varsFragment = "?,?"
+	} else if typ == Complex32Type {
+		sqlFragment = "val_r,val_i"	
+		varsFragment = "?,?"			
+	} else if typ == TimeType {
+		sqlFragment = "val,val_loc"
+		varsFragment = "?,?"		
+	} else {
+		sqlFragment = "val"
+		varsFragment = "?"		
+	}
+	return
+}
+
+
+func (typ *RType) DbCollectionRemove() (sqlFragment string) {
+	if typ == ComplexType {
+		sqlFragment = "val_r = ? AND val_i = ?"
+	} else if typ == Complex32Type {
+      sqlFragment = "val_r = ? AND val_i = ?"		
+	} else if typ == TimeType {
+		sqlFragment = "val = ? AND val_loc = ?"	
+	} else {
+		sqlFragment = "val = ?"
+	}
+	return
+}
+
+
+
+
+
+
+
+
 /*
    The name for this attribute that will become the db table name.
    (only applicable if the attribute's Part Type is non-primitive.)
