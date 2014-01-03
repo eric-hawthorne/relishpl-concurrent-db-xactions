@@ -236,7 +236,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 						}
 						if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
 							stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, obj.DBID(), val.DBID())) 
-			                stmt.Arg(SqlStringValueEscape(string(key.(String))))
+			            stmt.Arg(SqlStringValueEscape(string(key.(String))))
 							db.QueueStatements(stmt)
 						} else {
 							// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
@@ -273,7 +273,85 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 			// TODO
 			// !!!!!!!!!!!!!!!!!!!!!!!!
 			// !!!! NOT DONE YET !!!!!!
-			// !!!!!!!!!!!!!!!!!!!!!!!!	   
+			// !!!!!!!!!!!!!!!!!!!!!!!!
+			
+			val, found := RT.AttrValue(obj, attr, false, true)
+			if !found {
+				continue
+			}
+						
+			table := db.TableNameIfy(attr.ShortName())			
+			valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
+							   
+			collection := val.(RCollection)
+			isMap := collection.IsMap()
+			if isMap {
+			   
+			   // !!!!!!!!!!!!!!!!!!!!!!!!
+			   // !!!! NOT DONE YET !!!!!!
+			   // !!!!!!!!!!!!!!!!!!!!!!!!			   
+			   
+			   
+				theMap := collection.(Map)
+				for key := range theMap.Iter(nil) {
+					val, _ := theMap.Get(key)
+
+					if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
+						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
+						
+					   valParts := db.primitiveValSQL(val) 
+					   stmt.Args(valParts)								
+						
+		            stmt.Arg(SqlStringValueEscape(string(key.(String))))
+		            
+		            
+		            
+						db.QueueStatements(stmt)
+					} else {
+						// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+						// !!!!!!!!!!!!!!!!!!!!!!!!
+						// !!!! NOT DONE YET !!!!!!
+						// !!!!!!!!!!!!!!!!!!!!!!!!
+											
+                  stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
+					
+					   valParts := db.primitiveValSQL(val) 
+					   stmt.Args(valParts)
+		            						
+						// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+						
+						
+						db.QueueStatements(stmt)						
+									 
+					}
+				}
+			} else {
+				i := 0					
+				for val := range collection.Iter(nil) {
+					
+					if collection.IsOrdered() {					   
+						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
+						
+						valParts := db.primitiveValSQL(val) 
+						stmt.Args(valParts)
+						
+						db.QueueStatements(stmt)						
+					} else { // unordered set 
+					   
+						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
+						
+					   valParts := db.primitiveValSQL(val) 
+					   stmt.Args(valParts)						
+						
+						db.QueueStatements(stmt)						
+					}
+					i++
+				}
+			}			
+			
+			
+			
+			
 		}
 	}
 
@@ -299,8 +377,8 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 								return
 							}
 							if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {								
-						        stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, obj.DBID(), val.DBID())) 
-				                stmt.Arg(SqlStringValueEscape(string(key.(String))))
+						      stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, obj.DBID(), val.DBID())) 
+				            stmt.Arg(SqlStringValueEscape(string(key.(String))))
 								db.QueueStatements(stmt)									
 							} else {
 								// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
@@ -337,12 +415,93 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				// TODO
 				// !!!!!!!!!!!!!!!!!!!!!!!!
 				// !!!! NOT DONE YET !!!!!!
-				// !!!!!!!!!!!!!!!!!!!!!!!!	   
+				// !!!!!!!!!!!!!!!!!!!!!!!!	
+				
+   			val, found := RT.AttrValue(obj, attr, false, true)
+   			if !found {
+   				continue
+   			}
+						
+   			table := db.TableNameIfy(attr.ShortName())			
+   			valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
+							   
+   			collection := val.(RCollection)
+   			isMap := collection.IsMap()
+   			if isMap {
+			   
+   			   // !!!!!!!!!!!!!!!!!!!!!!!!
+   			   // !!!! NOT DONE YET !!!!!!
+   			   // !!!!!!!!!!!!!!!!!!!!!!!!			   
+			   
+			   
+   				theMap := collection.(Map)
+   				for key := range theMap.Iter(nil) {
+   					val, _ := theMap.Get(key)
+
+   					if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
+   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
+						
+   					   valParts := db.primitiveValSQL(val) 
+   					   stmt.Args(valParts)								
+						
+   		            stmt.Arg(SqlStringValueEscape(string(key.(String))))
+		            
+		            
+		            
+   						db.QueueStatements(stmt)
+   					} else {
+   						// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+   						// !!!!!!!!!!!!!!!!!!!!!!!!
+   						// !!!! NOT DONE YET !!!!!!
+   						// !!!!!!!!!!!!!!!!!!!!!!!!
+											
+                     stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
+					
+   					   valParts := db.primitiveValSQL(val) 
+   					   stmt.Args(valParts)
+		            						
+   						// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+						
+						
+   						db.QueueStatements(stmt)						
+									 
+   					}
+   				}
+   			} else {
+   				i := 0					
+   				for val := range collection.Iter(nil) {
+					
+   					if collection.IsOrdered() {					   
+   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
+						
+   						valParts := db.primitiveValSQL(val) 
+   						stmt.Args(valParts)
+						
+   						db.QueueStatements(stmt)						
+   					} else { // unordered set 
+					   
+   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
+						
+   					   valParts := db.primitiveValSQL(val) 
+   					   stmt.Args(valParts)						
+						
+   						db.QueueStatements(stmt)						
+   					}
+   					i++
+   				}
+   			}							
+				
+				
+				   
 			}
 		}
 	}
 	return
 }
+
+
+
+
 
 /*
    Persist a remote object which has not yet been persisted locally.
@@ -1505,6 +1664,57 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args 
 	return 
 
 }
+
+
+
+
+/*
+Used by primitive-valued collection insert and set clauses.
+Does not handle nil values.
+*/
+func (db *SqliteDB) primitiveValSQL(val RObject) (args []interface{}) {
+   switch val.(type) {
+   case Int:
+   	args = []interface{}{strconv.FormatInt(int64(val.(Int)), 10)}
+   case Int32:
+   	args = []interface{}{strconv.FormatInt(int64(int32(val.(Int32))), 10)}
+   case Uint:
+       args = []interface{}{strconv.FormatUint(uint64(val.(Uint)), 10)}
+   case Uint32:
+   	args = []interface{}{strconv.FormatUint(uint64(uint32(val.(Uint32))), 10)}	
+   case RTime:
+   	t := time.Time(val.(RTime))
+   	timeString := t.UTC().Format(TIME_LAYOUT)
+   	locationName := t.Location().String()
+   	args = []interface{}{timeString,locationName}   															
+   case String:
+   	args = []interface{}{SqlStringValueEscape(string(val.(String)))}
+   case Float:
+   	args = []interface{}{strconv.FormatFloat(float64(val.(Float)), 'G', -1, 64)}
+	
+   case Complex:
+   	c := complex128(val.(Complex))
+   	r := real(c)
+   	i := imag(c)
+   	args = []interface{}{strconv.FormatFloat(r, 'G', -1, 64),strconv.FormatFloat(i, 'G', -1, 64)}
+   case Complex32:
+   	c := complex64(val.(Complex32))
+   	r := float64(real(c))
+   	i := float64(imag(c))					
+   	args = []interface{}{strconv.FormatFloat(r, 'G', -1, 32),strconv.FormatFloat(i, 'G', -1, 32)}							
+   case Bool:
+   	boolVal := bool(val.(Bool))
+   	if boolVal {
+   		args = []interface{}{"1"}
+   	} else {
+   		args = []interface{}{"0"}
+   	}
+   default:
+   	panic(fmt.Sprintf("I don't know how to create SQL for a value of underlying type %v.", val.Type()))
+   }
+	return 
+}
+
 
 func SqlStringValueEscape(s string) string {
 	s = strconv.Quote(s)	
