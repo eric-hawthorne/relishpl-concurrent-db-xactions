@@ -823,8 +823,10 @@ func (db *SqliteDB) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec
 			return
 		}
 	} else if attr.Part.CollectionType != "" && attr.Part.Type.IsPrimitive {
-		err = errors.New("I don't handle collections of primitives yet.")
-		return
+		err = db.fetchPrimitiveAttributeValueCollection(objId, obj, attr)
+		if err != nil {
+			return
+		}
 	}
 	val, _ = RT.AttrVal(obj, attr)
 	return
@@ -970,7 +972,7 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 			return
 		}
 
-		err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj, radius-1)
+		err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj)
 		if err != nil {
 			return
 		}
@@ -1157,7 +1159,7 @@ func (db *SqliteDB) fetchMultiple(query string, queryArgObjs []RObject, idsOnly 
 					return
 				}
 
-				err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj, radius-2)
+				err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj)
 				if err != nil {
 					return
 				}
@@ -1559,6 +1561,155 @@ func convertAttrValTwoFields(valByteSlice []byte, valByteSlice2 []byte, attr *At
 
 
 
+/*
+Convert the byte slice which was returned as a column-value of a databse result row into
+a primitive-type RObject. Sets the val argument to the new RObject.
+If the value from the database was NULL (empty string in numeric fields), does not
+set the val argument, and returns false.
+
+TODO NOT HANDLING NULLS PROPERLY HERE YET !!!!!!!!!
+
+*/
+func convertVal(valByteSlice []byte, typ *RType, errPrefix string, val *RObject) (nonNullValueFound bool) {
+	switch typ {
+	case IntType:
+		if len(valByteSlice) > 0 {
+			x, err := strconv.ParseInt(string(valByteSlice), 10, 64)
+			if err != nil {
+				panic(errors.New(errPrefix + " as int64: " + err.Error()))
+			}
+			*val = Int(x)
+			nonNullValueFound = true
+		}
+
+	case Int32Type:
+		if len(valByteSlice) > 0 {
+			x, err := strconv.Atoi(string(valByteSlice))
+			if err != nil {
+				panic(errors.New(errPrefix + " as int: " + err.Error()))
+			}
+			*val = Int32(x)
+			nonNullValueFound = true
+		}
+
+	case FloatType:
+		if len(valByteSlice) > 0 {
+			x, err := strconv.ParseFloat(string(valByteSlice), 64)
+			if err != nil {
+				panic(errors.New(errPrefix + " as float64: " + err.Error()))
+			}
+			*val = Float(x)
+			nonNullValueFound = true
+		}
+
+	case BoolType:
+		*val = Bool(string(valByteSlice) == "1")
+		nonNullValueFound = true		
+
+	case StringType:
+		*val = String(SqlStringValueUnescape(string(valByteSlice)))
+		nonNullValueFound = true // Shoot!! How do we distinguish between not set and empty string?
+
+	default:
+		panic(fmt.Sprintf("I don't know how to restore a type %v primitive value.", typ))
+	}
+	return
+}
+
+
+
+/*
+Convert the byte slice which was returned as a column-value of a databse result row into
+a primitive-type RObject. Sets the val argument to the new RObject.
+If the value from the database was NULL (empty string in numeric fields), does not
+set the val argument, and returns false.
+
+TODO NOT HANDLING NULLS PROPERLY HERE YET !!!!!!!!!
+
+*/
+func convertValTwoFields(valByteSlice []byte, valByteSlice2 []byte, typ *RType, errPrefix string, val *RObject) (nonNullValueFound bool) {
+	switch typ {
+	case TimeType:
+		if len(valByteSlice) > 0 {
+			timeString := string(valByteSlice)
+			var locationName string
+	  	    if len(valByteSlice2) > 0 {
+			   locationName = string(valByteSlice2)		       
+		    }		
+			timeUTC, err := time.Parse(TIME_LAYOUT, timeString) 
+			if err != nil {
+				panic(errors.New(errPrefix + " as Time: " + err.Error()))
+			}
+			location, err := time.LoadLocation(locationName)
+			if err != nil {
+				panic(errors.New(errPrefix + " time.Location: " + err.Error()))
+			}			
+            *val = RTime(timeUTC.In(location))	
+			nonNullValueFound = true
+		}
+
+
+
+	case ComplexType:
+		if len(valByteSlice) > 0 {
+			r, err := strconv.ParseFloat(string(valByteSlice), 64)
+			if err != nil {
+				panic(errors.New(errPrefix + "_r as float64: " + err.Error()))
+			}
+		    if len(valByteSlice2) == 0 {
+				panic(errors.New(errPrefix + " imaginary part is null"))			
+			}
+			
+			i, err := strconv.ParseFloat(string(valByteSlice), 64)
+			if err != nil {
+				panic(errors.New(errPrefix + "_i as float64: " + err.Error()))
+			}			
+				
+			*val = Complex(complex(r,i))
+			nonNullValueFound = true
+		}
+		
+	case Complex32Type:
+		if len(valByteSlice) > 0 {
+			r, err := strconv.ParseFloat(string(valByteSlice), 32)
+			if err != nil {
+				panic(errors.New(errPrefix +  "_r as float32: " + err.Error()))
+			}
+		    if len(valByteSlice2) == 0 {
+				panic(errors.New(errPrefix + " imaginary part is null"))			
+			}
+			
+			i, err := strconv.ParseFloat(string(valByteSlice), 32)
+			if err != nil {
+				panic(errors.New(errPrefix +  "_i as float32: " + err.Error()))
+			}			
+				
+			r32 := float32(r)
+			i32 := float32(i)	
+			*val = Complex32(complex(r32,i32))
+			nonNullValueFound = true
+		}		
+
+	default:
+		panic(fmt.Sprintf("I don't know how to restore a type %v primitive value.", typ))
+	}
+	return
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /*
    Persist an robject for the first time. 
@@ -1609,7 +1760,7 @@ the primitive=valued attributes defined in the type.
 func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args []interface{}) {
 
 	for _, attr := range t.Attributes {
-		if attr.Part.Type.IsPrimitive {
+		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
 			val, found := RT.AttrVal(obj, attr)
 			s += ","
 			if found {

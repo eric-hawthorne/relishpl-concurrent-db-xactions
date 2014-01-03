@@ -178,6 +178,7 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 	if attr.Part.Type.IsPrimitive {
 
 		// TODO Have to handle different types, string, bool, int, float in different clauses
+		db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id=%v", table, obj.DBID()))		
 
 	} else { // Non-Primitive part type
 
@@ -356,7 +357,7 @@ Fetch from the db the values in a collection of a non-primitive-typed unary attr
 Set the attribute to the fetched collection.  
 */
 func (db *SqliteDB) fetchNonPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec, radius int) (err error) {
-	defer Un(Trace(PERSIST_TR2, "fetchUnaryNonPrimitiveAttributeValue", objId, attr.ShortName()))
+	defer Un(Trace(PERSIST_TR2, "fetchNonPrimitiveAttributeValueCollection", objId, attr.ShortName()))
 
 	// first, determine if the collection exists in memory already as the value of the attribute of the object.
 	// If not, create it.
@@ -377,10 +378,54 @@ Fetch attributea which are multi-valued but the values in the collection are pri
 TODO
 
 */
-func (db *SqliteDB) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObject, radius int) (err error) {
+func (db *SqliteDB) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObject) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchMultiValuedPrimitiveAttributeValues", id))
+
+	objTyp := obj.Type()
+
+	for _, attr := range objTyp.Attributes {
+		if attr.Part.CollectionType != "" && attr.Part.Type.IsPrimitive {
+			err = db.fetchPrimitiveAttributeValueCollection(id, obj, attr)
+			if err != nil {
+				return
+			}
+		}
+	}
+
+	for _, typ := range objTyp.Up {
+		for _, attr := range typ.Attributes {
+			if attr.Part.CollectionType != "" && attr.Part.Type.IsPrimitive {
+				err = db.fetchPrimitiveAttributeValueCollection(id, obj, attr)
+				if err != nil {
+					return
+				}
+			}
+		}
+	}
 	return
 }
+
+
+/*
+Fetch from the db the values in a collection of a non-primitive-typed unary attribute of the object.
+Set the attribute to the fetched collection.  
+*/
+func (db *SqliteDB) fetchPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec) (err error) {
+	defer Un(Trace(PERSIST_TR2, "fetchPrimitiveAttributeValueCollection", objId, attr.ShortName()))
+
+	// first, determine if the collection exists in memory already as the value of the attribute of the object.
+	// If not, create it.
+
+	collection, err := RT.EnsureMultiValuedAttributeCollection(obj, attr)
+	if err != nil {
+		return
+	}
+
+	err = db.fetchPrimitiveValueCollection(collection, objId, db.TableNameIfy(attr.ShortName()))
+
+	return
+}
+
 
 /*
    This is a lower-level function.
@@ -440,6 +485,75 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 		} else { // Just put proxy objects into the collection.
 			val = Proxy(id1)
 		}
+		addColl := collection.(AddableMixin)
+		addColl.AddSimple(val)
+	}
+	return
+}
+
+
+func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string) (err error) {
+	defer Un(Trace(PERSIST_TR2, "fetchPrimitiveValueCollection", collectionOrOwnerId, collectionTableName))
+
+	remColl := collection.(RemovableMixin)
+	remColl.ClearInMemory()
+
+	orderClause := ""
+	if collection.IsOrdered() {
+		orderClause = " ORDER BY ord1"
+	}
+	
+	typ := collection.ElementType()
+	
+	valCols,_ := typ.DbCollectionColumnInsert()	
+
+	query := fmt.Sprintf("SELECT %s FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
+
+	selectStmt, err := db.conn.Prepare(query)
+	if err != nil {
+		return
+	}
+
+	defer selectStmt.Finalize()
+
+	err = selectStmt.Exec()
+	if err != nil {
+		return
+	}
+
+	var val RObject
+   var numColumns int
+   switch typ {
+   case ComplexType,Complex32Type,TimeType:
+      numColumns = 2
+   default: 
+      numColumns = 1
+   }
+	valsBytes1 := make([][]byte, numColumns)
+
+	valsBytes := make([]interface{}, numColumns)
+
+	for i := 0; i < len(valsBytes1); i++ {
+		valsBytes[i] = &valsBytes1[i]
+	}
+
+   var nonNil bool
+	for selectStmt.Next() {
+   	err = selectStmt.Scan(valsBytes...)
+   	if err != nil {
+   		return
+   	}	   
+		valByteSlice := *(valsBytes[0].(*[]byte))   	
+   	if numColumns == 1 {
+			nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
+			if ! nonNil { panic("nil not valid element in a primitive value collection") }  	   
+   	   
+	   } else { // 2
+			valByteSlice2 := *(valsBytes[1].(*[]byte))	   
+         nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val) 	
+			if ! nonNil { panic("nil not valid element in a primitive value collection") }          			   
+	   }
+	   
 		addColl := collection.(AddableMixin)
 		addColl.AddSimple(val)
 	}
