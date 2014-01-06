@@ -193,6 +193,15 @@ func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
 	RT.Cache(obj) // Put in an in-memory object cache so that the runtime will only contain one object instance for each uuid.
 
 	err = db.PersistAttributesAndRelations(obj)
+	if err != nil {
+	   return
+   }
+   
+   if obj.IsCollection() {
+      collection := obj.(RCollection)
+      err = db.persistCollection(collection) 
+   }
+	
 	return
 }
 
@@ -498,6 +507,158 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 	}
 	return
 }
+
+
+
+
+
+
+
+
+
+
+/*
+   Persist an independent collection (list, set, or map)
+   Assumes the RObject core of the collection is already persisted.
+*/
+func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
+
+   // Derive a collection table name from the collection's
+   // collection-type and element type.
+   //
+   // Need to ensure the collection table exists in the db
+   //
+   // Return metadata about the collection, including the table name.
+   // 
+   table,isMap,isStringMap,isOrdered,elementType,err := db.EnsureCollectionTable(collection)
+   if err != nil {
+      return
+   }	
+   	
+   if !elementType.IsPrimitive {
+		if isMap {
+			theMap := collection.(Map)		
+			
+			for key := range theMap.Iter(nil) {
+				val, _ := theMap.Get(key)
+				err = db.EnsurePersisted(val)
+				if err != nil {
+					return
+				}
+				if isStringMap {
+					stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, collection.DBID(), val.DBID())) 
+	            stmt.Arg(SqlStringValueEscape(string(key.(String))))
+					db.QueueStatements(stmt)
+				} else {
+					// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+					// !!!!!!!!!!!!!!!!!!!!!!!!
+					// !!!! NOT DONE YET !!!!!!
+					// !!!!!!!!!!!!!!!!!!!!!!!!
+					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, collection.DBID(), val.DBID(), key.DBID())) 					 
+				}
+			}
+		} else {
+			i := 0
+			for val := range collection.Iter(nil) {
+				err = db.EnsurePersisted(val)
+				if err != nil {
+					return
+				}
+				if isOrdered {
+					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, collection.DBID(), val.DBID(), i))
+				} else { // unordered set 
+					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, collection.DBID(), val.DBID()))		
+				}
+				i++
+			}
+		}
+
+   } else { // a collection of primitive-type objects
+   	// TODO
+   	// !!!!!!!!!!!!!!!!!!!!!!!!
+   	// !!!! NOT DONE YET !!!!!!
+   	// !!!!!!!!!!!!!!!!!!!!!!!!
+			
+   	valCols,valVars := elementType.DbCollectionColumnInsert()
+					   
+   	if isMap {
+	   
+   	   // !!!!!!!!!!!!!!!!!!!!!!!!
+   	   // !!!! NOT DONE YET !!!!!!
+   	   // !!!!!!!!!!!!!!!!!!!!!!!!			   
+	   
+   		theMap := collection.(Map)
+   			
+   		for key := range theMap.Iter(nil) {
+   			val, _ := theMap.Get(key)
+
+   			if isStringMap {
+   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, collection.DBID(), valVars)) 
+				
+   			   valParts := db.primitiveValSQL(val) 
+   			   stmt.Args(valParts)								
+				
+               stmt.Arg(SqlStringValueEscape(string(key.(String))))
+            
+            
+            
+   				db.QueueStatements(stmt)
+   			} else {
+   				// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+   				// !!!!!!!!!!!!!!!!!!!!!!!!
+   				// !!!! NOT DONE YET !!!!!!
+   				// !!!!!!!!!!!!!!!!!!!!!!!!
+									
+               stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, collection.DBID(), valVars, key.DBID()))
+			
+   			   valParts := db.primitiveValSQL(val) 
+   			   stmt.Args(valParts)
+            						
+   				// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+				
+				
+   				db.QueueStatements(stmt)						
+							 
+   			}
+   		}
+   	} else {
+   		i := 0					
+   		for val := range collection.Iter(nil) {
+			
+   			if isOrdered {					   
+   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, collection.DBID(), valVars, i))
+				
+   				valParts := db.primitiveValSQL(val) 
+   				stmt.Args(valParts)
+				
+   				db.QueueStatements(stmt)						
+   			} else { // unordered set 
+			   
+   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, collection.DBID(), valVars))		
+				
+   			   valParts := db.primitiveValSQL(val) 
+   			   stmt.Args(valParts)						
+				
+   				db.QueueStatements(stmt)						
+   			}
+   			i++
+   		}
+   	}				
+   }
+   return
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1721,19 +1882,25 @@ func convertValTwoFields(valByteSlice []byte, valByteSlice2 []byte, typ *RType, 
 */
 func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) {
 
-    var stmtStr string
-    var args []interface{}
+   var stmtStr string
+   var args []interface{}
+   var stmt *StatementGroup
+   if obj.IsCollection() {
+      collection := obj.(RCollection)
+      collectionTypeDescriptor,_,_,_,_ := db.TypeDescriptor(collection)
+   	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), collectionTypeDescriptor))
+   } else {
+   	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName()))
 
-	stmt := Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName()))
-
-	stmtStr,args = db.instanceInsertStatement(obj.Type(), obj)
-	stmt.Add(stmtStr)
-	stmt.Args(args)
-	for _, typ := range obj.Type().Up {
-		stmtStr,args = db.instanceInsertStatement(typ, obj)
-		stmt.Add(stmtStr)
-		stmt.Args(args)		
-	}
+   	stmtStr,args = db.instanceInsertStatement(obj.Type(), obj)
+   	stmt.Add(stmtStr)
+   	stmt.Args(args)
+   	for _, typ := range obj.Type().Up {
+   		stmtStr,args = db.instanceInsertStatement(typ, obj)
+   		stmt.Add(stmtStr)
+   		stmt.Args(args)		
+   	}
+   }
 
 	db.QueueStatements(stmt)
 }

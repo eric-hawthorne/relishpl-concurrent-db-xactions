@@ -686,16 +686,16 @@ func (end RelEnd) DbColumnDef() (colDef string) {
    Return the sqlite column definition of the part-end of a multi-valued primitive-type attribute
    or the value column(s) of a primitive value collection.
 */
-func (end RelEnd) DbCollectionColumnDef() (colDef string) {
-	if end.Type == ComplexType {
+func (typ *RType) DbCollectionColumnDef() (colDef string) {
+	if typ == ComplexType {
 		colDef = "val_r DOUBLE,\nval_i DOUBLE"
-	} else if end.Type == Complex32Type {
+	} else if typ == Complex32Type {
 		colDef = "val_r DOUBLE,\nval_i DOUBLE"		
-	} else if end.Type == TimeType {
+	} else if typ == TimeType {
 		colDef = "val TEXT,\nval_loc TEXT"
 	} else {
 		colDef = "val "
-		colDef += end.Type.DbColumnType()
+		colDef += typ.DbColumnType()
 	}
 	return
 }
