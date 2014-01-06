@@ -255,7 +255,7 @@ func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec
 	
 	// Prepare column for Part
 		
-	s += attr.Part.DbCollectionColumnDef()	 
+	s += attr.Part.Type.DbCollectionColumnDef()	 
 		
 	// and add a sorting/ordering column if appropriate
 		
@@ -290,10 +290,132 @@ func (db *SqliteDB) TableNameIfy(typeName string) string {
 	return "[" + typeName + "]" // TODO Implement substitutions as needed.
 }
 
-
 /*
    Make a fully qualified type name from the corresponding table name in sqlite.
 */
 func (db *SqliteDB) TypeNameIfy(tableName string) string {
 	return tableName[1 : len(tableName)-1] // TODO Implement substitutions as needed.
 }
+
+
+
+
+
+
+
+
+
+func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, isStringMap bool, isOrdered bool) (err error) {
+
+	s := "CREATE TABLE IF NOT EXISTS " + table + "("
+
+	// Prepare Whole end
+
+	s += "id0 INTEGER NOT NULL,\n"
+
+	// Prepare Part
+
+	s += "id1 INTEGER NOT NULL"
+
+	if isStringMap {	
+		s += ",\nkey1 TEXT NOT NULL"
+	} else if isMap || isOrdered {
+		s += ",\nord1 INTEGER NOT NULL"
+   }
+
+	s += ");"
+	err = db.conn.Exec(s)
+	if err != nil {
+		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+	}
+	return
+}
+
+
+/*
+*/
+func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType) (err error) {
+
+	s := "CREATE TABLE IF NOT EXISTS " + table + "("
+
+	// Prepare Whole end
+
+	s += "id INTEGER NOT NULL,\n"
+	
+	// Prepare column for Part
+		
+	s += elementType.DbCollectionColumnDef()	 
+		
+	// and add a sorting/ordering column if appropriate
+		
+   if isStringMap {	
+   	s += ",\nkey1 TEXT NOT NULL"
+   } else if isMap || isOrdered {
+   	s += ",\nord1 INTEGER NOT NULL"
+   }
+
+	s += ");"
+	
+	err = db.conn.Exec(s)
+	if err != nil {
+		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+	}
+	return
+}
+
+
+
+
+
+
+
+
+
+
+/*
+   Derive a collection table name from the collection's
+   collection-type and element type.
+   
+   Need to ensure the collection table exists in the db
+
+   Return metadata about the collection, including the table name.
+*/
+func (db *SqliteDB) EnsureCollectionTable(collection RCollection) (table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType, err error) {
+        
+   table, isMap, isStringMap, isOrdered, elementType = db.TypeDescriptor(collection)
+   
+   if elementType.IsPrimitive {
+      err = db.EnsurePrimitiveCollectionTable(table, isMap, isStringMap, isOrdered, elementType)      
+   } else {
+      err = db.EnsureNonPrimitiveCollectionTable(table, isMap, isStringMap, isOrdered)
+   }
+   return
+}
+
+func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType) {
+   isMap = collection.IsMap()
+   isOrdered = collection.IsOrdered()
+   elementType = collection.ElementType()
+   if isMap {
+      isStringMap = (    collection.(Map).KeyType() == StringType  )
+   }
+   typeName := elementType.ShortName()
+   table = "["
+   if isOrdered {
+      table += "ordered_"
+   }
+   if isStringMap {
+      table += "stringmap"
+   } else if isMap {
+      table += "map"
+   } else if collection.IsSet() {
+      table += "set"
+   } else {
+      table += "list"
+   }
+   table += "_of_" + typeName + "]"  
+   return 
+}
+
+
+
