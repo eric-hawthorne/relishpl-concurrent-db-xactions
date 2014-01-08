@@ -647,7 +647,9 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 	}
 
 	objColl, foundCollection := attrVals[obj]
-	if !foundCollection { // this object does not already have the collection implementation of this multi-valued attribute
+	if foundCollection { // this object does not already have the collection implementation of this multi-valued attribute
+	   collection = objColl.(RCollection)
+	} else {
 		var owner RObject
 		var minCardinality, maxCardinality int64
 		if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
@@ -664,10 +666,10 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 		}
 		// Create the list or set collection
 
-		var sortWith *sortOp
 		var unaryMethod *RMultiMethod
 		var binaryMethod *RMultiMethod
 		var orderAttr *AttributeSpec
+		var isAscending bool
 
 		// fmt.Println(attr.Part.CollectionType)
 
@@ -678,8 +680,9 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 				binaryMethod = attr.Part.OrderMethod
 			} else { // must be an attribute
 				orderAttr = attr.Part.OrderAttr
-			}				
-
+			}			
+			isAscending = attr.Part.IsAscending	
+/*
 			if binaryMethod == nil {
 				binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]
 			}
@@ -690,6 +693,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 				lessFunction:  binaryMethod,
 				descending:    !attr.Part.IsAscending,
 			}
+*/			
 		}
 
 		/*
@@ -732,22 +736,319 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 			@@@@@@@@@@@@@@
 		*/
 
-		switch attr.Part.CollectionType {
-		case "list", "sortedlist":
-			objColl, err = rt.Newrlist(attr.Part.Type, minCardinality, maxCardinality, owner, sortWith)
-		case "set":
-			objColl, err = rt.Newrset(attr.Part.Type, minCardinality, maxCardinality, owner)
-		case "sortedset":
-			objColl, err = rt.Newrsortedset(attr.Part.Type, minCardinality, maxCardinality, owner, sortWith)
-		default:
-			panic("I don't handle map attributes yet.")
+
+	/////////
+	
+	
+      collection,err = rt.NewCollection(minCardinality,
+         maxCardinality,
+         owner,   
+         attr.Part.CollectionType, 
+         isAscending,
+         unaryMethod,
+         binaryMethod,
+         orderAttr,  
+         nil, // keyType *RType, 
+         attr.Part.Type) 
+	
+		attrVals[obj] = collection
+	}
+	return
+}
+
+
+
+
+
+
+
+
+
+
+
+/*
+Creates a new RCollection object of the appropriate type, for purposes of restoring a collection
+from persistent storage.
+The typeDescriptor is from the type field of the collection's instance entry in the RObject table in the
+local database. 
+Will have to get fancier here about sorting specifications, by enhancing the type descriptor info.
+This method is only for independent collections. Not for multivalued attribute collections.
+
+A collection type descriptor is something like:
+
+"["[ordered_][map|stringmap|list|set]"_of_"<someshorttypename>"]"
+*/
+func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (collection RCollection, err error) {
+   // , keyType *RType, elementType *RType
+
+   // Extract the collectionType part and the key type and element type from the collection type descriptor
+   
+   ofPos := strings.Index(collectionTypeDescriptor, "_of_")
+   collectionType := collectionTypeDescriptor[1:ofPos]
+   elementTypeShortName := collectionTypeDescriptor[ofPos+4:len(collectionTypeDescriptor)-1]  // the element type   
+   
+   // load the key type and element type if not in the runtime yet.
+   
+   var keyType *RType
+   var elementType *RType
+   elementType = rt.Typs[elementTypeShortName]
+   if elementType == nil {
+
+      pkgShortName := PackageShortName(elementTypeShortName)  
+//      localTypeName := LocalTypeName(typeName)   
+      pkgFullName := RT.PkgShortNameToName[pkgShortName]
+      originAndArtifact := OriginAndArtifact(pkgFullName) 
+      packagePath := LocalPackagePath(pkgFullName)      
+   
+      // TODO Dubious values of version and mustBeFromShared here!!!
+      err = rt.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
+      if err != nil {
+         return
+      }
+      
+      elementType = rt.Typs[elementTypeShortName]    
+       
+      // Alternate strategy!!    
+	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
+    }   
+
+
+	var minCardinality int64 = 0
+	var maxCardinality int64 = -1
+
+
+   var isAscending bool = true
+	var unaryMethod *RMultiMethod
+	var binaryMethod *RMultiMethod
+	var orderAttr *AttributeSpec
+	
+	
+	
+   collection,err = rt.NewCollection(minCardinality,
+      maxCardinality,
+      nil, // owner   
+      collectionType, 
+      isAscending,
+      unaryMethod,
+      binaryMethod,
+      orderAttr,  
+      keyType, 
+      elementType) 	
+	
+	return
+}
+
+
+
+/*
+minCardinality int64,
+maxCardinality int64,
+owner RObject,  // can be nil   
+isList bool,   // "list","sortedlist"
+isSet bool,    // "set","sortedset"
+isMap bool, // "map" "stringmap" "sortedmap" "sortedstringmap"
+isStringMap bool,  // "stringmap" "sortedstringmap"
+isSorted bool, // "sortedlist" "sortedset" "sortedmap" "sortedstringmap"
+
+keyType *RType,  // can be nil   
+elementType *RType) (collection RCollection, err error) {
+*/   
+func (rt *RuntimeEnv) NewCollection(
+   minCardinality int64,
+   maxCardinality int64,
+   owner RObject,  // can be nil   
+   collectionType string, 
+   isAscending bool,
+   unaryMethod *RMultiMethod,
+   binaryMethod *RMultiMethod,
+   orderAttr *AttributeSpec,  
+   keyType *RType, 
+   elementType *RType) (collection RCollection, err error) {
+
+
+	var objColl RObject
+
+	var sortWith *sortOp
+
+   // Why not use
+   // "list" "set" "map" "stringmap" "intmap" "sortedlist" "sortedset" "sortedmap" "sortedstringmap" "sortedintmap"
+   // in the type descriptor !!!!!!!
+   //
+   //
+   
+   // Also, should be unpacking the shorttypename of element (and possibly map key) here
+   // and loading their packages if not loaded.
+
+	if collectionType == "sortedlist" || collectionType == "sortedset" || collectionType == "sortedmap" || collectionType == "sortedstringmap" {			
+
+		if binaryMethod == nil {
+			binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]
 		}
 
-		attrVals[obj] = objColl
+		sortWith = &sortOp{
+			attr:          orderAttr,
+			unaryFunction: unaryMethod,
+			lessFunction:  binaryMethod,
+			descending:    !isAscending,
+		}
 	}
+
+	/*
+		@@@@@@@@@@@@@@@@@@@@@@@
+
+		NEED TO FIND OUT IF THERE IS A UNARY METHOD OF THE TYP2, otherwise it must be a binary method.
+
+		Only one of the attr or unaryFunction will be non-nil.
+		If attr or unaryFunction is non-nil, then lessFunction must be the "lt" multiMethod.
+
+		collection.sortWith.lessFunction,_ := RT.MultiMethods["lt"]
+
+		If attr and unaryFunction are nil, lessFunction may be any binary boolean function which has a method whose
+		parameter signature is compatible with a pair of values of the elementType of the collection. lessFunction MAY
+		be the "lt" function in this case but need not be. The function is treated as a "less-than" predicate.
+
+		type sortOp struct {
+			attr *AttributeSpec
+			unaryFunction *RMultiMethod
+			lessFunction *RMultiMethod
+			descending bool
+		}
+
+		$$$$$$$$$$$$$$$$$$$$$$$$
+
+
+		  attr = &AttributeSpec{typ1,
+		                        RelEnd{
+		 									    Name:endName2,
+		                                       Type:typ2,
+		                                       ArityLow:arityLow2,
+		                                       ArityHigh:arityHigh2,
+		                                       CollectionType:collectionType2,
+		                                       OrderAttr:orderAttrName,
+		                                       OrderMethod: orderMethod,
+		 									   OrderMethodArity: int32,
+		                                       IsAscending:isAscending,
+		                                      },
+
+		@@@@@@@@@@@@@@
+	*/
+
+	switch collectionType {
+	case "list", "sortedlist":
+		objColl, err = rt.Newrlist(elementType, minCardinality, maxCardinality, owner, sortWith)
+	case "set":
+		objColl, err = rt.Newrset(elementType, minCardinality, maxCardinality, owner)
+	case "sortedset":
+		objColl, err = rt.Newrsortedset(elementType, minCardinality, maxCardinality, owner, sortWith)
+	default:
+		panic("I don't handle map attributes yet.")
+	}
+
+	collection = objColl.(RCollection)
+
+
+	
+	return
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+Creates a new RCollection object of the appropriate type, for purposes of restoring a collection
+from persistent storage.
+The typeDescriptor is from the type field of the collection's instance entry in the RObject table in the
+local database. 
+Will have to get fancier here about sorting specifications, by enhancing the type descriptor info.
+This method is only for independent collections. Not for multivalued attribute collections.
+
+A collection type descriptor is something like:
+
+[ordered_][map|stringmap|list|set]
+
+func (rt *RuntimeEnv) NewCollection(
+   minCardinality int64,
+   maxCardinality int64,
+   owner RObject,  // can be nil   
+   isList bool,   // "list","sortedlist"
+   isSet bool,    // "set","sortedset"
+   isMap bool, // "map" "stringmap" "sortedmap" "sortedstringmap"
+   isStringMap bool,  // "stringmap" "sortedstringmap"
+   isSorted bool, // "sortedlist" "sortedset" "sortedmap" "sortedstringmap"
+   isAscending bool,
+	unaryMethod *RMultiMethod,
+	binaryMethod *RMultiMethod,
+	orderAttr *AttributeSpec,
+	keyType *RType,  // can be nil   
+   elementType *RType) (collection RCollection, err error) {
+
+
+	var objColl RObject
+	var sortWith *sortOp,
+
+	// fmt.Println(attr.Part.CollectionType)
+
+   if isSorted {			
+
+		if binaryMethod == nil {
+			binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]
+		}
+
+		sortWith = &sortOp{
+			attr:          orderAttr,
+			unaryFunction: unaryMethod,
+			lessFunction:  binaryMethod,
+			descending:    !isAscending,
+		}
+	}
+
+
+	if isList {
+		objColl, err = rt.Newrlist(attr.Part.Type, minCardinality, maxCardinality, owner, sortWith)
+	} else if isSet {
+	   if isSorted {
+		   objColl, err = rt.Newrsortedset(attr.Part.Type, minCardinality, maxCardinality, owner, sortWith)	      
+      } else {
+         objColl, err = rt.Newrset(attr.Part.Type, minCardinality, maxCardinality, owner)         
+      }
+   } else if isStringMap {
+      if isSorted {
+         panic("I don't handle sortedstringmap creation yet.")         
+      } else {
+         panic("I don't handle stringmap creation yet.")
+      }      
+   } else if isMap {
+      if isSorted {
+         panic("I don't handle sortedmap creation yet.")         
+      } else {
+         panic("I don't handle map creation yet.")
+      }
+   }
+	
 	collection = objColl.(RCollection)
 	return
 }
+
+*/
+
+
+
+
+
+
+
+
+
 
 /*
 Removes val from the multi-valued attribute if val is in the collection. Does nothing and does not complain if val is not in the collection.
