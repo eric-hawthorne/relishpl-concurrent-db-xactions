@@ -790,6 +790,10 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
    // load the key type and element type if not in the runtime yet.
    
    var keyType *RType
+   
+   // TODO
+   
+   
    var elementType *RType
    elementType = rt.Typs[elementTypeShortName]
    if elementType == nil {
