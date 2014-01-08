@@ -1039,40 +1039,53 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		}
 	}
 
-   // If I am fetching a data object for which I have not loaded into runtime
-   // the package in which its datatype is defined, I load that package now.
-   // Note that the package must have been loaded previously in SOME run of the program
-   // that used the same local database, so that the package's short name has been recorded 
-   // in the artifact local database.
-    
-   typ := RT.Typs[typeName]
-   if typ == nil {
-   
-      pkgShortName := PackageShortName(typeName)  
-//      localTypeName := LocalTypeName(typeName)   
-      pkgFullName := RT.PkgShortNameToName[pkgShortName]
-      originAndArtifact := OriginAndArtifact(pkgFullName) 
-      packagePath := LocalPackagePath(pkgFullName)      
+   var isCollection bool 
       
-      // TODO Dubious values of version and mustBeFromShared here!!!
-      err = RT.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
+   if typeName[0] == '[' {
+      isCollection = true
+    	obj, err = RT.NewCollectionFromDB(typeName)
+    	if err != nil {
+    		return
+    	}  
+    	
+    	// TODO Now load the collection using the typeName as the collection table name    
+      
+   } else {
+   
+      // If I am fetching a data object for which I have not loaded into runtime
+      // the package in which its datatype is defined, I load that package now.
+      // Note that the package must have been loaded previously in SOME run of the program
+      // that used the same local database, so that the package's short name has been recorded 
+      // in the artifact local database.
+    
+      typ := RT.Typs[typeName]
+      if typ == nil {
+   
+         pkgShortName := PackageShortName(typeName)  
+   //      localTypeName := LocalTypeName(typeName)   
+         pkgFullName := RT.PkgShortNameToName[pkgShortName]
+         originAndArtifact := OriginAndArtifact(pkgFullName) 
+         packagePath := LocalPackagePath(pkgFullName)      
+      
+         // TODO Dubious values of version and mustBeFromShared here!!!
+         err = RT.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
      
-      if err != nil {
-         return
-      }
+         if err != nil {
+            return
+         }
          
-      typ = RT.Typs[typeName]    
+         typ = RT.Typs[typeName]    
           
-      // Alternate strategy!!    
-	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
-    }
-    fullTypeName := typ.Name
+         // Alternate strategy!!    
+   	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
+       }
+       fullTypeName := typ.Name
 
-	obj, err = RT.NewObject(fullTypeName)
-	if err != nil {
-		return
-	}
-	
+   	obj, err = RT.NewObject(fullTypeName)
+   	if err != nil {
+   		return
+   	}
+   }
 
 	// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
 
@@ -1122,7 +1135,20 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 
 	// TODO
 
-	if radius > 0 {
+   if isCollection {
+      collection := obj.(RCollection)
+      if collection.ElementType().IsPrimitive {
+   	   err = db.fetchPrimitiveValueCollection(collection, obj.DBID(), typeName)	   
+         if err != nil {
+         	return
+         }	          
+      } else {
+      	err = db.fetchCollection(collection,  obj.DBID(), typeName, radius)	   
+         if err != nil {
+         	return
+      	}
+      }	   
+   } else if radius > 0 {
 		err = db.fetchUnaryNonPrimitiveAttributeValues(id, obj, radius-1)
 		if err != nil {
 			return
@@ -1137,7 +1163,6 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
 		if err != nil {
 			return
 		}
-
 	}
 	return
 }
@@ -1888,6 +1913,7 @@ func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) {
    if obj.IsCollection() {
       collection := obj.(RCollection)
       collectionTypeDescriptor,_,_,_,_ := db.TypeDescriptor(collection)
+      collectionTypeDescriptor = "Collection_" + collectionTypeDescriptor
    	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), collectionTypeDescriptor))
    } else {
    	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName()))
