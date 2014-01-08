@@ -394,15 +394,16 @@ func (db *SqliteDB) EnsureCollectionTable(collection RCollection) (table string,
 
 func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType) {
    isMap = collection.IsMap()
-   isOrdered = collection.IsOrdered()
+   isSorting := collection.IsSorting()
+   isOrdered = collection.IsOrdered()   
    elementType = collection.ElementType()
    if isMap {
       isStringMap = (    collection.(Map).KeyType() == StringType  )
    }
    typeName := elementType.ShortName()
    table = "["
-   if isOrdered {
-      table += "ordered_"
+   if isSorting {
+      table += "sorted"
    }
    if isStringMap {
       table += "stringmap"
@@ -413,6 +414,7 @@ func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap 
    } else {
       table += "list"
    }
+   // TODO If a map, include the KeyType shortname in type name.
    table += "_of_" + typeName + "]"  
    return 
 }
