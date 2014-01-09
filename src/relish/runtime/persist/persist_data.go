@@ -1916,7 +1916,6 @@ func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) {
    if obj.IsCollection() {
       collection := obj.(RCollection)
       collectionTypeDescriptor,_,_,_,_ := db.TypeDescriptor(collection)
-      collectionTypeDescriptor = "Collection_" + collectionTypeDescriptor
    	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), collectionTypeDescriptor))
    } else {
    	stmt = Stmt(fmt.Sprintf("INSERT INTO RObject(id,id2,flags,typeName) VALUES(%v,%v,%v,'%s');", dbid, dbid2, obj.Flags(), obj.Type().ShortName()))
