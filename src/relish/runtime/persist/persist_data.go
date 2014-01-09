@@ -1061,9 +1061,12 @@ func (db *SqliteDB) fetch1(query string, radius int, errSuffix string, checkCach
       typ := RT.Typs[typeName]
       if typ == nil {
    
-         pkgShortName := PackageShortName(typeName)  
+         fmt.Println("typeName",typeName)
+         pkgShortName := PackageShortName(typeName)
+         fmt.Println("pkgShortName",pkgShortName)         
    //      localTypeName := LocalTypeName(typeName)   
          pkgFullName := RT.PkgShortNameToName[pkgShortName]
+         fmt.Println("pkgFullName",pkgFullName)         
          originAndArtifact := OriginAndArtifact(pkgFullName) 
          packagePath := LocalPackagePath(pkgFullName)      
       
