@@ -783,15 +783,48 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
 
    // Extract the collectionType part and the key type and element type from the collection type descriptor
    
+   var keyTypeShortName string
+   var elementTypeShortName string
+   
    ofPos := strings.Index(collectionTypeDescriptor, "_of_")
    collectionType := collectionTypeDescriptor[1:ofPos]
-   elementTypeShortName := collectionTypeDescriptor[ofPos+4:len(collectionTypeDescriptor)-1]  // the element type   
-   
+   switch collectionType {   
+   case "map","stringmap","sortedmap","sortedstringmap":
+      keyStartPos := ofPos + 5
+      keyEndPos := strings.Index(collectionTypeDescriptor, ")=>(")
+      elementStartPos := keyEndPos + 4
+      elementEndPos := len(collectionTypeDescriptor)-2
+      keyTypeShortName = collectionTypeDescriptor[keyStartPos:len(keyEndPos]  // the key type   
+      elementTypeShortName = collectionTypeDescriptor[elementStartPos:elementEndPos]  // the element type         
+   default:
+      elementTypeShortName = collectionTypeDescriptor[ofPos+4:len(collectionTypeDescriptor)-1]  // the element type   
+   }
    // load the key type and element type if not in the runtime yet.
    
    var keyType *RType
    
-   // TODO
+   if keyTypeShortName != "" {
+      keyType = rt.Typs[elementTypeShortName]
+      if keyType == nil {
+
+         pkgShortName := PackageShortName(keyTypeShortName)  
+   //      localTypeName := LocalTypeName(typeName)   
+         pkgFullName := RT.PkgShortNameToName[pkgShortName]
+         originAndArtifact := OriginAndArtifact(pkgFullName) 
+         packagePath := LocalPackagePath(pkgFullName)      
+   
+         // TODO Dubious values of version and mustBeFromShared here!!!
+         err = rt.Loader.LoadRelishCodePackage(originAndArtifact,"",packagePath,false)
+         if err != nil {
+            return
+         }
+      
+         keyType = rt.Typs[keyTypeShortName]    
+       
+         // Alternate strategy!!    
+   	   // rterr.Stop("Can't summon object. The package which defines its type, '%s', has not been loaded into the runtime.",localTypeName) 
+       }      
+   }
    
    
    var elementType *RType
@@ -944,14 +977,14 @@ func (rt *RuntimeEnv) NewCollection(
 		objColl, err = rt.Newrset(elementType, minCardinality, maxCardinality, owner)
 	case "sortedset":
 		objColl, err = rt.Newrsortedset(elementType, minCardinality, maxCardinality, owner, sortWith)
+	case "map","sortedmap","stringmap","sortedstringmap":		
+      objColl, err = rt.Newmap(keyType, elementType, minCardinality, maxCardinality, owner, sortWith)		
 	default:
-		panic("I don't handle map attributes yet.")
+		panic(fmt.Sprintf("I don't handle %s attributes yet.",collectionType))		
 	}
 
 	collection = objColl.(RCollection)
 
-
-	
 	return
 }
 

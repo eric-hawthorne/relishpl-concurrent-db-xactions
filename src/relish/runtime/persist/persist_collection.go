@@ -453,40 +453,92 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 		orderClause = " ORDER BY ord1"
 	}
 
-	query := fmt.Sprintf("SELECT id1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)
+   if collection.IsMap() {
+      theMap := collection.(Map)
+      if theMap.KeyType() == StringType {
+   	   if collection.IsOrdered() {
+   		   orderClause = " ORDER BY key1"
+      	}         
+      	query := fmt.Sprintf("SELECT id1,key1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)
 
-	selectStmt, err := db.conn.Prepare(query)
-	if err != nil {
-		return
-	}
+      	selectStmt, err := db.conn.Prepare(query)
+      	if err != nil {
+      		return
+      	}
 
-	defer selectStmt.Finalize()
+      	defer selectStmt.Finalize()
 
-	err = selectStmt.Exec()
-	if err != nil {
-		return
-	}
+      	err = selectStmt.Exec()
+      	if err != nil {
+      		return
+      	}
 
-    collection.SetMayContainProxies(radius <= 0) 
+          collection.SetMayContainProxies(radius <= 0) 
 
-	var val RObject
+      	var val RObject
 
-	for selectStmt.Next() {
-		var id1 int64
-		err = selectStmt.Scan(&id1)
-		if err != nil {
-			return
-		}
-		if radius > 0 { // fetch the full objects
-			val, err = db.Fetch(id1, radius-1)
-			if err != nil {
-				return
-			}
-		} else { // Just put proxy objects into the collection.
-			val = Proxy(id1)
-		}
-		addColl := collection.(AddableMixin)
-		addColl.AddSimple(val)
+      	for selectStmt.Next() {
+      		var id1 int64
+      		err = selectStmt.Scan(&id1)
+      		if err != nil {
+      			return
+      		}
+      		if radius > 0 { // fetch the full objects
+      			val, err = db.Fetch(id1, radius-1)
+      			if err != nil {
+      				return
+      			}
+      		} else { // Just put proxy objects into the collection.
+      			val = Proxy(id1)
+      		}
+      		addColl := collection.(AddableMixin)
+      		addColl.AddSimple(val)
+      	}
+              
+         
+      } else {  // An object-keyed map
+      	query := fmt.Sprintf("SELECT id1,ord1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)         
+         
+         
+      }
+      
+   } else { // Not a map
+      
+   	query := fmt.Sprintf("SELECT id1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)
+
+   	selectStmt, err := db.conn.Prepare(query)
+   	if err != nil {
+   		return
+   	}
+
+   	defer selectStmt.Finalize()
+
+   	err = selectStmt.Exec()
+   	if err != nil {
+   		return
+   	}
+
+       collection.SetMayContainProxies(radius <= 0) 
+
+   	var val RObject
+
+   	for selectStmt.Next() {
+   		var id1 int64
+   		err = selectStmt.Scan(&id1)
+   		if err != nil {
+   			return
+   		}
+   		if radius > 0 { // fetch the full objects
+   			val, err = db.Fetch(id1, radius-1)
+   			if err != nil {
+   				return
+   			}
+   		} else { // Just put proxy objects into the collection.
+   			val = Proxy(id1)
+   		}
+   		addColl := collection.(AddableMixin)
+   		addColl.AddSimple(val)
+   	}
 	}
 	return
 }
