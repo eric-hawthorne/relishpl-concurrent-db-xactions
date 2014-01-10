@@ -397,10 +397,14 @@ func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap 
    isSorting := collection.IsSorting()
    isOrdered = collection.IsOrdered()   
    elementType = collection.ElementType()
+   var typeName string
    if isMap {
       isStringMap = (    collection.(Map).KeyType() == StringType  )
+      typeName = collection.Type().ShortName()
+      typeName = typeName[7:]
+   } else {
+      typeName = elementType.ShortName()
    }
-   typeName := elementType.ShortName()
    table = "["
    if isSorting {
       table += "sorted"
