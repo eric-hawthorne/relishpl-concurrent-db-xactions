@@ -473,16 +473,18 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       		return
       	}
 
-          collection.SetMayContainProxies(radius <= 0) 
+         collection.SetMayContainProxies(radius <= 0) 
 
       	var val RObject
 
       	for selectStmt.Next() {
       		var id1 int64
-      		err = selectStmt.Scan(&id1)
+      		var keyStr string
+      		err = selectStmt.Scan(&id1,&keyStr)
       		if err != nil {
       			return
       		}
+      		key := String(keyStr)      		
       		if radius > 0 { // fetch the full objects
       			val, err = db.Fetch(id1, radius-1)
       			if err != nil {
@@ -491,15 +493,54 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       		} else { // Just put proxy objects into the collection.
       			val = Proxy(id1)
       		}
-      		addColl := collection.(AddableMixin)
-      		addColl.AddSimple(val)
+      		
+	         theMap.PutSimple(key, val)     		
       	}
               
          
       } else {  // An object-keyed map
       	query := fmt.Sprintf("SELECT id1,ord1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)         
-         
-         
+   
+      	selectStmt, err := db.conn.Prepare(query)
+      	if err != nil {
+      		return
+      	}
+
+      	defer selectStmt.Finalize()
+
+      	err = selectStmt.Exec()
+      	if err != nil {
+      		return
+      	}
+
+         collection.SetMayContainProxies(radius <= 0) 
+
+      	var val RObject
+
+      	for selectStmt.Next() {
+      		var id1 int64
+      		var ord1 int64
+      		err = selectStmt.Scan(&id1,&ord1)
+      		if err != nil {
+      			return
+      		}
+      		
+   			key, err = db.Fetch(ord1, 1) // Should this just be a proxy?
+   			if err != nil {
+   				return
+   			}      		
+      		  		
+      		if radius > 0 { // fetch the full objects
+      			val, err = db.Fetch(id1, radius-1)
+      			if err != nil {
+      				return
+      			}
+      		} else { // Just put proxy objects into the collection.
+      			val = Proxy(id1)
+      		}
+      		
+	         theMap.PutSimple(key, val)     		
+      	}         
       }
       
    } else { // Not a map
@@ -555,59 +596,159 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 		orderClause = " ORDER BY ord1"
 	}
 	
-	typ := collection.ElementType()
+
+   if collection.IsMap() {
+      theMap := collection.(Map)
+   	typ := theMap.ValType()
+
+   	valCols,_ := typ.DbCollectionColumnInsert()
+   	      
+      if theMap.KeyType() == StringType {
+   	   if collection.IsOrdered() {
+   		   orderClause = " ORDER BY key1"
+      	}         
+      	
+   	   query := fmt.Sprintf("SELECT %s,key1 FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
+      	
+      	selectStmt, err := db.conn.Prepare(query)
+      	if err != nil {
+      		return
+      	}
+
+      	defer selectStmt.Finalize()
+
+      	err = selectStmt.Exec()
+      	if err != nil {
+      		return
+      	}
+
+         collection.SetMayContainProxies(radius <= 0) 
+
+      	var val RObject
+
+      	for selectStmt.Next() {
+      		var id1 int64
+      		var keyStr string
+      		err = selectStmt.Scan(&id1,&keyStr)
+      		if err != nil {
+      			return
+      		}
+      		key := String(keyStr)      		
+      		if radius > 0 { // fetch the full objects
+      			val, err = db.Fetch(id1, radius-1)
+      			if err != nil {
+      				return
+      			}
+      		} else { // Just put proxy objects into the collection.
+      			val = Proxy(id1)
+      		}
+      		
+	         theMap.PutSimple(key, val)     		
+      	}
+              
+         
+      } else {  // An object-keyed map
+         
+
+      	query := fmt.Sprintf("SELECT %s,ord1 FROM %s WHERE id0=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)         
+   
+      	selectStmt, err := db.conn.Prepare(query)
+      	if err != nil {
+      		return
+      	}
+
+      	defer selectStmt.Finalize()
+
+      	err = selectStmt.Exec()
+      	if err != nil {
+      		return
+      	}
+
+         collection.SetMayContainProxies(radius <= 0) 
+
+      	var val RObject
+
+      	for selectStmt.Next() {
+      		var id1 int64
+      		var ord1 int64
+      		err = selectStmt.Scan(&id1,&ord1)
+      		if err != nil {
+      			return
+      		}
+      		
+   			key, err = db.Fetch(ord1, 1) // Should this just be a proxy?
+   			if err != nil {
+   				return
+   			}      		
+      		  		
+      		if radius > 0 { // fetch the full objects
+      			val, err = db.Fetch(id1, radius-1)
+      			if err != nil {
+      				return
+      			}
+      		} else { // Just put proxy objects into the collection.
+      			val = Proxy(id1)
+      		}
+      		
+	         theMap.PutSimple(key, val)     		
+      	}         
+      }
+   } else { // not a map
+
+   	typ := collection.ElementType()
 	
-	valCols,_ := typ.DbCollectionColumnInsert()	
+   	valCols,_ := typ.DbCollectionColumnInsert()	
 
-	query := fmt.Sprintf("SELECT %s FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
+   	query := fmt.Sprintf("SELECT %s FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
 
-	selectStmt, err := db.conn.Prepare(query)
-	if err != nil {
-		return
-	}
-
-	defer selectStmt.Finalize()
-
-	err = selectStmt.Exec()
-	if err != nil {
-		return
-	}
-
-	var val RObject
-   var numColumns int
-   switch typ {
-   case ComplexType,Complex32Type,TimeType:
-      numColumns = 2
-   default: 
-      numColumns = 1
-   }
-	valsBytes1 := make([][]byte, numColumns)
-
-	valsBytes := make([]interface{}, numColumns)
-
-	for i := 0; i < len(valsBytes1); i++ {
-		valsBytes[i] = &valsBytes1[i]
-	}
-
-   var nonNil bool
-	for selectStmt.Next() {
-   	err = selectStmt.Scan(valsBytes...)
+   	selectStmt, err := db.conn.Prepare(query)
    	if err != nil {
    		return
-   	}	   
-		valByteSlice := *(valsBytes[0].(*[]byte))   	
-   	if numColumns == 1 {
-			nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
-			if ! nonNil { panic("nil not valid element in a primitive value collection") }  	   
+   	}
+
+   	defer selectStmt.Finalize()
+
+   	err = selectStmt.Exec()
+   	if err != nil {
+   		return
+   	}
+
+   	var val RObject
+      var numColumns int
+      switch typ {
+      case ComplexType,Complex32Type,TimeType:
+         numColumns = 2
+      default: 
+         numColumns = 1
+      }
+   	valsBytes1 := make([][]byte, numColumns)
+
+   	valsBytes := make([]interface{}, numColumns)
+
+   	for i := 0; i < len(valsBytes1); i++ {
+   		valsBytes[i] = &valsBytes1[i]
+   	}
+
+      var nonNil bool
+   	for selectStmt.Next() {
+      	err = selectStmt.Scan(valsBytes...)
+      	if err != nil {
+      		return
+      	}	   
+   		valByteSlice := *(valsBytes[0].(*[]byte))   	
+      	if numColumns == 1 {
+   			nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
+   			if ! nonNil { panic("nil not valid element in a primitive value collection") }  	   
    	   
-	   } else { // 2
-			valByteSlice2 := *(valsBytes[1].(*[]byte))	   
-         nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val) 	
-			if ! nonNil { panic("nil not valid element in a primitive value collection") }          			   
-	   }
+   	   } else { // 2
+   			valByteSlice2 := *(valsBytes[1].(*[]byte))	   
+            nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val) 	
+   			if ! nonNil { panic("nil not valid element in a primitive value collection") }          			   
+   	   }
 	   
-		addColl := collection.(AddableMixin)
-		addColl.AddSimple(val)
-	}
+   		addColl := collection.(AddableMixin)
+   		addColl.AddSimple(val)
+   	}
+   }
 	return
 }
