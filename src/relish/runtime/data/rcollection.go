@@ -1686,6 +1686,9 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[string]RObject)}	
 	    m.rcollection.robject.this = m
 	    coll = m
+	    //fmt.Println(m)
+	    //fmt.Println(m.m)
+   	 //fmt.Println(m.m == nil)	    
 	case IntType, Int32Type:
 		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[int64]RObject)}
 	    m.rcollection.robject.this = m
@@ -1703,6 +1706,8 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	if ! markSense {
 	    coll.SetMarked()
 	}
+	
+
 	Logln(GC3_,"Newmap: IsMarked",coll.IsMarked())	
 	return
 }
@@ -1807,7 +1812,9 @@ func (s *rstringmap) Contains(th InterpreterThread, key RObject) (found bool) {
 */
 func (s *rstringmap) PutSimple(key RObject, val RObject) (newLen int) {	
 
-	k := string(key.(String))	
+	k := string(key.(String))
+	 //fmt.Println(s.m)
+	 //fmt.Println(s.m == nil)	
     s.m[k] = val
     newLen = len(s.m)
     return
@@ -1824,7 +1831,7 @@ func (s *rstringmap) Remove(key RObject) (removed bool, removedIndex int) {
 
 func (s *rstringmap) ClearInMemory() {	
 
-	s.m = nil
+	s.m = make(map[string]RObject)
 }
 
 
@@ -2015,7 +2022,7 @@ func (s *ruint64map) Remove(key RObject) (removed bool, removedIndex int) {
 
 func (s *ruint64map) ClearInMemory() {
 
-	s.m = nil
+	s.m = make(map[uint64]RObject)
 }
 
 
@@ -2190,7 +2197,7 @@ func (s *rint64map) Remove(key RObject) (removed bool, removedIndex int) {
 
 func (s *rint64map) ClearInMemory() {	
 
-	s.m = nil
+	s.m = make(map[int64]RObject)
 }
 
 func (c *rint64map) FromMapListTree(tree interface{}) (obj RObject, err error) {
@@ -2315,7 +2322,7 @@ func (s *rpointermap) Remove(key RObject) (removed bool, removedIndex int) {
 
 func (s *rpointermap) ClearInMemory() {
 
-	s.m = nil
+	s.m =  make(map[RObject]RObject)
 }
 
 func (c *rpointermap) FromMapListTree(tree interface{}) (obj RObject, err error) {
