@@ -192,6 +192,183 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 
 }
 
+
+
+
+
+
+
+func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
+
+	table := db.TableNameIfy(attr.ShortName())
+   fmt.Println(table)
+	
+   return   
+}
+
+      
+func (db *SqliteDB) PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error) {
+
+   table,_,_,_,elementType,err := db.EnsureCollectionTable(coll.(RCollection))
+   if err != nil {
+      return
+   }
+   
+   fmt.Println(table)
+   fmt.Println(elementType)      
+   
+   
+   return   
+}
+  
+func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, insertIndex int) (err error) {
+
+   table,_,_,isOrdered,elementType,err := db.EnsureCollectionTable(coll)
+   if err != nil {
+      return
+   }
+   
+	if elementType.IsPrimitive {
+	
+		valCols,valVars := elementType.DbCollectionColumnInsert()	
+      
+      if coll.IsSet() && ! isOrdered {      
+         stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, coll.DBID(), valVars))		
+
+         valParts := db.primitiveValSQL(val) 
+         stmt.Args(valParts)						
+
+         db.QueueStatements(stmt)      
+         
+      } else if coll.IsList() && ! coll.IsSorting() { // id, val, ord1
+      
+			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, coll.DBID(), valVars, insertIndex))
+				
+			valParts := db.primitiveValSQL(val) 
+			stmt.Args(valParts)
+				
+			db.QueueStatements(stmt)
+
+      } else if (coll.IsList() || coll.IsSet()) && coll.IsSorting() { // id, val, ord1
+   
+      	db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 + 1 WHERE id0=%v AND ord1 >= %v",table, coll.DBID(), insertIndex))
+      	      
+      	stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, coll.DBID(), valVars, insertIndex))
+		
+      	valParts := db.primitiveValSQL(val) 
+      	stmt.Args(valParts)
+		
+      	db.QueueStatements(stmt)      	
+      }		
+
+	} else { // Non-Primitive part type
+
+		err = db.EnsurePersisted(val)
+		if err != nil {
+			return
+		}
+
+      if coll.IsSet() && ! isOrdered {   // id0,id1
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, coll.DBID(), val.DBID())) 
+          
+      } else if coll.IsList() && ! coll.IsSorting() { // id0, id1, ord1
+
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, coll.DBID(), val.DBID(), insertIndex))	
+			//	     case "map": // id0, id1, ord1
+
+			//	     case "stringmap": // id0,id1,key1
+
+      } else if (coll.IsList() || coll.IsSet()) && coll.IsSorting() {  // id0, id1, ord1
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 + 1 WHERE id0=%v AND ord1 >= %v",table, coll.DBID(), insertIndex))
+			db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, coll.DBID(), val.DBID(), insertIndex)) 
+			//	     case "sortedstringmap":	// id0,id1,key1		
+		}
+		// stmt = fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v",table,obj.DBID(),val.DBID())   // Ensure DBID?                                       
+	}   
+   return   
+}
+
+
+// TODO StringMaps !!
+//
+func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
+
+   table,_,_,_,elementType,err := db.EnsureCollectionTable(coll)
+   if err != nil {
+      return
+   }
+   
+	if elementType.IsPrimitive {
+
+		// TODO Have to handle different types, string, bool, int, float in different clauses
+		
+		if removedIndex == -1 {	
+		   
+		   sqlFragment := elementType.DbCollectionRemove() 
+      	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
+		
+      	valParts := db.primitiveValSQL(val) 
+      	stmt.Args(valParts)
+		
+      	db.QueueStatements(stmt)			
+			
+			
+		} else {
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, coll.DBID(), removedIndex))
+		}
+			
+		
+
+	} else { // Non-Primitive element type
+
+		//	  fmt.Printf("id1 %v",val.DBID())	
+		//	  fmt.Printf("removedIndex %v",removedIndex)
+
+		if removedIndex == -1 {
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v", table, coll.DBID(), val.DBID()))
+		} else {
+			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
+			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, coll.DBID(), removedIndex))
+		}
+	}
+   return   
+}
+
+
+func (db *SqliteDB) PersistClearCollection(coll RemovableCollection) (err error) {
+	
+   table,_,_,_,elementType,err := db.EnsureCollectionTable(coll)
+   if err != nil {
+      return
+   }	
+
+	if elementType.IsPrimitive {
+
+		// TODO Have to handle different types, string, bool, int, float in different clauses
+		db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id=%v", table, coll.DBID()))		
+
+	} else { // Non-Primitive part type
+
+		db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v", table, coll.DBID()))
+
+	}
+   return   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 JUST HERE FOR EXAMPLE
 func (db *SqliteDB) fetchPrimitiveAttributeValues(id int64, obj RObject) (err os.Error) {
@@ -460,9 +637,10 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
    		   orderClause = " ORDER BY key1"
       	}         
       	query := fmt.Sprintf("SELECT id1,key1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)
-
-      	selectStmt, err := db.conn.Prepare(query)
-      	if err != nil {
+   		
+      	selectStmt, queryErr := db.conn.Prepare(query)
+      	if queryErr != nil {
+   			err = queryErr      	   
       		return
       	}
 
@@ -476,15 +654,17 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
          collection.SetMayContainProxies(radius <= 0) 
 
       	var val RObject
-
+      	var key RObject
+   		var id1 int64
+   		var keyStr string
+   		
       	for selectStmt.Next() {
-      		var id1 int64
-      		var keyStr string
+
       		err = selectStmt.Scan(&id1,&keyStr)
       		if err != nil {
       			return
       		}
-      		key := String(keyStr)      		
+      		key = String(keyStr)      		
       		if radius > 0 { // fetch the full objects
       			val, err = db.Fetch(id1, radius-1)
       			if err != nil {
@@ -501,8 +681,9 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       } else {  // An object-keyed map
       	query := fmt.Sprintf("SELECT id1,ord1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)         
    
-      	selectStmt, err := db.conn.Prepare(query)
-      	if err != nil {
+      	selectStmt, queryErr := db.conn.Prepare(query)
+      	if queryErr != nil {
+   			err = queryErr      	   
       		return
       	}
 
@@ -516,10 +697,12 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
          collection.SetMayContainProxies(radius <= 0) 
 
       	var val RObject
-
+      	var key RObject
+   		var id1 int64
+   		var ord1 int64
+   		
       	for selectStmt.Next() {
-      		var id1 int64
-      		var ord1 int64
+
       		err = selectStmt.Scan(&id1,&ord1)
       		if err != nil {
       			return
@@ -547,8 +730,9 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       
    	query := fmt.Sprintf("SELECT id1 FROM %s WHERE id0=%v%s", collectionTableName, collectionOrOwnerId, orderClause)
 
-   	selectStmt, err := db.conn.Prepare(query)
-   	if err != nil {
+   	selectStmt, queryErr := db.conn.Prepare(query)
+   	if queryErr != nil {
+			err = queryErr      	   
    		return
    	}
 
@@ -610,8 +794,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       	
    	   query := fmt.Sprintf("SELECT %s,key1 FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
       	
-      	selectStmt, err := db.conn.Prepare(query)
-      	if err != nil {
+      	selectStmt, queryErr := db.conn.Prepare(query)
+      	if queryErr != nil {
+   			err = queryErr      	   
       		return
       	}
 
@@ -622,11 +807,50 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       		return
       	}
 
-         collection.SetMayContainProxies(radius <= 0) 
+         collection.SetMayContainProxies(false) 
 
       	var val RObject
+      	var keyStr string
+      	var key RObject      	   	
+      	
+         var numColumns int
+         switch typ {
+         case ComplexType,Complex32Type,TimeType:
+            numColumns = 2
+         default: 
+            numColumns = 1
+         }
+      	valsBytes1 := make([][]byte, numColumns)
 
+      	valsBytes := make([]interface{}, numColumns+1)
+
+      	for i := 0; i < len(valsBytes1); i++ {
+      		valsBytes[i] = &valsBytes1[i]
+      	}
+      	valsBytes[numColumns] = &keyStr
+
+         var nonNil bool
       	for selectStmt.Next() {
+         	err = selectStmt.Scan(valsBytes...)
+         	if err != nil {
+         		return
+         	}	   
+      		valByteSlice := *(valsBytes[0].(*[]byte))   	
+         	if numColumns == 1 {
+      			nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
+      			if ! nonNil { panic("nil not valid element in a primitive value collection") }  	   
+   	   
+      	   } else { // 2
+      			valByteSlice2 := *(valsBytes[1].(*[]byte))	   
+               nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val) 	
+      			if ! nonNil { panic("nil not valid element in a primitive value collection") }          			   
+      	   }      	
+
+      		key = String(keyStr)            	
+      		
+/*     		
+      	for selectStmt.Next() {
+      	      
       		var id1 int64
       		var keyStr string
       		err = selectStmt.Scan(&id1,&keyStr)
@@ -642,6 +866,7 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       		} else { // Just put proxy objects into the collection.
       			val = Proxy(id1)
       		}
+*/      				
       		
 	         theMap.PutSimple(key, val)     		
       	}
@@ -652,8 +877,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
       	query := fmt.Sprintf("SELECT %s,ord1 FROM %s WHERE id0=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)         
    
-      	selectStmt, err := db.conn.Prepare(query)
-      	if err != nil {
+      	selectStmt, queryErr := db.conn.Prepare(query)
+      	if queryErr != nil {
+   			err = queryErr      	   
       		return
       	}
 
@@ -664,9 +890,51 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       		return
       	}
 
-         collection.SetMayContainProxies(radius <= 0) 
+         collection.SetMayContainProxies(false) 
 
       	var val RObject
+      	var key RObject   
+      	var ord1 int64      	   	
+      	
+         var numColumns int
+         switch typ {
+         case ComplexType,Complex32Type,TimeType:
+            numColumns = 2
+         default: 
+            numColumns = 1
+         }
+      	valsBytes1 := make([][]byte, numColumns)
+
+      	valsBytes := make([]interface{}, numColumns+1)
+
+      	for i := 0; i < len(valsBytes1); i++ {
+      		valsBytes[i] = &valsBytes1[i]
+      	}
+      	valsBytes[numColumns] = &ord1
+
+         var nonNil bool
+      	for selectStmt.Next() {
+         	err = selectStmt.Scan(valsBytes...)
+         	if err != nil {
+         		return
+         	}	   
+      		valByteSlice := *(valsBytes[0].(*[]byte))   	
+         	if numColumns == 1 {
+      			nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
+      			if ! nonNil { panic("nil not valid element in a primitive value collection") }  	   
+   	   
+      	   } else { // 2
+      			valByteSlice2 := *(valsBytes[1].(*[]byte))	   
+               nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val) 	
+      			if ! nonNil { panic("nil not valid element in a primitive value collection") }          			   
+      	   }      	
+      	
+   			key, err = db.Fetch(ord1, 1) // Should this just be a proxy?
+   			if err != nil {
+   				return
+   			}      	
+	
+/*      	
 
       	for selectStmt.Next() {
       		var id1 int64
@@ -689,6 +957,7 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       		} else { // Just put proxy objects into the collection.
       			val = Proxy(id1)
       		}
+*/      		
       		
 	         theMap.PutSimple(key, val)     		
       	}         
@@ -701,8 +970,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
    	query := fmt.Sprintf("SELECT %s FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)
 
-   	selectStmt, err := db.conn.Prepare(query)
-   	if err != nil {
+   	selectStmt, queryErr := db.conn.Prepare(query)
+   	if queryErr != nil {
+			err = queryErr      	   
    		return
    	}
 

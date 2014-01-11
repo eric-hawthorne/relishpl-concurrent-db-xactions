@@ -71,8 +71,15 @@ type DB interface {
 	PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
 	PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
 	PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
-    PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
-    PersistClearAttr(obj RObject, attr *AttributeSpec) (err error)
+   PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
+   PersistClearAttr(obj RObject, attr *AttributeSpec) (err error)
+   PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error)   
+   PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error)   
+ 	PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
+ 	PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
+   PersistClearCollection(coll RemovableCollection) (err error)    
+    
+    
 	EnsurePersisted(obj RObject) (err error)
 	EnsureAttributeAndRelationTables(t *RType) (err error)
 	ObjectNameExists(name string) (found bool, err error)
@@ -379,6 +386,50 @@ func (dbt * DBThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err er
    dbt.ReleaseDB()
    return
 }
+
+
+func (dbt * DBThread) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistSetAttrElement(obj, attr, val, index)
+   dbt.ReleaseDB()
+   return   
+}
+
+      
+func (dbt * DBThread) PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistSetCollectionElement(coll, val, index)
+   dbt.ReleaseDB()
+   return   
+}
+  
+func (dbt * DBThread) PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistAddToCollection(coll, val, insertedIndex)
+   dbt.ReleaseDB()
+   return   
+}
+
+func (dbt * DBThread) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistRemoveFromCollection(coll, val, removedIndex)
+   dbt.ReleaseDB()
+   return   
+}
+
+func (dbt * DBThread) PersistClearCollection(coll RemovableCollection) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistClearCollection(coll)
+   dbt.ReleaseDB()
+   return   
+}
+
+
+
+
+
+
+
 
 func (dbt * DBThread) EnsurePersisted(obj RObject) (err error) {
    dbt.UseDB()	

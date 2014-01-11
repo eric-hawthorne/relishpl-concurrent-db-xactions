@@ -488,6 +488,42 @@ func (rt *RuntimeEnv) SetOrAddToAttr(th InterpreterThread, obj RObject, attr *At
 }
 
 
+
+func (rt *RuntimeEnv) AddToCollection(th InterpreterThread, coll AddableCollection, val RObject, typeCheck bool, context MethodEvaluationContext) (err error) {
+
+	if typeCheck && !val.Type().LessEq(coll.ElementType()) {
+		err = fmt.Errorf("Cannot assign  a '%v' a value of type '%v'.", coll.Type(), val.Type())
+		return
+	}
+	
+	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
+	// if val == NIL, reject the addition.	
+
+	added, newLen := coll.Add(val, context) // returns false if is a set and val is already a member.
+
+	/* TODO figure out efficient persistence of collection updates
+	 */
+	//fmt.Printf("added=%v\n",added)
+	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
+
+	if added {
+	    if coll.IsStoredLocally() {
+			var insertIndex int
+			if coll.IsSorting() {
+				orderedColl := coll.(OrderedCollection)
+				insertIndex = orderedColl.Index(val, 0)
+			} else {
+				insertIndex = newLen - 1
+			}
+			th.DB().PersistAddToCollection(coll, val, insertIndex)
+		}
+	}
+
+	return
+}
+
+
+
 /*
  Remove all elements of the multivalued attribute, in memory and in the db.
  If the attribute has an inverse, also removes the inverse attribute values.
@@ -794,7 +830,7 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
       keyEndPos := strings.Index(collectionTypeDescriptor, ")=>(")
       elementStartPos := keyEndPos + 4
       elementEndPos := len(collectionTypeDescriptor)-2
-      keyTypeShortName = collectionTypeDescriptor[keyStartPos:len(keyEndPos]  // the key type   
+      keyTypeShortName = collectionTypeDescriptor[keyStartPos:keyEndPos]  // the key type   
       elementTypeShortName = collectionTypeDescriptor[elementStartPos:elementEndPos]  // the element type         
    default:
       elementTypeShortName = collectionTypeDescriptor[ofPos+4:len(collectionTypeDescriptor)-1]  // the element type   
