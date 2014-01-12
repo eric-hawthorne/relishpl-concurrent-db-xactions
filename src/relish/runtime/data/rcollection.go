@@ -1794,9 +1794,9 @@ func (s *rstringmap) Put(key RObject, val RObject, context MethodEvaluationConte
 	k := string(key.(String))	
 	_,found := s.m[k] 
 	added = ! found
-    s.m[k] = val
-    newLen = len(s.m)
-    return
+   s.m[k] = val
+   newLen = len(s.m)
+   return
 }
 
 func (s *rstringmap) Contains(th InterpreterThread, key RObject) (found bool) {

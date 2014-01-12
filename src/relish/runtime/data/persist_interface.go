@@ -73,7 +73,10 @@ type DB interface {
 	PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
    PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
    PersistClearAttr(obj RObject, attr *AttributeSpec) (err error)
-   PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error)   
+   PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) 
+   
+   PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error)    
+     
    PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error)   
  	PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
  	PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
@@ -395,6 +398,16 @@ func (dbt * DBThread) PersistSetAttrElement(obj RObject, attr *AttributeSpec, va
    return   
 }
 
+
+
+      
+func (dbt * DBThread) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
+   dbt.UseDB()	
+   err = dbt.db.PersistMapPut(theMap, key, val, isNewKey)
+   dbt.ReleaseDB()
+   return   
+}
+      
       
 func (dbt * DBThread) PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error) {
    dbt.UseDB()	

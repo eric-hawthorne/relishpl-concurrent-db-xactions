@@ -201,7 +201,35 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
 
 	table := db.TableNameIfy(attr.ShortName())
-   fmt.Println(table)
+	
+   if attr.Part.Type.IsPrimitive {
+
+      valColSettings := attr.Part.Type.DbCollectionUpdate()   
+    
+ 		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
+
+ 		valParts := db.primitiveValSQL(val) 
+ 		stmt.Args(valParts)
+ 		stmt.Arg(obj.DBID())
+ 		stmt.Arg(index)
+
+ 		db.QueueStatements(stmt)						
+
+   } else { // non-primitive element values    
+
+ 		err = db.EnsurePersisted(val)
+ 		if err != nil {
+ 			return
+ 		}
+
+ 		stmt := Stmt(fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v AND ord1=%v", table))
+ 		stmt.Arg(val.DBID())
+ 		stmt.Arg(obj.DBID())
+ 		stmt.Arg(index)		
+
+ 		db.QueueStatements(stmt)			
+
+ 	}	
 	
    return   
 }
@@ -214,12 +242,169 @@ func (db *SqliteDB) PersistSetCollectionElement(coll OrderedCollection, val RObj
       return
    }
    
-   fmt.Println(table)
-   fmt.Println(elementType)      
+   valColSettings := elementType.DbCollectionUpdate()   
    
+   if elementType.IsPrimitive {
+				   
+		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
+
+		valParts := db.primitiveValSQL(val) 
+		stmt.Args(valParts)
+		stmt.Arg(coll.(RObject).DBID())
+		stmt.Arg(index)
+
+		db.QueueStatements(stmt)						
+     
+  } else { // non-primitive element values    
+
+		err = db.EnsurePersisted(val)
+		if err != nil {
+			return
+		}
+
+		stmt := Stmt(fmt.Sprintf("UPDATE %s SET id1=%v WHERE id0=%v AND ord1=%v", table))
+		stmt.Arg(val.DBID())
+		stmt.Arg(coll.(RObject).DBID())
+		stmt.Arg(index)		
+		
+		db.QueueStatements(stmt)			
+
+	} 
    
    return   
 }
+
+
+/*
+NOTE NOTE NOTE We don't have persist remove from map yet !!!!! 
+Does it remove by key? It should.
+*/
+func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
+
+   table,_,isStringMap,_,elementType,err := db.EnsureCollectionTable(theMap)
+   if err != nil {
+      return
+   }	
+		
+	if elementType.IsPrimitive {		
+
+
+
+      keyStr := SqlStringValueEscape(string(key.(String))) 
+
+   	if isStringMap {
+   	  
+   	  if isNewKey {
+   	      valCols,valVars := elementType.DbCollectionColumnInsert()   	     
+   			
+   			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, theMap.DBID(), valVars)) 
+		
+   		   valParts := db.primitiveValSQL(val) 
+   		   stmt.Args(valParts)								
+		
+            stmt.Arg(keyStr)
+      
+   			db.QueueStatements(stmt)   	  
+   	   
+         } else {  // replacing value of an existing key
+            
+            valColSettings := elementType.DbCollectionUpdate()    
+                       
+      		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND key1=?", table, valColSettings))
+
+      		valParts := db.primitiveValSQL(val) 
+      		stmt.Args(valParts)
+      		stmt.Arg(theMap.DBID())
+      		stmt.Arg(keyStr)        	
+
+          	db.QueueStatements(stmt)         
+         }   	   
+		} else { // not a stringmap
+			// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+			// !!!!!!!!!!!!!!!!!!!!!!!!
+			// !!!! NOT DONE YET !!!!!!
+			// !!!!!!!!!!!!!!!!!!!!!!!!
+			if isNewKey {
+   	      valCols,valVars := elementType.DbCollectionColumnInsert()			   
+			   
+            stmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id,ord1) VALUES(%s,?,?)", table, valCols, valVars))
+	
+   		   valParts := db.primitiveValSQL(val) 		   
+   		   stmt.Args(valParts)
+            stmt.Arg(theMap.DBID())		   
+            stmt.Arg(key.DBID())       						
+   			// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+		
+   			db.QueueStatements(stmt)
+   			
+         } else { // replacing value of an existing key
+            
+            valColSettings := elementType.DbCollectionUpdate() 
+                 
+         	stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
+
+            stmt.Arg(theMap.DBID())
+            stmt.Arg(key.DBID())         	
+
+         	db.QueueStatements(stmt)          
+         }								
+   	} 	
+	} else { // non-primitive element type
+      
+		err = db.EnsurePersisted(val)
+		if err != nil {
+			return
+		}      
+      
+      if isStringMap {
+         
+         keyStr := SqlStringValueEscape(string(key.(String)))   
+           
+         if isNewKey {      
+   			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(?,?,?)", table)) 
+            stmt.Arg(theMap.DBID())
+            stmt.Arg(val.DBID())
+            stmt.Arg(keyStr)
+   			db.QueueStatements(stmt)               
+               
+         } else { // replacing value of an existing key
+
+      		stmt := Stmt(fmt.Sprintf("UPDATE %s SET id1=? WHERE id0=? AND key1=?", table))
+
+      		stmt.Arg(val.DBID())
+      		stmt.Arg(theMap.DBID())
+      		stmt.Arg(keyStr)
+
+         	db.QueueStatements(stmt)               
+         }   
+		} else {  // not a stringmap
+				// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+				// !!!!!!!!!!!!!!!!!!!!!!!!
+				// !!!! NOT DONE YET !!!!!!
+				// !!!!!!!!!!!!!!!!!!!!!!!!
+
+         if isNewKey { 
+            
+            stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(?,?,?)"))
+            stmt.Arg(theMap.DBID())
+            stmt.Arg(val.DBID())
+            stmt.Arg(key.DBID())         		
+   			db.QueueStatements(stmt)
+			
+         } else { // replacing value of an existing key
+         
+         	stmt := Stmt(fmt.Sprintf("UPDATE %s SET id1=? WHERE id0=? AND ord1=?", table))
+            stmt.Arg(val.DBID())
+            stmt.Arg(theMap.DBID())
+            stmt.Arg(key.DBID())         	
+
+         	db.QueueStatements(stmt)                
+         }				
+		}
+	} 
+   return   
+}
+
   
 func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, insertIndex int) (err error) {
 
