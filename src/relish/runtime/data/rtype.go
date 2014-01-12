@@ -738,6 +738,19 @@ func (typ *RType) DbCollectionRemove() (sqlFragment string) {
 }
 
 
+func (typ *RType) DbCollectionUpdate() (sqlFragment string) {
+	if typ == ComplexType {
+		sqlFragment = "val_r = ?,val_i = ?"
+	} else if typ == Complex32Type {
+      sqlFragment = "val_r = ?,val_i = ?"		
+	} else if typ == TimeType {
+		sqlFragment = "val = ?,val_loc = ?"	
+	} else {
+		sqlFragment = "val = ?"
+	}
+	return
+}
+
 
 
 
