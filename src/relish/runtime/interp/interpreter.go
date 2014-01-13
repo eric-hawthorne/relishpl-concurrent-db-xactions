@@ -1299,7 +1299,7 @@ func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, er
 //   fmt.Printf("CreateList: typ.Name=%s from elementType %s\n",typ.Name,elementType.Name.Name)
 
    // TODO sorting-lists
-   return i.rt.Newrlist(typ, 0, -1, nil, nil)
+   return i.rt.Newrlist(typ, 0, -1, nil, nil, nil)
 }
 
 /*
@@ -1313,7 +1313,7 @@ func (i *Interpreter) CreateSet(t *Thread, elementType *ast.TypeSpec) (RCollecti
    }
 
    // TODO sorting-sets
-   return i.rt.Newrset(typ, 0, -1, nil)
+   return i.rt.Newrset(typ, 0, -1, nil, nil)
 }
 
 /*
@@ -1333,7 +1333,7 @@ func (i *Interpreter) CreateMap(t *Thread, keyType *ast.TypeSpec, valType *ast.T
    } 
 
    // TODO sorting-maps
-   return i.rt.Newmap(keyTyp, valTyp, 0, -1, nil, nil)
+   return i.rt.Newmap(keyTyp, valTyp, 0, -1, nil, nil, nil)
 }
 
 
@@ -1367,7 +1367,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 			i.EvalExpr(t, expr)
 		}	
 		
-       err = i.rt.ExtendCollectionTypeChecked(list, t.TopN(nElem), t.EvalContext) 	
+       err = i.rt.ExtendCollection(list, t.TopN(nElem), true, t.EvalContext) 	
        if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
        }		
@@ -1497,7 +1497,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 			i.EvalExpr(t, expr)
 		}	
 		
-       err = i.rt.ExtendCollectionTypeChecked(set, t.TopN(nElem), t.EvalContext) 	
+       err = i.rt.ExtendCollection(set.(AddableCollection), t.TopN(nElem), true, t.EvalContext) 	
        if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
        }		
@@ -1609,7 +1609,11 @@ func (i *Interpreter) EvalMapConstruction(t *Thread, mapConstruction *ast.MapCon
       for k := 0; k < n; k+=2 {
          key := t.Objs[k]
          val := t.Objs[k+1] 
-		 theMap.Put(key, val, t.EvalContext) 
+		   //theMap.Put(key, val, t.EvalContext) 
+         err = i.rt.PutInMapTypeChecked(theMap, key, val, t.EvalContext) 	 
+         if err != nil {
+   	      rterr.Stop1(t, mapConstruction, err)
+         }		 
       }
       t.Objs = nil
    }
@@ -3375,8 +3379,36 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					switch stmt.Tok {
 					case token.ASSIGN:
    				   if collection.IsIndexSettable() {
-                      coll := collection.(IndexSettable)					
-					       coll.Set(ix,t.Pop())						   
+                      coll := collection.(IndexSettable)		
+					       val := t.Pop()
+					       typeCheck := true 
+					       if typeCheck && !val.Type().LessEq(coll.ElementType()) {
+                   		err := fmt.Errorf("Cannot put a value of type '%v' in collection with element type '%v'.", val.Type(), coll.ElementType())
+                        if err != nil {					
+						         rterr.Stop1(t,indexExpr,err)       				                               
+                        }                   
+                   		return
+                   	}
+					      owner := coll.Owner()                 
+                     if owner == nil {
+                        if coll.IsStoredLocally() {
+                            err := t.DB().PersistSetCollectionElement(coll, val, ix)                         		
+                            if err != nil {					
+   							       rterr.Stop1(t,indexExpr,err)       				                               
+                            }    
+                         }                     
+                      } else {
+                         if owner.IsStoredLocally() {
+                            attr := coll.Attribute()
+                            err := t.DB().PersistSetAttrElement(owner, attr , val, ix)  
+                            if err != nil {					
+         							 rterr.Stop1(t,indexExpr,err)       				                               
+                            }   
+                         }                 
+                   	 }
+                   	 
+               		 coll.Set(ix,val)     	 
+                     			
 					   } else {
    					   if collection.IsList() { // Must be a sorting list
    					      rterr.Stop1(t, indexExpr,"Cannot set element at [index] of a sorting list.")	
@@ -3443,7 +3475,12 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					switch stmt.Tok {
 					case token.ASSIGN:
 					   // No problem
-	               theMap.Put(idx, t.Pop(), t.EvalContext)	
+	               //theMap.Put(idx, t.Pop(), t.EvalContext)	
+	               
+                  err := i.rt.PutInMapTypeChecked(theMap, idx, t.Pop(), t.EvalContext) 	 
+                  if err != nil {
+            	      rterr.Stop1(t, indexExpr, err)
+                  }	               
 	               				   
 					case token.ADD_ASSIGN:
 					   

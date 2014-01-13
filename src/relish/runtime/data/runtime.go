@@ -489,10 +489,10 @@ func (rt *RuntimeEnv) SetOrAddToAttr(th InterpreterThread, obj RObject, attr *At
 
 
 
-func (rt *RuntimeEnv) AddToCollection(th InterpreterThread, coll AddableCollection, val RObject, typeCheck bool, context MethodEvaluationContext) (err error) {
+func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeCheck bool, context MethodEvaluationContext) (err error) {
 
 	if typeCheck && !val.Type().LessEq(coll.ElementType()) {
-		err = fmt.Errorf("Cannot assign  a '%v' a value of type '%v'.", coll.Type(), val.Type())
+		err = fmt.Errorf("Cannot add a value of type '%v' to a collection with element-type constraint '%v'.", val.Type(),coll.ElementType())	
 		return
 	}
 	
@@ -515,7 +515,7 @@ func (rt *RuntimeEnv) AddToCollection(th InterpreterThread, coll AddableCollecti
 			} else {
 				insertIndex = newLen - 1
 			}
-			th.DB().PersistAddToCollection(coll, val, insertIndex)
+			err = context.InterpThread().DB().PersistAddToCollection(coll, val, insertIndex)
 		}
 	}
 
@@ -560,10 +560,10 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 TODO Optimize this  to add all at once with a slice copy or similar, then persist in fewer
 separate DB calls.
 */
-func (rt *RuntimeEnv) ExtendCollectionTypeChecked(coll RCollection, vals []RObject, context MethodEvaluationContext) (err error) {
+func (rt *RuntimeEnv) ExtendCollection(coll AddableCollection, vals []RObject, typeCheck bool, context MethodEvaluationContext) (err error) {
 
     for _,val := range vals {
-       err = rt.AddToCollectionTypeChecked(coll, val, context)	
+       err = rt.AddToCollection(coll, val, typeCheck, context)	
        if err != nil {
 	      return
        }
@@ -571,7 +571,7 @@ func (rt *RuntimeEnv) ExtendCollectionTypeChecked(coll RCollection, vals []RObje
     return
 }
 
-
+/*
 func (rt *RuntimeEnv) AddToCollectionTypeChecked(coll RCollection, val RObject, context MethodEvaluationContext) (err error) {
 
 	if !val.Type().LessEq(coll.ElementType()) {
@@ -585,7 +585,7 @@ func (rt *RuntimeEnv) AddToCollectionTypeChecked(coll RCollection, val RObject, 
 	// added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
 
 	addColl.Add(val, context) // returns false if is a set and val is already a member.	
-
+*/
 /*
 Need to decide how to persist collections and check if persisted and handle persisting add
 
@@ -607,9 +607,10 @@ Need to decide how to persist collections and check if persisted and handle pers
 	}
 
 	*/
-
+/*
 	return
 }
+*/
 
 /*
 TODO Optimize this  to add all at once with a slice copy or similar, then persist in fewer
@@ -641,29 +642,10 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
 		return
 	}	
 
-    theMap.Put(key, val, context)
+   isNewKey,_ := theMap.Put(key, val, context)
 	
-/*
-Need to decide how to persist collections and check if persisted and handle persisting add
-
-	TODO figure out efficient persistence of map collection updates
 	
-	//fmt.Printf("added=%v\n",added)
-	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
-
-    // This part is COPYITIS from AddToAttrTypeChecked method.
-	if added && obj.IsStoredLocally() {
-		var insertIndex int
-		if objColl.(RCollection).IsSorting() {
-			orderedColl := objColl.(OrderedCollection)
-			insertIndex = orderedColl.Index(val, 0)
-		} else {
-			insertIndex = newLen - 1
-		}
-		rt.db.PersistAddToAttr(obj, attr, val, insertIndex)
-	}
-
-	*/
+	err = context.InterpThread().DB().PersistMapPut(theMap, key, val, isNewKey)  
 
 	return
 }
@@ -687,6 +669,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 	   collection = objColl.(RCollection)
 	} else {
 		var owner RObject
+		var attribute *AttributeSpec
 		var minCardinality, maxCardinality int64
 		if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
 			minCardinality = 0
@@ -698,6 +681,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 			minCardinality = int64(attr.Part.ArityLow)
 			maxCardinality = int64(attr.Part.ArityHigh)
 			owner = obj //  	Collection is owned by the "whole" object.
+			attribute = attr
 
 		}
 		// Create the list or set collection
@@ -779,6 +763,7 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
       collection,err = rt.NewCollection(minCardinality,
          maxCardinality,
          owner,   
+         attribute,
          attr.Part.CollectionType, 
          isAscending,
          unaryMethod,
@@ -900,6 +885,7 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
    collection,err = rt.NewCollection(minCardinality,
       maxCardinality,
       nil, // owner   
+      nil, // attribute
       collectionType, 
       isAscending,
       unaryMethod,
@@ -930,6 +916,7 @@ func (rt *RuntimeEnv) NewCollection(
    minCardinality int64,
    maxCardinality int64,
    owner RObject,  // can be nil   
+   attribute *AttributeSpec,  // can be nil
    collectionType string, 
    isAscending bool,
    unaryMethod *RMultiMethod,
@@ -1008,13 +995,13 @@ func (rt *RuntimeEnv) NewCollection(
 
 	switch collectionType {
 	case "list", "sortedlist":
-		objColl, err = rt.Newrlist(elementType, minCardinality, maxCardinality, owner, sortWith)
+		objColl, err = rt.Newrlist(elementType, minCardinality, maxCardinality, owner, attribute, sortWith)
 	case "set":
-		objColl, err = rt.Newrset(elementType, minCardinality, maxCardinality, owner)
+		objColl, err = rt.Newrset(elementType, minCardinality, maxCardinality, owner, attribute)
 	case "sortedset":
-		objColl, err = rt.Newrsortedset(elementType, minCardinality, maxCardinality, owner, sortWith)
+		objColl, err = rt.Newrsortedset(elementType, minCardinality, maxCardinality, owner, attribute, sortWith)
 	case "map","sortedmap","stringmap","sortedstringmap":		
-      objColl, err = rt.Newmap(keyType, elementType, minCardinality, maxCardinality, owner, sortWith)		
+      objColl, err = rt.Newmap(keyType, elementType, minCardinality, maxCardinality, owner, attribute, sortWith)		
 	default:
 		panic(fmt.Sprintf("I don't handle %s attributes yet.",collectionType))		
 	}

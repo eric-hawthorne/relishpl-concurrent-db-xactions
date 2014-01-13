@@ -76,17 +76,17 @@ type DB interface {
    PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) 
    
    PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error)    
-     
-   PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error)   
+   // Note: Missing PersistRemoveFromMap  
+   PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error)   
  	PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
  	PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
    PersistClearCollection(coll RemovableCollection) (err error)    
-    
-    
+     
 	EnsurePersisted(obj RObject) (err error)
 	EnsureAttributeAndRelationTables(t *RType) (err error)
+	
 	ObjectNameExists(name string) (found bool, err error)
-  ObjectNames(prefix string) (names []string, err error)  
+   ObjectNames(prefix string) (names []string, err error)  
 	NameObject(obj RObject, name string)
 	RenameObject(oldName string, newName string)	
 	
@@ -409,7 +409,7 @@ func (dbt * DBThread) PersistMapPut(theMap Map, key RObject,val RObject, isNewKe
 }
       
       
-func (dbt * DBThread) PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error) {
+func (dbt * DBThread) PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error) {
    dbt.UseDB()	
    err = dbt.db.PersistSetCollectionElement(coll, val, index)
    dbt.ReleaseDB()

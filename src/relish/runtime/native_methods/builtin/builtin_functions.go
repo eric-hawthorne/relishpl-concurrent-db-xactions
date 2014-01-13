@@ -3723,7 +3723,7 @@ the collection.
 func builtinAsList(th InterpreterThread, objects []RObject) []RObject {
 	coll := objects[0].(RCollection)
 
-    list, err := RT.Newrlist(coll.ElementType(),0,-1,nil,nil)
+    list, err := RT.Newrlist(coll.ElementType(),0,-1,nil,nil,nil)
 	if err != nil {
 		panic(err)
 	}
@@ -4097,7 +4097,7 @@ func builtinStringSplit(th InterpreterThread, objects []RObject) []RObject {
 
     stringSlice := strings.Split(s,sep)
 
-    elementList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    elementList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -4820,7 +4820,7 @@ func builtinCsvRead(th InterpreterThread, objects []RObject) []RObject {
 
 
    errStr := ""
-   recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil)
+   recordsList, err := RT.Newrlist(ListOfStringType, 0, -1, nil, nil, nil)
    if err != nil {
       errStr = err.Error()
    } else {
@@ -4833,7 +4833,7 @@ func builtinCsvRead(th InterpreterThread, objects []RObject) []RObject {
           	 break
           }    
 
-		  recordList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+		  recordList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
 		  if err != nil {
 			 errStr = err.Error()
 			 break
@@ -4992,7 +4992,7 @@ func treeFromGoToRelish(v interface{}) RObject {
 	 case string:
 		return String(v.(string)) 
 	 case []interface{}:
-		relishList, err := RT.Newrlist(AnyType, 0, -1, nil, nil)
+		relishList, err := RT.Newrlist(AnyType, 0, -1, nil, nil, nil)
 		if err != nil {
 		   panic(err)
 		}
@@ -5003,7 +5003,7 @@ func treeFromGoToRelish(v interface{}) RObject {
 		}
 		return relishList
      case map[string]interface{}:
-        relishMap,err := RT.Newmap(StringType, AnyType, 0, -1, nil, nil)	
+        relishMap,err := RT.Newmap(StringType, AnyType, 0, -1, nil, nil, nil)	
 		if err != nil {
 		   panic(err)
 		}	

@@ -77,6 +77,7 @@ type RCollection interface {
 
 	IsCardOk() bool  // Is my current cardinality within my cardinality constraints?
 	Owner() RObject  // if non-nil, this collection is the implementation of a multi-valued attribute.
+	Attribute() *AttributeSpec  // if non-nil, the attribute that this is the value of for the owner object.
 	// Returns an iterator that yields the objects in the collection. A Map iterator returns the keys.
 	Iter(th InterpreterThread) <-chan RObject // Usage: for obj := range s.Iter()  or ch := s.Iter(); x, ok = <-ch
 
@@ -238,6 +239,7 @@ type rcollection struct {
 	maxCard     int64
 	elementType *RType
 	owner       RObject
+	attr *AttributeSpec
 
 	sortWith *sortOp // Which attribute of a member, or which unary func of member or which less function to sort with. May be nil.
 
@@ -320,6 +322,10 @@ func (c rcollection) ElementType() *RType {
 */
 func (c rcollection) Owner() RObject {
 	return c.owner
+}
+
+func (c rcollection) Attribute() *AttributeSpec {
+	return c.attr
 }
 
 func (c rcollection) IsInsertable() bool {
@@ -632,7 +638,7 @@ func (o *rset) Mark() bool {
 /*
    Constructor
 */
-func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality int64, owner RObject) (coll RCollection, err error) {
+func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality int64, owner RObject, attr *AttributeSpec) (coll RCollection, err error) {
 	typ, err := rt.GetSetType(elementType)
 	if err != nil {
 		return nil, err
@@ -640,7 +646,7 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, nil, false}, nil}
+	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, nil, false}, nil}
 	s.rcollection.robject.this = s
 	coll = s		
     if ! markSense {
@@ -1091,7 +1097,7 @@ func (s *rsortedset) Iterable() (interface{},error) {
 /*
    Constructor
 */
-func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll RCollection, err error) {
+func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardinality int64, owner RObject, attr *AttributeSpec, sortWith *sortOp) (coll RCollection, err error) {
 	typ, err := rt.GetSetType(elementType)
 	if err != nil {
 		return nil, err
@@ -1099,7 +1105,7 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith, false}, nil, nil}
+	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false}, nil, nil}
 	s.rcollection.robject.this = s
 	coll = s		
 	if ! markSense {
@@ -1636,7 +1642,7 @@ func (c *rlist) FromMapListTree(tree interface{}) (obj RObject, err error) {
 /*
    Constructor
 */
-func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll List, err error) {
+func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, attr *AttributeSpec, sortWith *sortOp) (coll List, err error) {
 	typ, err := rt.GetListType(elementType)
 	if err != nil {
 		return nil, err
@@ -1644,7 +1650,7 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, sortWith, false}, nil}
+	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false}, nil}
 	lst.rcollection.robject.this = lst
 	coll = lst	
 	if ! markSense {
@@ -1673,7 +1679,7 @@ func (o rlist) IsZero() bool {
 /*
    Constructor - decides which kind of map to use depending on the keyType
 */
-func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, maxCardinality int64, owner RObject, sortWith *sortOp) (coll Map, err error) {
+func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, maxCardinality int64, owner RObject, attr *AttributeSpec, sortWith *sortOp) (coll Map, err error) {
 	typ, err := rt.GetMapType(keyType,valType)
 	if err != nil {
 		return nil, err
@@ -1683,22 +1689,22 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	}
 	switch keyType {
 	case StringType:
-		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[string]RObject)}	
+		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false}, valType, make(map[string]RObject)}	
 	    m.rcollection.robject.this = m
 	    coll = m
 	    //fmt.Println(m)
 	    //fmt.Println(m.m)
    	 //fmt.Println(m.m == nil)	    
 	case IntType, Int32Type:
-		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false}, valType, make(map[int64]RObject)}
+		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false}, valType, make(map[int64]RObject)}
 	    m.rcollection.robject.this = m
 	    coll = m	
 	case UintType, Uint32Type:
-		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false},valType, make(map[uint64]RObject)}
+		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false},valType, make(map[uint64]RObject)}
 	    m.rcollection.robject.this = m				
 	    coll = m	
 	default:
-		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, sortWith, false},valType, make(map[RObject]RObject)}		
+		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false},valType, make(map[RObject]RObject)}		
 	    m.rcollection.robject.this = m			
 	    coll = m				
 	}
