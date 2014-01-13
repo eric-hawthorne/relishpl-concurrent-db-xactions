@@ -484,7 +484,7 @@ func typeNames(th InterpreterThread, objects []RObject) []RObject {
     includeReflect := int(objects[3].(Int))       
     reverseNames := bool(objects[4].(Bool))      
 
-    typeNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    typeNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -688,7 +688,7 @@ func attributeNames(th InterpreterThread, objects []RObject) []RObject {
 	includeComplex := bool(objects[2].(Bool))		
 	includeInherited := bool(objects[3].(Bool))
 
-    attrNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    attrNameList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -761,7 +761,7 @@ func supertypes(th InterpreterThread, objects []RObject) []RObject {
     if ! typFound {
     	panic("reflect.DataType is not defined.")
     }
-    supertypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil)
+    supertypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -796,7 +796,7 @@ func subtypes(th InterpreterThread, objects []RObject) []RObject {
     if ! typFound {
     	panic("reflect.DataType is not defined.")
     }
-    subtypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil)
+    subtypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -828,7 +828,7 @@ func supertypeClosure(th InterpreterThread, objects []RObject) []RObject {
     if ! typFound {
     	panic("reflect.DataType is not defined.")
     }
-    supertypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil)
+    supertypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -858,7 +858,7 @@ func subtypeClosure(th InterpreterThread, objects []RObject) []RObject {
     if ! typFound {
     	panic("reflect.DataType is not defined.")
     }
-    subtypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil)
+    subtypeList, err := RT.Newrlist(dataTypeType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1110,7 +1110,7 @@ func objectNames(th InterpreterThread, objects []RObject) []RObject {
 
 	prefix := string(objects[0].(String))	
 
-    nameList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    nameList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1213,7 +1213,7 @@ func getSimpleAttributes(th InterpreterThread, objects []RObject) []RObject {
     	panic("reflect.SimpleAttrDescriptor is not defined.")
     }
 
-    attrDescrList, err := RT.Newrlist(simpleAttrDescrType, 0, -1, nil, nil)
+    attrDescrList, err := RT.Newrlist(simpleAttrDescrType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1304,7 +1304,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
     	panic("reflect.ComplexAttrDescriptor is not defined.")
     }
 
-    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil)
+    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1471,12 +1471,12 @@ func getCollectionInfo(th InterpreterThread, objects []RObject) []RObject {
        panic("getCollectionInfo called on a non-collection object")
     }
 
-    keyList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    keyList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }    
     
-    valList, err := RT.Newrlist(StringType, 0, -1, nil, nil)
+    valList, err := RT.Newrlist(StringType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1589,7 +1589,7 @@ func getCollectionElements(th InterpreterThread, objects []RObject) []RObject {
     	panic("reflect.ComplexAttrDescriptor is not defined.")
     }
 
-    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil)
+    attrDescrList, err := RT.Newrlist(complexAttrDescrType, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }
@@ -1852,14 +1852,14 @@ func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryCond
     
     t, typeFound := RT.Types[typeName]
     if ! typeFound {
-       objectList, err := RT.Newrlist(AnyType, 0, -1, nil, nil)
+       objectList, err := RT.Newrlist(AnyType, 0, -1, nil, nil, nil)
        if err != nil {
 	      panic(err)
        }
 	   return objectList
     }
 
-    objectList, err := RT.Newrlist(t, 0, -1, nil, nil)
+    objectList, err := RT.Newrlist(t, 0, -1, nil, nil, nil)
     if err != nil {
 	   panic(err)
     }

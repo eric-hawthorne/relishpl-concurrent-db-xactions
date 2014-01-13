@@ -235,7 +235,7 @@ func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val 
 }
 
       
-func (db *SqliteDB) PersistSetCollectionElement(coll OrderedCollection, val RObject, index int) (err error) {
+func (db *SqliteDB) PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error) {
 
    table,_,_,_,elementType,err := db.EnsureCollectionTable(coll.(RCollection))
    if err != nil {

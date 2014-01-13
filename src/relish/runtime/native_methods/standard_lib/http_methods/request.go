@@ -397,7 +397,7 @@ func uploadedFiles(th InterpreterThread, objects []RObject) []RObject {
 
     uploadedFileType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile"]
 
-    fileList,err := RT.Newrlist(uploadedFileType,0,-1,nil,nil)
+    fileList,err := RT.Newrlist(uploadedFileType,0,-1,nil,nil,nil)
     if err != nil {
     	panic(err)
     }

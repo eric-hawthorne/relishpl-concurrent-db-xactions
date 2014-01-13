@@ -345,7 +345,7 @@ func (t *RType) Prototype() RObject {
 		      panic(fmt.Sprintf("List Element Type '%s' not found.",elementTypeName))	
 		   }	
 	
-           p, err = RT.Newrlist(typ, 0, -1, nil, nil)		
+           p, err = RT.Newrlist(typ, 0, -1, nil, nil, nil)		
 		   if err != nil {
 			   panic(err)
 		   }
@@ -366,7 +366,7 @@ func (t *RType) Prototype() RObject {
 		      panic(fmt.Sprintf("Map value type '%s' not found.",valTypeName))
 		   }	
 		
-           p, err = RT.Newmap(keyTyp, valTyp, 0, -1, nil, nil)		
+           p, err = RT.Newmap(keyTyp, valTyp, 0, -1, nil, nil, nil)		
 		   if err != nil {
 			   panic(err)
 		   }					
@@ -379,7 +379,7 @@ func (t *RType) Prototype() RObject {
 		      panic(fmt.Sprintf("Set Element Type '%s' not found.",elementTypeName))
 		   }	
 
-           p, err = RT.Newrset(typ, 0, -1, nil)		
+           p, err = RT.Newrset(typ, 0, -1, nil, nil)		
 		   if err != nil {
 			   panic(err)
 		   }		
