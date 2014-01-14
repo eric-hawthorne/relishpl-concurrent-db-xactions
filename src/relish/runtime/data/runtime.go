@@ -522,6 +522,25 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 	return
 }
 
+/*
+Removes val from the multi-valued attribute if val is in the collection. Does nothing and does not complain if val is not in the collection.
+If removePersistent is true, also removes the value from the persistent version of the attribute association.
+*/
+func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection RemovableCollection, val RObject, removePersistent bool) (err error) { 	
+	
+	removed, removedIndex := collection.Remove(val)
+	
+	if removed  {
+	   if removePersistent && collection.IsStoredLocally() {
+	    	th.DB().PersistRemoveFromCollection(collection, val, removedIndex)
+	   }
+	}
+
+	return
+}
+
+
+
 
 
 /*
