@@ -478,26 +478,43 @@ func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, 
 //
 func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
 
-   table,_,_,_,elementType,err := db.EnsureCollectionTable(coll)
+   table,isMap,isStringMap,_,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
       return
    }
    
-	if elementType.IsPrimitive {
+   if isStringMap {
+   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
+      
+      keyStr := SqlStringValueEscape(string(key.(String)))   
+   	stmt.Arg(coll.DBID())
+   	stmt.Arg(keyStr)
+   	
+   	db.QueueStatements(stmt)
+   		      
+   } else if isMap {   
+   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
+      
+      keyStr := SqlStringValueEscape(string(key.(String)))   
+   	stmt.Arg(coll.DBID())
+   	stmt.Arg(keyStr)
+   	
+   	db.QueueStatements(stmt)  
+   	    
+   } else if elementType.IsPrimitive {
 
 		// TODO Have to handle different types, string, bool, int, float in different clauses
 		
 		if removedIndex == -1 {	
-		   
+
 		   sqlFragment := elementType.DbCollectionRemove() 
       	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
-		
+	
       	valParts := db.primitiveValSQL(val) 
       	stmt.Args(valParts)
-		
+	
       	db.QueueStatements(stmt)			
-			
-			
+		
 		} else {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
 			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, coll.DBID(), removedIndex))
