@@ -847,7 +847,7 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
    ofPos := strings.Index(collectionTypeDescriptor, "_of_")
    collectionType := collectionTypeDescriptor[1:ofPos]
    switch collectionType {   
-   case "map","stringmap","sortedmap","sortedstringmap":
+   case "map","stringmap","sortedmap","sortedstringmap","int64map","uint64map":
       keyStartPos := ofPos + 5
       keyEndPos := strings.Index(collectionTypeDescriptor, ")=>(")
       elementStartPos := keyEndPos + 4
@@ -1037,7 +1037,7 @@ func (rt *RuntimeEnv) NewCollection(
 		objColl, err = rt.Newrset(elementType, minCardinality, maxCardinality, owner, attribute)
 	case "sortedset":
 		objColl, err = rt.Newrsortedset(elementType, minCardinality, maxCardinality, owner, attribute, sortWith)
-	case "map","sortedmap","stringmap","sortedstringmap":		
+	case "map","sortedmap","stringmap","sortedstringmap","uint64map","int64map":		
       objColl, err = rt.Newmap(keyType, elementType, minCardinality, maxCardinality, owner, attribute, sortWith)		
 	default:
 		panic(fmt.Sprintf("I don't handle %s attributes yet.",collectionType))		

@@ -380,28 +380,41 @@ func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isS
 
    Return metadata about the collection, including the table name.
 */
-func (db *SqliteDB) EnsureCollectionTable(collection RCollection) (table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType, err error) {
+func (db *SqliteDB) EnsureCollectionTable(collection RCollection) (table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType, err error) {
         
-   table, isMap, isStringMap, isOrdered, elementType = db.TypeDescriptor(collection)
+   table, isMap, isOrdered, keyType, elementType = db.TypeDescriptor(collection)
    
    if elementType.IsPrimitive {
-      err = db.EnsurePrimitiveCollectionTable(table, isMap, isStringMap, isOrdered, elementType)      
+      err = db.EnsurePrimitiveCollectionTable(table, isMap, isOrdered, keyType, elementType)      
    } else {
-      err = db.EnsureNonPrimitiveCollectionTable(table, isMap, isStringMap, isOrdered)
+      err = db.EnsureNonPrimitiveCollectionTable(table, isMap, isOrdered, keyType)
    }
    return
 }
 
-func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType) {
+func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType) {
+   
    isMap = collection.IsMap()
    isSorting := collection.IsSorting()
    isOrdered = collection.IsOrdered()   
    elementType = collection.ElementType()
    var typeName string
    if isMap {
-      isStringMap = (    collection.(Map).KeyType() == StringType  )
+      // isStringMap = (    collection.(Map).KeyType() == StringType  )
+      
+      keyType = collection.(Map).KeyType()
+      
+      
       typeName = collection.Type().ShortName()
       typeName = typeName[7:]
+      
+      
+// IntType,Int32Type,UintType,Uint32Type    
+      
+      
+      
+      
+      
    } else {
       typeName = elementType.ShortName()
    }
@@ -409,15 +422,23 @@ func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap 
    if isSorting {
       table += "sorted"
    }
-   if isStringMap {
-      table += "stringmap"
-   } else if isMap {
-      table += "map"
-   } else if collection.IsSet() {
-      table += "set"
-   } else {
-      table += "list"
+   switch keyType {
+   case StringType:
+      table += "stringmap"   
+   case IntType,Int32Type:
+      table += "int64map"   
+   case UintType,Uint32Type:
+      table += "uint64map"   
+   case nil:
+      if collection.IsSet() {
+         table += "set"
+      } else {
+         table += "list"
+      }
+   default:  
+      table += "map"          
    }
+   
    // TODO If a map, include the KeyType shortname in type name.
    table += "_of_" + typeName + "]"  
    return 

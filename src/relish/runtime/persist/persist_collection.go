@@ -478,39 +478,47 @@ func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, 
 //
 func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
 
-   table,isMap,isStringMap,_,elementType,err := db.EnsureCollectionTable(coll)
+   table,isMap,_,keyType,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
       return
    }
    
    if elementType.IsPrimitive {
-
-	   if isStringMap {
-		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
-		      
-		    keyStr := SqlStringValueEscape(string(val.(String)))   
+      
+	   if isMap { 
+ 		   stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND ord1=?", table))	      
+	      switch keyType {  
+	      case StringType:
+  		   	stmt = Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
+  		      keyStr := SqlStringValueEscape(string(val.(String)))   
+  		   	stmt.Arg(coll.DBID())
+  		   	stmt.Arg(keyStr)
+	   	case UintType:
 		   	stmt.Arg(coll.DBID())
-		   	stmt.Arg(keyStr)
-		   	
-		   	db.QueueStatements(stmt)
-	   		      
-	   } else if isMap {   
-		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND ord1=?", table))
-		      
+		   	stmt.Arg(int64(uint64(val.(Uint))))   // val is actually the map key
+	   	case Uint32Type:
 		   	stmt.Arg(coll.DBID())
-		   	stmt.Arg(val.DBID())   // val is actually the map key
-		   	
-		   	db.QueueStatements(stmt)  
-
+		   	stmt.Arg(int(uint32(val.(Uint32))))   // val is actually the map key			   	
+	   	case IntType:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(int64(val.(Int)))   // val is actually the map key
+	   	case Uint32Type:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(int(val.(Int32)))   // val is actually the map key		   	   		          
+         default:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(val.DBID())   // val is actually the map key 
+         }
+		   db.QueueStatements(stmt) 		         
 	   } else if removedIndex == -1 {	
 
 		   sqlFragment := elementType.DbCollectionRemove() 
-      	   stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
+      	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
 	
-      	   valParts := db.primitiveValSQL(val) 
-      	   stmt.Args(valParts)
+      	valParts := db.primitiveValSQL(val) 
+      	stmt.Args(valParts)
 	
-      	   db.QueueStatements(stmt)			
+      	db.QueueStatements(stmt)			
 		
 		} else {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
