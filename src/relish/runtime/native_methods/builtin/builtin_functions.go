@@ -3666,11 +3666,11 @@ func builtinContains(th InterpreterThread, objects []RObject) []RObject {
 }
 
 func builtinClear(th InterpreterThread, objects []RObject) []RObject {
-	coll,isRemovableMixin := objects[0].(RemovableMixin)
-    if ! isRemovableMixin {
+	coll,isRemovableCollection := objects[0].(RemovableCollection)
+    if ! isRemovableCollection {
     	rterr.Stop("Can only apply clear to a mutable,clearable collection or map.")
     }
-    coll.ClearInMemory()
+    RT.ClearCollection(th, coll)
 	return []RObject{}
 }
 

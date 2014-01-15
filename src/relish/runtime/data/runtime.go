@@ -568,10 +568,28 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement ClearInMemory()
 	collection.ClearInMemory()	
 	
-	
-	err = th.DB().PersistClearAttr(obj, attr)
+	if obj.IsStoredLocally() {
+	   err = th.DB().PersistClearAttr(obj, attr)
+    }
 	return
 }
+
+
+/*
+ Remove all elements of the multivalued attribute, in memory and in the db.
+ If the attribute has an inverse, also removes the inverse attribute values.
+*/
+func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection RemovableCollection) (err error) {
+
+
+	collection.ClearInMemory()	
+	
+	if collection.IsStoredLocally() {
+	   err = th.DB().PersistClearCollection(collection)
+    }
+	return
+}
+
 
 
 
@@ -663,9 +681,9 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
 
    isNewKey,_ := theMap.Put(key, val, context)
 	
-	
-	err = context.InterpThread().DB().PersistMapPut(theMap, key, val, isNewKey)  
-
+	if theMap.IsStoredLocally() {
+	   err = context.InterpThread().DB().PersistMapPut(theMap, key, val, isNewKey)  
+    }
 	return
 }
 
@@ -844,7 +862,7 @@ func (rt *RuntimeEnv) NewCollectionFromDB(collectionTypeDescriptor string) (coll
    var keyType *RType
    
    if keyTypeShortName != "" {
-      keyType = rt.Typs[elementTypeShortName]
+      keyType = rt.Typs[keyTypeShortName]
       if keyType == nil {
 
          pkgShortName := PackageShortName(keyTypeShortName)  

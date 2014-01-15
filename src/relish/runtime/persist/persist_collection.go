@@ -483,51 +483,63 @@ func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RO
       return
    }
    
-   if isStringMap {
-   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
-      
-      keyStr := SqlStringValueEscape(string(key.(String)))   
-   	stmt.Arg(coll.DBID())
-   	stmt.Arg(keyStr)
-   	
-   	db.QueueStatements(stmt)
-   		      
-   } else if isMap {   
-   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
-      
-      keyStr := SqlStringValueEscape(string(key.(String)))   
-   	stmt.Arg(coll.DBID())
-   	stmt.Arg(keyStr)
-   	
-   	db.QueueStatements(stmt)  
-   	    
-   } else if elementType.IsPrimitive {
+   if elementType.IsPrimitive {
 
-		// TODO Have to handle different types, string, bool, int, float in different clauses
-		
-		if removedIndex == -1 {	
+	   if isStringMap {
+		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND key1=?", table))
+		      
+		    keyStr := SqlStringValueEscape(string(val.(String)))   
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(keyStr)
+		   	
+		   	db.QueueStatements(stmt)
+	   		      
+	   } else if isMap {   
+		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND ord1=?", table))
+		      
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(val.DBID())   // val is actually the map key
+		   	
+		   	db.QueueStatements(stmt)  
+
+	   } else if removedIndex == -1 {	
 
 		   sqlFragment := elementType.DbCollectionRemove() 
-      	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
+      	   stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table,  coll.DBID(), sqlFragment))
 	
-      	valParts := db.primitiveValSQL(val) 
-      	stmt.Args(valParts)
+      	   valParts := db.primitiveValSQL(val) 
+      	   stmt.Args(valParts)
 	
-      	db.QueueStatements(stmt)			
+      	   db.QueueStatements(stmt)			
 		
 		} else {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
 			db.QueueStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%v AND ord1 > %v",  table, coll.DBID(), removedIndex))
 		}
-			
-		
 
 	} else { // Non-Primitive element type
 
 		//	  fmt.Printf("id1 %v",val.DBID())	
 		//	  fmt.Printf("removedIndex %v",removedIndex)
 
-		if removedIndex == -1 {
+		if isStringMap {
+		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND key1=?", table))
+		      
+		    keyStr := SqlStringValueEscape(string(val.(String)))   
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(keyStr)
+		   	
+		   	db.QueueStatements(stmt)
+	   		      
+	   } else if isMap {   
+		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND ord1=?", table))
+		        
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(val.DBID())  // val is actually the map key
+		   	
+		   	db.QueueStatements(stmt)  
+
+	   } else if removedIndex == -1 {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v", table, coll.DBID(), val.DBID()))
 		} else {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v AND ord1=%v", table, coll.DBID(), val.DBID(), removedIndex))
