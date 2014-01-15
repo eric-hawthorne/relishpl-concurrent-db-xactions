@@ -1687,8 +1687,12 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
+	fmt.Println(keyType)
+	fmt.Println(valType)
+	fmt.Println(keyType == StringType)	
 	switch keyType {
 	case StringType:
+		fmt.Println("Making a stringmap")
 		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false}, valType, make(map[string]RObject)}	
 	    m.rcollection.robject.this = m
 	    coll = m
