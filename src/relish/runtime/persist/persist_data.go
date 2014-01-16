@@ -530,7 +530,7 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
    //
    // Return metadata about the collection, including the table name.
    // 
-   table,isMap,isStringMap,isOrdered,elementType,err := db.EnsureCollectionTable(collection)
+   table,isMap,isOrdered,keyType,elementType,err := db.EnsureCollectionTable(collection)
    if err != nil {
       return
    }	
@@ -539,35 +539,68 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 		if isMap {
 			theMap := collection.(Map)		
 			
+			mapStmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(?,?,?)", table))		
+			stringMapStmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(?,?,?)", table)) 	
+
 			for key := range theMap.Iter(nil) {
 				val, _ := theMap.Get(key)
 				err = db.EnsurePersisted(val)
 				if err != nil {
 					return
 				}
-				if isStringMap {
-					stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,key1) VALUES(%v,%v,?)", table, collection.DBID(), val.DBID())) 
-	            stmt.Arg(SqlStringValueEscape(string(key.(String))))
-					db.QueueStatements(stmt)
-				} else {
-					// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
-					// !!!!!!!!!!!!!!!!!!!!!!!!
-					// !!!! NOT DONE YET !!!!!!
-					// !!!!!!!!!!!!!!!!!!!!!!!!
-					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, collection.DBID(), val.DBID(), key.DBID())) 					 
-				}
+				stmt := mapStmt			 
+			    switch keyType {  
+			      case StringType:
+				   	stmt = stringMapStmt  	
+		  		    keyStr := SqlStringValueEscape(string(key.(String)))   
+		  		   	stmt.Arg(collection.DBID())
+                    stmt.Arg(val.DBID()) 
+		  		   	stmt.Arg(keyStr)
+			   	case UintType:
+				   	stmt.Arg(collection.DBID())
+                    stmt.Arg(val.DBID()) 				   	
+				   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+			   	case Uint32Type:
+				   	stmt.Arg(collection.DBID())
+                    stmt.Arg(val.DBID()) 				   	
+				   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+			   	case IntType:
+				   	stmt.Arg(collection.DBID())
+                    stmt.Arg(val.DBID()) 				   	
+				   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+			   	case Uint32Type:
+				   	stmt.Arg(collection.DBID())
+                    stmt.Arg(val.DBID()) 				   	
+				   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		   	   		          
+		         default:
+				   	stmt.Arg(collection.DBID())
+				   	stmt.Arg(val.DBID())  
+				   	stmt.Arg(key.DBID())
+		         }
+				 db.QueueStatements(stmt) 
 			}
 		} else {
+			orderedStmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(?,?,?)", table))
+			unorderedStmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(?,?)", table))	
+
 			i := 0
 			for val := range collection.Iter(nil) {
 				err = db.EnsurePersisted(val)
 				if err != nil {
 					return
 				}
+
 				if isOrdered {
-					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(%v,%v,%v)", table, collection.DBID(), val.DBID(), i))
+					stmt := orderedStmt
+					stmt.Arg(collection.DBID())
+					stmt.Arg(val.DBID())
+					stmt.Arg(i)
+					db.QueueStatements(stmt)
 				} else { // unordered set 
-					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, collection.DBID(), val.DBID()))		
+					stmt := unorderedStmt
+					stmt.Arg(collection.DBID())
+					stmt.Arg(val.DBID())
+					db.QueueStatements(stmt)	
 				}
 				i++
 			}
@@ -589,57 +622,64 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 	   
    		theMap := collection.(Map)
    			
+   		stringMapStmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id,key1) VALUES(%s,?,?)", table, valCols, valVars)) 
+        mapStmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id,ord1) VALUES(%s,?,?)", table, valCols, valVars))
+
    		for key := range theMap.Iter(nil) {
    			val, _ := theMap.Get(key)
+   			valParts := db.primitiveValSQL(val) 
 
-   			if isStringMap {
-   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, collection.DBID(), valVars)) 
-				
-   			   valParts := db.primitiveValSQL(val) 
-   			   stmt.Args(valParts)								
-				
-               stmt.Arg(SqlStringValueEscape(string(key.(String))))
-            
-            
-            
-   				db.QueueStatements(stmt)
-   			} else {
-   				// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
-   				// !!!!!!!!!!!!!!!!!!!!!!!!
-   				// !!!! NOT DONE YET !!!!!!
-   				// !!!!!!!!!!!!!!!!!!!!!!!!
-									
-               stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, collection.DBID(), valVars, key.DBID()))
-			
-   			   valParts := db.primitiveValSQL(val) 
-   			   stmt.Args(valParts)
-            						
-   				// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
-				
-				
-   				db.QueueStatements(stmt)						
-							 
-   			}
+			stmt := mapStmt			 
+		    switch keyType {  
+		      case StringType:
+			   	stmt = stringMapStmt  	
+			   	stmt.Args(valParts)	
+	  		   	stmt.Arg(collection.DBID())			   	
+	  		    keyStr := SqlStringValueEscape(string(key.(String)))   
+	  		   	stmt.Arg(keyStr)
+		   	case UintType:
+			   	stmt.Args(valParts)	
+	  		   	stmt.Arg(collection.DBID())	                			   	
+			   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+		   	case Uint32Type:
+			   	stmt.Args(valParts)	                	
+	  		   	stmt.Arg(collection.DBID())	                			   	
+			   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+		   	case IntType:
+ 			   	stmt.Args(valParts)	               
+	  		   	stmt.Arg(collection.DBID())	                			   	
+			   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+		   	case Uint32Type:
+			   	stmt.Args(valParts)	
+	  		   	stmt.Arg(collection.DBID())	                			   	
+			   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		   	   		          
+	         default:
+			   	stmt.Args(valParts)				   	
+	  		   	stmt.Arg(collection.DBID())				   	
+			   	stmt.Arg(key.DBID())
+	         }
+			 db.QueueStatements(stmt) 
    		}
    	} else {
+
+
+   		orderedStmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id,ord1) VALUES(%s,?,?)", table, valCols, valVars))
+   		unorderedStmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id) VALUES(%s,?)", table, valCols, valVars))		
+
    		i := 0					
    		for val := range collection.Iter(nil) {
-			
+   			valParts := db.primitiveValSQL(val) 			
    			if isOrdered {					   
-   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, collection.DBID(), valVars, i))
-				
-   				valParts := db.primitiveValSQL(val) 
+   				stmt := orderedStmt
    				stmt.Args(valParts)
-				
+    			stmt.Arg(collection.DBID())	
+    			stmt.Arg(i)	  				
    				db.QueueStatements(stmt)						
    			} else { // unordered set 
-			   
-   				stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, collection.DBID(), valVars))		
-				
-   			   valParts := db.primitiveValSQL(val) 
-   			   stmt.Args(valParts)						
-				
-   				db.QueueStatements(stmt)						
+   			   stmt := unorderedStmt	
+   			   stmt.Args(valParts)		
+   			   stmt.Arg(collection.DBID())				
+   			   db.QueueStatements(stmt)						
    			}
    			i++
    		}
