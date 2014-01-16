@@ -408,7 +408,7 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
   
 func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, insertIndex int) (err error) {
 
-   table,_,_,isOrdered,elementType,err := db.EnsureCollectionTable(coll)
+   table,_,isOrdered,_,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
       return
    }
@@ -530,22 +530,31 @@ func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RO
 		//	  fmt.Printf("id1 %v",val.DBID())	
 		//	  fmt.Printf("removedIndex %v",removedIndex)
 
-		if isStringMap {
-		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND key1=?", table))
-		      
-		    keyStr := SqlStringValueEscape(string(val.(String)))   
+	   if isMap {  
+		  stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND ord1=?", table)) 		     
+	      switch keyType {  
+	      case StringType:
+		   	stmt = Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND key1=?", table))  		   	
+  		    keyStr := SqlStringValueEscape(string(val.(String)))   
+  		   	stmt.Arg(coll.DBID())
+  		   	stmt.Arg(keyStr)
+	   	case UintType:
 		   	stmt.Arg(coll.DBID())
-		   	stmt.Arg(keyStr)
-		   	
-		   	db.QueueStatements(stmt)
-	   		      
-	   } else if isMap {   
-		   	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND ord1=?", table))
-		        
+		   	stmt.Arg(int64(uint64(val.(Uint))))   // val is actually the map key
+	   	case Uint32Type:
 		   	stmt.Arg(coll.DBID())
-		   	stmt.Arg(val.DBID())  // val is actually the map key
-		   	
-		   	db.QueueStatements(stmt)  
+		   	stmt.Arg(int(uint32(val.(Uint32))))   // val is actually the map key			   	
+	   	case IntType:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(int64(val.(Int)))   // val is actually the map key
+	   	case Uint32Type:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(int(val.(Int32)))   // val is actually the map key		   	   		          
+         default:
+		   	stmt.Arg(coll.DBID())
+		   	stmt.Arg(val.DBID())   // val is actually the map key 
+         }
+		   db.QueueStatements(stmt) 
 
 	   } else if removedIndex == -1 {
 			db.QueueStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=%v AND id1=%v", table, coll.DBID(), val.DBID()))
