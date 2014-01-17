@@ -227,12 +227,14 @@ func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err e
 
 	s += "id1 INTEGER NOT NULL"
 
-	switch attr.Part.CollectionType {
-	case "list", "sortedlist", "sortedset", "map", "sortedmap":
-		s += ",\nord1 INTEGER NOT NULL"
-	case "stringmap", "sortedstringmap":
-		s += ",\nkey1 TEXT NOT NULL"
-	}
+   if attr.Part.ArityHigh != -1 { // This is a multi-valued attribute.
+   	switch attr.Part.CollectionType {
+   	case "list", "sortedlist", "sortedset", "map", "sortedmap":
+   		s += ",\nord1 INTEGER NOT NULL"
+   	case "stringmap", "sortedstringmap":
+   		s += ",\nkey1 TEXT NOT NULL"
+   	}
+   }
 
 	s += ");"
 	err = db.conn.Exec(s)
@@ -305,7 +307,7 @@ func (db *SqliteDB) TypeNameIfy(tableName string) string {
 
 
 
-func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, isStringMap bool, isOrdered bool) (err error) {
+func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType) (err error) {
 
 	s := "CREATE TABLE IF NOT EXISTS " + table + "("
 
@@ -317,7 +319,7 @@ func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, 
 
 	s += "id1 INTEGER NOT NULL"
 
-	if isStringMap {	
+	if keyType == StringType {	
 		s += ",\nkey1 TEXT NOT NULL"
 	} else if isMap || isOrdered {
 		s += ",\nord1 INTEGER NOT NULL"
@@ -334,7 +336,7 @@ func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, 
 
 /*
 */
-func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isStringMap bool, isOrdered bool, elementType *RType) (err error) {
+func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType) (err error) {
 
 	s := "CREATE TABLE IF NOT EXISTS " + table + "("
 
@@ -348,7 +350,7 @@ func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isS
 		
 	// and add a sorting/ordering column if appropriate
 		
-   if isStringMap {	
+   if keyType == StringType {	
    	s += ",\nkey1 TEXT NOT NULL"
    } else if isMap || isOrdered {
    	s += ",\nord1 INTEGER NOT NULL"
