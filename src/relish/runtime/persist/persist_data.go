@@ -224,6 +224,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
         Logln(PERSIST2_,attr)
 
+
 		if !attr.Part.Type.IsPrimitive {
 
 			table := db.TableNameIfy(attr.ShortName())
@@ -233,6 +234,11 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				continue
 			}
 			if attr.Part.CollectionType != "" { // a collection of non-primitives
+			   
+      // TODO TODO TODO
+      // Shouldn't we be distinguishing between owned collections (multi-valued attribute)
+      // where attr.Part.MaxArity != 1			   
+			   
 				collection := val.(RCollection)
 				isMap := collection.IsMap()
 				if isMap {

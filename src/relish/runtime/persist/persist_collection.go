@@ -281,18 +281,16 @@ Does it remove by key? It should.
 */
 func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
 
-   table,_,isStringMap,_,elementType,err := db.EnsureCollectionTable(theMap)
+   table,_,_,keyType,elementType,err := db.EnsureCollectionTable(theMap)
    if err != nil {
       return
    }	
 		
 	if elementType.IsPrimitive {		
 
-
-
       keyStr := SqlStringValueEscape(string(key.(String))) 
 
-   	if isStringMap {
+   	if keyType == StringType {
    	  
    	  if isNewKey {
    	      valCols,valVars := elementType.DbCollectionColumnInsert()   	     
@@ -332,9 +330,19 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
    		   valParts := db.primitiveValSQL(val) 		   
    		   stmt.Args(valParts)
             stmt.Arg(theMap.DBID())		   
-            stmt.Arg(key.DBID())       						
+            switch keyType {
+   	   	case UintType:
+   		   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+   	   	case IntType:
+   		   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(key.(Int32)))   // val is actually the map key                         
+            default:
+               stmt.Arg(key.DBID())       						
    			// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
-		
+		      }
    			db.QueueStatements(stmt)
    			
          } else { // replacing value of an existing key
@@ -344,8 +352,20 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
          	stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
 
             stmt.Arg(theMap.DBID())
-            stmt.Arg(key.DBID())         	
-
+            
+            switch keyType {
+   	   	case UintType:
+   		   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+   	   	case IntType:
+   		   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(key.(Int32)))   // val is actually the map key                         
+            default:
+               stmt.Arg(key.DBID())       						
+   			// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+		      }                   	
          	db.QueueStatements(stmt)          
          }								
    	} 	
@@ -388,7 +408,24 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
             stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id0,id1,ord1) VALUES(?,?,?)"))
             stmt.Arg(theMap.DBID())
             stmt.Arg(val.DBID())
-            stmt.Arg(key.DBID())         		
+            
+            
+   		   valParts := db.primitiveValSQL(val) 		   
+   		   stmt.Args(valParts)
+            stmt.Arg(theMap.DBID())		   
+            switch keyType {
+   	   	case UintType:
+   		   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+   	   	case IntType:
+   		   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(key.(Int32)))   // val is actually the map key                         
+            default:
+               stmt.Arg(key.DBID())       						
+   			// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+		      }            	
    			db.QueueStatements(stmt)
 			
          } else { // replacing value of an existing key
@@ -396,8 +433,19 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
          	stmt := Stmt(fmt.Sprintf("UPDATE %s SET id1=? WHERE id0=? AND ord1=?", table))
             stmt.Arg(val.DBID())
             stmt.Arg(theMap.DBID())
-            stmt.Arg(key.DBID())         	
-
+            switch keyType {
+   	   	case UintType:
+   		   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
+   	   	case IntType:
+   		   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
+   	   	case Uint32Type:
+   		   	stmt.Arg(int(key.(Int32)))   // val is actually the map key                         
+            default:
+               stmt.Arg(key.DBID())       						
+   			// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+		      }                    	
          	db.QueueStatements(stmt)                
          }				
 		}
