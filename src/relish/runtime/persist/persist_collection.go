@@ -376,7 +376,7 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
 			return
 		}      
       
-      if isStringMap {
+      if keyType == StringType {
          
          keyStr := SqlStringValueEscape(string(key.(String)))   
            
