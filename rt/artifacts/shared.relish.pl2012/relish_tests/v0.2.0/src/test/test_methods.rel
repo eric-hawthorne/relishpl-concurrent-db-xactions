@@ -1,0 +1,19 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  test
+
+""" 
+ test_methods.rel
+
+ Utility functions supporting testing.
+"""
+
+
+assert testName String predicate Bool assertion String > result Bool
+"""
+ If the predicate is true, returns true.
+ If the predicate is false, prints the fail message and returns false.
+"""
+   result = predicate
+   if not predicate
+      print "Failed Assertion:" testName ":" assertion

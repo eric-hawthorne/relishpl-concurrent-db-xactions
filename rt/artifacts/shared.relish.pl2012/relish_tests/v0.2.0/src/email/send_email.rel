@@ -1,0 +1,51 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  email 
+
+""" 
+ send_email.rel
+
+ Test sending an email message. 
+"""
+
+
+main
+"""
+ Main program.
+"""
+   testEmail
+
+
+testEmail
+"""
+ Test interactive input from the console.
+"""
+   serverAddr = input "SMTP server address e.g. mail.example.com:25 (Leave empty and press Enter to skip test)\n>"
+   if not serverAddr
+      print "Skipping email sending test."
+   else
+      userName = input "Sending mail account username (Leave empty and press Enter if none)\n>"      
+      password = input "Sending mail account password (Leave empty and press Enter if none)\n>"       
+      recipient = input "Recipient email address\n>"     
+      from = input "From email address\n>" 
+      err = sendEmail
+               serverAddr
+               userName
+               password
+               from
+               recipient
+               "Test email message from a relish application"
+               """
+Hi,
+
+This is a test message sent using the sendEmail built-in method of relish.
+Did you receive it?
+
+Sincerely,
+Anonymous Coward
+"""
+      if err
+         print "Could not send email message:"
+         print err
+      else
+         print "Sending email message apparently succeeded. No errors during sending process."
