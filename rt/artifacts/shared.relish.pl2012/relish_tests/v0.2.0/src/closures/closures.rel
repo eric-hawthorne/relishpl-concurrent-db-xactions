@@ -14,6 +14,7 @@ package  closures
 
 import 
    strings
+   test as t
 
 
 main
@@ -23,7 +24,7 @@ main
    testClosures
 
 
-outerMethod a Int
+outerMethod a Int > msg String
 """
  Just serves as an enclosing method for the closures.
 
@@ -41,32 +42,41 @@ outerMethod a Int
                    times i b         
 
       out = apply c a "baz"
-      print out
+      msg = cat msg out "|"
       b = plus b 1
 
-   exclaim
-      func j Int > Int
-      """
-       Whoa!
-      """
-         => plus j b
-      7
+   msg = 
+      cat
+         msg 
+         "|"
+         exclaim
+            func j Int > Int
+            """
+             Whoa!
+            """
+               => plus j b
+            7
 
 
-exclaim f Callable n Int
+exclaim f Callable n Int > String
 """
  Just print it!
 """
-   print apply f n
+   => String apply f n
 
 
 testClosures
 """
  Test the declaration and application of closures.
 """
-   outerMethod 7
+   passed = true
 
+   print "===== Closures"
 
+   passed = and assertEq "var baz = 7|var baz = 14|var baz = 21||11" (outerMethod 7) "outerMethod"
+                passed
 
+   if passed
+      print "PASSED"
 
 
