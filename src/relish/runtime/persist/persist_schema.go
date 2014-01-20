@@ -184,8 +184,9 @@ Ensure that DB tables exist to represent the non-primitive-valued attributes and
 of the type.
 */
 func (db *SqliteDB) EnsureAttributeAndRelationTables(t *RType) (err error) {
-
+    //fmt.Println("EnsureAttributeAndRelationTables", t)
 	for _, attr := range t.Attributes {
+		//fmt.Println(attr)
 		if !attr.IsTransient {
 			if attr.Part.Type.IsPrimitive {
 				if attr.Part.ArityHigh != 1 { // a multi-valued primitive-type attribute
@@ -217,6 +218,7 @@ Name string
 */
 func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
 
+    //fmt.Println("EnsureNonPrimitiveAttributeTable", attr)
 	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
 
 	// Prepare Whole end
@@ -227,7 +229,7 @@ func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err e
 
 	s += "id1 INTEGER NOT NULL"
 
-   if attr.Part.ArityHigh != -1 { // This is a multi-valued attribute.
+   if attr.Part.ArityHigh != 1 { // This is a multi-valued attribute.
    	switch attr.Part.CollectionType {
    	case "list", "sortedlist", "sortedset", "map", "sortedmap":
    		s += ",\nord1 INTEGER NOT NULL"
@@ -248,6 +250,7 @@ func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err e
 /*
 */
 func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
+    //fmt.Println("EnsureMultiValuedPrimitiveAttributeTable", attr)	
 
 	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
 
@@ -262,7 +265,7 @@ func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec
 	// and add a sorting/ordering column if appropriate
 		
     switch attr.Part.CollectionType {
-    case "list", "map", "sortedmap":
+    case "list", "sortedlist", "sortedset", "map", "sortedmap":   	
 	s += ",\nord1 INTEGER NOT NULL"
     case "stringmap", "sortedstringmap":
 	s += ",\nkey1 TEXT NOT NULL"
