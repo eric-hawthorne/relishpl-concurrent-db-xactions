@@ -823,6 +823,74 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 
 
 
+/*
+Helper method. Ensures that a collection exists in memory (and in db if obj is persistent) if someone
+wants to do a += to a collection-valued attribute.
+Ensure the collection is assigned as value of the attribute.
+*/
+func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj RObject, attr *AttributeSpec) (collection RCollection, err error) {
+
+   // A single-valued attribute whose value is a collection
+	attrVal, found := RT.AttrVal(obj, attr)
+	var isCollection bool
+	if found {
+		collection, isCollection = attrVal.(RCollection)
+        if ! isCollection {
+        	err = fmt.Errorf("Value of %s.%s is not a collection but must be.", obj, attr)
+        }
+		return
+	}
+
+	var minCardinality int64 = 0
+	var maxCardinality int64 = -1 // largest possible collection is allowed - the attribute is not constraining it.	
+
+
+	// Create the list or set collection
+
+	var unaryMethod *RMultiMethod
+	var binaryMethod *RMultiMethod
+	var orderAttr *AttributeSpec
+	var isAscending bool
+
+	// fmt.Println(attr.Part.CollectionType)
+
+	if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
+		if attr.Part.OrderMethodArity == 1 {
+			unaryMethod = attr.Part.OrderMethod
+		} else if attr.Part.OrderMethodArity == 2 {
+			binaryMethod = attr.Part.OrderMethod
+		} else { // must be an attribute
+			orderAttr = attr.Part.OrderAttr
+		}			
+		isAscending = attr.Part.IsAscending			
+	}
+
+
+    collection,err = rt.NewCollection(minCardinality,
+         maxCardinality,
+         nil, // owner,   
+         nil, // attribute,
+         attr.Part.CollectionType, 
+         isAscending,
+         unaryMethod,
+         binaryMethod,
+         orderAttr,  
+         nil, // keyType *RType, 
+         attr.Part.Type)  // TODO This will become incorrect when collection types are expressed correctly.
+	
+
+    err = RT.SetAttr(th, obj, attr, collection, true, th.EvaluationContext(), false)
+    if err != nil {
+	   if ! ( strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") ) {
+	       panic(err)
+	   }
+    }
+
+    return
+}
+
+
+
 
 /*
 Creates a new RCollection object of the appropriate type, for purposes of restoring a collection
