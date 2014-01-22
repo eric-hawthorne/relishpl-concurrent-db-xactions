@@ -1223,7 +1223,13 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 	
 	objColl, foundCollection := rt.AttrVal(obj, attr)
 
-	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute		
+	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute	
+
+
+	    // TODO WHOA WHOA WHOA  just because the collection wasn't there in mem doesn't mean the value shouldnt be removed
+	    // from the database representation of the multi-valued attribute association table does it????
+	    // Can this situation arise?
+
 		return
 	}
 
