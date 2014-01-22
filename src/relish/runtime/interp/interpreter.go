@@ -3315,10 +3315,20 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 	   					}
 				   } else {
 				      // A single-valued attribute whose value is a collection
-						attrVal, found := RT.AttrVal(assignee, attr)
-						if ! found {
-						      rterr.Stopf1(t,selector,"Can't add to collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
-						}									
+
+                        attrVal, err := RT.EnsureCollectionAttributeVal(t, assignee, attr) 
+                        if err != nil {
+	   						rterr.Stop1(t,selector,err)                        	
+                        }
+
+						// attrVal, found := RT.AttrVal(assignee, attr)
+						// if ! found {
+                              // TODO Create collection
+							  // TODO assign it to the attribute, which persists it if assignee is persistent.
+							  // 
+                              // Obsolete
+						      // rterr.Stopf1(t,selector,"Can't add to collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
+						// }									
 																		
 						coll,isAddColl := attrVal.(AddableCollection) 
 						if ! isAddColl {
@@ -3333,7 +3343,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		               	// Replaced because now also handle the persistence aspect of appending to a collection
 		                // coll.Add(val, t.EvalContext)					   
 							  
-		                err := RT.AddToCollection(coll, val, false, t.EvalContext) 
+		                err = RT.AddToCollection(coll, val, false, t.EvalContext) 
 			            if err != nil {					
 			               rterr.Stop1(t,lhsExpr,err)       				                               
 			            } 
@@ -3351,7 +3361,9 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 				   	   // A single-valued attribute whose value is a collection
 						attrVal, found := RT.AttrVal(assignee, attr)
 						if ! found {
-						      rterr.Stopf1(t,selector,"Can't remove from collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
+							  return
+							  // Who cares.
+						      // rterr.Stopf1(t,selector,"Can't remove from collection. %s.%s has not been assigned a collection yet.", selector.X, selector.Sel.Name)               	   
 						}	
 						coll,isRemColl := attrVal.(RemovableCollection) 
 						if ! isRemColl {
