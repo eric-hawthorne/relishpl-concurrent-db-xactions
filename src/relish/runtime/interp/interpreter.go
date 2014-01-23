@@ -66,7 +66,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 	if ! quiet {
 	   Logln(ANY_, " ")
 	   Logln(ANY_, "==============================")
-	   Logln(ANY_, "== RELISH Interpreter 0.0.9 ==")
+	   Logln(ANY_, "== RELISH Interpreter 0.1.0 ==")
 	   Logln(ANY_, "==============================")
     }
 	Logln(GENERATE2_, " ")
