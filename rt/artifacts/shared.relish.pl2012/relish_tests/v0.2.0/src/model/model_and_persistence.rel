@@ -105,10 +105,13 @@ testModel
    car1.wheels += wheel4  // Also NOT HANDLING // comment at beginning of indented line !!!
    car1.wheels += wheel3  
 
-   if not exists "JSS 994"
+   if exists "JSS 994"
+      firstPass = false
+   else
+      firstPass = true
       dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
       dub truck1 "JAT 057"
-
+   
    car1.wheels += wheel1  
    car1.wheels += wheel2  
 
@@ -122,7 +125,10 @@ testModel
 
    print "car2.wheels:"
 
-   for i wheel in car2.wheels
+   if firstPass
+      for i wheel in car2.wheels
+         passed = and assertEq wheel.num (minus 4 i) "wheel.num"
+                   passed   
       print "wheel[" i "] =" wheel.num
 
 
