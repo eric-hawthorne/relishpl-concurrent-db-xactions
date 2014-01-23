@@ -3203,7 +3203,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						return
 					}					
 					// TODO The persistence aspect of appending to a collection
-                    coll.Add(val, t.EvalContext)	
+                    //coll.Add(val, t.EvalContext)	
 
 	               	// Replaced because now also handle the persistence aspect of appending to a collection
 	                // coll.Add(val, t.EvalContext)					   
