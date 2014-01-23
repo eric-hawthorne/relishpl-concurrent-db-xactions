@@ -263,6 +263,7 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 		}
 	}
 
+
 	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
@@ -273,20 +274,28 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
 			
             if strings.Contains(err.Error(), "has no value for attribute") {
-	           if allowNoValue {
-		          return
-		       } else {			
-			      panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
-		       }
+               if ! allowNoValue {
+          	      panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))     	
+               }
 		    } else {
 		       panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
 			}
 		}
-		if val != nil {
+        if val != nil {
 			Logln(PERSIST2_, "AttrVal (fetched) =", val)
-			found = true
+            found = true
 		}
 	}
+
+	if val == nil && attr.Part.ArityHigh != 1 && attr.Part.CollectionType != ""  {
+		var err error
+	   	val, err = rt.EnsureMultiValuedAttributeCollection(obj, attr)
+		if err != nil {
+          	panic(fmt.Sprintf("Error ensure multivalued attribute collection %s.%s: %s", obj, attr.Part.Name, err))  
+		}   
+		found = true          	
+	}
+
 	return
 }
 
