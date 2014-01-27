@@ -46,59 +46,110 @@ testCollections
 
    model.testModel  // Create some objects 
 
+   passed = true
+
+   print "===== Collections"
+
+
    allWheels = []vehicles.Wheel "num > 0 order by num"
 
-   print "All wheels:"
+   // print "All wheels:"
+   i = 1
    for aWheel in allWheels
-      print aWheel.num
+      passed = assertEq aWheel.num i "allWheels"
+      i = plus i 1
 
    bigWheels = []vehicles.Wheel "num > 2"
 
    for i wheel in bigWheels
-      print "bigWheels[" i "] =" wheel.num
+      // print "bigWheels[" i "] =" wheel.num
+      passed = and assertEq (minus 4 i) wheel.num "bigWheels"
+                   passed
       if eq i 0
          theWheel = wheel
 
-   print contains bigWheels theWheel  // Should print true
+   passed = and assert (contains bigWheels theWheel) "contains bigWheels theWheel"  
+                passed
 
    smallWheels = []vehicles.Wheel  // An empty list of Wheels
 
-   print contains smallWheels theWheel  // Should print false
+   passed = and assertNot (contains smallWheels theWheel) "not contains smallWheels theWheel"  
+                passed
 
-   print "len bigWheels =" (len bigWheels)
-   print "len smallWheels =" (len smallWheels)
+   passed = and assertEq (len bigWheels) 2 "len bigWheels"
+                passed
+
+   passed = and assertEq (len smallWheels) 0 "len smallWheels"
+                passed
 
    spares = [allWheels[0] allWheels[1] allWheels[2]]vehicles.Wheel
 
-   print "spares[1] =" spares[1].num
+   passed = and assertEq spares[1].num 2 "spares 1"
+                passed
 
    vcls = []vehicles.Vehicle "lat > 48" 
+   i = 0
    for vhcl in vcls 
-      print "vehicle lat long"
-      print vhcl.lat vhcl.long
+      if eq i 0
+         passed = and assertEq vhcl.lat 49.243 "lat 1"
+                      passed
+         passed = and assertEq vhcl.long 123.761 "long 1"
+                      passed
+      else
+         passed = and assertEq vhcl.lat 49.265 "lat 2"
+                      passed
+         passed = and assertEq vhcl.long 123.778 "long 2"
+                      passed   
+      i = plus i 1
 
    map1 = {"One"=>allWheels[0] "Two"=>allWheels[1] "Three"=>allWheels[2]}String > vehicles.Wheel
 
    map2 = {}String > vehicles.Wheel
 
    wheelFourFound = map1[? "Four"]
-   print "map1[? \"Four\"] =" wheelFourFound
-   print map1[! "Three"].num
+
+   passed = and assertNot wheelFourFound "map1[? \"Four\"]"
+                passed
+
+   passed = and assertEq map1[! "Three"].num 3 "map1[? \"Three\"]"
+                passed
+
+   keys = ""
    for key in map1
-      print key
+      keys = cat keys key
+
+   passed = and assertEq keys "OneTwoThree" "keys 1"
+                passed
+
+   keys = ""
    for key val in map1
-      print key val.num
+      keys = cat keys key val.num
+
+   passed = and assertEq keys "One1Two2Three3" "keys 2"
+                passed
 
    wh2 found = map1["Two"]
-   print wh2.num found
+
+   passed = and assertEq wh2.num 2 "map1[Two]"
+                passed   
+
+   passed = and assert found "map1[Two]"
+                passed
+
 
    wh2 found = map1["two"]
-   print wh2 found   
+ 
+   passed = and assertNot wh2 "map1[two]"
+                passed   
+
+   passed = and assertNot found "map1[two]"
+                passed
+
 
    map1["Four"] = allWheels[3]
 
-   print map1[! "Four"].num
-
+   passed = and assertEq map1[! "Four"].num 4 "map1[Four]"
+                passed
 
 
    solarSystem = {
@@ -110,7 +161,8 @@ testCollections
                   > 
                      String
 
-   print solarSystem[! 1]
+   passed = and assertEq solarSystem[! 1] "Mercury" "Mercury"
+                passed
 
    outerSolarSystem = {
                          "Jupiter" => 5
@@ -119,46 +171,63 @@ testCollections
                          "Neptune" => 8
                       }String > Int 
 
-   for k v in outerSolarSystem
-      print k v   
+   keyVals = ""
+   for k v in outerSolarSystem  
+      keyVals = cat keyVals k v
 
+   passed = and assertEq keyVals "Jupiter5Saturn6Uranus7Neptune8" "outerSolarSystem"
+                passed
 
    sales = [1.29 4.25 0.33 5.981]
-   print sum sales  // should print 11.851
+
+   passed = and assertEq (sum sales) 11.850999999999999 "sales 1"
+                passed
 
    sales1 = sales[:neg 2]
-   print sales1
+
+   passed = and assertEq (String sales1) "[1.29   4.25]" "sales 2"
+                passed
    sales1 = sales[1:neg 2]
-   print sales1
+   passed = and assertEq (String sales1) "[4.25]" "sales 3"
+                passed
    sales1 = sales[2:neg 2]
-   print sales1
+   passed = and assertEq (String sales1) "[]" "sales 4"
+                passed
    sales1 = sales[:]
-   print sales1
+   passed = and assertEq (String sales1) "[1.29   4.25   0.33   5.981]" "sales 5"
+                passed
    sales1 = sales[2:]
-   print sales1
+   passed = and assertEq (String sales1) "[0.33   5.981]" "sales 6"
+                passed
    sales1 = sales[:3]
-   print sales1
+   passed = and assertEq (String sales1) "[1.29   4.25   0.33]" "sales 7"
+                passed
    sales1 = sales[2:3]
-   print sales1
+   passed = and assertEq (String sales1) "[0.33]" "sales 8"
+                passed
    sales1 = sales[
                     2
                     :
                     plus 1
                          2
                  ]
-   print sales1
+   passed = and assertEq (String sales1) "[0.33]" "sales 9"
+                passed
 
    scores = [22 9 0 13]
-   print sum scores  // should print 44
 
-   print contains scores 22  // should print true
+   passed = and assertEq (sum scores) 44 "sum scores"
+                passed
+   passed = and assert (contains scores 22) "contains scores 22"
+                passed
 
    taxedSales = [
                    for sale in sales
                       times sale 1.10
                 ]Float
 
-   print sum taxedSales
+   passed = and assertEq (sum taxedSales) 13.036100000000001 "sum taxedSales"
+                passed
 
    taxedBigSales = [
                       for sale in sales
@@ -166,8 +235,8 @@ testCollections
                             times sale 1.10
                    ]Float
 
-   print sum taxedBigSales
-
+   passed = and assertEq (sum taxedBigSales) 12.673100000000002 "sum taxedBigSales"
+                passed
 
    opps = {
              for ky vl 
@@ -177,9 +246,29 @@ testCollections
                 ky vl
           }String > String
    
+   keyVals = ""
    for key9 val9 in opps
-      print key9 val9
-   print opps["left"] opps["up"]
+      keyVals = cat keyVals key9 val9
+
+   passed = and assertEq keyVals "leftrightupdowninsideoutside" "opps 1"
+                passed
+
+   val found = opps["left"] 
+
+   passed = and assertEq val "right" "opps 2"
+                passed
+
+   passed = and assert found "opps 3"
+                passed
+
+   val found = opps["up"]
+
+   passed = and assertEq val "down" "opps 4"
+                passed
+
+   passed = and assert found "opps 3"
+                passed
+
 
    opps2 = {
               for val3 in ["left" "up" "inside"]
@@ -187,10 +276,26 @@ testCollections
                  cat "[" val3 "]"
            }String > String
    
+   keyVals = ""
    for key8 val8 in opps2
-      print key8 val8
-   print opps2["left"] opps2["up"]
- 
+      keyVals = cat keyVals key8 val8
+
+   passed = and assertEq keyVals "left[left]up[up]inside[inside]" "opps2 1"
+                passed
+
+   val found = opps2["left"]
+   passed = and assertEq val "[left]" "opps2 2"
+                passed
+
+   passed = and assert found "opps2 3"
+                passed
+
+   val found = opps2["up"]
+   passed = and assertEq val "[up]" "opps2 4"
+                passed
+
+   passed = and assert found "opps2 5"
+                passed
 
    places = ["left" "inside" "up"]    
 
@@ -200,9 +305,30 @@ testCollections
                  cat "[" val4 "]"
            }String > String
    
+   keyVals = ""   
    for key7 val7 in opps3
-      print key7 val7
-   print opps3["left"] opps3["up"]
+      keyVals = cat keyVals key7 val7
+
+   passed = and assertEq keyVals "left[left]inside[inside]up[up]" "opps3 1"
+                passed
+
+
+   val found = opps3["left"] 
+
+   passed = and assertEq val "[left]" "opps3 2"
+                passed
+
+   passed = and assert found "opps3 3"
+                passed
+
+   val found = opps3["up"]
+
+   passed = and assertEq val "[up]" "opps3 4"
+                passed
+
+   passed = and assert found "opps3 5"
+                passed
+
 
    opps4 = {
               for key6 val6 in opps
@@ -221,9 +347,15 @@ testCollections
                        first val6 3
            }String > String
    
+   keyVals = ""      
    for key5 val5 in opps4
-      print key5 val5
+      keyVals = cat keyVals key5 val5
 
+   passed = and assertEq keyVals "leftrigupdowninsout" "opps4 1"
+                passed
+
+
+   vals = ""
    for whNum in [
                    for whel1
                       in 
@@ -233,21 +365,30 @@ testCollections
                             allWheels[1]
                       whel1.num
                 ]Int
-      print whNum
+      vals = cat vals (String whNum)
 
+   passed = and assertEq vals "322" "whNum"
+                passed
+                 
    youngsters = []people.Person "dateOfBirth > '1982-09-23'"
 
+   vals = ""
    for person in youngsters
-      print person.firstName person.lastName
+      vals = cat vals person.firstName person.lastName
+
+   passed = and assertEq vals "JoeArmstrongAliceWong" "youngsters"
+                passed
 
    clear allWheels
 
-   print len allWheels
+   passed = and assertEq (len allWheels) 0 "len allWheels"
+                passed
 
    clear opps4
 
-   print len opps4
-
+   passed = and assertEq (len opps4) 0 "len opps4"
+                passed
+                
    records = [
                 ["First name" "Last name"]
                 ["Joe" "DiMaggio"]
