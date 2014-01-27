@@ -14,6 +14,7 @@ import
    model/machines/engines
    shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
    model/people
+   strings
    test as t
 
 
@@ -39,6 +40,8 @@ testModel
  retrieval of persisted objects by SQL query.
 """
    passed = true
+   
+   print "===== Model and Persistence"
 
    basic1 = Basic
    basic1.b = true
@@ -84,7 +87,7 @@ testModel
 
    addEngine car1 120 243.5
 
-   passed = and assertEq  car1.engine.horsepower 120 "attribute selector chaining 1"  
+   passed = and assertEq car1.engine.horsepower 120 "attribute selector chaining 1"  
                 passed 
 
    passed = and assertEq car1.engine.weightKg 243.5 "attribute selector chaining 2"  
@@ -123,26 +126,42 @@ testModel
    passed = and assertEq car2.vin "V0E44R8139WT6214A" "attribute selector after object summoned from db 2"
                 passed
 
-   print "car2.wheels:"
+   // print "car2.wheels:"
 
    if firstPass
       for i wheel in car2.wheels
-         passed = and assertEq wheel.num (minus 4 i) "wheel.num"
-                   passed   
-      print "wheel[" i "] =" wheel.num
-
+         passed = and assertEq wheel.num (minus 4 i) "wheel.num 1"
+                      passed   
+      // print "wheel[" i "] =" wheel.num
+   else
+      for i wheel in car2.wheels
+         if eq i 0
+            passed = and assertEq wheel.num 4 "wheel.num 2"
+                         passed         
+         else
+            passed = and assertEq wheel.num 1 "wheel.num 3"
+                         passed  
 
    car2.wheels -= wheel2
    car2.wheels -= wheel3
 
-   print "After removing wheels 2 and 3 from car2.wheels, car2.wheels is:"
 
    for i wheel in car2.wheels
-      print "wheel[" i "] =" wheel.num
+      if eq i 0
+         passed = and assertEq wheel.num 4 "wheel.num 4"
+                      passed         
+      else
+         passed = and assertEq wheel.num 1 "wheel.num 5"
+                      passed  
+
+   // print "After removing wheels 2 and 3 from car2.wheels, car2.wheels is:"
+                         
+   // for i wheel in car2.wheels
+   //    print "wheel[" i "] =" wheel.num
 
     
-   print "len car2.wheels =" (len car2.wheels)
-
+   passed = and assertEq 2 (len car2.wheels) "len car2.wheels"
+                passed
 
    driver1 = people.Person
    driver1.firstName = "Joe"
@@ -151,7 +170,8 @@ testModel
    if err
       print err
 
-   print driver1.dateOfBirth
+   passed = and assertEq (String driver1.dateOfBirth) "1983-09-25 22:13:45.875 +0000 UTC" "driver1.dateOfBirth"
+                passed
 
    passenger1 = people.Person
    passenger1.firstName = "Alice"
@@ -178,28 +198,52 @@ testModel
    car2.passengers += passenger1
    car2.passengers += passenger2
 
-   for person in car2.passengers
-      print person.firstName person.lastName person.dateOfBirth
+   for i person in car2.passengers
+      if eq i 0
+         passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
+                               "Ernie Kovacs 1969-02-03 08:08:00 -0700 PDT"
+                               "car2.passengers 1"
+                      passed
+      else
+         passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
+                               "Alice Wong 1990-02-13 22:13:45 -0800 PST"     
+                               "car2.passengers 2"                                 
+                      passed                      
+
 
    car3 = passenger2.vehicleRiddenIn
-   print car3.vin     
+   passed = and assertEq car3.vin "V0E44R8139WT6214A" "car3.vin"
+                passed 
 
-   print car2.passengers[1].firstName
+   passed = and assertEq car2.passengers[1].firstName "Alice" "passenger firstName"
+                passed
 
    truck1.driver = driver2
 
    // Clear the passengers
    car2.passengers = nil
 
-   print len car2.passengers
+   passed = and assertEq (len car2.passengers) 0 "len car2.passengers 1"
+                passed
 
-   print String passenger2.vehicleRiddenIn
+   passed = and assertEq (String passenger2.vehicleRiddenIn) "*nil*" "passenger2.vehicleRiddenIn"
+                passed
 
    passengerList = [passenger1 passenger2]people.Person
 
    car2.passengers = passengerList
 
-   print len car2.passengers
+   passed = and assertEq (len car2.passengers) 2 "len car2.passengers 2"
+                passed
 
    car3 = passenger2.vehicleRiddenIn
-   print car3.vin
+   
+   // print car3.vin
+
+   passed = and assertEq car3.vin "V0E44R8139WT6214A" "car3.vin"
+                passed 
+
+   if passed
+      print "PASSED"
+
+ 

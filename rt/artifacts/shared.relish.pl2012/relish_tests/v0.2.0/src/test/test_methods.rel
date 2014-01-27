@@ -9,17 +9,17 @@ package  test
 """
 
 
-assert predicate Bool assertion String > result Bool
+assert predicate ?Any assertion String > result Bool
 """
  If the predicate is true, returns true.
  If the predicate is false, prints the fail message and returns false.
 """
-   result = predicate
+   result = not not predicate
    if not result
       print "Failed Assertion:" assertion
 
 
-assertEq leftSide Any rightSide Any assertion String > result Bool
+assertEq leftSide ?Any rightSide ?Any assertion String > result Bool
 """
  If the predicate is true, returns true.
  If the predicate is false, prints the fail message and returns false.
@@ -29,7 +29,7 @@ assertEq leftSide Any rightSide Any assertion String > result Bool
       print "Failed Assertion:" assertion
 
 
-assertNeq leftSide Any rightSide Any assertion String > result Bool
+assertNeq leftSide ?Any rightSide ?Any assertion String > result Bool
 """
  If the predicate is true, returns true.
  If the predicate is false, prints the fail message and returns false.
@@ -39,7 +39,7 @@ assertNeq leftSide Any rightSide Any assertion String > result Bool
       print "Failed Assertion:" assertion
 
 
-assertNot predicate Bool assertion String > result Bool
+assertNot predicate ?Any assertion String > result Bool
 """
  If the predicate is true, returns true.
  If the predicate is false, prints the fail message and returns false.
