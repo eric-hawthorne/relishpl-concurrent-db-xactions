@@ -555,13 +555,16 @@ func lstatPrimitive(th InterpreterThread, objects []RObject) []RObject {
 // Close closes the File, rendering it unusable for I/O. It returns an error, if any.
 func close(th InterpreterThread, objects []RObject) []RObject {
 	
+	errStr := ""	
 	wrapper := objects[0].(*GoWrapper)	
-	file := wrapper.GoObj.(*os.File)
-	err := file.Close()
-	errStr := ""
-	if err != nil {
-	   errStr = err.Error()
-	}
+	if wrapper.GoObj != nil {
+		file := wrapper.GoObj.(*os.File)
+		err := file.Close()
+
+		if err != nil {
+		   errStr = err.Error()
+		}
+    }
 	return []RObject{String(errStr)}
 }
 

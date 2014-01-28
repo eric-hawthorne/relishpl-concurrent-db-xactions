@@ -651,7 +651,25 @@ initString s String obj MyType > String
    // First String is the time, second String is the format template.
    // See description of format Constants and Time.Format at http://golang.org/pkg/time/
    //
+   // In this case above, the last part of the time is in milliseconds. 
+   // Time strings and format strings can have fewer pieces, and 0s are filled in for
+   // missing pieces or 1s if 0s are not allowed.
+   //
+   // Note: This produces a UTC time. The time string can contain e.g. PST or -0700 to get
+   // a non UTC time, but the preferred way of parsing a formatted time string to produce
+   // a non-UTC time is the variant below where location is supplied as an extra argument.
+   // This will ensure that the time has a standard location and that the location's 
+   // daylight saving time rules are properly applied.
+
+   t err = Time "2012-09-23 14:23:00.000" "2006-01-02 15:04:05.999" "Africa/Dar_es_Salaam"
+
+   // First String is the time, second String is the format template. 
+   // Third string is IANA time zone name or "Local" or "UTC"
+   // See description of format Constants and Time.Format at http://golang.org/pkg/time/
+   //
    // In this case above, the last part of the time is in milliseconds
+   // Time strings and format strings can have fewer pieces, and 0s are filled in for
+   // missing pieces or 1s if 0s are not allowed.
 
 
    t err = Time 2012 12 30 18 36 29 0 "UTC"
