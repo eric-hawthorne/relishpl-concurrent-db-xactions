@@ -2047,11 +2047,18 @@ urlPathPartDecode s > String
 	}
 	timeInit2Method.PrimitiveCode = builtinInitTimeParse	
 
-	timeInit3Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","year","month","day","hour","min","sec","nsec","loc"}, []string{"Time","Int","Int","Int","Int","Int","Int","Int","String"},  []string{"Time","String"}, false, 0, false)
+	timeInit3Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","timeString","layout","location"}, []string{"Time","String","String","String"},  []string{"Time","String"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	timeInit3Method.PrimitiveCode = builtinInitTimeDate	
+	timeInit3Method.PrimitiveCode = builtinInitTimeParse	
+
+
+	timeInit4Method, err := RT.CreateMethod("",nil,"initTime", []string{"t","year","month","day","hour","min","sec","nsec","loc"}, []string{"Time","Int","Int","Int","Int","Int","Int","Int","String"},  []string{"Time","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	timeInit4Method.PrimitiveCode = builtinInitTimeDate	
 
 
 
@@ -5187,8 +5194,9 @@ t err = Time "2012-09-23 14:23:00.000 Local"
 
 t err = Time "2012-09-23 14:23:00.000 " "2006-01-02 15:04:05.999 "
 
+t err = Time "2012-09-23 14:23:00.000 " "2006-01-02 15:04:05.999" "America/Los Angeles"
 
-
+// What is the status of these ones????
 
 initTime t0 Time location String > t Time err String
 
@@ -5202,7 +5210,10 @@ func builtinInitTimeParse(th InterpreterThread, objects []RObject) []RObject {
 // ignore first Time arg
 	if len(objects) == 2 {
 		return initTimeParse1(objects[1].String())
+	} else if len(objects) == 4 {
+		return initTimeParse3(objects[1].String(),objects[2].String(), objects[3].String())
 	} 
+	// len = 3
 	return initTimeParse2(objects[1].String(),objects[2].String())
 }
 
@@ -5266,6 +5277,25 @@ func initTimeParse1(timeString string) []RObject {
 
 func initTimeParse2(timeString string, layout string) []RObject {
    t, err := time.Parse(layout, timeString)
+   if err != nil {
+	  var tZero time.Time 
+	  t := RTime(tZero)
+      return []RObject{t, String(err.Error())}	
+   }		
+   return []RObject{RTime(t),String("")}
+}
+
+
+func initTimeParse3(timeString string, layout string, locationName string) []RObject {
+
+   loc, err := time.LoadLocation(locationName) 
+   if err != nil {
+	  var tZero time.Time 
+	  t := RTime(tZero)
+      return []RObject{t, String(err.Error())}	
+   }
+
+   t, err := time.ParseInLocation(layout, timeString, loc)
    if err != nil {
 	  var tZero time.Time 
 	  t := RTime(tZero)
