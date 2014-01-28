@@ -2836,15 +2836,15 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
    				// increment the loop iteration index
    				idx += 1
    			}
-			} else {
+		 } else if collection.IsOrdered() {
+					
+				
+			ordColl := collection.(OrderedCollection)
+		  	length := collection.Length()			
 			
+			// now do the looping
 
-			   ordColl := collection.(OrderedCollection)
-		  	   length := collection.Length()			
-			
-				// now do the looping
-
-				for ; idx < length; idx++ {
+			for ; idx < length; idx++ {
 					// moreMembers := false
 
                obj := ordColl.At(t, int(idx)) 
@@ -2883,6 +2883,33 @@ func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement)
 					// increment the loop iteration index
 					// idx += 1
 				}			
+			} else {  // Unordered
+				for {
+					obj, nextMemberFound := <-iters[0]
+
+					if ! nextMemberFound {
+						break
+					}
+
+					// Assign to the value variable
+
+					valVar := stmt.KeyAndValues[0].(*ast.Ident)
+					LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
+					t.Stack[t.Base+valVar.Offset] = obj
+
+					// Execute loop body	
+
+					breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
+
+					if breakLoop || returnFrom {
+						breakLoop = false
+						continueLoop = false
+						break
+					}
+
+					// increment the loop iteration index
+					idx += 1
+				}
 			}			
 		} else { // more than one collection - they must be ordered 	
 
