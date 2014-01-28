@@ -379,9 +379,33 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
        return
     }
 
-	if typeCheck && !val.Type().LessEq(attr.Part.Type) {
-		err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
-		return
+	if typeCheck {
+        // This is a kludge
+        if attr.Part.CollectionType != "" { // "list", "sortedlist","set", "sortedset", "map", "stringmap", "sortedmap","sortedstringmap" ""
+           valType := val.Type()
+           if valType.ElementType() != attr.Part.Type {
+ 		      err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
+		      return          	
+           } 
+           
+            if strings.HasPrefix(valType.Name,"List_of_") {
+               if attr.Part.CollectionType != "list" {
+ 		          err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
+		          return  
+               }
+           	} else if strings.HasPrefix(valType.Name,"Set_of_") {
+                if attr.Part.CollectionType != "set" {
+  		           err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
+		           return                	
+                }
+           	} else {
+ 		      err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
+		      return  
+           	}
+       	} else if !val.Type().LessEq(attr.Part.Type) {
+		   err = fmt.Errorf("Cannot assign  '%v.%v %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.Type, val.Type())
+		   return
+	   }
 	}
 	
 	attrVals, found := rt.attributes[attr]
