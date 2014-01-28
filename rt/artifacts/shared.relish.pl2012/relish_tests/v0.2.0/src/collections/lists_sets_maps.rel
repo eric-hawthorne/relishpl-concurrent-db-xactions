@@ -372,11 +372,23 @@ testCollections
                  
    youngsters = []people.Person "dateOfBirth > '1982-09-23'"
 
-   vals = ""
-   for person in youngsters
-      vals = cat vals person.firstName person.lastName
 
-   passed = and assertEq vals "JoeArmstrongAliceWong" "youngsters"
+   youngUns = {}String
+
+   for person in youngsters
+      youngUns += person.firstName
+
+   youngUnList = []String
+   for name in youngUns
+      youngUnList += name
+
+   sort youngUnList
+
+   vals = ""
+   for yu in youngUnList     
+      vals = cat vals yu
+
+   passed = and assertEq vals "AliceJaneJoe" "youngsters"
                 passed
 
    clear allWheels
@@ -388,32 +400,39 @@ testCollections
 
    passed = and assertEq (len opps4) 0 "len opps4"
                 passed
-                
+
    records = [
                 ["First name" "Last name"]
                 ["Joe" "DiMaggio"]
              ][] String   
 
-   print records  
+   passed = and assertEq (String records) "[[First name   Last name]   [Joe   DiMaggio]]" "records"
+                passed
 
-   foo places
+   passed = and foo places
+                passed
 
    places += "right"
 
-   print places
+   passed = and assertEq (String places) "[left   inside   up   right]" "places"
+                passed
 
    fakeCollection = nil
    for i val in fakeCollection
-      print "Oops!"
+      passed = and assert false "fakeCollection"
+                   passed
       
+   if passed
+      print "PASSED"
 
-foo a [] String
+
+foo a [] String > Bool
 """
  Tests argument type compatibility of collection-type args.
  This was failing to be dispatched to when called on a [] String argument.
 """
-   print a
-   print "Succeeded"
+   => assertEq (String a) "[left   inside   up]" "foo places"
+
 
 
         
