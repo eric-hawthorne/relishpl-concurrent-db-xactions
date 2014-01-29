@@ -2120,25 +2120,25 @@ unlock m Mutex
 """
 
 
-lock m RWMutex
+lock m RwMutex
 """
  Locks the mutex. When lock is acquired, go-routines attempting to lock or rlock this mutex will block.
 """
 
 
-unlock m RWMutex
+unlock m RwMutex
 """
  Unlocks the write-lock on the mutex. A goroutine is free to lock the mutex now.
 """
 
 
-rlock m RWMutex
+rlock m RwMutex
 """
  Locks the mutex for reading. When lock is acquired, go-routines attempting to write-lock this mutex will block.
 """
 
 
-runlock m RWMutex
+runlock m RwMutex
 """
  Unlocks the read-lock on the mutex. A goroutine  is free to write-lock the mutex now.
 """
@@ -3161,7 +3161,7 @@ lock mx
 
 unlock mx
 
-rwmx = RWMutex
+rwmx = RwMutex
 
 lock rwmx  // write-lock the mutex
 // write to something

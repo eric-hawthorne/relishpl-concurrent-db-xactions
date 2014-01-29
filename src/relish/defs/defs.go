@@ -70,7 +70,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "OutChannel" : true,
 "Channel" : true,
 "Mutex" : true,
-"RWMutex" : true,
+"RwMutex" : true,
 "Bytes": true,
 "Bits": true,
 "CodePoints": true,  // TODO - Change to Runes
