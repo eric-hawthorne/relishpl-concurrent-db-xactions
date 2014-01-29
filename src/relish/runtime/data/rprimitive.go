@@ -190,7 +190,7 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	MutexType, _ = rt.CreateType("Mutex", "", []string{})
 
-	RWMutexType, _ = rt.CreateType("RWMutex", "", []string{})	
+	RWMutexType, _ = rt.CreateType("RwMutex", "", []string{})	
 
 //	FileType,_ = rt.CreateType("shared.relish.pl2012/lib/core/pkg/io/File", "", []string{"Any"})
 

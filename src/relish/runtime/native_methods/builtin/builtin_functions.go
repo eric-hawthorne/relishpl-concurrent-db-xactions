@@ -2005,25 +2005,25 @@ urlPathPartDecode s > String
 	}
 	mutexUnlockMethod.PrimitiveCode = builtinMutexUnlock
 
-	rwmutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"RwMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexLockMethod.PrimitiveCode = builtinRWMutexLock
 
-	rwmutexUnlockMethod, err := RT.CreateMethod("",nil,"unlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexUnlockMethod, err := RT.CreateMethod("",nil,"unlock", []string{"m"}, []string{"RwMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexUnlockMethod.PrimitiveCode = builtinRWMutexUnlock
 
-	rwmutexRLockMethod, err := RT.CreateMethod("",nil,"rlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexRLockMethod, err := RT.CreateMethod("",nil,"rlock", []string{"m"}, []string{"RwMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
 	rwmutexRLockMethod.PrimitiveCode = builtinRWMutexRLock
 
-	rwmutexRUnlockMethod, err := RT.CreateMethod("",nil,"runlock", []string{"m"}, []string{"RWMutex"}, nil, false, 0, false)
+	rwmutexRUnlockMethod, err := RT.CreateMethod("",nil,"runlock", []string{"m"}, []string{"RwMutex"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
