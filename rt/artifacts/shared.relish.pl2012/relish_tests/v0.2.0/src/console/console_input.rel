@@ -9,6 +9,10 @@ package  console
 """
 
 
+import
+   test
+
+
 main
 """
  Main program.
@@ -20,5 +24,8 @@ testInput
 """
  Test interactive input from the console.
 """
-   s = input "What is your name?\n>"
-   print s      
+   print "===== Input"
+   s = input "What is your name? (Please Enter the name Joe if you want test to pass.)\n>"
+   passed = assertEq s "Joe" "name is Joe"
+   if passed
+      print "PASSED"      
