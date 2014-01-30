@@ -322,32 +322,6 @@ func (rt *RuntimeEnv) AttrValByName(obj RObject, attrName string) (val RObject, 
 
 
 
-
-
-/*
-Untypechecked assignment. Assumes type has been statically checked.
-
-func (rt *RuntimeEnv) SetAttr(obj RObject, attr *AttributeSpec, val RObject, , context MethodEvaluationContext, isInverse bool) {
-
-	attrVals, found := rt.attributes[attr]
-	if found {
-		_, found = attrVals[obj]
-	} else {
-		attrVals = make(map[RObject]RObject)
-		rt.attributes[attr] = attrVals
-	}
-	attrVals[obj] = val
-	if obj.IsStoredLocally() {
-		rt.db.PersistSetAttr(obj, attr, val, found)
-	}
-	
-    if ! isInverse && attr.Inverse != nil {
-	   err = rt.SetOrAddToAttr(val, attr.Inverse, obj, context, true)
-    }	
-	return
-}
-*/
-
 /*
 Untypechecked assignment. Used in restoration (summoning) of an object from persistent storage.
 */
@@ -398,6 +372,11 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
   		           err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
 		           return                	
                 }
+           	} else if strings.HasPrefix(valType.Name,"Map_of_") {
+                if attr.Part.CollectionType != "map" {
+  		           err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
+		           return                	
+                }           	
            	} else {
  		      err = fmt.Errorf("Cannot assign  '%v.%v %s of %v' a value of type '%v'.", obj.Type(), attr.Part.Name, attr.Part.CollectionType, attr.Part.Type, val.Type())
 		      return  

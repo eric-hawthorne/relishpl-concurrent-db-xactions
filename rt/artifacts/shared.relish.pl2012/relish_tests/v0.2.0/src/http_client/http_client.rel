@@ -12,6 +12,7 @@ package  http_client
 import
    http
    strings
+   test
 
 
 main
@@ -25,34 +26,61 @@ testHttp
 """
  Tests requesting web pages with HTTP GET and posting to a form action page using HTTP POST.
 """
+   passed = true
+
+   print "===== HTTP Client"
 
    content err = httpGet "http://google.com/robots.txt"
-   print "===== http://google.com/robots.txt ======================="
-   print "Content:"
-   print content
-   print "Err:"
-   print err
+   // print "===== http://google.com/robots.txt ======================="
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
+
+   template = """
+User-agent: *
+Disallow: /search
+Disallow: /sdch
+Disallow: /groups
+Disallow: /images
+Disallow: /catalogs
+"""   
+   passed = and assert hasPrefix content template
+                       "http://google.com/robots.txt"
+                passed
+   passed = and assertNot err "err http://google.com/robots.txt"
+                passed   
 
    content err = httpGet "https://google.com/robots.txt"
-   print "===== https://google.com/robots.txt ======================"
-   print "Content:"
-   print content
-   print "Err:"
-   print err   
+   // print "===== https://google.com/robots.txt ======================"
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err   
+   passed = and assert hasPrefix content template
+                       "https://google.com/robots.txt"
+                passed   
+   passed = and assertNot err "err https://google.com/robots.txt"
+                passed   
 
-   content err = httpGet "http://echidna.org/"
-   print "===== http://echidna.org/ ================================"
-   print "Content:"
-   print content
-   print "Err:"
-   print err
+   content err = httpGet "http://echidnoid.org/"
+   // print "===== http://echidnoid.org/ ================================"
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
+   template = "Get http://echidnoid.org/: dial tcp: lookup echidnoid.org: no such host"   
+   passed = and assertEq err 
+                         template
+                         "err http://echidnoid.org"
+                passed 
 
-   content err = httpGet "http://relish.pl"
-   print "===== http://relish.pl ==================================="
-   print "Content:"
-   print content
-   print "Err:"
-   print err
+   // content err = httpGet "http://relish.pl"
+   // print "===== http://relish.pl ==================================="
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
 
    keysVals = {
                  "firstName" => "Charlie"
@@ -81,3 +109,6 @@ James,"Earl Jones,Jr.",   4349893434,""
    print content
    print "Err:"
    print err  
+
+   if passed
+      print "PASSED"
