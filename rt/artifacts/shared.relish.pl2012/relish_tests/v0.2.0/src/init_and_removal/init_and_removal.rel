@@ -8,6 +8,8 @@ package  init_and_removal
  Test initialization of attribute values of objects, before and after persistence, and also,
  test removal of relation assocations between objects, and database deletion of objects.
 
+ TODO: This test is incomplete and messed up currently.
+ 
  Requirements and Design
  -----------------------
  Desirable properties of this behaviour in the language:

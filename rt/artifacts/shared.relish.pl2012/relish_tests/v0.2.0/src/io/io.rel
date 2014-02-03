@@ -14,6 +14,8 @@ package  io
 import
    files
    strings
+   datetime
+   test as t
 
 
 main
@@ -27,113 +29,164 @@ testIo
 """
  Currently tests file i/o. TODO Extend later to other kinds of i/o streams.
 """
+   passed = true
+
+   print "===== IO"
+
+   content = """
+What we call life is neither a thing apart from matter, nor merely "living matter," but an informational
+and energetic process at Earth's surface.
+
+Life is a particular form of the motion of matter.
+"""
+
+   file err = files.File "testIo.txt"
+   if err
+      outFile err = files.File "testIo.txt" "w"
+      if err
+         print err
+         print "Could not read or write testIo.txt. Skipping further io tests"
+         =>      
+
+      n err = write outFile content
+      if err
+         print err
+         print "Could not read or write testIo.txt. Skipping further io tests"
+         =>  
+      err = close outFile
+      if err
+         print err
+         print "Could not close testIo.txt. Skipping further io tests"
+         =>             
    file err = files.File "testIo.txt"
    if err
       print err
-      print "Skipping further io tests"
+      print "Could not read or write testIo.txt. Skipping further io tests"
       =>
 
    buf = Bytes 150
    n err = read file buf
    if err
+      passed = false
       print err
    else
-      print "I read" n "bytes." 
-      print "------------"
+      passed = and assertEq n 150 "num bytes read"
+                   passed
+
+
       s = String buf
       s1 = slice s 0 n
-      print s1
-      print "------------"
+      sTarget = cat "What we call life is neither a thing apart from"
+                    " matter, nor merely \"living matter,\" but an informational\n" 
+                    "and energetic process at Earth's surface.\n\nLi"
+
+      passed = and assertEq s1 sTarget "s1 1"
+                   passed
+
    close file
-   
+
+   tNow = minus now "Local"
+                seconds 1
 
    file err = files.File "testIo2.txt" "w"
    n err = write file "Gangnam Style!"
    if err
+      passed = false
       print err
    else
       close file
       err = move "testIo2.txt" "testIo3.txt"
       if err
+         passed = false      
          print err
       else   
          file3 err = files.File "testIo3.txt"
          if err
+            passed = false
             print err      
          else
             n err = read file3 buf
             if err
+               passed = false
                print err
             else
-               print "I read" n "bytes." 
-               print "------------"
+               passed = and assertEq n 14 "num bytes read 2"
+                            passed             
                s = String buf
                s1 = slice s 0 n
-               print s1
-               print "------------"
+               passed = and assertEq s1 "Gangnam Style!" "gangnam"
+                            passed               
             close file3   
 
 
    path = "testIo3.txt"
    fileInfo fileExists err = stat path
    if err
+      passed = false
       print "Can't stat file" path ":" err
    elif fileExists
-      print path "last modified at" fileInfo.modTime
+      passed = and assert gte fileInfo.modTime tNow
+                          "file modified time"
+                   passed
    else  
+      passed = false
       print path "does not exist."
 
 
    err = remove "testIo3.txt"
    if err
+      passed = false
       print err
 
    path = "testIo3.txt"
    fileInfo fileExists err = stat path
    if err
+      passed = false
       print "Can't stat file" path ":" err
    elif fileExists
-      print path "last modified at" fileInfo.modTime
-   else  
-      print path "does not exist."      
+      passed = and assert false "file removed"
+                   passed     
 
    file err = files.File "testIo.txt"
    if err
+      passed = false   
       print err
    else
       buf = Bytes 300
-      content err = readAllText file
+      content2 err = readAllText file
       if err
+         passed = false      
          print err
       else
-         print "------------"
-         print content
-         print "------------"
+         passed = and assertEq content content2 "content2"
+                      passed
       close file         
 
    file err = files.File "testIo.txt"
    if err
+      passed = false     
       print err
    else
       buf = Bytes 300
-      content err = readAllBinary file
+      content3 err = readAllBinary file
       if err
          print err
       else
-         print "------------"
-         print content
-         print "------------"
+         passed = and assertEq content content3 "content3"
+                      passed
       close file          
    tmp = files.tempDir
    myTempDirPath = cat tmp "/myTestDirectory/andSubdir"
    err = mkdirAll myTempDirPath
    if err
+      passed = false
       print err
    else
       myTempDirPath = cat tmp "/myTestDirectory"
       err = removeAll myTempDirPath
       if err
+         passed = false
          print err
-      else
-         print "Removed directory " myTempDirPath "and subdirectory." 
 
+   if passed
+      print "PASSED"
