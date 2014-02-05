@@ -53,6 +53,8 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			timeString := t.UTC().Format(TIME_LAYOUT)
 			locationName := t.Location().String()
 			db.QueueStatement(fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()))				
+		} else if val.Type() == MutexType || val.Type() == RWMutexType {
+			// skip persisting
 		} else {
 			valStr,args := db.primitiveAttrValSQL(val)
 			stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s=? WHERE id=?", table, attr.Part.Name))
@@ -150,6 +152,8 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
 		   attrName := attr.Part.Name
 		   attrLocName := attrName + "_loc"			
 		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL,%s=NULL WHERE id=%v", table, attrName, attrLocName, obj.DBID())
+		} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType {
+			// skip persisting        
         } else	{
 		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL WHERE id=%v", table, attr.Part.Name, obj.DBID()) 
 	    }
@@ -2066,11 +2070,15 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args 
 					}
 				case *Mutex,*RWMutex:
 				   // Ignore these transient-type attributes 
+					s = s[:len(s)-1] // take off the comma
 				default:
 					panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
 				}
 			} else if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				s += "NULL,NULL"
+			} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType {
+				// Ignore these transient-type attributes 
+				s = s[:len(s)-1] // take off the comma				
 			} else {
 				s += "NULL"
 			}

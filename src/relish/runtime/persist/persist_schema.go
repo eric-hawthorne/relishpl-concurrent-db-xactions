@@ -56,7 +56,7 @@ func (db *SqliteDB) EnsureTypeTable(typ *RType) (err error) {
 	// Loop over primitive-valued attributes - for each, make a column in the table - TBD
 
 	for _, attr := range typ.Attributes {
-		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
+		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" && ! attr.IsTransient {
 			s += ",\n" + attr.Part.DbColumnDef()
 
 		}
