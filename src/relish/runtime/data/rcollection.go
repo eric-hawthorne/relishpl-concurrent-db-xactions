@@ -829,7 +829,8 @@ func (s *rsortedset) Less(i, j int) bool {
 	        default:
 				// Use the "less" multimethod to compare them.
 
-			    lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
+			    lessMethod, _ := evalContext.InterpThread().CallingPackage().MultiMethods["lt"]
+			    //lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
 
 				isLess := evalContext.EvalMultiMethodCall(lessMethod, []RObject{val1, val2})        
 				goLess = ! isLess.IsZero()       
@@ -1536,7 +1537,8 @@ func (s *rlist) Less(i, j int) bool {
 	        default:
 				// Use the "less" multimethod to compare them.
 
-			    lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
+			    lessMethod, _ := evalContext.InterpThread().CallingPackage().MultiMethods["lt"]
+			    //lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
 
 				isLess := evalContext.EvalMultiMethodCall(lessMethod, []RObject{val1, val2})        
 				goLess = ! isLess.IsZero()       
