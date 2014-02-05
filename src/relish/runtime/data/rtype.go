@@ -1041,6 +1041,8 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		return
 	}
 
+	isTransient = isTransient || typ2 == MutexType || typ2 == RWMutexType
+
 	attr = &AttributeSpec{typ1,
 		RelEnd{
 			Name:             endName2,
