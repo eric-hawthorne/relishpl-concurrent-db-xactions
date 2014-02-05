@@ -1452,6 +1452,8 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 			} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 			   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 			   numPrimAttributeColumns += 2
+			} else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType {
+				// ignore
 			} else {
 			   selectClause += sep + attr.Part.Name
 			   numPrimAttributeColumns ++
@@ -1469,6 +1471,8 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 				} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 				   numPrimAttributeColumns += 2
+			    } else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType {
+				   // ignore				   
 				} else {
 				   selectClause += sep + attr.Part.Name
 				   numPrimAttributeColumns ++
@@ -1482,7 +1486,7 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 
 		// Figure out the total number of primitive attributes in all the types combined.
 
-		numPrimitiveAttrs := objTyp.NumPrimitiveAttributes
+		// numPrimitiveAttrs := objTyp.NumPrimitiveAttributes
 
 		// Now for the object's type and all types in the upchain, we need to 
 		// create a join statement on the type tables, then
@@ -1493,7 +1497,7 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 
 		for _, typ := range objTyp.Up {
 			from += " JOIN " + db.TableNameIfy(typ.ShortName()) + " USING (id)"
-			numPrimitiveAttrs += typ.NumPrimitiveAttributes
+			// numPrimitiveAttrs += typ.NumPrimitiveAttributes
 		}
 
 		where := fmt.Sprintf(" WHERE %s.id=%v", specificTypeTable, id)
@@ -1563,7 +1567,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 	var nonNil bool 
 
 	for _, attr := range objTyp.Attributes {
-		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" {
+		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType {
 			valByteSlice := *(attrValsBytes[i].(*[]byte))
 			if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				i++
@@ -1581,7 +1585,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" {
+			if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType {
 				valByteSlice := *(attrValsBytes[i].(*[]byte))
 				if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 					i++
@@ -2060,6 +2064,8 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args 
 					} else {
 						s += "0"
 					}
+				case Mutex,RWMutex:
+				   // Ignore these transient-type attributes 
 				default:
 					panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
 				}

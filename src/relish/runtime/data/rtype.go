@@ -240,7 +240,7 @@ func newRType(name string, shortName string, parents []*RType) *RType {
 	//
 	// Should we define Int for Int64 Uint for Uint64 and Float for Float64
 	//
-	case "Int", "Uint", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8", "Bit", "Bool", "CodePoint","Mutex","RWMutex":
+	case "Int", "Uint", "Int32", "Uint32", "Int16", "Uint16", "Int8", "Uint8", "Bit", "Bool", "CodePoint","Mutex","RwMutex":
 		fallthrough
 	case "[]Int", "[]Uint", "[]Int32", "[]Uint32", "[]Int16", "[]Uint16", "[]Int8", "[]Byte", "[]Bit", "[]Bool", "[]CodePoint":
 		fallthrough
