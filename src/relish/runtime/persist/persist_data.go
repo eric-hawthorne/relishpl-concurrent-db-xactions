@@ -2064,7 +2064,7 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args 
 					} else {
 						s += "0"
 					}
-				case Mutex,RWMutex:
+				case *Mutex,*RWMutex:
 				   // Ignore these transient-type attributes 
 				default:
 					panic(fmt.Sprintf("I don't know how to create SQL for an attribute value of underlying type %v.", val.Type()))
