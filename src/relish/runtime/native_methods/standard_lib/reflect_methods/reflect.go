@@ -1422,7 +1422,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
 	
 	       var valStr string
 	
-	       if attr.IsMultiValued() && val != NIL {
+	       if attr.IsCollection() && val != NIL {
 	          // fmt.Println(attr.Part.Name, "is multivalued")
 			    primitive := attr.Part.Type.IsPrimitive
 		

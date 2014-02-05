@@ -224,20 +224,16 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
         Logln(PERSIST2_,attr)
 
-
-		if !attr.Part.Type.IsPrimitive {
-
-			table := db.TableNameIfy(attr.ShortName())
+		if ! attr.Part.Type.IsPrimitive {  
 
 			val, found := RT.AttrValue(obj, attr, false, true)
 			if !found {
 				continue
 			}
-			if attr.Part.CollectionType != "" { // a collection of non-primitives
-			   
-      // TODO TODO TODO
-      // Shouldn't we be distinguishing between owned collections (multi-valued attribute)
-      // where attr.Part.MaxArity != 1			   
+
+			table := db.TableNameIfy(attr.ShortName())
+
+			if attr.IsMultiValued() { // a collection of non-primitives, owned by the "whole" object		   
 			   
 				collection := val.(RCollection)
 				isMap := collection.IsMap()
@@ -276,7 +272,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 						i++
 					}
 				}
-			} else { // a single non-primitive value
+			} else { // a single non-primitive value or independent collection of non-primitive element type.
 
 				err = db.EnsurePersisted(val)
 				if err != nil {
@@ -284,103 +280,118 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				}
 				db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
 			}
-		} else if attr.Part.CollectionType != "" { // a collection of primitive-type objects
-			// TODO
-			// !!!!!!!!!!!!!!!!!!!!!!!!
-			// !!!! NOT DONE YET !!!!!!
-			// !!!!!!!!!!!!!!!!!!!!!!!!
-			
-			val, found := RT.AttrValue(obj, attr, false, true)
-			if !found {
-				continue
-			}
-						
-			table := db.TableNameIfy(attr.ShortName())			
-			valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
-							   
-			collection := val.(RCollection)
-			isMap := collection.IsMap()
-			if isMap {
-			   
-			   // !!!!!!!!!!!!!!!!!!!!!!!!
-			   // !!!! NOT DONE YET !!!!!!
-			   // !!!!!!!!!!!!!!!!!!!!!!!!			   
-			   
-			   
-				theMap := collection.(Map)
-				for key := range theMap.Iter(nil) {
-					val, _ := theMap.Get(key)
+		} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-					if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
-						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
-						
-					   valParts := db.primitiveValSQL(val) 
-					   stmt.Args(valParts)								
-						
-		            stmt.Arg(SqlStringValueEscape(string(key.(String))))
-		            
-		            
-		            
-						db.QueueStatements(stmt)
-					} else {
-						// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
-						// !!!!!!!!!!!!!!!!!!!!!!!!
-						// !!!! NOT DONE YET !!!!!!
-						// !!!!!!!!!!!!!!!!!!!!!!!!
-											
-                  stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
-					
-					   valParts := db.primitiveValSQL(val) 
-					   stmt.Args(valParts)
-		            						
-						// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
-						
-						
-						db.QueueStatements(stmt)						
-									 
-					}
+		    val, found := RT.AttrValue(obj, attr, false, true)
+		    if !found {
+		   	    continue
+		    }
+			
+			table := db.TableNameIfy(attr.ShortName())	
+
+		    if attr.IsMultiValued() { // a collection of primitive-type objects owned by the "whole" object
+
+				// TODO
+				// !!!!!!!!!!!!!!!!!!!!!!!!
+				// !!!! NOT DONE YET !!!!!!
+				// !!!!!!!!!!!!!!!!!!!!!!!!
+				
+				val, found := RT.AttrValue(obj, attr, false, true)
+				if !found {
+					continue
 				}
-			} else {
-				i := 0					
-				for val := range collection.Iter(nil) {
-					
-					if collection.IsOrdered() {					   
-						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
+							
+				valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
+								   
+				collection := val.(RCollection)
+				isMap := collection.IsMap()
+				if isMap {
+				   
+				   // !!!!!!!!!!!!!!!!!!!!!!!!
+				   // !!!! NOT DONE YET !!!!!!
+				   // !!!!!!!!!!!!!!!!!!!!!!!!			   
+				   
+				   
+					theMap := collection.(Map)
+					for key := range theMap.Iter(nil) {
+						val, _ := theMap.Get(key)
+
+						if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
+							stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
+							
+						   valParts := db.primitiveValSQL(val) 
+						   stmt.Args(valParts)								
+							
+			            stmt.Arg(SqlStringValueEscape(string(key.(String))))
+			            
+			            
+			            
+							db.QueueStatements(stmt)
+						} else {
+							// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+							// !!!!!!!!!!!!!!!!!!!!!!!!
+							// !!!! NOT DONE YET !!!!!!
+							// !!!!!!!!!!!!!!!!!!!!!!!!
+												
+	                  stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
 						
-						valParts := db.primitiveValSQL(val) 
-						stmt.Args(valParts)
-						
-						db.QueueStatements(stmt)						
-					} else { // unordered set 
-					   
-						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
-						
-					   valParts := db.primitiveValSQL(val) 
-					   stmt.Args(valParts)						
-						
-						db.QueueStatements(stmt)						
+						   valParts := db.primitiveValSQL(val) 
+						   stmt.Args(valParts)
+			            						
+							// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+							
+							
+							db.QueueStatements(stmt)						
+										 
+						}
 					}
-					i++
+				} else {
+					i := 0					
+					for val := range collection.Iter(nil) {
+						
+						if collection.IsOrdered() {					   
+							stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
+							
+							valParts := db.primitiveValSQL(val) 
+							stmt.Args(valParts)
+							
+							db.QueueStatements(stmt)						
+						} else { // unordered set 
+						   
+							stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
+							
+						   valParts := db.primitiveValSQL(val) 
+						   stmt.Args(valParts)						
+							
+							db.QueueStatements(stmt)						
+						}
+						i++
+					}
+				}			
+			
+			} else { // attr.IsIndependentCollection()  // independent collection of primitive element type
+
+				err = db.EnsurePersisted(val)
+				if err != nil {
+					return
 				}
-			}			
-			
-			
-			
-			
+				db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
+			}	
 		}
 	}
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if !attr.Part.Type.IsPrimitive {
-
-				table := db.TableNameIfy(attr.ShortName())
+			if ! attr.Part.Type.IsPrimitive {
 
 				val, found := RT.AttrValue(obj, attr, false, true)
 				if !found {
 					continue
 				}
-				if attr.Part.CollectionType != "" { // a collection of non-primitives
+
+				table := db.TableNameIfy(attr.ShortName())
+
+				if attr.IsMultiValued() { // a collection of non-primitives, owned by the "whole" object	
 					collection := val.(RCollection)
 					isMap := collection.IsMap()
 					if isMap {
@@ -418,7 +429,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 							i++
 						}
 					}
-				} else { // a single non-primitive value
+				} else { // a single non-primitive value or independent collection of non-primitive element type.
 
 					err = db.EnsurePersisted(val)
 					if err != nil {
@@ -426,86 +437,92 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					}
 					db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
 				}
-			} else if attr.Part.CollectionType != "" { // a collection of primitive-type objects
-				// TODO
-				// !!!!!!!!!!!!!!!!!!!!!!!!
-				// !!!! NOT DONE YET !!!!!!
-				// !!!!!!!!!!!!!!!!!!!!!!!!	
-				
-   			val, found := RT.AttrValue(obj, attr, false, true)
-   			if !found {
-   				continue
-   			}
-						
-   			table := db.TableNameIfy(attr.ShortName())			
-   			valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
-							   
-   			collection := val.(RCollection)
-   			isMap := collection.IsMap()
-   			if isMap {
-			   
-   			   // !!!!!!!!!!!!!!!!!!!!!!!!
-   			   // !!!! NOT DONE YET !!!!!!
-   			   // !!!!!!!!!!!!!!!!!!!!!!!!			   
-			   
-			   
-   				theMap := collection.(Map)
-   				for key := range theMap.Iter(nil) {
-   					val, _ := theMap.Get(key)
+			} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-   					if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
-   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
-						
-   					   valParts := db.primitiveValSQL(val) 
-   					   stmt.Args(valParts)								
-						
-   		            stmt.Arg(SqlStringValueEscape(string(key.(String))))
-		            
-		            
-		            
-   						db.QueueStatements(stmt)
-   					} else {
-   						// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
-   						// !!!!!!!!!!!!!!!!!!!!!!!!
-   						// !!!! NOT DONE YET !!!!!!
-   						// !!!!!!!!!!!!!!!!!!!!!!!!
-											
-                     stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
-					
-   					   valParts := db.primitiveValSQL(val) 
-   					   stmt.Args(valParts)
-		            						
-   						// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
-						
-						
-   						db.QueueStatements(stmt)						
-									 
-   					}
-   				}
-   			} else {
-   				i := 0					
-   				for val := range collection.Iter(nil) {
-					
-   					if collection.IsOrdered() {					   
-   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
-						
-   						valParts := db.primitiveValSQL(val) 
-   						stmt.Args(valParts)
-						
-   						db.QueueStatements(stmt)						
-   					} else { // unordered set 
-					   
-   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
-						
-   					   valParts := db.primitiveValSQL(val) 
-   					   stmt.Args(valParts)						
-						
-   						db.QueueStatements(stmt)						
-   					}
-   					i++
-   				}
-   			}							
+			    val, found := RT.AttrValue(obj, attr, false, true)
+			    if !found {
+			   	    continue
+			    }
 				
+				table := db.TableNameIfy(attr.ShortName())	
+
+		        if attr.IsMultiValued() { // collection of primitives owned by the "whole" object
+
+		   			valCols,valVars := attr.Part.Type.DbCollectionColumnInsert()
+									   
+		   			collection := val.(RCollection)
+		   			isMap := collection.IsMap()
+		   			if isMap {
+					   
+		   			   // !!!!!!!!!!!!!!!!!!!!!!!!
+		   			   // !!!! NOT DONE YET !!!!!!
+		   			   // !!!!!!!!!!!!!!!!!!!!!!!!			   
+					   
+					   
+		   				theMap := collection.(Map)
+		   				for key := range theMap.Iter(nil) {
+		   					val, _ := theMap.Get(key)
+
+		   					if attr.Part.CollectionType == "stringmap" || attr.Part.CollectionType == "orderedstringmap" {
+		   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(%v,%s,?)", table, valCols, obj.DBID(), valVars)) 
+								
+		   					   valParts := db.primitiveValSQL(val) 
+		   					   stmt.Args(valParts)								
+								
+		   		            stmt.Arg(SqlStringValueEscape(string(key.(String))))
+				            
+				            
+				            
+		   						db.QueueStatements(stmt)
+		   					} else {
+		   						// TODO - We do not know if the key is persisted. We don't know if the key is an integer!!!
+		   						// !!!!!!!!!!!!!!!!!!!!!!!!
+		   						// !!!! NOT DONE YET !!!!!!
+		   						// !!!!!!!!!!!!!!!!!!!!!!!!
+													
+		                     stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, key.DBID()))
+							
+		   					   valParts := db.primitiveValSQL(val) 
+		   					   stmt.Args(valParts)
+				            						
+		   						// db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id,val,ord1) VALUES(%v,%v,%v)", table, obj.DBID(), val, key.DBID())) 		
+								
+								
+		   						db.QueueStatements(stmt)						
+											 
+		   					}
+		   				}
+		   			} else {
+		   				i := 0					
+		   				for val := range collection.Iter(nil) {
+							
+		   					if collection.IsOrdered() {					   
+		   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, i))
+								
+		   						valParts := db.primitiveValSQL(val) 
+		   						stmt.Args(valParts)
+								
+		   						db.QueueStatements(stmt)						
+		   					} else { // unordered set 
+							   
+		   						stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
+								
+		   					   valParts := db.primitiveValSQL(val) 
+		   					   stmt.Args(valParts)						
+								
+		   						db.QueueStatements(stmt)						
+		   					}
+		   					i++
+		   				}
+		   			}							
+				} else {  // attr.IsIndependentCollection()  // independent collection of primitive element type
+
+				err = db.EnsurePersisted(val)
+				if err != nil {
+					return
+				}
+				db.QueueStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(%v,%v)", table, obj.DBID(), val.DBID())) 
+				}
 				
 				   
 			}

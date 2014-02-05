@@ -184,16 +184,23 @@ Ensure that DB tables exist to represent the non-primitive-valued attributes and
 of the type.
 */
 func (db *SqliteDB) EnsureAttributeAndRelationTables(t *RType) (err error) {
-    //fmt.Println("EnsureAttributeAndRelationTables", t)
+    // fmt.Println("EnsureAttributeAndRelationTables", t)
 	for _, attr := range t.Attributes {
-		//fmt.Println(attr)
+		// fmt.Println(attr)
 		if !attr.IsTransient {
 			if attr.Part.Type.IsPrimitive {
 				if attr.Part.ArityHigh != 1 { // a multi-valued primitive-type attribute
+				fmt.Println("arityHigh ",attr.Part.ArityHigh)
 				   err = db.EnsureMultiValuedPrimitiveAttributeTable(attr)
 				   if err != nil {
 			  		  return
 				   }					
+				} else if attr.Part.CollectionType != "" {
+					// fmt.Println("OOPS collection of primitives and arityHigh ",attr.Part.ArityHigh)
+				    err = db.EnsureNonPrimitiveAttributeTable(attr)
+				    if err != nil {
+			  		  return
+				    }					
 				}
 			} else {
 			   err = db.EnsureNonPrimitiveAttributeTable(attr)

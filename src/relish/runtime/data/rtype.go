@@ -620,19 +620,27 @@ func (attr *AttributeSpec) IsOneWay() bool {
 }
 
 /*
-Is this correct? I don't think so. How do we specify an attribute that points to a single collection?
-Right now can't do that.
+   Either a multi-valued attribute or an independent collection.
+   In either case, the immediate value of the attribute will be an RCollection.
 */
-func (attr *AttributeSpec) IsMultiValued() bool {
+func (attr *AttributeSpec) IsCollection() bool {
 	return attr.Part.CollectionType != ""
 }
 
+func (attr *AttributeSpec) IsMultiValued() bool {
+	return attr.Part.CollectionType != "" && attr.Part.ArityHigh != 1
+}
+
 func (attr *AttributeSpec) IsSimple() bool {
-	return attr.Part.Type.IsPrimitive && ! attr.IsMultiValued()
+	return attr.Part.Type.IsPrimitive && ! attr.IsCollection()
 }
 
 func (attr *AttributeSpec) IsComplex() bool {
 	return ! attr.IsSimple()
+}
+
+func (attr *AttributeSpec) IsIndependentCollection() bool {
+	return attr.Part.CollectionType != "" && attr.Part.ArityHigh == 1
 }
 
 /*
@@ -764,8 +772,13 @@ func (typ *RType) DbCollectionUpdate() (sqlFragment string) {
    Currently the name is e.g. "Cart___wheel__Wheel"
 */
 func (attr *AttributeSpec) ShortName() string {
-	return fmt.Sprintf("%s___%s__%s", attr.WholeType.ShortName(),
-		attr.Part.Name, attr.Part.Type.ShortName())
+	if attr.IsIndependentCollection() {
+	   return fmt.Sprintf("%s___%s__%s_of_%s", attr.WholeType.ShortName(),
+		  attr.Part.Name, attr.Part.CollectionType, attr.Part.Type.ShortName())	
+	} else {
+	   return fmt.Sprintf("%s___%s__%s", attr.WholeType.ShortName(),
+		  attr.Part.Name, attr.Part.Type.ShortName())
+	}
 }
 
 
