@@ -1040,7 +1040,7 @@ func (db *SqliteDB) FetchByName(name string, radius int) (obj RObject, err error
 func (db *SqliteDB) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchAttribute", objId, radius))
 
-	if attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive {
+	if (attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive) || attr.IsIndependentCollection() {
 		err = db.fetchUnaryNonPrimitiveAttributeValue(objId, obj, attr, radius)
 		if err != nil {
 			return
@@ -1619,7 +1619,7 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValues(id int64, obj RObject,
 	objTyp := obj.Type()
 
 	for _, attr := range objTyp.Attributes {
-		if attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive {
+		if (attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive) || attr.IsIndependentCollection() {
 			err = db.fetchUnaryNonPrimitiveAttributeValue(id, obj, attr, radius)
 			if err != nil {
 				return
@@ -1629,7 +1629,7 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValues(id int64, obj RObject,
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive {
+			if (attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive) || attr.IsIndependentCollection() {
 				err = db.fetchUnaryNonPrimitiveAttributeValue(id, obj, attr, radius)
 				if err != nil {
 					return
@@ -1650,9 +1650,10 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValue(objId int64, obj RObjec
 	// First query for the id of the attribute value object
 
 	query := fmt.Sprintf("SELECT id1 FROM %s WHERE id0=%v", db.TableNameIfy(attr.ShortName()), objId)
-
+    // fmt.Println(query)  // debug
 	selectStmt, err := db.conn.Prepare(query)
 	if err != nil {
+		// panic(err) // debug
 		return
 	}
 
@@ -1660,6 +1661,7 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValue(objId int64, obj RObjec
 
 	err = selectStmt.Exec()
 	if err != nil {
+		// panic(err) // debug		
 		return
 	}
 
@@ -1672,12 +1674,14 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValue(objId int64, obj RObjec
 	var id1 int64
 	err = selectStmt.Scan(&id1)
 	if err != nil {
+		// panic(err) // debug			
 		return
 	}
 
 	// Then fetch the object with the id
 	val, err := db.Fetch(id1, radius)
 	if err != nil {
+		// panic(err) // debug				
 		return
 	}
 	RT.RestoreAttr(obj, attr, val)

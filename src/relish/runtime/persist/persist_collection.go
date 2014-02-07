@@ -288,9 +288,9 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
 		
 	if elementType.IsPrimitive {		
 
-      keyStr := SqlStringValueEscape(string(key.(String))) 
-
    	if keyType == StringType {
+
+        keyStr := SqlStringValueEscape(string(key.(String)))          
    	  
    	  if isNewKey {
    	      valCols,valVars := elementType.DbCollectionColumnInsert()   	     
@@ -351,6 +351,9 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
                  
          	stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
 
+            valParts := db.primitiveValSQL(val) 
+            stmt.Args(valParts)
+            
             stmt.Arg(theMap.DBID())
             
             switch keyType {
@@ -1150,7 +1153,95 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 	         theMap.PutSimple(key, val)     		
       	}
               
+      } else if theMap.KeyType() == IntType || theMap.KeyType() == UintType {  // An integer keyed map
+
+         query := fmt.Sprintf("SELECT %s,ord1 FROM %s WHERE id=%v%s", valCols, collectionTableName, collectionOrOwnerId, orderClause)         
+   
+         selectStmt, queryErr := db.conn.Prepare(query)
+         if queryErr != nil {
+            err = queryErr          
+            return
+         }
+
+         defer selectStmt.Finalize()
+
+         err = selectStmt.Exec()
+         if err != nil {
+            return
+         }
+
+         collection.SetMayContainProxies(false) 
+
+         var val RObject
+         var key RObject   
+         var ord1 int64             
          
+         var numColumns int
+         switch typ {
+         case ComplexType,Complex32Type,TimeType:
+            numColumns = 2
+         default: 
+            numColumns = 1
+         }
+         valsBytes1 := make([][]byte, numColumns)
+
+         valsBytes := make([]interface{}, numColumns+1)
+
+         for i := 0; i < len(valsBytes1); i++ {
+            valsBytes[i] = &valsBytes1[i]
+         }
+         valsBytes[numColumns] = &ord1
+
+         var nonNil bool
+         for selectStmt.Next() {
+            err = selectStmt.Scan(valsBytes...)
+            if err != nil {
+               return
+            }     
+            valByteSlice := *(valsBytes[0].(*[]byte))    
+            if numColumns == 1 {
+               nonNil = convertVal(valByteSlice, typ,"collection element val", &val)  
+               if ! nonNil { panic("nil not valid element in a primitive value collection") }      
+         
+            } else { // 2
+               valByteSlice2 := *(valsBytes[1].(*[]byte))      
+               nonNil = convertValTwoFields(valByteSlice, valByteSlice2, typ,"collection element val", &val)   
+               if ! nonNil { panic("nil not valid element in a primitive value collection") }                     
+            }        
+         
+            if theMap.KeyType() == IntType {
+               key = Int(ord1)
+            } else if theMap.KeyType() == UintType {
+               key = Uint(uint64(ord1))               
+            }
+/*       
+
+         for selectStmt.Next() {
+            var id1 int64
+            var ord1 int64
+            err = selectStmt.Scan(&id1,&ord1)
+            if err != nil {
+               return
+            }
+            
+            key, err = db.Fetch(ord1, 1) // Should this just be a proxy?
+            if err != nil {
+               return
+            }           
+                  
+            if radius > 0 { // fetch the full objects
+               val, err = db.Fetch(id1, radius-1)
+               if err != nil {
+                  return
+               }
+            } else { // Just put proxy objects into the collection.
+               val = Proxy(id1)
+            }
+*/          
+            
+            theMap.PutSimple(key, val)          
+         }         
+
       } else {  // An object-keyed map
          
 
