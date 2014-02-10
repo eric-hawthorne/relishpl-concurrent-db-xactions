@@ -11,6 +11,7 @@ package  time
 import
    model/people
    datetime
+   test
 
 
 main
@@ -24,6 +25,10 @@ testTime
 """
  Test tm.Time data type and methods.
 """
+   passed = true
+   
+   print "===== Time"
+      
    person1 = people.Person
    person1.firstName = "Alice"
    person1.lastName = "Wong"
@@ -31,35 +36,108 @@ testTime
    if err
       print err
 
-   print person1.dateOfBirth
+   passed = and assertEq (String person1.dateOfBirth) "1990-02-13 22:13:45 -0800 PST" "dateOfBirth"
+                passed
+   
    t2 = 
       plus 
          person1.dateOfBirth 
          plus (hours 50) (minutes 30)     
    t3 = plus person1.dateOfBirth (duration 50 30)
    t4 = addDate person1.dateOfBirth 1 0 2      
-   print t2
-   print t3
-   print t4
-   print minus t3 t2
-   print minus t3 (hours 50)    
-   print now "Local"
+   passed = and assertEq (String t2) "1990-02-16 00:43:45 -0800 PST" "time 1"
+                passed
+   passed = and assertEq (String t3) "1990-02-16 00:43:45 -0800 PST" "time 2"
+                passed
+   passed = and assertEq (String t4) "1991-02-15 22:13:45 -0800 PST" "time 3"
+                passed   
+   passed = and assertEq (minus t3 t2) 0 "time 4"
+                passed
+                
+   passed = and assertEq String minus t3 (hours 50)                 
+                         "1990-02-13 22:43:45 -0800 PST"
+                         "time 5"
+                passed
+   timeDiff = seconds
+                 minus (now "Local") (now "UTC")
+   
+   passed = and assert lt timeDiff 1 
+                       "now"
+                passed
    now1 = now "UTC" 
-   print format now1 "Jan 2 06 15:04 MST"  
+   timeString = format now1 "Jan 2 06 15:04 MST"  
    sleep seconds 3
    ns = since now1 
-   print secondsEquivalentOf ns
+   delay = secondsEquivalentOf ns
+   passed = and assert and gte delay 3
+                           lt delay 4 
+                       "sleep"
+                passed
    h m s ns = timeParts ns
-   print h m s ns
-   print date t2
-   print clock t2
-   print year t2       
-   print month t2
-   print weekday t2
-   print day t2 
-   print hour t2
-   print minute t2
-   print second t2
-   print nanosecond t2
-   print zone t2
-   print format t2 "2006/01/02 3:04pm -0700 MST"      
+   passed = and assert and eq h 0
+                           eq m 0
+                           eq s 3 
+                       "sleep 2"
+                passed   
+   y m d = date t2     
+   n = plus y (plus m d)           
+   passed = and assertEq n 2008 "date"
+                passed
+   
+   h m s = clock t2
+   n = plus h (plus m s)
+   passed = and assertEq n 88 "clock"   
+                passed
+   
+   passed = and assertEq (year t2) 1990 "year"   
+                passed
+  
+   passed = and assertEq month t2
+                         2
+                         "month"   
+                passed     
+                
+   passed = and assertEq weekday t2
+                         5
+                         "weekday"   
+                passed                  
+
+   passed = and assertEq day t2
+                         16
+                         "day"   
+                passed 
+ 
+   passed = and assertEq hour t2
+                         0
+                         "hour"   
+                passed                 
+
+   passed = and assertEq minute t2
+                         43
+                         "minute"   
+                passed    
+   
+   passed = and assertEq second t2
+                         45
+                         "second"   
+                passed                   
+
+   passed = and assertEq nanosecond t2
+                         0
+                         "nanosecond"   
+                passed   
+   
+   zoneName offset = zone t2   
+   passed = and assertEq zoneName "PST" "zone name"   
+                passed                    
+  
+   passed = and assertEq offset -28800 "zone offset"   
+                passed
+                                
+   passed = and assertEq format t2 "2006/01/02 3:04pm -0700 MST"  
+                         "1990/02/16 12:43am -0800 PST"
+                         "format"
+                passed          
+       
+   if passed
+      print "PASSED"
