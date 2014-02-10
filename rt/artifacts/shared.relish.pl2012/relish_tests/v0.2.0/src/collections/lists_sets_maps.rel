@@ -62,7 +62,7 @@ testCollections
    bigWheels = []vehicles.Wheel "num > 2"
 
    for i wheel in bigWheels
-      // print "bigWheels[" i "] =" wheel.num
+      print "bigWheels[" i "] =" wheel.num
       passed = and assertEq (minus 4 i) wheel.num "bigWheels"
                    passed
       if eq i 0
