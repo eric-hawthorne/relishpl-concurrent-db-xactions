@@ -11,6 +11,7 @@ package  transcoders
 import
    csv
    strings
+   test
 
 
 main
@@ -26,6 +27,10 @@ testCsv
  Tests reading CSV-encoded data from a big, multi-line String, and writing records
  out in CSV format to a big, multi-line String.
 """
+   passed = true
+
+   print "===== CSV"
+
    csvFileContents = """
 "John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
 Alice,Lin,323-665-4343,No problem here.   
@@ -33,12 +38,20 @@ Red,O'Kelly,,
 James,"Earl Jones,Jr.",   4349893434,""
 """
 
+   records1 = """
+|John, Q.|Public|604-221-3455|He said "I am innocent!" in a loud voice.|
+|Alice|Lin|323-665-4343|No problem here.   |
+|Red|O'Kelly|||
+|James|Earl Jones,Jr.|   4349893434||
+"""
+
    records err = csvRead csvFileContents
    if err
+      passed = false
       print err
    else
-      printRecords records   
-
+      passed = and assertEq records1 (catRecords records) "records1"   
+                   passed 
    print ""
    print "==================== Now trimming spaces ================="
    print ""
@@ -161,8 +174,11 @@ James,"Earl Jones,Jr.",   4349893434,""
    print "==================== Done csvWrite tests ================="
    print ""     
 
+   if passed
+      print "PASSED"
 
-printRecords records List
+
+catRecords records List > rows String
 """
  Prints out each record, with each field enclosed in | |
 """
@@ -172,4 +188,10 @@ printRecords records List
       for field in record
          row = cat row sep field
       row = cat row sep
-      print row      
+      rows = cat rows row "\n"
+
+
+
+
+
+
