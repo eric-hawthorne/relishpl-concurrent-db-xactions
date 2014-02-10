@@ -59,10 +59,10 @@ testCollections
       passed = assertEq aWheel.num i "allWheels"
       i = plus i 1
 
-   bigWheels = []vehicles.Wheel "num > 2"
+   bigWheels = []vehicles.Wheel "num > 2 order by num desc"
 
    for i wheel in bigWheels
-      print "bigWheels[" i "] =" wheel.num
+      // print "bigWheels[" i "] =" wheel.num
       passed = and assertEq (minus 4 i) wheel.num "bigWheels"
                    passed
       if eq i 0
