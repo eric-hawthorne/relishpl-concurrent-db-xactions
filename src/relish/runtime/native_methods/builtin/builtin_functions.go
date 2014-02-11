@@ -459,7 +459,7 @@ func InitBuiltinFunctions(relishRoot string) {
 
 
 	 Decodes the json-encoded string argument into a relish object or object tree, which is returned.
-	 If the second argument is summplied, attempts to populate the supplied object, 
+	 If the second argument is supplied, attempts to populate the supplied object, 
 	 which must be a collection, a map, or a structured object. In that case, the object argument itself
 	 is returned, after being populated with attribute/collection values from the JSON string.
 	"""
