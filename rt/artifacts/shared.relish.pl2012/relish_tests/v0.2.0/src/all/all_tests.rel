@@ -49,4 +49,5 @@ testAll
    closures.testClosures
    http_client.testHttp
    transcoders.testCsv
+   transcoders.testJson
    concurrency.testConcurrency
