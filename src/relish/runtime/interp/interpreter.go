@@ -1112,7 +1112,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 //		}
 			
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
-		// defer methodCallErrHandle(t,call)	
+		defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
@@ -1833,7 +1833,10 @@ func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) (err error) 
                } 
            } 
         }
-
+        if m.Code.Body == nil {
+           err = fmt.Errorf("Method body statements not defined for method %v.",m)  
+           return      	
+        }
 		i.ExecBlock(t, m.Code.Body)
 		// Now maybe type-check the return values !!!!!!!! This is really expensive !!!!
 	} else {
