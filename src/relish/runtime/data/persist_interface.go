@@ -62,6 +62,17 @@ func (sg *StatementGroup) Args(args []interface{}) {
 }
 
 
+/*
+Clears all arguments that have been added to the statement group.
+Note: Only a single-statement statement group can be re-used with new args,
+or more precisely, only the last statement in the statement group 
+can have its arguments re-appended to after ClearArgs.
+*/
+func (sg *StatementGroup) ClearArgs() {
+   for _,stmt := range sg.Statements {
+      stmt.Args = nil
+   }
+}
 
 
 type DB interface {
