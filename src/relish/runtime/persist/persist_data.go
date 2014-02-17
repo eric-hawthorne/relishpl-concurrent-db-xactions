@@ -575,31 +575,37 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 				if err != nil {
 					return
 				}
-				stmt := mapStmt			 
+				stmt := mapStmt		
 			    switch keyType {  
 			      case StringType:
-				   	stmt = stringMapStmt  	
+				   	stmt = stringMapStmt  
+				    stmt.ClearArgs()					   		
 		  		    keyStr := SqlStringValueEscape(string(key.(String)))   
 		  		   	stmt.Arg(collection.DBID())
                     stmt.Arg(val.DBID()) 
 		  		   	stmt.Arg(keyStr)
 			   	case UintType:
+				    stmt.ClearArgs()			   		
 				   	stmt.Arg(collection.DBID())
                     stmt.Arg(val.DBID()) 				   	
 				   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
 			   	case Uint32Type:
+				    stmt.ClearArgs()			   		
 				   	stmt.Arg(collection.DBID())
                     stmt.Arg(val.DBID()) 				   	
 				   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
 			   	case IntType:
+				    stmt.ClearArgs()			   		
 				   	stmt.Arg(collection.DBID())
                     stmt.Arg(val.DBID()) 				   	
 				   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
 			   	case Uint32Type:
+			   		stmt.ClearArgs()
 				   	stmt.Arg(collection.DBID())
                     stmt.Arg(val.DBID()) 				   	
 				   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		   	   		          
 		         default:
+		         	stmt.ClearArgs()
 				   	stmt.Arg(collection.DBID())
 				   	stmt.Arg(val.DBID())  
 				   	stmt.Arg(key.DBID())
@@ -619,12 +625,14 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 
 				if isOrdered {
 					stmt := orderedStmt
+					stmt.ClearArgs()
 					stmt.Arg(collection.DBID())
 					stmt.Arg(val.DBID())
 					stmt.Arg(i)
 					db.QueueStatements(stmt)
 				} else { // unordered set 
 					stmt := unorderedStmt
+					stmt.ClearArgs()
 					stmt.Arg(collection.DBID())
 					stmt.Arg(val.DBID())
 					db.QueueStatements(stmt)	
@@ -659,28 +667,34 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 			stmt := mapStmt			 
 		    switch keyType {  
 		      case StringType:
-			   	stmt = stringMapStmt  	
+			   	stmt = stringMapStmt  
+			   	stmt.ClearArgs()	
 			   	stmt.Args(valParts)	
 	  		   	stmt.Arg(collection.DBID())			   	
 	  		    keyStr := SqlStringValueEscape(string(key.(String)))   
 	  		   	stmt.Arg(keyStr)
 		   	case UintType:
+		   		stmt.ClearArgs()
 			   	stmt.Args(valParts)	
 	  		   	stmt.Arg(collection.DBID())	                			   	
 			   	stmt.Arg(int64(uint64(key.(Uint))))   // val is actually the map key
 		   	case Uint32Type:
+		   		stmt.ClearArgs()
 			   	stmt.Args(valParts)	                	
 	  		   	stmt.Arg(collection.DBID())	                			   	
 			   	stmt.Arg(int(uint32(key.(Uint32))))   // val is actually the map key			   	
 		   	case IntType:
+		   		stmt.ClearArgs()
  			   	stmt.Args(valParts)	               
 	  		   	stmt.Arg(collection.DBID())	                			   	
 			   	stmt.Arg(int64(key.(Int)))   // val is actually the map key
 		   	case Uint32Type:
+		   		stmt.ClearArgs()
 			   	stmt.Args(valParts)	
 	  		   	stmt.Arg(collection.DBID())	                			   	
 			   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		   	   		          
 	         default:
+	         	stmt.ClearArgs()
 			   	stmt.Args(valParts)				   	
 	  		   	stmt.Arg(collection.DBID())				   	
 			   	stmt.Arg(key.DBID())
@@ -698,12 +712,14 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
    			valParts := db.primitiveValSQL(val) 			
    			if isOrdered {					   
    				stmt := orderedStmt
+   				stmt.ClearArgs()
    				stmt.Args(valParts)
     			stmt.Arg(collection.DBID())	
     			stmt.Arg(i)	  				
    				db.QueueStatements(stmt)						
    			} else { // unordered set 
    			   stmt := unorderedStmt	
+   			   stmt.ClearArgs()
    			   stmt.Args(valParts)		
    			   stmt.Arg(collection.DBID())				
    			   db.QueueStatements(stmt)						
