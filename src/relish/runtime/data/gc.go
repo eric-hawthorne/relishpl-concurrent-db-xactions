@@ -87,6 +87,17 @@ func (rt *RuntimeEnv) MarkAttributes() {
     Logln(GC2_,"Marked",len(rt.ReflectedAttributes),"reflected Attributes.")		
 }
 
+/*
+Mark the gloabal variables (known as the context) as reachable.
+*/
+func (rt *RuntimeEnv) MarkContext() {
+    defer Un(Trace(GC2_,"MarkContext"))
+	for _,obj := range rt.context {
+		obj.Mark()
+	}
+    Logln(GC2_,"Marked",len(rt.context),"context-map objects (global variables) and their associates.")		
+}
+
 
 var inTransitMutex sync.Mutex
 

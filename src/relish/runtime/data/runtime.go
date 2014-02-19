@@ -52,6 +52,10 @@ type RuntimeEnv struct {
 	RunningArtifact string                 // Full origin-qualified name of the artifact one of whose package main functions was run in relish command
 	TypeTupleTree *TypeTupleTreeNode  // Obsolete
 	TypeTupleTrees []*TypeTupleTreeNode  // New
+
+	context map[string]RObject  // "Global variable" hashtable.
+	contextMutex sync.RWMutex
+
 	objects       map[int64]RObject // persistable objects by DBID()
 	// objects map[string] RObject // persistable objects by uuidstr - do we need this for distributed computing?
 	objectIds map[RObject]uint64 // non-persistable object to its local numeric id (for debug printing the object)
@@ -206,6 +210,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		objectIds:     make(map[RObject]uint64),
 		idGen:         NewIdGenerator(),
 		attributes:    make(map[*AttributeSpec]map[RObject]RObject),
+		context:       make(map[string]RObject),
 		constants:     make(map[string]RObject),
 		inTransit:     make(map[RObject]uint32),
 	    ReflectedDataTypes: make(map[string]RObject),
@@ -1324,6 +1329,53 @@ func (rt *RuntimeEnv) RemoveAttrGeneral(th InterpreterThread, obj RObject, attr 
    }
    return
 }
+
+
+func (rt *RuntimeEnv) ContextGet(name string) RObject {
+	rt.contextMutex.RLock()
+	defer rt.contextMutex.RUnlock()
+	val,found := rt.context[name]
+	if ! found {
+		val = NIL
+	}
+	return val
+}
+
+func (rt *RuntimeEnv) ContextExists(name string) (found bool) {
+	rt.contextMutex.RLock()
+	defer rt.contextMutex.RUnlock()
+	_,found = rt.context[name]	
+	return
+}
+
+func (rt *RuntimeEnv) ContextPut(obj RObject, name string) {
+	rt.contextMutex.Lock()
+	defer rt.contextMutex.Unlock()
+	rt.context[name] = obj
+}
+
+func (rt *RuntimeEnv) ContextRemove(name string) {
+	rt.contextMutex.Lock()
+	defer rt.contextMutex.Unlock()
+	delete(rt.context,name)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 /*
