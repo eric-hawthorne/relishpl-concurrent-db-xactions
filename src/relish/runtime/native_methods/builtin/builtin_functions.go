@@ -1241,6 +1241,38 @@ func InitBuiltinFunctions(relishRoot string) {
 	rollbackMethod.PrimitiveCode = builtinRollbackTransaction	
 
 
+    ///////////////////////////////////////////////////////////
+    // Context map functions. The context is a non-persistent map from String name to object, which
+    // serves as a substitute for global variables.
+    // Requesting, setting and removing the context objects is thread-safe.
+    // Being in the context map is one way to keep a non-persistent object around (un-garbage-collected) in 
+    // between method executions.
+
+
+	contextMethod, err := RT.CreateMethod("",nil,"context", []string{"name"}, []string{"String"}, []string{"Any"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	contextMethod.PrimitiveCode = builtinContext	
+
+	context2Method, err := RT.CreateMethod("",nil,"context", []string{"obj", "name"}, []string{"Any", "String"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	context2Method.PrimitiveCode = builtinContextPut
+
+	contextExistsMethod, err := RT.CreateMethod("",nil,"contextExists", []string{"name"}, []string{"String"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	contextExistsMethod.PrimitiveCode = builtinContextExists	
+
+	contextRemoveMethod, err := RT.CreateMethod("",nil,"contextRemove", []string{"name"}, []string{"String"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	contextRemoveMethod.PrimitiveCode = builtinContextRemove	
+
 
     ///////////////////////////////////////////////////////////////////
     // Boolean Logical functions - not and or
@@ -3596,6 +3628,42 @@ func builtinRollbackTransaction(th InterpreterThread, objects []RObject) []RObje
 	}
 
 	return []RObject{String(errStr)}
+}
+
+
+
+//////////////////////////////////////////////////////////////////////
+// Non-persistent global context functions
+
+
+func builtinContext(th InterpreterThread, objects []RObject) []RObject {
+
+	name := objects[0].String()
+	val := RT.ContextGet(name)
+	return []RObject{val}
+}
+
+func builtinContextExists(th InterpreterThread, objects []RObject) []RObject {
+
+	name := objects[0].String()
+	found := RT.ContextExists(name)
+	return []RObject{Bool(found)}
+}
+
+func builtinContextPut(th InterpreterThread, objects []RObject) []RObject {
+
+	obj := objects[0]
+	name := objects[1].String()
+	RT.ContextPut(obj, name)
+
+	return nil
+}
+
+func builtinContextRemove(th InterpreterThread, objects []RObject) []RObject {
+
+	name := objects[0].String()
+	RT.ContextRemove(name)
+	return nil
 }
 
 
