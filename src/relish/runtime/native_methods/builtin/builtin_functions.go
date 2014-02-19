@@ -1255,11 +1255,11 @@ func InitBuiltinFunctions(relishRoot string) {
 	}
 	contextMethod.PrimitiveCode = builtinContext	
 
-	context2Method, err := RT.CreateMethod("",nil,"context", []string{"obj", "name"}, []string{"Any", "String"}, nil, false, 0, false)
+	contextPutMethod, err := RT.CreateMethod("",nil,"contextPut", []string{"obj", "name"}, []string{"Any", "String"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	context2Method.PrimitiveCode = builtinContextPut
+	contextPutMethod.PrimitiveCode = builtinContextPut
 
 	contextExistsMethod, err := RT.CreateMethod("",nil,"contextExists", []string{"name"}, []string{"String"}, []string{"Bool"}, false, 0, false)
 	if err != nil {
