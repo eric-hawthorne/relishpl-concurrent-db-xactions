@@ -111,7 +111,11 @@ func (mTCP *ModbusTCP) Connect(ipAddr string, port uint32, slaveAddr uint32) (er
 */
 func (mTCP *ModbusTCP) Close() {
 	if mTCP.tcpConn != nil {
-		mTCP.tcpConn.Close()
+        openConnectionMutex.Lock()	
+        defer openConnectionMutex.Unlock()		
+        if ! useKeptAliveConnection[mTCP.ipAddrAndPort] {
+		   mTCP.tcpConn.Close()
+	    }
 		mTCP.tcpConn = nil
 	}
 }
