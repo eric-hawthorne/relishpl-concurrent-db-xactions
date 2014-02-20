@@ -14,6 +14,7 @@ package interp
 import (
    . "relish/runtime/data"
    . "relish/dbg"
+   "sync"
 )
 
 
@@ -32,6 +33,14 @@ func newDispatcher(rt *RuntimeEnv) (d *dispatcher) {
    return
 }
 
+// TODO Note: It is a real problem that we are having to synchronize 
+// method dispatch. Perhaps the best solution would be to give each interpreter thread
+// its own method lookup table and typetuple table. 
+// That in itself would impose substantial inefficiencies. Hmmmm
+//
+var dispatchMutex sync.Mutex
+
+
 /*
    The main dispatch function.
    First looks up a cache (map) of method implementations keyed by typetuples.
@@ -47,6 +56,7 @@ func newDispatcher(rt *RuntimeEnv) (d *dispatcher) {
    report the lack of a compatible method.
 */
 func (d *dispatcher) GetMethod(mm *RMultiMethod, args []RObject) (*RMethod,*RTypeTuple) {
+   dispatchMutex.Lock()
    typeTuple := d.typeTupleTrees[len(args)].GetTypeTuple(args)
    method,found := mm.CachedMethods[typeTuple]
    if !found {
@@ -55,6 +65,7 @@ func (d *dispatcher) GetMethod(mm *RMultiMethod, args []RObject) (*RMethod,*RTyp
          mm.CachedMethods[typeTuple] = method
       }
    }
+   dispatchMutex.Unlock()
    return method,typeTuple
 }
 
@@ -67,6 +78,7 @@ Note that this process may result in a multimethod whose method of non-zero arit
 big deal as long as this method is only ever called on multimethods that actually only have a single method implementation.
 */
 func (d *dispatcher) GetSingletonMethod(mm *RMultiMethod) *RMethod {
+   dispatchMutex.Lock()   
    method,found := mm.CachedMethods[d.emptyTypeTuple]
    if !found {
       for _,methods := range mm.Methods {
@@ -77,6 +89,7 @@ func (d *dispatcher) GetSingletonMethod(mm *RMultiMethod) *RMethod {
          mm.CachedMethods[d.emptyTypeTuple] = method
       }
    }
+   dispatchMutex.Unlock()
    return method   
 }
 
@@ -89,6 +102,7 @@ func (d *dispatcher) GetSingletonMethod(mm *RMultiMethod) *RMethod {
    Same as GetMethod but for types instead of object instances.
 */
 func (d *dispatcher) GetMethodForTypes(mm *RMultiMethod, types ...*RType) (*RMethod,*RTypeTuple) {
+   dispatchMutex.Lock()     
    typeTuple := d.typeTupleTrees[len(types)].GetTypeTupleFromTypes(types)
    method,found := mm.CachedMethods[typeTuple]
    if !found {
@@ -97,6 +111,7 @@ func (d *dispatcher) GetMethodForTypes(mm *RMultiMethod, types ...*RType) (*RMet
          mm.CachedMethods[typeTuple] = method
       }
    }
+   dispatchMutex.Unlock()   
    return method,typeTuple
 }
 
