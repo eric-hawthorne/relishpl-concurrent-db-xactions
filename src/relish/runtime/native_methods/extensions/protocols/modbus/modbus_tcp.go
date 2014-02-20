@@ -10,6 +10,7 @@ import (
 	"net"
 
 	"strconv"
+	"sync"
 )
 
 //const (
@@ -26,13 +27,45 @@ type ModbusTCP struct {
 	*modbus
 	tcpConn net.Conn
 	tID     int32
+	ipAddrAndPort string
 }
+
+
+// Map from ip-address:port to whether or not multiple modbus requests to that ip-address:port
+// should share a single always-open TCP connection. If an ip-address:port is in this map,
+// it means yes use the kept alive connection. If ip-address:port is not in this map, then 
+// a single TCP connection should be created for each modbus request to the address:port.
+//
+var useKeptAliveConnection map[string]bool = make(map[string]bool)
+
+// A map from ip-address:port to an open tcp connection to that ip address.
+// See comment above.
+//
+var openTcpConnections map[string]net.Conn = make(map[string]net.Conn)
+
+var openConnectionMutex sync.Mutex
+
+func MaintainOpenConnection(ipAddrAndPort string) {
+   openConnectionMutex.Lock()
+   useKeptAliveConnection[ipAddrAndPort] = true
+   openConnectionMutex.Unlock()
+}
+
+func DiscardOpenConnection(ipAddrAndPort string) {
+   openConnectionMutex.Lock()	
+   useKeptAliveConnection[ipAddrAndPort] = false
+   openTcpConnections[ipAddrAndPort].Close()   
+   delete(openTcpConnections,ipAddrAndPort)
+   openConnectionMutex.Unlock()   
+
+}
+
 
 /*
    This creates a Modbus over TCP client.
 */
 func MakeModbusTCP(addressMode string, queryTimeout uint64, queryRetries uint32) *ModbusTCP {
-	mTCP := &ModbusTCP{MakeModbus(addressMode, queryTimeout, queryRetries), nil, 0}
+	mTCP := &ModbusTCP{MakeModbus(addressMode, queryTimeout, queryRetries), nil, 0, ""}
 
 	return mTCP
 }
@@ -47,16 +80,34 @@ func MakeModbusTCP(addressMode string, queryTimeout uint64, queryRetries uint32)
    @return err         - connection error
 */
 func (mTCP *ModbusTCP) Connect(ipAddr string, port uint32, slaveAddr uint32) (err error) {
-	mTCP.tcpConn, err = net.Dial("tcp", ipAddr+":"+strconv.FormatUint(uint64(port), 10))
-	if err == nil {
-		// mTCP.tcpConn.SetTimeout(int64(mTCP.queryTimeout))
-	}
+   
+    mTCP.ipAddrAndPort = ipAddr+":"+strconv.FormatUint(uint64(port), 10)
+
+    openConnectionMutex.Lock()	
+    defer openConnectionMutex.Unlock()
+    connection, found := openTcpConnections[mTCP.ipAddrAndPort]
+    if ! found {
+
+		connection, err = net.Dial("tcp", mTCP.ipAddrAndPort)
+		if err != nil {
+			return
+		}
+        
+        if useKeptAliveConnection[mTCP.ipAddrAndPort] {
+        	openTcpConnections[mTCP.ipAddrAndPort] = connection
+        }
+    }
+
+
+	mTCP.tcpConn = connection
+
 	mTCP.slaveAddr = byte(slaveAddr) //TODO: test for address > 255 ?
 	return
 }
 
 /*
-   Closes the TCP connection
+   Closes the TCP connection.
+   WARNING. Do not call this if your ModbusTCP is using a shared open (kept-alive) TCP connection.
 */
 func (mTCP *ModbusTCP) Close() {
 	if mTCP.tcpConn != nil {

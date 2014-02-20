@@ -9,6 +9,7 @@ package modbus_methods
 import (
    . "relish/runtime/data"
    modbus "relish/runtime/native_methods/extensions/protocols/modbus"
+   "strconv"
 )
 
 
@@ -134,6 +135,27 @@ func InitModbusMethods() {
       panic(err)
    }
    closeMethod.PrimitiveCode = close
+
+
+   // maintainOpenConnection
+   //    ipAddr String
+   //    port Uint32
+   maintainOpenConnectionMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"maintainOpenConnection", []string{"ipAddr","port"}, []string{"String","Uint32"}, []string{}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   maintainOpenConnectionMethod.PrimitiveCode = maintainOpenConnection
+
+   // discardOpenConnection
+   //    ipAddr String
+   //    port Uint32
+   discardOpenConnectionMethod, err := RT.CreateMethod("gait.bcit.ca2012/protocols/pkg/modbus",nil,"discardOpenConnection", []string{"ipAddr","port"}, []string{"String","Uint32"}, []string{}, false, 0, false)
+   if err != nil {
+      panic(err)
+   }
+   discardOpenConnectionMethod.PrimitiveCode = discardOpenConnection
+
+
 
    // send
    //    modbus Modbus
@@ -347,6 +369,36 @@ func close(th InterpreterThread, objects []RObject) []RObject {
    modbus.Close()
    return []RObject{}
 }
+
+
+// maintainOpenConnection
+//    ipAddr String
+//    port Uint32
+func maintainOpenConnection(th InterpreterThread, objects []RObject) []RObject {
+   ipAddr := string(objects[0].(String))
+   port := uint32(objects[1].(Uint32))
+   
+   ipAddrAndPort := ipAddr+":"+strconv.FormatUint(uint64(port), 10) 
+     
+   modbus.MaintainOpenConnection(ipAddrAndPort)
+
+   return []RObject{}
+}
+
+// discardOpenConnection
+//    ipAddr String
+//    port Uint32
+func discardOpenConnection(th InterpreterThread, objects []RObject) []RObject {
+   ipAddr := string(objects[0].(String))
+   port := uint32(objects[1].(Uint32))
+   
+   ipAddrAndPort := ipAddr+":"+strconv.FormatUint(uint64(port), 10) 
+     
+   modbus.DiscardOpenConnection(ipAddrAndPort)
+
+   return []RObject{}
+}
+
 
 
 // send
