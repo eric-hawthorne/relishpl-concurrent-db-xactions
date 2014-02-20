@@ -90,6 +90,8 @@ func (i *Interpreter) mark() {
     i.rt.MarkAttributes()
     
     i.rt.MarkAttributeVals()    
+
+    i.rt.MarkContext()
 }
 
 
