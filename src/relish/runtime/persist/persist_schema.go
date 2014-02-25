@@ -190,7 +190,7 @@ func (db *SqliteDB) EnsureAttributeAndRelationTables(t *RType) (err error) {
 		if !attr.IsTransient {
 			if attr.Part.Type.IsPrimitive {
 				if attr.Part.ArityHigh != 1 { // a multi-valued primitive-type attribute
-				fmt.Println("arityHigh ",attr.Part.ArityHigh)
+				//fmt.Println("arityHigh ",attr.Part.ArityHigh)
 				   err = db.EnsureMultiValuedPrimitiveAttributeTable(attr)
 				   if err != nil {
 			  		  return

@@ -37,6 +37,11 @@ func newDispatcher(rt *RuntimeEnv) (d *dispatcher) {
 // method dispatch. Perhaps the best solution would be to give each interpreter thread
 // its own method lookup table and typetuple table. 
 // That in itself would impose substantial inefficiencies. Hmmmm
+// Would it be more efficient to mutex lock only the dynamic dispatch and the insertions into the mm.CachedMethods
+// hashtable, and to put a deferred recover call around the GetTypeTuple and lookup of mm.CachedMethods[typeTuple]
+// where the recover would try the lookup again inside the mutex lock. So try again, synchronized, to look up 
+// method in cache after a memory fault occurs in trying to look up without locking.
+// Actually, type tuple creation/search will have to be assessed separately from cached method lookup.
 //
 var dispatchMutex sync.Mutex
 

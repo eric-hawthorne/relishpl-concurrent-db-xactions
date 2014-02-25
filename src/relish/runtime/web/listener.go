@@ -406,6 +406,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    t := interpreter.NewThread(nil)
 
+   Log(GC2_,"Running dialog handler method: %s\n",handlerMethod.Name)   
+   Log(GC2_," Args: %v\n",positionalArgStringValues)   
+   Log(GC2_," KW Args: %v\n",keywordArgStringValues)   
+
    t.DB().BeginTransaction()
 
    defer t.CommitOrRollback()
@@ -417,6 +421,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	                                                 r)   
 
    interpreter.DeregisterThread(t)
+   Log(GC2_,"Finished running dialog handler method: %s\n",handlerMethod.Name)   
+   Log(GC2_," Args: %v\n",positionalArgStringValues)   
+   Log(GC2_," KW Args: %v\n",keywordArgStringValues)      
      
    if err != nil {
       fmt.Println(err)  

@@ -33,23 +33,46 @@ func GCMarkSense() bool {
    return markSense
 }
 
+
+// var nRlocking int32
+// var nRlocked int32
+// var nLocking int32
+// var nLocked int32
+
+
 func GCMutexRLock(msg string) {
-   //Logln(GC_,">>> GCMutex.RLock()")		
+//   nRlocking++	
+//   if nRlocked > 0 || (len(msg) > 1 && msg[0] == 'r' && msg[1] == 'e') {
+//      Logln(GC_,">>> GCMutex.RLock'ing() ",msg, "nRlocking =", nRlocking, "nRlocked =", nRlocked)		
+//   }
    GCMutex.RLock()
+//   nRlocking--
+//   nRlocked++
+//   if nRlocked > 1 || (len(msg) > 1 && msg[0] == 'r' && msg[1] == 'e') {   
+//     Logln(GC_,">>> GCMutex.RLock() rlocked! ",msg, "nRlocking =", nRlocking, "nRlocked =", nRlocked)   
+//   }
 }
 
 func GCMutexRUnlock(msg string) {
-   //Logln(GC_,"<<< GCMutex.RUnlock()")	
+//   nRlocked--	
+//   if nRlocked > 0 || (len(msg) > 1 && msg[0] == 'D' && msg[1] == 'e') {   
+//      Logln(GC_,"<<< GCMutex.RUnlock()",msg, "nRlocked =", nRlocked)	
+//   }
    GCMutex.RUnlock()
 }
 
 func GCMutexLock(msg string) {
-   //Logln(GC_,">>>>>> GCMutex.Lock()")		
+//   nLocking++
+//   Logln(GC_,">>>>>> GCMutex.Lock'ing()",msg,"nLocked =",nLocked,"nRlocked =", nRlocked)		
    GCMutex.Lock()
+//   nLocking--
+//   nLocked++
+//   Logln(GC_,">>> GCMutex.RLock() rlocked! ",msg, "nLocked =", nLocked)      
 }
 
 func GCMutexUnlock(msg string) {
-   //Logln(GC_,"<<<<<< GCMutex.Unlock()")	
+//   nLocked--	
+//   Logln(GC_,"<<<<<< GCMutex.Unlock()",msg, "nLocked =", nLocked)	
    GCMutex.Unlock()
 }
 

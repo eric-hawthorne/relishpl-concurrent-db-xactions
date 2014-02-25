@@ -598,7 +598,7 @@ func (o *runit) markAttributes()  {
 
 		if !attr.Part.Type.IsPrimitive {
 
-			val, found := RT.AttrValue(o, attr, false, true)
+			val, found := RT.AttrValue(o, attr, false, true, false) // We know only one thread is running no need to lock
 			if !found {
 				break
 			}
@@ -610,7 +610,7 @@ func (o *runit) markAttributes()  {
 		for _, attr := range typ.Attributes {
 			if !attr.Part.Type.IsPrimitive {
 
-				val, found := RT.AttrValue(o, attr, false, true)
+				val, found := RT.AttrValue(o, attr, false, true, false)  // We know only one thread is running no need to lock
 				if !found {
 					break
 				}
@@ -647,7 +647,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
         if includePrivate || attr.Part.IsPublicReadable() {
             key = attr.Part.Name
 
-			  value, found := RT.AttrValue(o, attr, true, true)
+			  value, found := RT.AttrVal(o, attr)
 			  // fmt.Println(attr.Part.Name,":",value)			
 			  if !found {
 			     //fmt.Println("attr val not found")
@@ -669,7 +669,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 	        if includePrivate || attr.Part.IsPublicReadable() {
 	            key = attr.Part.Name
 
-				value, found := RT.AttrValue(o, attr, true, true)
+				value, found := RT.AttrVal(o, attr)
 				//fmt.Println(attr.Part.Name,":",value)
 				if !found {
 			      //fmt.Println("attr val not found")				   

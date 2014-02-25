@@ -220,9 +220,13 @@ type InterpreterThread interface {
 	*/
 	Err() string
 	
-	AllowGC()
+	// AllowGC(msg string)   // deadlock debug versions
 	
-	DisallowGC()
+	// DisallowGC(msg string)   // deadlock debug versions
+
+  AllowGC()
+  
+  DisallowGC()
 	
 	GC()
 

@@ -205,6 +205,12 @@ TODO TODO: If error on the commit, wait, try again a couple of times, backing of
 then try a rollback.
 If error on the rollback, wait, try again a couple of times, backing off, 
 then do a releaseDB.
+
+
+TODO: If we get an exception percolating all the way up to here, should we
+have a recover(..) call in here so as to roll back the transaction. Seems like the
+best thing to do. Not sure if any exceptions can get up this high.
+
 */
 func (t *Thread) CommitOrRollback() {
 	if t.err == "" {
@@ -1228,7 +1234,9 @@ func (i *Interpreter) GoApply(t *Thread, method *RMethod, file rterr.CodeFileLoc
 
 	t.PopFinalBase(method.NumReturnArgs)  // Pop off all of the executing method's context (for GC non-reference)
 	                                      // But do not set the thread's ExecutingMethod, because there is none.
-	// t.PopN(method.NumReturnArgs) // Also pop any return args off t's stack (for GC non-reference)		
+	// t.PopN(method.NumReturnArgs) // Also pop any return args off t's stack (for GC non-reference)	
+
+	i.DeregisterThread(t)	
 }
 
 
@@ -3179,10 +3187,12 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
        if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
           i.rt.IncrementInTransitCount(val)
        }
-       
+   
+       // t.AllowGC(" Channel <-")      
        t.AllowGC()
 	   c.Ch <- val
-	   t.DisallowGC()	    
+	   // t.DisallowGC(" Channel <-")	  
+	   t.DisallowGC()	      
 
 
     } else { // assignment

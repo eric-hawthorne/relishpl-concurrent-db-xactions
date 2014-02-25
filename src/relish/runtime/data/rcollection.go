@@ -2503,6 +2503,16 @@ func (f FakeInterpreterThread) Err() string {
 }
 
 /*
+deadlock debug version
+func (f FakeInterpreterThread) AllowGC(msg string)  {
+}
+*/
+/*
+deadlock debug version
+func (f FakeInterpreterThread) DisallowGC(msg string)  {
+}
+*/
+/*
 */
 func (f FakeInterpreterThread) AllowGC()  {
 }

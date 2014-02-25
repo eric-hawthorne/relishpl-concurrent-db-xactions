@@ -230,7 +230,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 		if ! attr.Part.Type.IsPrimitive {  
 
-			val, found := RT.AttrValue(obj, attr, false, true)
+			val, found := RT.AttrValue(obj, attr, false, true, true)
 			if !found {
 				continue
 			}
@@ -286,7 +286,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 			}
 		} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-		    val, found := RT.AttrValue(obj, attr, false, true)
+		    val, found := RT.AttrValue(obj, attr, false, true, true)
 		    if !found {
 		   	    continue
 		    }
@@ -300,7 +300,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				// !!!! NOT DONE YET !!!!!!
 				// !!!!!!!!!!!!!!!!!!!!!!!!
 				
-				val, found := RT.AttrValue(obj, attr, false, true)
+				val, found := RT.AttrValue(obj, attr, false, true, true)
 				if !found {
 					continue
 				}
@@ -388,7 +388,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 		for _, attr := range typ.Attributes {
 			if ! attr.Part.Type.IsPrimitive {
 
-				val, found := RT.AttrValue(obj, attr, false, true)
+				val, found := RT.AttrValue(obj, attr, false, true, true)
 				if !found {
 					continue
 				}
@@ -443,7 +443,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				}
 			} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-			    val, found := RT.AttrValue(obj, attr, false, true)
+			    val, found := RT.AttrValue(obj, attr, false, true, true)
 			    if !found {
 			   	    continue
 			    }
@@ -1586,6 +1586,8 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 	var val RObject
 	var nonNil bool 
 
+    RT.LockAttributes()
+    defer RT.UnlockAttributes()
 	for _, attr := range objTyp.Attributes {
 		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType {
 			valByteSlice := *(attrValsBytes[i].(*[]byte))
@@ -1597,7 +1599,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 			   nonNil = convertAttrVal(valByteSlice, attr, &val) 
 		    }
 		    if nonNil {
-		   		RT.RestoreAttr(obj, attr, val)			    
+		   		RT.RestoreAttrNonLocking(obj, attr, val)			    
 		    }
 		    i++
 		}
@@ -1615,7 +1617,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 				   nonNil = convertAttrVal(valByteSlice, attr, &val) 
 			    }
 			    if nonNil {
-			   		RT.RestoreAttr(obj, attr, val)			    
+			   		RT.RestoreAttrNonLocking(obj, attr, val)			    
 			    }
 			    i++				
 			}
@@ -1700,7 +1702,7 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValue(objId int64, obj RObjec
 		// panic(err) // debug				
 		return
 	}
-	RT.RestoreAttr(obj, attr, val)
+	RT.RestoreAttr(obj, attr, val) 
 
 	return
 }
