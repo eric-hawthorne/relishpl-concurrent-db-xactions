@@ -4243,7 +4243,7 @@ func (o *GoWrapper) markAttributes()  {
 
 		if !attr.Part.Type.IsPrimitive {
 
-			val, found := RT.AttrValue(o, attr, false, true)
+			val, found := RT.AttrValue(o, attr, false, true, false) // No need to lock - only one thread is running
 			if !found {
 				break
 			}
@@ -4255,7 +4255,7 @@ func (o *GoWrapper) markAttributes()  {
 		for _, attr := range typ.Attributes {
 			if !attr.Part.Type.IsPrimitive {
 
-				val, found := RT.AttrValue(o, attr, false, true)
+				val, found := RT.AttrValue(o, attr, false, true, false)  // no need to lock - only one thread is running
 				if !found {
 					break
 				}

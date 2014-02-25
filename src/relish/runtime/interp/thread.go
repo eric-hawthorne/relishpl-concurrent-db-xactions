@@ -51,6 +51,7 @@ func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
 
 
 func (i *Interpreter) registerThread(t *Thread) {
+    // GCMutexRLock(fmt.Sprintf("registerThread %p",t))	
     GCMutexRLock("")	
     t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 
@@ -69,8 +70,8 @@ func (i *Interpreter) DeregisterThread(t *Thread) {
     RemoveContext(t) 	
 
     t.GCLockCounter = -1
-    GCMutexRUnlock("")	
-
+    // GCMutexRUnlock(fmt.Sprintf("DeregisterThread %p",t))	
+    GCMutexRUnlock("")	    
     Logln(GC3_, ")DeregisterThread")
 }
 
@@ -130,8 +131,10 @@ func (t *Thread) Push(obj RObject) {
     // Manage locking of the garbage collector RWMutex
 	if t.GCLockCounter == 0 {
 		t.GCLockCounter = -1
+        // GCMutexRUnlock("Push")		
         GCMutexRUnlock("")
         // Garbage Collector goroutine can block me and run in here
+        // GCMutexRLock("Push")        
         GCMutexRLock("")
         t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 	} else {
@@ -277,9 +280,11 @@ func (t *Thread) Pop() RObject {
     // Manage locking of the garbage collector RWMutex
 	if t.GCLockCounter == 0 {
 		t.GCLockCounter = -1
-        GCMutexRUnlock("")
+        // GCMutexRUnlock("pop")
+        GCMutexRUnlock("")        
         // Garbage Collector goroutine can block me and run in here
-        GCMutexRLock("")
+        // GCMutexRLock("pop")
+        GCMutexRLock("")        
         t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 	} else {
 		t.GCLockCounter--
@@ -305,9 +310,11 @@ func (t *Thread) PopN(n int) RObject {
     // Manage locking of the garbage collector RWMutex
 	if t.GCLockCounter == 0 {
 		t.GCLockCounter = -1
-        GCMutexRUnlock("")
+        // GCMutexRUnlock("popN")
+        GCMutexRUnlock("")        
         // Garbage Collector goroutine can block me and run in here
-        GCMutexRLock("")
+        // GCMutexRLock("popN")
+        GCMutexRLock("")        
         t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 	} else {
 		t.GCLockCounter--
@@ -356,11 +363,13 @@ Call this just before this goroutine (relish thread) is going to be potentially 
 Allow garbage collection to proceed while this goroutine (relish thread) is blocked.
 You must call DisallowGC() as soon as the potentially-blocking operation is complete.
 */
+//func (t *Thread) AllowGC(msg string) {
 func (t *Thread) AllowGC() {
     if t.GCLockCounter == -1 {
     	panic("thread is attempting to doubly runlock the GCMutex.")
     }
 	t.GCLockCounter = -1
+    //GCMutexRUnlock(msg)	
     GCMutexRUnlock("")
     // Garbage Collector goroutine can block me and run in here
 }
@@ -370,12 +379,14 @@ Manage locking of the garbage collector RWMutex. RLock the mutex.
 Call this just after this goroutine (relish thread) completes an operation that is going to 
 be potentially blocked.
 */
+//func (t *Thread) DisallowGC(msg string) {
 func (t *Thread) DisallowGC() {
 
     if t.GCLockCounter != -1 {
     	panic("thread is attempting to doubly rlock the GCMutex.")
     }
-    GCMutexRLock("")
+    //GCMutexRLock(msg)
+    GCMutexRLock("")    
     t.GCLockCounter = MAX_GC_LOCKED_STACK_OPS
 }
 

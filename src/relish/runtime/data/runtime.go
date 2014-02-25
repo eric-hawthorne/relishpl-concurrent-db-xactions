@@ -247,7 +247,7 @@ func (rt *RuntimeEnv) SetDB(db DB) {
    What does it return if no value has been defined? How about a found boolean
 */
 func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, found bool) {
-	return rt.AttrValue(obj, attr, true, true)
+	return rt.AttrValue(obj, attr, true, true, true)
 }
 
 /*
@@ -257,17 +257,26 @@ func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, fo
    the multi-value attribute.
    What does it return if no value has been defined? How about a found boolean
 */
-func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool) (val RObject, found bool) {
+func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
+	
+    if lock {
+    	attrMutex.RLock()
+    }
 	attrVals, found := rt.attributes[attr]
 	if found {
 		val, found = attrVals[obj]
 		if found {
+			if lock {
+    	       attrMutex.RUnlock()	
+            }
 			return
 		} else if (! checkPersistence) && (! allowNoValue) {
 			panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
 		}
 	}
-
+	if lock {
+      attrMutex.RUnlock()	
+    }
 
 	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
@@ -333,6 +342,26 @@ Untypechecked assignment. Used in restoration (summoning) of an object from pers
 func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject) {
 	
 	defer Un(Trace(PERSIST_TR2, "RestoreAttr", obj, attr, val))
+
+    attrMutex.Lock()
+	attrVals, found := rt.attributes[attr]
+	if !found {
+		attrVals = make(map[RObject]RObject)
+		rt.attributes[attr] = attrVals
+	}
+	attrVals[obj] = val
+    attrMutex.Unlock()
+	return
+}
+
+/*
+Untypechecked assignment. Used in restoration (summoning) of an object from persistent storage.
+Not mutex locked.
+*/
+func (rt *RuntimeEnv) RestoreAttrNonLocking(obj RObject,  attr *AttributeSpec, val RObject) {
+	
+	defer Un(Trace(PERSIST_TR2, "RestoreAttrNonLocking", obj, attr, val))
+	
 	attrVals, found := rt.attributes[attr]
 	if !found {
 		attrVals = make(map[RObject]RObject)
@@ -341,6 +370,20 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject
 	attrVals[obj] = val
 
 	return
+}
+
+
+
+
+var attrMutex sync.RWMutex
+var attrMutex2 sync.Mutex
+
+func (rt *RuntimeEnv) LockAttributes() {
+   attrMutex.Lock()
+}
+
+func (rt *RuntimeEnv) UnlockAttributes() {
+	attrMutex.Unlock()
 }
 
 /*
@@ -392,6 +435,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	   }
 	}
 	
+	attrMutex.Lock()
 	attrVals, found := rt.attributes[attr]
 	
 	var oldVal RObject
@@ -406,12 +450,19 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
     // Also have to do this in UnsetAttr !!!
 	if ! found {
 		if obj.IsStoredLocally() && attr.IsRelation() {
-			oldVal, found = rt.AttrVal(obj, attr)
+			attrMutex2.Lock()
+			attrMutex.Unlock()
+			oldVal, found = rt.AttrValue(obj, attr,true,true, true)
+			attrMutex.Lock()
+			attrMutex2.Unlock()
 		}
 	}
 
 
 	attrVals[obj] = val
+
+	attrMutex.Unlock()
+
 	if obj.IsStoredLocally() {
 		th.DB().PersistSetAttr(obj, attr, val, found)
 	}
@@ -1287,6 +1338,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
        return
     }
 
+    attrMutex.Lock()
 	attrVals, found := rt.attributes[attr]
     var val RObject
 
@@ -1296,13 +1348,19 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
 
 	if ! found {
 		if obj.IsStoredLocally() {
+			attrMutex2.Lock()
+			attrMutex.Unlock()
 			val, found = rt.AttrVal(obj, attr)
+			attrMutex.Lock()
+			attrMutex2.Unlock()			
 			attrVals = rt.attributes[attr]
 		}
 	}
 
+
 	if found {
 	   delete(attrVals,obj)
+	   attrMutex.Unlock()
 
        if removePersistent && obj.IsStoredLocally() {
 	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
@@ -1312,6 +1370,8 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
        if ! isInverse && attr.Inverse != nil && val != NIL {
            err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
        }
+    } else {
+    	attrMutex.Unlock()
     }	
 	
     return

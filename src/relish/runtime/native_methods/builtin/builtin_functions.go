@@ -3094,9 +3094,11 @@ func builtinTimeNow(th InterpreterThread, objects []RObject) []RObject {
 //
 func builtinSleep(th InterpreterThread, objects []RObject) []RObject {
 	d := time.Duration(int64(objects[0].(Int)))
-	th.AllowGC()
+	// th.AllowGC("sleep")
+	th.AllowGC()	
     time.Sleep(d)
-    th.DisallowGC()
+    // th.DisallowGC("sleep")
+    th.DisallowGC()    
 	return []RObject{}
 }	
 
@@ -3856,9 +3858,11 @@ TODO DUMMY Implementation
 */
 func builtinFrom(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(RInChannel)
-	th.AllowGC()	
+	// th.AllowGC("From Channel")	
+	th.AllowGC()		
     val := c.From()
-    th.DisallowGC()
+    // th.DisallowGC("From Channel")
+    th.DisallowGC()    
 	if val.IsUnit() || val.IsCollection() || val.Type() == ClosureType {
 		   RT.DecrementInTransitCount(val)
 	}
@@ -3901,7 +3905,11 @@ func builtinChannelCap(th InterpreterThread, objects []RObject) []RObject {
 
 func builtinMutexLock(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*Mutex)
+	// th.AllowGC("MutexLock")
+	th.AllowGC()	
 	c.Lock()
+    // th.DisallowGC("MutexLock")	
+    th.DisallowGC()	    
 	return []RObject{}
 }
 
@@ -3913,7 +3921,11 @@ func builtinMutexUnlock(th InterpreterThread, objects []RObject) []RObject {
 
 func builtinRWMutexLock(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
+	// th.AllowGC("RWMutexLock")	
+	th.AllowGC()	
 	c.Lock()
+    // th.DisallowGC("RWMutexLock")	
+    th.DisallowGC()    	
 	return []RObject{}
 }
 
@@ -3925,7 +3937,11 @@ func builtinRWMutexUnlock(th InterpreterThread, objects []RObject) []RObject {
 
 func builtinRWMutexRLock(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
+	// th.AllowGC("RWMutexRLock")	
+	th.AllowGC()		
 	c.RLock()
+    // th.DisallowGC("RWMutexRLock")	
+    th.DisallowGC()    	
 	return []RObject{}
 }
 

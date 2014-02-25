@@ -59,8 +59,8 @@ func (i *Interpreter) GCLoop() {
 Run the garbage collector.
 */
 func (i *Interpreter) GC() {
-    data.GCMutexLock("")
-    defer data.GCMutexUnlock("")        
+    data.GCMutexLock("GC")
+    defer data.GCMutexUnlock("GC")        
     defer Un(Trace(GC2_,"GC"))    
     i.mark()
     i.sweep()
