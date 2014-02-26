@@ -459,10 +459,9 @@ func (s *rset) AddSimple(obj RObject) (newLen int) {
 
 func (s *rset) Remove(obj RObject) (removed bool, removedIndex int) {
 
-    if s.m == nil {
+    if s.m == nil {	
     	return
     } 
-
     s.deproxify(nil)	
 
 	removed = s.m[obj]
@@ -761,7 +760,10 @@ func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching sorted-set element [%v]: %s", i, err))
 		}
-		(*(s.v))[i] = obj		
+		(*(s.v))[i] = obj	
+
+  		s.m[obj] = true
+		delete(s.m, proxy) 				
 	}
 	return obj
 }
@@ -1035,15 +1037,34 @@ func (c *rsortedset) Contains(th InterpreterThread, obj RObject) (found bool) {
 func (s *rsortedset) Remove(obj RObject) (removed bool, removedIndex int) {
 
 	if s.v == nil {
+        Logln(COLL2_,"rsortedset.Remove(): s.v == nil, removed == false, removedIndex == -1")   		
 		removedIndex = -1
 	} else {			
         s.deproxify(nil)	
-
-		delete(s.m, obj) // delete (s.m,obj)	
+        len1 := len(s.m)
+		delete(s.m, obj) // delete (s.m,obj)
+		len2 := len(s.m)			
+		weird := (len1 == len2)
+		if weird {
+		   Logln(COLL2_,"rsortedset.Remove(): len(s.m) same after delete(s.m,obj). len =", len2)  
+		   Logln(COLL2_,"rsortedset.Remove(): obj =", obj.Debug())   
+		   for key,val := range s.m {
+		      Logln(COLL2_,"rsortedset.Remove(): m key =", key.Debug(), "val =", val) 		   	   
+		   }	 	
+		}
 		removedIndex = s.Index(obj, 0)
+		if weird {
+		   for i,val := range *s.v {
+		      Logln(COLL2_,"rsortedset.Remove(): v[",i,"] =", val.Debug()) 		   	  
+		   }	
+		   Logln(COLL2_,"rsortedset.Remove(): removedIndex =", removedIndex)  			
+		}
 		if removedIndex >= 0 {
 			s.v.Delete(removedIndex)
 			removed = true
+		    if weird {
+		       Logln(COLL2_,"rsortedset.Remove(): deleted from vector but not map. len(s.v) =",len(*s.v))  			
+		    }			
 		}
 	}
 	return

@@ -326,7 +326,7 @@ func (o *robject) String() string {
 
 
 func (o *robject) Debug() string {
-	return fmt.Sprintf("%s@%v",o.String(),&o)
+	return fmt.Sprintf("%s@%p",o.String(),o)
 }
 
 
