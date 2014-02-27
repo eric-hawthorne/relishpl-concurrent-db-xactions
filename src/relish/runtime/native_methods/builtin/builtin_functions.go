@@ -2550,7 +2550,7 @@ func builtinLtNum(th InterpreterThread, objects []RObject) []RObject {
 		case Int32:
 			val = Bool(int64(obj1.(Int)) < int64(obj2.(Int32)))
 		case Float:
-			val = Bool(float64(obj2.(Float)) < float64(obj1.(Int)))
+			val = Bool(float64(obj1.(Int)) < float64(obj2.(Float)))
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
@@ -2561,7 +2561,7 @@ func builtinLtNum(th InterpreterThread, objects []RObject) []RObject {
 		case Int:
 			val = Bool(int64(obj1.(Int32)) < int64(obj2.(Int)))
 		case Float:
-			val = Bool(float64(obj2.(Float)) < float64(obj1.(Int32)))
+			val = Bool(float64(obj1.(Int32)) < float64(obj2.(Float)))
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
@@ -2663,7 +2663,7 @@ func builtinGtNum(th InterpreterThread, objects []RObject) []RObject {
 		case Int32:
 			val = Bool(int64(obj1.(Int)) > int64(obj2.(Int32)))
 		case Float:
-			val = Bool(float64(obj2.(Float)) > float64(obj1.(Int)))
+			val = Bool(float64(obj1.(Int)) > float64(obj2.(Float)))
 		default:
 		rterr.Stop("gt is not defined for argument types")
 		}
@@ -2674,7 +2674,7 @@ func builtinGtNum(th InterpreterThread, objects []RObject) []RObject {
 		case Int:
 			val = Bool(int64(obj1.(Int32)) > int64(obj2.(Int)))
 		case Float:
-			val = Bool(float64(obj2.(Float)) > float64(obj1.(Int32)))
+			val = Bool(float64(obj1.(Int32)) > float64(obj2.(Float)))
 		default:
 		rterr.Stop("gt is not defined for argument types")
 		}
