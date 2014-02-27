@@ -110,6 +110,78 @@ testArithmeticAndLogic
 
    print "===== Arithmetic and Logic and Method Call Formatting"
 
+   passed = and assert (lt 1 2) "lt i i"
+                passed
+
+   passed = and assert (lt 1.0 2.0) "lt f f"
+                passed
+
+   passed = and assert (lt 1 2.0) "lt i f"
+                passed
+
+   passed = and assert (lt 1.0 2) "lt f i"
+                passed
+
+
+   passed = and assertNot (gt 1 2) "gt i i"
+                passed
+
+   passed = and assertNot (gt 1.0 2.0) "gt f f"
+                passed
+
+   passed = and assertNot (gt 1 2.0) "gt i f"
+                passed
+
+   passed = and assertNot (gt 1.0 2) "gt f i"
+                passed
+
+
+   passed = and assert (lte 1 2) "lte i i"
+                passed
+
+   passed = and assert (lte 1.0 2.0) "lte f f"
+                passed
+
+   passed = and assert (lte 1 2.0) "lte i f"
+                passed
+
+   passed = and assert (lte 1.0 2) "lte f i"
+                passed
+
+
+   passed = and assertNot (gte 1 2) "gte i i"
+                passed
+
+   passed = and assertNot (gte 1.0 2.0) "gte f f"
+                passed
+
+   passed = and assertNot (gte 1 2.0) "gte i f"
+                passed
+
+   passed = and assertNot (gte 1.0 2) "gte f i"
+                passed
+
+
+
+
+   passed = and assert (lt "a" "aa") "lt s s"
+                passed
+
+
+   passed = and assertNot (gt "a" "aa") "gt s s"
+                passed
+
+   passed = and assert (lte "a" "aa") "lte s s"
+                passed
+
+
+   passed = and assertNot (gte "a" "aa") "gte s s"
+                passed
+
+
+
+
+
    cp = circleProperty 9.0 
                        "a"
 
