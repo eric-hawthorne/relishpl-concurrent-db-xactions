@@ -644,8 +644,7 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 
 
 /*
- Remove all elements of the multivalued attribute, in memory and in the db.
- If the attribute has an inverse, also removes the inverse attribute values.
+ Remove all elements of the collection, in memory and in the db.
 */
 func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection RemovableCollection) (err error) {
 

@@ -3747,7 +3747,17 @@ func builtinClear(th InterpreterThread, objects []RObject) []RObject {
     if ! isRemovableCollection {
     	rterr.Stop("Can only apply clear to a mutable,clearable collection or map.")
     }
-    RT.ClearCollection(th, coll)
+
+    owner := coll.Owner()
+    if (owner == nil) {
+        RT.ClearCollection(th, coll)
+    } else {
+	    err := RT.ClearAttr(th, owner, coll.Attribute())
+	    if err != nil {
+	        rterr.Stop(err)
+		}	    	
+    }
+
 	return []RObject{}
 }
 
