@@ -143,12 +143,20 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
 	      continue  // must be a multimethod owned by a dependency of the dependency - ignore
       }
 
+////      if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////         fmt.Println("Adding dbg multimethod from config package to controller package during generation.")
+////      }
+
       // And consider only the exported multimethods of the dependency package
 
       if ! multiMethod.IsExported {
 	     continue
       }  
 
+////      if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////         fmt.Println("multimethod was exported. All ok so far.")
+////         fmt.Println(multiMethod.Debug())
+////      }
 
 //      if multiMethodName == multiMethod.Name {
 //         fmt.Println(multiMethodName)
@@ -167,6 +175,15 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
 	     // and it should not be re-exported, so mark it as non-exportable.
 	     qualifiedMethodName := dependencyPackage.Name + "/" + multiMethodName
 	     g.pkg.MultiMethods[qualifiedMethodName] = multiMethod 			
+
+
+
+////      	 if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////        	 fmt.Println("cloned a zero MaxArity method and set IsExported false.")
+////     	 }
+
+
+
          continue
 	  } 
 
@@ -178,9 +195,21 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
 	
    	   	   g.pkg.MultiMethods[multiMethodName] = multiMethod  // use the mm from dependency package
 
+////      	    if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////        	   fmt.Println("using multimethod from config package since controller package has no multimethod yet.")
+////     	    }
+
+
    	  } else if myMultiMethod != multiMethod {
 	   // Current package has a different mm instance than the dependency package's mm
 	      		
+
+////      	    if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////        	   fmt.Println("controller package has a different multimethod of same name.")
+////        	   fmt.Println(myMultiMethod.Debug())
+////     	    }
+
+
    	   	   // Merge them if possible, else complain!! throw runtime error!
 
            if myMultiMethod.NumReturnArgs != multiMethod.NumReturnArgs {
@@ -204,14 +233,30 @@ func (g *Generator) updatePackageMultiMethodMap(dependencyPackage *data.RPackage
 	          // and it should not be re-exported, so mark it as non-exportable.
 	
 	          g.pkg.MultiMethods[multiMethodName] = myMultiMethod	
+
+////      	      if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////        	     fmt.Println("controller package's method is from a different package:")
+////        	     fmt.Println("So cloned it into controller package and set IsExported = false")
+////        	     fmt.Println(myMultiMethod.Debug())
+////     	      }
+
            }
 
            // Merge in methods from the dependency package's mm into current-package-owned mm of the same name.
            myMultiMethod.MergeInNewMethodsFrom(multiMethod)
 
+////      	      if strings.HasSuffix(dependencyPackage.Name,"config") && multiMethod.Name == "dbg" && strings.HasSuffix(g.pkg.Name,"controller") {
+////        	     fmt.Println("After merging methods in from config multimethod:")
+////        	     fmt.Println(myMultiMethod.Debug())
+////     	      }
+
+
    	  }
    	  // else I've (current package has) already got the multimethod - everything's cool
    }
+////    if strings.HasSuffix(dependencyPackage.Name,"config") && strings.HasSuffix(g.pkg.Name,"controller") {
+////       g.pkg.ListMethod("dbg")
+////   }
 }
 
 

@@ -101,6 +101,19 @@ func (p *RPackage) ListMethods() {
 	}
 }
 
+
+/*
+Debugging function. Prints detailed debug info for a given multimethod as visible in the package.
+*/
+func (p *RPackage) ListMethod(name string) {
+	fmt.Println("------------")	
+	fmt.Println("Multimethod", name, "visible in package", p.Name)
+	fmt.Println("------------")
+	mm := p.MultiMethods[name]
+    fmt.Println(mm.Debug())
+}
+
+
 /*
 THIS IS OBSOLETE COMMENT
    orgDomain - e.g. ibm.com - may be a subdomain e.g. compsci.berkeley.edu or research.ca.ibm.com
