@@ -81,7 +81,9 @@ func (p * RMultiMethod) Clone(pkg *RPackage) *RMultiMethod {
 For methods which are not found in p but are found in q, add them to p
 */
 func (p * RMultiMethod) MergeInNewMethodsFrom(q *RMultiMethod) {
+	aritiesMerged := make(map[int]bool)
 	for arity,pMethods := range p.Methods {
+		aritiesMerged[arity] = true
 		qMethods, found := q.Methods[arity]
 		if found {
 			var methodsToAdd []*RMethod
@@ -99,6 +101,12 @@ func (p * RMultiMethod) MergeInNewMethodsFrom(q *RMultiMethod) {
 			}
 			p.Methods[arity] = append(pMethods, methodsToAdd...)
 		}
+    }
+    for arity,qMethods := range q.Methods {
+       if ! aritiesMerged[arity] {
+		  var noMethods []*RMethod       	
+       	  p.Methods[arity] = append(noMethods,qMethods...)
+       }
     }
 
     // Now clear the cached methods map of p, since we have new methods to consider.
@@ -138,7 +146,20 @@ func (p *RMultiMethod) String() string {
 }
 
 func (p *RMultiMethod) Debug() string {
-	return fmt.Sprintf("%s.%s Exported:%v MaxArity:%v #RetArgs: %v", p.Pkg.ShortName, p.String(), p.IsExported, p.MaxArity, p.NumReturnArgs)
+	s := fmt.Sprintf("%s.%s Exported:%v MaxArity:%v #RetArgs: %v\n", p.Pkg.ShortName, p.String(), p.IsExported, p.MaxArity, p.NumReturnArgs)
+    s += "--- Methods: ---\n"  
+    for arity,methods := range p.Methods {
+       s += fmt.Sprintf("%d =>\n",arity)
+       for _,meth := range methods {
+       	  s += "      " + meth.String() + "\n" 
+       }
+    }
+    s += "--- CachedMethods: ---\n"   
+    for tt, meth := range p.CachedMethods {
+    	s += fmt.Sprintf("%v => %v",tt, meth)
+    }
+
+	return s
 }
 
 func (p *RMultiMethod) HasUUID() bool {

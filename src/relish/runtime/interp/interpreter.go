@@ -1133,6 +1133,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
             // This is actually a no-compatible method found dynamic-dispatch error (i.e. a runtime-detected type compatibility error).
 			//
+////			t.ExecutingPackage.ListMethod("dbg")
+////			fmt.Println("--------------")
 			rterr.Stopf1(t, call, "No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
 		}
 		LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
