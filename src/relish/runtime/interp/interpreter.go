@@ -745,7 +745,7 @@ func (i *Interpreter) EvalIndexExpr(t *Thread, idxExpr *ast.IndexExpr) {
 func indexErrHandle(t *Thread, idxExpr *ast.IndexExpr) {
       r := recover()	
       if r != nil {
-          rterr.Stopf1(t,idxExpr,r.(string))
+          rterr.Stopf1(t,idxExpr,"%v",r)
       }	
 }	
 

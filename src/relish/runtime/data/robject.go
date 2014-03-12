@@ -298,6 +298,11 @@ func (o *robject) Mark() bool {
    } 
    o.ToggleMarked()
    Logln(GC3_,"Mark(): Marked with",o.IsMarked())
+
+   // COMMENT OUT NEXT 3 LINES FOR SPEED INCREASE IF DO NOT NEED MEMORY LEAK DEBUGGING SUPPORT ENABLED
+   if mappingMemory {
+      instanceMap[o.rtype]++
+   }
    return true
 }
 

@@ -62,8 +62,16 @@ func (i *Interpreter) GC() {
     data.GCMutexLock("GC")
     defer data.GCMutexUnlock("GC")        
     defer Un(Trace(GC2_,"GC"))    
+    
+    if Logging(GC_) {
+       data.StartMemoryMapping()
+    }
+
     i.mark()
     i.sweep()
+
+    Logln(GC_,data.ReportMemoryMap()) 
+
     runtime.GC()  // Go garbage collector.
 }
 
