@@ -14,6 +14,8 @@ package data
 import (
    . "relish/dbg"
    "sync"
+   "fmt"
+   "sort"
 )
 
 
@@ -213,4 +215,64 @@ func (rt *RuntimeEnv) Sweep() {
 	markSense = ! markSense	
 	
     Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")		
+}
+
+
+// MEMORY LEAK DEBUGGING SUPPORT
+// Note: Requires uncommenting some code in the Mark() method in robject.go at around line 302.
+// That code may have been commented out for speed improvement.
+
+var mappingMemory bool = false
+
+var instanceMap map[*RType]int
+
+func StartMemoryMapping() {
+	mappingMemory = true
+    instanceMap = make(map[*RType]int)
+}
+
+/*
+Called by ReportMemoryMap below.
+*/
+func stopMemoryMapping() {
+	mappingMemory = false
+	instanceMap = nil
+}
+
+/*
+   Return a multi-line string that constitutes a report on how many instances of each
+   non-primitive, non-native type of relish object are reachable in memory.
+   The report is ordered from most instances to least.
+*/
+func ReportMemoryMap() string {
+
+   // invert the map so we can sort it.
+   
+   typesByNumInstances := make(map[int][]*RType)
+
+   for typ, n := range instanceMap {
+      typs := typesByNumInstances[n]
+      typesByNumInstances[n] = append(typs,typ)
+   }
+
+   var numsOfInstances []int
+   for n := range typesByNumInstances {
+   	  numsOfInstances = append(numsOfInstances,n)
+   }
+
+   // now sort by numbers of instances descending
+
+   sort.Sort(sort.Reverse(sort.IntSlice(numsOfInstances)))
+   
+   // traverse the reversed map in order and add to report string
+   report := ""
+   for _,n := range numsOfInstances {
+      types := typesByNumInstances[n]
+      for _,typ := range types {
+         report += fmt.Sprintf("%8d  %s\n",n, typ.Name)
+      }
+   }
+
+   stopMemoryMapping()
+   return report
 }
