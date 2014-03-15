@@ -968,6 +968,230 @@ func (p *Mutex) Unlock() {
 
 
 
+
+
+
+
+
+
+
+
+
+
+type OwnedMutex struct {
+	mtx sync.Mutex
+	count int64
+	threadWithLock InterpreterThread
+	mtx2 sync.Mutex  // Mutex to ensure that all variables in the OwnedMutex
+	                 // are updated consistently and atomically each time.
+}
+
+
+func (p *OwnedMutex) Lock(th InterpreterThread) {
+	p.mtx2.Lock()
+    if p.threadWithLock == th {
+       count++
+    } else {  // someone else coming to lock it
+	   p.mtx2.Unlock()    
+	   p.mtx.Lock()
+	   p.mtx2.Lock()	
+       p.threadWithLock = th
+       p.count++	       
+    }
+	p.mtx2.Unlock()    
+}
+
+func (p *OwnedMutex) Unlock(th InterpreterThread) {
+	p.mtx2.Lock()	
+	if p.threadWithLock == th {
+		p.count--
+		if p.count == 0 {
+	       p.mtx.Unlock() 			
+		}
+	} else {
+	   p.mtx2.Unlock()			
+       panic("A goroutine that did not lock the OwnedMutex is trying to unlock it.")
+	}
+	p.mtx2.Unlock()	
+}
+
+
+
+// TODO
+
+func (p OwnedMutex) IsZero() bool {
+	return sync.Mutex(p) == sync.Mutex{}  // unlocked mutex
+}
+
+func (p OwnedMutex) Type() *RType {
+	return OwnedMutexType
+}
+
+func (p OwnedMutex) This() RObject {
+	return p
+}
+
+/*
+Hmmm. TODO
+*/
+func (p OwnedMutex) IsUnit() bool {
+	return true
+}
+
+/*
+*/
+func (p OwnedMutex) IsCollection() bool {
+	return false
+}
+
+func (p OwnedMutex) String() string {
+   return fmt.Sprintf("%v",sync.Mutex(p))
+}
+
+func (p OwnedMutex) Debug() string {
+	return p.String()
+}
+
+func (p OwnedMutex) HasUUID() bool {
+	return false
+}
+
+
+/*
+   TODO We have to figure out what to do with this.
+*/
+func (p OwnedMutex) UUID() []byte {
+	panic("A OwnedMutex cannot have a UUID.")
+	return nil
+}
+
+func (p OwnedMutex) DBID() int64 {
+	panic("A OwnedMutex cannot have a DBID.")
+	return 0
+}
+
+func (p OwnedMutex) EnsureUUID() (theUUID []byte, err error) {
+	panic("A OwnedMutex cannot have a UUID.")
+	return
+}
+
+func (p OwnedMutex) UUIDuint64s() (id uint64, id2 uint64) {
+	panic("A OwnedMutex cannot have a UUID.")
+	return
+}
+
+func (p OwnedMutex) EnsureUUIDuint64s() (id uint64, id2 uint64, err error) {
+	panic("A OwnedMutex cannot have a UUID.")
+	return
+}
+
+func (p OwnedMutex) UUIDstr() string {
+	panic("A OwnedMutex cannot have a UUID.")
+	return ""
+}
+
+func (p OwnedMutex) EnsureUUIDstr() (uuidstr string, err error) {
+	panic("A OwnedMutex cannot have a UUID.")
+	return
+}
+
+func (p OwnedMutex) UUIDabbrev() string {
+	panic("A OwnedMutex cannot have a UUID.")
+	return ""
+}
+
+func (p OwnedMutex) EnsureUUIDabbrev() (uuidstr string, err error) {
+	panic("A OwnedMutex cannot have a UUID.")
+	return
+}
+
+func (p OwnedMutex) RemoveUUID() {
+	panic("A OwnedMutex does not have a UUID.")
+	return
+}
+
+func (p OwnedMutex) Flags() int8 {
+	panic("A OwnedMutex has no Flags.")
+	return 0
+}
+
+func (p OwnedMutex) IsDirty() bool {
+	return false
+}
+func (p OwnedMutex) SetDirty() {
+}
+func (p OwnedMutex) ClearDirty() {
+}
+
+func (p OwnedMutex) IsIdReversed() bool {
+	return false
+}
+
+func (p OwnedMutex) SetIdReversed() {}
+
+func (p OwnedMutex) ClearIdReversed() {}
+
+func (p OwnedMutex) IsLoadNeeded() bool {
+	return false
+}
+
+func (p OwnedMutex) SetLoadNeeded()   {}
+func (p OwnedMutex) ClearLoadNeeded() {}
+
+func (p OwnedMutex) IsValid() bool { return true }
+func (p OwnedMutex) SetValid()     {}
+func (p OwnedMutex) ClearValid()   {}
+
+func (p OwnedMutex) IsMarked() bool { return false }
+func (p OwnedMutex) SetMarked()    {}
+func (p OwnedMutex) ClearMarked()  {}
+func (p OwnedMutex) ToggleMarked()  {}
+
+func (p OwnedMutex) Mark() bool { return false }
+
+func (p OwnedMutex) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p OwnedMutex) SetStoredLocally()     {}
+func (p OwnedMutex) ClearStoredLocally()   {}
+
+func (p OwnedMutex) IsProxy() bool { return false }
+
+func (p OwnedMutex) IsTransient() bool { return true }
+
+
+func (p OwnedMutex) Iterable() (sliceOrMap interface{}, err error) {
+	return nil,errors.New("Expecting a collection or map.")
+}
+
+func (p OwnedMutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+   err = errors.New("Cannot represent a OwnedMutex in JSON.")
+   return
+}
+
+func (p OwnedMutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+   err = errors.New("Cannot unmarshal JSON into a OwnedMutex.")
+   return
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 type RWMutex sync.RWMutex
 
 // TODO

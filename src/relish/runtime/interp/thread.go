@@ -239,12 +239,14 @@ or nil if at stack bottom.
 */
 func (t *Thread) CallingMethod() *RMethod {
 	defer UnM(t, TraceM(t, INTERP_TR3, "CallingMethod"))
-	previousBase := int(t.Stack[t.Base].(Int32))
+	if t.Base >= 0 {
+		previousBase := int(t.Stack[t.Base].(Int32))
 
-	if previousBase == -2 {
-		return nil
-	} 		
-	return t.Stack[previousBase+1].(*RMethod)
+		if previousBase == -2 {
+			return nil
+		} 		
+		return t.Stack[previousBase+1].(*RMethod)
+    }
 }
 
 /*
