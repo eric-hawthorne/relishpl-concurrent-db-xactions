@@ -70,6 +70,7 @@ var BuiltinTypeName map[string]bool = map[string]bool {
 "OutChannel" : true,
 "Channel" : true,
 "Mutex" : true,
+"OwnedMutex" : true,
 "RwMutex" : true,
 "Bytes": true,
 "Bits": true,

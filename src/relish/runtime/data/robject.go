@@ -839,6 +839,8 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
     	return b, nil
     case MutexType:
     	return &Mutex{}, nil
+    case OwnedMutexType:
+    	return &OwnedMutex{}, nil    	
     case RWMutexType:
     	return &RWMutex{}, nil    
 	
