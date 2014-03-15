@@ -88,6 +88,7 @@ var InChannelType *RType
 var OutChannelType *RType
 var ChannelType *RType
 var MutexType *RType
+var OwnedMutexType *RType
 var RWMutexType *RType
 
 
@@ -190,7 +191,11 @@ func (rt *RuntimeEnv) createPrimitiveTypes() {
 
 	MutexType, _ = rt.CreateType("Mutex", "", []string{})
 
+	OwnedMutexType, _ = rt.CreateType("OwnedMutex", "", []string{})
+
 	RWMutexType, _ = rt.CreateType("RwMutex", "", []string{})	
+
+
 
 //	FileType,_ = rt.CreateType("shared.relish.pl2012/lib/core/pkg/io/File", "", []string{"Any"})
 
@@ -990,7 +995,7 @@ type OwnedMutex struct {
 func (p *OwnedMutex) Lock(th InterpreterThread) {
 	p.mtx2.Lock()
     if p.threadWithLock == th {
-       count++
+       p.count++
     } else {  // someone else coming to lock it
 	   p.mtx2.Unlock()    
 	   p.mtx.Lock()
@@ -1006,6 +1011,7 @@ func (p *OwnedMutex) Unlock(th InterpreterThread) {
 	if p.threadWithLock == th {
 		p.count--
 		if p.count == 0 {
+		   p.threadWithLock = nil	
 	       p.mtx.Unlock() 			
 		}
 	} else {
@@ -1015,12 +1021,34 @@ func (p *OwnedMutex) Unlock(th InterpreterThread) {
 	p.mtx2.Unlock()	
 }
 
+/*
+Returns true iff some thread has the OwnedMutex locked presently.
+Note that it is only necessarily true of some moment that is already past by the time this
+method is returned from.
+*/
+func (p *OwnedMutex) IsLocked() bool {
+	p.mtx2.Lock()
+	defer p.mtx2.Unlock()	
+	return p.threadWithLock != nil 		
+}
+
+/*
+Returns true iff the argument thread has the OwnedMutex locked presently.
+NOTE that it is only necessarily true of some moment that is already past by the time this
+method is returned from, unless it is asked from the same thread as is passed in.
+*/
+func (p *OwnedMutex) HaveLock(th InterpreterThread) bool {
+	p.mtx2.Lock()	
+	defer p.mtx2.Unlock()	
+	return p.threadWithLock == th 
+}
+
 
 
 // TODO
 
 func (p OwnedMutex) IsZero() bool {
-	return sync.Mutex(p) == sync.Mutex{}  // unlocked mutex
+	return p.mtx == sync.Mutex{}  // unlocked mutex
 }
 
 func (p OwnedMutex) Type() *RType {
@@ -1045,7 +1073,7 @@ func (p OwnedMutex) IsCollection() bool {
 }
 
 func (p OwnedMutex) String() string {
-   return fmt.Sprintf("%v",sync.Mutex(p))
+   return fmt.Sprintf("%v:%d",p.mtx,p.count)
 }
 
 func (p OwnedMutex) Debug() string {

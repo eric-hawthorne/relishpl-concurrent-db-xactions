@@ -53,7 +53,7 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			timeString := t.UTC().Format(TIME_LAYOUT)
 			locationName := t.Location().String()
 			db.QueueStatement(fmt.Sprintf("UPDATE %s SET %s='%s', %s='%s' WHERE id=%v", table, attrName, timeString, attrLocName, locationName, obj.DBID()))				
-		} else if val.Type() == MutexType || val.Type() == RWMutexType {
+		} else if val.Type() == MutexType || val.Type() == RWMutexType || val.Type() == OwnedMutexType {
 			// skip persisting
 		} else {
 			valStr,args := db.primitiveAttrValSQL(val)
@@ -152,7 +152,7 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
 		   attrName := attr.Part.Name
 		   attrLocName := attrName + "_loc"			
 		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL,%s=NULL WHERE id=%v", table, attrName, attrLocName, obj.DBID())
-		} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType {
+		} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType || attr.Part.Type == OwnedMutexType {
 			// skip persisting        
         } else	{
 		   stmt = fmt.Sprintf("UPDATE %s SET %s=NULL WHERE id=%v", table, attr.Part.Name, obj.DBID()) 
@@ -1472,7 +1472,7 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 			} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 			   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 			   numPrimAttributeColumns += 2
-			} else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType {
+			} else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType || attr.Part.Type == OwnedMutexType {
 				// ignore
 			} else {
 			   selectClause += sep + attr.Part.Name
@@ -1491,7 +1491,7 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 				} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				   selectClause += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 				   numPrimAttributeColumns += 2
-			    } else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType {
+			    } else if attr.Part.Type == MutexType ||  attr.Part.Type == RWMutexType || attr.Part.Type == OwnedMutexType {
 				   // ignore				   
 				} else {
 				   selectClause += sep + attr.Part.Name
@@ -1589,7 +1589,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
     RT.LockAttributes()
     defer RT.UnlockAttributes()
 	for _, attr := range objTyp.Attributes {
-		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType {
+		if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType  && attr.Part.Type != OwnedMutexType {
 			valByteSlice := *(attrValsBytes[i].(*[]byte))
 			if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				i++
@@ -1607,7 +1607,7 @@ func (db *SqliteDB) restoreAttrs(obj RObject, objTyp *RType, attrValsBytes []int
 
 	for _, typ := range objTyp.Up {
 		for _, attr := range typ.Attributes {
-			if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType {
+			if attr.Part.Type.IsPrimitive  && attr.Part.CollectionType == "" && attr.Part.Type != MutexType && attr.Part.Type != RWMutexType  && attr.Part.Type != OwnedMutexType {
 				valByteSlice := *(attrValsBytes[i].(*[]byte))
 				if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 					i++
@@ -2098,7 +2098,7 @@ func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args 
 				}
 			} else if attr.Part.Type == TimeType || attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
 				s += "NULL,NULL"
-			} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType {
+			} else if attr.Part.Type == MutexType || attr.Part.Type == RWMutexType || attr.Part.Type == OwnedMutexType {
 				// Ignore these transient-type attributes 
 				s = s[:len(s)-1] // take off the comma				
 			} else {

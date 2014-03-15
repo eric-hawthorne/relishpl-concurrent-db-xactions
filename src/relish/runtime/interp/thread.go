@@ -247,6 +247,7 @@ func (t *Thread) CallingMethod() *RMethod {
 		} 		
 		return t.Stack[previousBase+1].(*RMethod)
     }
+    return nil
 }
 
 /*

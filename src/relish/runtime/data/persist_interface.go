@@ -313,7 +313,7 @@ This method will block until no other DBThread is using the database.
 */
 func (dbt * DBThread) UseDB() {
    Logln(PERSIST2_,"DBThread.UseDB when ownership level is",dbt.dbLockOwnershipDepth) 		
-   if dbt.acquiringDbLock {
+   if dbt.acquiringDbLock {  // Umm, shouldn't this be impossible? The same thread is blocked further inside this method.
       return	
    }	
    if dbt.dbLockOwnershipDepth == 0 {
