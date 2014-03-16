@@ -60,6 +60,9 @@ testConcurrency
    
    print "===== Concurrency"
 
+   passed = and assert (testOwnedMutexes) "OwnedMutexes"
+                passed
+   
    b = Buffer  
 
    ch1 = Channel
@@ -77,3 +80,41 @@ testConcurrency
                 passed
    if passed             
       print "PASSED"
+      
+      
+testOwnedMutexes > Bool
+"""
+ Test mutexes of type OwnedMutex, which are owned by whichever thread (goroutine) has a lock on them.
+ That thread is free to lock again a mutex that it has already got locked,
+ because the mutex remembers which thread has it locked, and, for nested lockings by
+ the same thread, it just increments a "number of times I am locked nestedly by this
+ thread" counter. The thread must of course still unlock the mutex exactly as many times
+ as it nestedly locked the mutex.
+"""
+
+   b = Buffer
+   mx = OwnedMutex
+   
+   go doLockedThing b mx 1
+   go doLockedThing b mx 2
+   doLockedThing b mx 3
+   
+   sleep seconds 3
+   
+   => eq (len b.s) 9
+      
+
+doLockedThing b Buffer m OwnedMutex i Int
+"""
+ Just nestedly lock and unlock the mutex.
+"""
+   pause = div (seconds 1) 10
+   for j = 1   lt j 4   j = plus j 1
+      lock m
+      lock m
+      lock m
+      b.s += fill "%s:%s" i j
+      unlock m
+      unlock m
+      unlock m
+      sleep pause
