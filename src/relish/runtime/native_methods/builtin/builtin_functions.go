@@ -2036,6 +2036,22 @@ urlPathPartDecode s > String
 		panic(err)
 	}
 	mutexUnlockMethod.PrimitiveCode = builtinMutexUnlock
+	
+	
+	
+	ownedMutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"OwnedMutex"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	ownedMutexLockMethod.PrimitiveCode = builtinOwnedMutexLock
+
+	ownedMutexUnlockMethod, err := RT.CreateMethod("",nil,"unlock", []string{"m"}, []string{"OwnedMutex"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	ownedMutexUnlockMethod.PrimitiveCode = builtinOwnedMutexUnlock	
+	
+	
 
 	rwmutexLockMethod, err := RT.CreateMethod("",nil,"lock", []string{"m"}, []string{"RwMutex"}, nil, false, 0, false)
 	if err != nil {
@@ -3928,6 +3944,24 @@ func builtinMutexUnlock(th InterpreterThread, objects []RObject) []RObject {
 	c.Unlock()
 	return []RObject{}
 }
+
+
+func builtinOwnedMutexLock(th InterpreterThread, objects []RObject) []RObject {
+	c := objects[0].(*OwnedMutex)
+	// th.AllowGC("MutexLock")
+	th.AllowGC()	
+	c.Lock(th)
+    // th.DisallowGC("MutexLock")	
+    th.DisallowGC()	    
+	return []RObject{}
+}
+
+func builtinOwnedMutexUnlock(th InterpreterThread, objects []RObject) []RObject {
+	c := objects[0].(*OwnedMutex)
+	c.Unlock(th)
+	return []RObject{}
+}
+
 
 func builtinRWMutexLock(th InterpreterThread, objects []RObject) []RObject {
 	c := objects[0].(*RWMutex)
