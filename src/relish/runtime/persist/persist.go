@@ -119,8 +119,9 @@ func (db *SqliteDB) QueueStatements(statementGroup *StatementGroup) {
 Execute asynchronously a statementGroup consisting of one or more semicolon separated INSERT or UPDATE statements.
 A statementGroup is a string with semi-colon separated SQL statements in it.
 Blocks only if 10,000 statementGroups are pending execution.
+New: Now return an error, since not queuing statements.
 */
-func (db *SqliteDB) QueueStatement(statement string) {
+func (db *SqliteDB) QueueStatement(statement string)  {
 
 	// Replace everything  with the statementQueue insertion below
 
@@ -131,6 +132,21 @@ func (db *SqliteDB) QueueStatement(statement string) {
 		fmt.Printf("DB ERROR on statement:\n%s\nDetail: %s\n\n", statement, err)
 	}
 }
+
+/*
+Execute a single SQL statement.
+Return the db error if any.
+*/
+func (db *SqliteDB) ExecStatement(statement string) (err error) {
+
+	// Replace everything  with the statementQueue insertion below
+
+	Logln(PERSIST_, fmt.Sprintf("Executing statement:\n%s\n", statement))
+
+	err = db.conn.Exec(statement)
+	return
+}
+
 
 
 /*
