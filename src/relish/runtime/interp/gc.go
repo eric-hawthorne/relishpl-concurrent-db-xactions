@@ -24,9 +24,14 @@ var m runtime.MemStats
 /*
 Run the garbage collector loop.
 
-Checks every CG_INTERVAL_MINUTES to see if it should run the GC.
+Checks every params.GcIntervalSeconds to see if it should run the GC.
 Runs it if the current allocated-and-not-yet-freed memory is greater than twice 
 the lowest memory allocated-and-not-freed level since GC was last run.
+
+!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!
+TODO : !!!!!!!!! : Need to add a params.GcForcedIntervalSeconds e.g. 3 minutes worth 
+where it will definitely GC if that amount of time has elapsed.
 */
 func (i *Interpreter) GCLoop() {
 	
@@ -106,7 +111,7 @@ func (i *Interpreter) mark() {
 func (i *Interpreter) sweep() {
     defer Un(Trace(GC2_,"sweep"))
 
-    i.rt.Sweep()
+    i.rt.Sweep2()  // Rename back to Sweep later.
 }
 
 

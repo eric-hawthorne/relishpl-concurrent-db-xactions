@@ -388,6 +388,14 @@ func (rt *RuntimeEnv) UnlockAttributes() {
 
 /*
 Optionally typechecked assignment. Never used in inverse.
+
+!!!!!!!!!!!!!!!!!
+TODO !!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!
+AttributeSpec should have its own .attributes and also its own Mutex / RWMutex
+So attr setting/getting is only one hashtable lookup not two, and
+mutex locking has less scope (only applies to the particular attributespec.)
+
 */
 func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, typeCheck bool, context MethodEvaluationContext, isInverse bool) (err error) {
 
@@ -460,6 +468,8 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 
 
 	attrVals[obj] = val
+	fmt.Println(len(attrVals))
+
 
 	attrMutex.Unlock()
 

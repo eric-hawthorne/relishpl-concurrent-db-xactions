@@ -180,6 +180,146 @@ func (rt *RuntimeEnv) markAttributeValsRound() bool {
 	return newMarks > 0
 }
 
+
+
+/*
+Remove from runtime-global maps, those objects which are unreachable from thread stacks or from constants.
+By removing these relish-unreachable objects from the maps, the objects become garbage-collectable
+by Go.
+
+NOTE: Factors we could be counting to decide whether to copy maps or delete from them:
+
+1. Every nth GC   n = 10 say  (but may not be often enough)
+
+2. # of elements formerly in map (N0)
+
+3. Fraction of elements deleted F  (per attr or total)
+
+4. Statistics of F over up to the last n GCs  (Fbar)
+
+5. # of elements still in map N1
+
+6. # of elements removed R (last time, or this time) (total not per attr)
+
+7. Rbar over up to the last nGCs (total not per attr)
+
+*/
+
+var nObjs0, nObjects0, nIds0, nIdents0, nAttrs0, nAtt0 int  // from last collection 
+
+func (rt *RuntimeEnv) Sweep2() {
+
+  
+  var nObjs, nObjects, nIds, nIdents, nAtt, nAttrs, nAttrs1, nAtt1 int
+
+  nObjects = len(rt.objects)
+
+  if (nObjs0 > 1000) || (nObjects0 > 0 && nObjs0 * 100 / nObjects0 > 30) {  // copy the persistent objects cache
+    freshObjectsMap := make(map[int64]RObject)
+
+    for key, obj := range rt.objects {
+       if obj.IsMarked() == markSense {  // Reachable
+           freshObjectsMap[key] = obj
+           nObjs++
+       }  
+    } 
+    rt.objects = freshObjectsMap
+
+  } else {  // delete unreachable objects from existing persistent objects cache
+    for key, obj := range rt.objects {
+       if obj.IsMarked() != markSense {  // Not reachable
+           delete(rt.objects,key)
+           nObjs++
+       }  
+    } 
+  }
+
+  nIdents = len(rt.objectIds) 
+
+  if (nIds0 > 1000) || (nIdents0 > 0 && nIds0 * 100 / nIdents0 > 30) {  // copy the non-persistent object ids map
+    freshObjectIdsMap := make(map[RObject]uint64)
+
+    for obj,oid := range rt.objectIds {
+       if obj.IsMarked() == markSense {  // Reachable
+         freshObjectIdsMap[obj] = oid
+         nIds++
+       }  
+    }
+    rt.objectIds = freshObjectIdsMap
+
+  } else { // delete unreachable objects from existing non-persistent object ids map
+    for obj := range rt.objectIds {
+       if obj.IsMarked() != markSense {  // Not reachable
+         delete(rt.objectIds,obj)
+         nIds++
+       }  
+    }
+  }
+
+
+  if (nAtt0 > 50000) || (nAttrs0 > 0 && nAtt0 * 100 / nAttrs0 > 50) {  // copy all attribute value association maps
+
+    for attr,attrMap := range rt.attributes {
+      nAttrs1 = len(attrMap)
+      nAttrs += nAttrs1
+      nAtt1 = 0
+      freshAttrMap := make(map[RObject]RObject)      
+      for obj,val := range attrMap {
+         if obj.IsMarked() == markSense {  // Reachable
+           freshAttrMap[obj] = val
+           nAtt1++
+         }      
+      }
+      rt.attributes[attr] = freshAttrMap  // abandons the old attr map making it GC free'able.
+
+      nAtt += nAtt1
+    }
+
+  } else {  // start by deleting from the existing maps rather than copying them
+
+    for attr,attrMap := range rt.attributes {
+      nAttrs1 = len(attrMap)
+      nAttrs += nAttrs1
+      nAtt1 = 0
+      for obj := range attrMap {
+         if obj.IsMarked() != markSense {  // Not reachable
+           delete(attrMap,obj)
+           nAtt1++
+         }      
+      }
+
+      // If deleted more than 1000 entries from the attribute association map, or
+      // more than 30% of all the entries there were, copy the hashtable and abandon the old one.
+      if (nAtt1 > 1000) || (nAttrs1 > 0 && nAtt1 * 100 / nAttrs1 > 30) {
+         freshAttrMap := make(map[RObject]RObject)
+         for k,v := range attrMap {
+            freshAttrMap[k] = v
+         }
+         rt.attributes[attr] = freshAttrMap  // abandons the old attr map making it GC free'able.
+      }
+
+      nAtt += nAtt1
+    }
+
+  }
+
+
+
+
+  nObjs0 = nObjs
+  nObjects0 = nObjects
+  nIds0 = nIds
+  nIdents0 = nIdents
+  nAtt0 = nAtt
+  nAttrs0 = nAttrs
+
+
+  markSense = ! markSense 
+  
+  Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")   
+}
+
+
 /*
 Remove from runtime-global maps, those objects which are unreachable from thread stacks or from constants.
 By removing these relish-unreachable objects from the maps, the objects become garbage-collectable
