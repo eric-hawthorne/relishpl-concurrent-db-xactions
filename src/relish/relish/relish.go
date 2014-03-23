@@ -130,7 +130,7 @@ func main() {
 
     flag.StringVar(&projectPath, "init", "", "<artifactpath> [webapp] - create directory tree and template files for a relish software project")    
     
-    flag.IntVar(&params.GcIntervalSeconds, "gc", 600, "The garbage collection interval (seconds): defaults to 600")	
+    flag.IntVar(&params.GcIntervalSeconds, "gc", 20, "The garbage collection check interval (seconds): defaults to 20")	
     
     flag.Parse()
 
