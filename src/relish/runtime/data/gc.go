@@ -207,23 +207,31 @@ NOTE: Factors we could be counting to decide whether to copy maps or delete from
 
 var nObjs0, nObjects0, nIds0, nIdents0, nAttrs0, nAtt0 int  // from last collection 
 
+var nObjsCumRemoved, nIdsCumRemoved, nAttCumRemoved int // since last copying of maps
+
+
 func (rt *RuntimeEnv) Sweep2() {
 
   
   var nObjs, nObjects, nIds, nIdents, nAtt, nAttrs, nAttrs1, nAtt1 int
+  var nObjsLeft, nIdsLeft, nAtt1Left int
+
+  var copiedObjectsCache, copiedObjectIds, copiedAttrs bool
 
   nObjects = len(rt.objects)
 
-  if (nObjs0 > 1000) || (nObjects0 > 0 && nObjs0 * 100 / nObjects0 > 30) {  // copy the persistent objects cache
+  if (nObjsCumRemoved > 50000) || (nObjs0 > 1000) || (nObjects0 > 0 && nObjs0 * 100 / nObjects0 > 30) {  // copy the persistent objects cache
     freshObjectsMap := make(map[int64]RObject)
 
     for key, obj := range rt.objects {
        if obj.IsMarked() == markSense {  // Reachable
            freshObjectsMap[key] = obj
-           nObjs++
+           nObjsLeft++
        }  
     } 
+    nObjs = nObjects - nObjsLeft
     rt.objects = freshObjectsMap
+    copiedObjectsCache = true
 
   } else {  // delete unreachable objects from existing persistent objects cache
     for key, obj := range rt.objects {
@@ -236,16 +244,18 @@ func (rt *RuntimeEnv) Sweep2() {
 
   nIdents = len(rt.objectIds) 
 
-  if (nIds0 > 1000) || (nIdents0 > 0 && nIds0 * 100 / nIdents0 > 30) {  // copy the non-persistent object ids map
+  if  (nIdsCumRemoved > 50000) || (nIds0 > 1000) || (nIdents0 > 0 && nIds0 * 100 / nIdents0 > 30) {  // copy the non-persistent object ids map
     freshObjectIdsMap := make(map[RObject]uint64)
 
     for obj,oid := range rt.objectIds {
        if obj.IsMarked() == markSense {  // Reachable
          freshObjectIdsMap[obj] = oid
-         nIds++
+         nIdsLeft++
        }  
     }
+    nIds = nIdents - nIdsLeft
     rt.objectIds = freshObjectIdsMap
+    copiedObjectIds = true
 
   } else { // delete unreachable objects from existing non-persistent object ids map
     for obj := range rt.objectIds {
@@ -257,21 +267,22 @@ func (rt *RuntimeEnv) Sweep2() {
   }
 
 
-  if (nAtt0 > 50000) || (nAttrs0 > 0 && nAtt0 * 100 / nAttrs0 > 50) {  // copy all attribute value association maps
+  if (nAttCumRemoved > 200000) || (nAtt0 > 50000) || (nAttrs0 > 0 && nAtt0 * 100 / nAttrs0 > 50) {  // copy all attribute value association maps
 
     for attr,attrMap := range rt.attributes {
       nAttrs1 = len(attrMap)
       nAttrs += nAttrs1
-      nAtt1 = 0
+      nAtt1Left = 0
       freshAttrMap := make(map[RObject]RObject)      
       for obj,val := range attrMap {
          if obj.IsMarked() == markSense {  // Reachable
            freshAttrMap[obj] = val
-           nAtt1++
+           nAtt1Left++
          }      
       }
+      nAtt1 = nAttrs1 - nAtt1Left
       rt.attributes[attr] = freshAttrMap  // abandons the old attr map making it GC free'able.
-
+      copiedAttrs = true
       nAtt += nAtt1
     }
 
@@ -291,11 +302,13 @@ func (rt *RuntimeEnv) Sweep2() {
       // If deleted more than 1000 entries from the attribute association map, or
       // more than 30% of all the entries there were, copy the hashtable and abandon the old one.
       if (nAtt1 > 1000) || (nAttrs1 > 0 && nAtt1 * 100 / nAttrs1 > 30) {
+         Logln(GC2_,"Copied attr values map for attr ",attr,"(prevent Go map memory leak).")         
          freshAttrMap := make(map[RObject]RObject)
          for k,v := range attrMap {
             freshAttrMap[k] = v
          }
          rt.attributes[attr] = freshAttrMap  // abandons the old attr map making it GC free'able.
+         nAttCumRemoved -= nAtt1  // don't count these toward accumulated removed attr entry cruft
       }
 
       nAtt += nAtt1
@@ -312,6 +325,28 @@ func (rt *RuntimeEnv) Sweep2() {
   nIdents0 = nIdents
   nAtt0 = nAtt
   nAttrs0 = nAttrs
+
+  if copiedObjectsCache {
+       Logln(GC2_,"Copied persistent objects cache map (prevent Go map memory leak).")   
+       nObjsCumRemoved = 0    
+  } else {
+       nObjsCumRemoved += nObjs
+  }
+
+  if copiedObjectIds {
+       Logln(GC2_,"Copied non-persistent object ids map (prevent Go map memory leak).") 
+       nIdsCumRemoved = 0    
+
+  } else {
+       nIdsCumRemoved += nIds
+  } 
+
+  if copiedAttrs {
+       Logln(GC2_,"Copied all attr values maps (prevent Go map memory leak).") 
+       nAttCumRemoved = 0    
+  } else {
+       nAttCumRemoved += nAtt
+  } 
 
 
   markSense = ! markSense 
@@ -362,6 +397,12 @@ func (rt *RuntimeEnv) Sweep() {
 // Note: Requires uncommenting some code in the Mark() method in robject.go at around line 302.
 // That code may have been commented out for speed improvement.
 
+var n_runits_ever uint64 = 0
+var n_rsets_ever uint64 = 0
+var n_rsortedsets_ever uint64 = 0
+var n_rlists_ever uint64 = 0
+var n_maps_ever uint64 = 0
+
 var mappingMemory bool = false
 
 var instanceMap map[*RType]int
@@ -386,6 +427,10 @@ func stopMemoryMapping() {
 */
 func ReportMemoryMap() string {
 
+   // First, report how many unit objects and collections have ever been allocated.
+   report := fmt.Sprintf("\n%d runits\n%d rsets\n%d rsortedsets\n%d rlists\n%d maps ever allocated\n\n", 
+                         n_runits_ever,n_rsets_ever,n_rsortedsets_ever,n_rlists_ever,n_maps_ever)
+
    // invert the map so we can sort it.
    
    typesByNumInstances := make(map[int][]*RType)
@@ -405,7 +450,7 @@ func ReportMemoryMap() string {
    sort.Sort(sort.Reverse(sort.IntSlice(numsOfInstances)))
    
    // traverse the reversed map in order and add to report string
-   report := ""
+
    for _,n := range numsOfInstances {
       types := typesByNumInstances[n]
       for _,typ := range types {

@@ -39,22 +39,42 @@ func (i *Interpreter) GCLoop() {
 
     var prevA uint64
 
+    var prevGcTime time.Time = time.Now()
+    var currentGcTime time.Time
+    var forced bool
+
     for {
 	    time.Sleep(time.Duration(params.GcIntervalSeconds) * time.Second)
 	    // time.Sleep(4 * time.Second)    
 		    
+      // See if too much time has passed since last relish GC  
+      forced = false  
+      currentGcTime = time.Now()
+      if currentGcTime.Sub(prevGcTime) > time.Duration(params.GcForceIntervalSeconds) * time.Second {
+         forced = true
+      }
+
 	    runtime.ReadMemStats(&m)
-	    if m.Alloc > prevA * 2  {	
-		   Logln(GC_,"GC because Prev Alloc",prevA,", Alloc",m.Alloc)
-		
+	    if forced || (m.Alloc > prevA * 2) || (m.Alloc > prevA + 10000000) {	// if grew double or by more than 10 MB approx
+         if forced {
+		        Logln(GC_,"GC because more than",params.GcForceIntervalSeconds,"seconds since last GC. Prev Alloc",prevA,", Alloc",m.Alloc)
+		     } else {
+            Logln(GC_,"GC because Prev Alloc",prevA,", Alloc",m.Alloc)          
+         }
+
 	       i.GC()
 	
+         prevGcTime = currentGcTime
+
 	       runtime.ReadMemStats(&m)	
 	       prevA = m.Alloc
 	
+         Logln(GC_,"Sys",m.Sys,"Mallocs",m.Mallocs,"Frees",m.Frees)
+         Logln(GC_,"HeapAlloc",m.HeapAlloc,"HeapInuse",m.HeapInuse,"HeapIdle",m.HeapIdle,"HeapReleased",m.HeapReleased,"HeapObjects",m.HeapObjects,"HeapSys",m.HeapSys)
+         Logln(GC_,"StackInuse",m.StackInuse,"StackSys",m.StackSys)
 	    } else if m.Alloc < prevA {
 		   
-		   prevA = m.Alloc   
+		     prevA = m.Alloc   
 		
 	    }
     }

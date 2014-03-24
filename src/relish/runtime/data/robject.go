@@ -889,6 +889,9 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	if ! markSense {
 		unit.SetMarked()
 	}
-	Logln(GC3_,"NewObject: IsMarked",unit.IsMarked())	
+    if Logging(GC_) {
+       n_runits_ever ++
+	   Logln(GC3_,"NewObject: IsMarked",unit.IsMarked())	
+    }
 	return unit, nil
 }

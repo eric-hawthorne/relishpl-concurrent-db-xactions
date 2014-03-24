@@ -5,7 +5,11 @@
 
 package params
 
-// Garbage Collection Interval (seconds). Checks to see if allocated unfreed memory has doubled
-// since last check time. If so, does a relish garbage collection and Go garbage collection.
+// Garbage Collection Check Interval (seconds). Checks to see if allocated unfreed memory has doubled
+// or increased by 10 MB since last check time. 
+// If so, does a relish garbage collection and Go garbage collection.
 //
-var GcIntervalSeconds = 600
+var GcIntervalSeconds = 20
+
+// If the last relish GC was longer than this long ago, relish GC is run for sure.
+var GcForceIntervalSeconds = 600  // 10 minutes
