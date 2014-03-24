@@ -468,7 +468,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 
 
 	attrVals[obj] = val
-	fmt.Println(len(attrVals))
+	// fmt.Println(len(attrVals))
 
 
 	attrMutex.Unlock()

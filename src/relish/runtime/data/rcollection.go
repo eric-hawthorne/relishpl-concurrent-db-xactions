@@ -651,7 +651,12 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
     if ! markSense {
 	    coll.SetMarked()
     }	
-	Logln(GC3_,"Newrset: IsMarked",coll.IsMarked())	
+
+    if Logging(GC_) {
+       n_rsets_ever ++
+	   Logln(GC3_,"Newrset: IsMarked",coll.IsMarked())		
+    }
+
 	return
 }
 
@@ -1211,7 +1216,13 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 	if ! markSense {
 	    coll.SetMarked()
 	}
-	Logln(GC3_,"Newrsortedset: IsMarked",coll.IsMarked())			
+
+    if Logging(GC_) {
+       n_rsortedsets_ever ++
+	   Logln(GC3_,"Newrsortedset: IsMarked",coll.IsMarked())	
+    }
+
+		
 	return
 }
 
@@ -1780,7 +1791,12 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	if ! markSense {
 	    coll.SetMarked()
 	}	
-	Logln(GC3_,"Newrlist: IsMarked",coll.IsMarked())		
+
+    if Logging(GC_) {
+       n_rlists_ever ++
+	   Logln(GC3_,"Newrlist: IsMarked",coll.IsMarked())	
+    }	
+	
 	return
 }
 
@@ -1841,8 +1857,11 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	    coll.SetMarked()
 	}
 	
+    if Logging(GC_) {
+       n_maps_ever ++
+	   Logln(GC3_,"Newmap: IsMarked",coll.IsMarked())	
+    }	
 
-	Logln(GC3_,"Newmap: IsMarked",coll.IsMarked())	
 	return
 }
 
