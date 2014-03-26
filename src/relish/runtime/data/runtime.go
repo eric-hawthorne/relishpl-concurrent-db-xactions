@@ -73,6 +73,7 @@ type RuntimeEnv struct {
 	//
 	attributes map[*AttributeSpec]map[RObject]RObject
 
+
 	// TODO HOW do we deal with object networks that are not fully retrieved 
 	// from storage yet? i.e. that need to be lazily loaded into memory?
 
@@ -111,6 +112,18 @@ func init() {
 	RT = NewRuntimeEnv()
 	RT.createPrimitiveTypes()
 }
+
+
+func (rt *RuntimeEnv) DebugAttributesMemory() {
+   fmt.Println("--------attributes---------- valMap lengths ---------")
+	for attr,valMap := range rt.attributes {
+	   n := len(valMap)
+	   if n > 0 {
+	      fmt.Printf("%8d %s\n",len(valMap),attr.ShortName())
+      }
+   }
+}
+
 
 func (rt *RuntimeEnv) DB() DB {
 	return rt.db
