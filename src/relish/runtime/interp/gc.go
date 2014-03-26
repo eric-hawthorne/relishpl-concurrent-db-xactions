@@ -72,6 +72,9 @@ func (i *Interpreter) GCLoop() {
          Logln(GC_,"Sys",m.Sys,"Mallocs",m.Mallocs,"Frees",m.Frees)
          Logln(GC_,"HeapAlloc",m.HeapAlloc,"HeapInuse",m.HeapInuse,"HeapIdle",m.HeapIdle,"HeapReleased",m.HeapReleased,"HeapObjects",m.HeapObjects,"HeapSys",m.HeapSys)
          Logln(GC_,"StackInuse",m.StackInuse,"StackSys",m.StackSys)
+         if Logging(GC_) {
+            i.rt.DebugAttributesMemory()    
+         }      
 	    } else if m.Alloc < prevA {
 		   
 		     prevA = m.Alloc   
