@@ -17,6 +17,9 @@ import (
    "runtime"
    "relish/runtime/data"
    "relish/params"
+   "runtime/pprof"   
+   "os"
+   "fmt"
 )
 
 var m runtime.MemStats
@@ -42,6 +45,7 @@ func (i *Interpreter) GCLoop() {
     var prevGcTime time.Time = time.Now()
     var currentGcTime time.Time
     var forced bool
+    var nGCs int64
 
     for {
 	    time.Sleep(time.Duration(params.GcIntervalSeconds) * time.Second)
@@ -65,7 +69,7 @@ func (i *Interpreter) GCLoop() {
 	       i.GC()
 	
          prevGcTime = currentGcTime
-
+         nGCs ++
 	       runtime.ReadMemStats(&m)	
 	       prevA = m.Alloc
 	
@@ -75,6 +79,17 @@ func (i *Interpreter) GCLoop() {
          if Logging(GC_) {
             i.rt.DebugAttributesMemory()    
          }      
+         if Logging(GC2_) {
+            memProfileFilename := fmt.Sprintf("memory%d.prof", nGCs)
+            f, err := os.Create(memProfileFilename)
+            if err == nil {
+              pprof.WriteHeapProfile(f)
+              f.Close()
+            } else {
+              Logln(GC2_,"Unable to create memory profile file", memProfileFilename)
+            }
+
+         }               
 	    } else if m.Alloc < prevA {
 		   
 		     prevA = m.Alloc   

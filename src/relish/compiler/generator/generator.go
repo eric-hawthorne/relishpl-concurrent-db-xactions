@@ -45,9 +45,9 @@ func NewGenerator(files map[*ast.File]string) *Generator {
 }
 
 /*
-TODO HAVE TO CHANGE THIS TO GENERATE CODE FOR A WHOLE PACKAGE !!!!
+Generates runtime objects and code for a relish package.
 
-Given a Relish intermediate-code file node tree, create objects in the runtime for data-types, methods, and constants defined in the file.
+Create objects in the runtime for data-types, methods, and constants defined in the files of the package.
 Assumes imported packages have already been loaded; thus the objects defined in files of the imported packages have been generated.
 */
 func (g *Generator) GenerateCode() {	
@@ -59,9 +59,37 @@ func (g *Generator) GenerateCode() {
    g.generateConstants()
    g.generateRelations(types, attributeOrderings) 
    g.configureAttributeSortings(attributeOrderings)
+   g.configureObjectAttributeStructure(types)
    g.ensureAttributeAndRelationTables(types)
    g.Interp.DeregisterThread(g.th)
    // g.pkg.ListMethods() // Debugging - temporary
+}
+
+/*
+   Goes through all of the direct and inherited attributes of the type and gives each attribute
+   a unique index at which its value can be found in the attribute value array of an instance of
+   the type.
+   Also, sets type.TotalAttributeCount so that instances of the type can have their 
+   attribute value array sized to suit.
+*/
+func (g *Generator) configureObjectAttributeStructure(types map[*data.RType]bool) {
+	for typ := range types {
+		i := 0
+		for _, attr := range typ.Attributes {
+		   attr.Index[typ] = i
+           i++
+
+		}
+
+		for _, supertyp := range typ.Up {
+			for _, attr := range supertyp.Attributes {
+		        attr.Index[typ] = i				
+				i++
+			}
+		}
+
+		typ.TotalAttributeCount = i
+	}
 }
 
 

@@ -571,7 +571,29 @@ A unitary object. i.e. Not a collection.
 */
 type runit struct {
 	robject
+	attrs []RObject
 }
+
+func (o *runit) Mark() bool {
+	if (&(o.robject)).Mark() {
+		for _,val := range o.attrs {
+			if val != nil {
+			   val.Mark()
+		    }
+		}
+		return true
+	}
+	return false
+}
+
+/*
+Create the array of references to attribute values.
+*/
+func (r *runit) initialize(n int) {
+   r.attrs = make([]RObject,n)
+}
+
+
 
 func (o *runit) String() string {
 	return (&(o.robject)).String()
@@ -589,6 +611,7 @@ func (u runit) IsCollection() bool {
 	return false
 }
 
+/*
 func (o *runit) Mark() bool {
 	if (&(o.robject)).Mark() {
 		o.markAttributes()
@@ -625,6 +648,7 @@ func (o *runit) markAttributes()  {
 	}
 	return
 }
+*/
 
 
 
@@ -884,7 +908,21 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
     }
 	// It's not a primitive type nor a parameterized type
 
-	unit := &runit{robject{rtype: typ}}
+	unit := &runit{robject{rtype: typ},nil}
+
+// NEED TO FIND OUT HOW BIG TO MAKE THE INSTANCE HERE ! HOW MANY ATTRIBUTES
+///////////////////////////
+//////////////////////////
+/////////////////////////	
+////////////////////////
+///////////////////////
+//////////////////////
+/////////////////////
+////////////////////
+///////////////////	
+    unit.initialize(typ.TotalAttributeCount)
+    
+
 	unit.robject.this = unit
 	if ! markSense {
 		unit.SetMarked()
