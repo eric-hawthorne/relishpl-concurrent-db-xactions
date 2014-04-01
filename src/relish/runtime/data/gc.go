@@ -159,10 +159,11 @@ func (rt *RuntimeEnv) MarkInTransit() {
 
 
 func (rt *RuntimeEnv) MarkAttributeVals() {
-   n := 0
-	for rt.markAttributeValsRound() {  Logln(GC2_,n) }
+  // n := 0
+	// for rt.markAttributeValsRound() {  Logln(GC2_,n) }
 }
 
+/*
 func (rt *RuntimeEnv) markAttributeValsRound() bool {
    newMarks := 0
 	for attr,attrMap := range rt.attributes {
@@ -179,7 +180,7 @@ func (rt *RuntimeEnv) markAttributeValsRound() bool {
 	}
 	return newMarks > 0
 }
-
+*/
 
 
 /*
@@ -213,10 +214,10 @@ var nObjsCumRemoved, nIdsCumRemoved, nAttCumRemoved int // since last copying of
 func (rt *RuntimeEnv) Sweep2() {
 
   
-  var nObjs, nObjects, nIds, nIdents, nAtt, nAttrs, nAttrs1, nAtt1 int
-  var nObjsLeft, nIdsLeft, nAtt1Left int
+  var nObjs, nObjects, nIds, nIdents int //, nAtt, nAttrs, nAttrs1, nAtt1 int
+  var nObjsLeft, nIdsLeft int //, nAtt1Left int
 
-  var copiedObjectsCache, copiedObjectIds, copiedAttrs bool
+  var copiedObjectsCache, copiedObjectIds bool //, copiedAttrs bool
 
   nObjects = len(rt.objects)
 
@@ -266,7 +267,7 @@ func (rt *RuntimeEnv) Sweep2() {
     }
   }
 
-
+/*
   if (nAttCumRemoved > 200000) || (nAtt0 > 50000) || (nAttrs0 > 0 && nAtt0 * 100 / nAttrs0 > 50) {  // copy all attribute value association maps
 
     for attr,attrMap := range rt.attributes {
@@ -315,7 +316,7 @@ func (rt *RuntimeEnv) Sweep2() {
     }
 
   }
-
+*/
 
 
 
@@ -323,8 +324,8 @@ func (rt *RuntimeEnv) Sweep2() {
   nObjects0 = nObjects
   nIds0 = nIds
   nIdents0 = nIdents
-  nAtt0 = nAtt
-  nAttrs0 = nAttrs
+  // nAtt0 = nAtt
+  // nAttrs0 = nAttrs
 
   if copiedObjectsCache {
        Logln(GC2_,"Copied persistent objects cache map (prevent Go map memory leak).")   
@@ -341,17 +342,19 @@ func (rt *RuntimeEnv) Sweep2() {
        nIdsCumRemoved += nIds
   } 
 
+/*
   if copiedAttrs {
        Logln(GC2_,"Copied all attr values maps (prevent Go map memory leak).") 
        nAttCumRemoved = 0    
   } else {
        nAttCumRemoved += nAtt
   } 
-
+*/
 
   markSense = ! markSense 
   
-  Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")   
+ 
+  Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids.")   
 }
 
 
@@ -378,6 +381,7 @@ func (rt *RuntimeEnv) Sweep() {
 		   nIds++
 	   }	
 	}
+  /*
 	for _,attrMap := range rt.attributes {
 		nAttrs += len(attrMap)
 		for obj := range attrMap {
@@ -387,6 +391,7 @@ func (rt *RuntimeEnv) Sweep() {
 		   }			
 		}
 	}
+  */
 	markSense = ! markSense	
 	
     Logln(GC2_,"Swept",nObjs,"of",nObjects,"from cache,\n",nIds,"of",nIdents,"from non-persistent ids,\n",nAtt,"of",nAttrs,"attribute associations.")		

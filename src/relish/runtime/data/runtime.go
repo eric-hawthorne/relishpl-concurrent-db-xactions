@@ -71,7 +71,7 @@ type RuntimeEnv struct {
 	// RCollection must have a reference to its owner RObject. A plain-old RCollection object
 	// which is a single value always has a nil owner.
 	//
-	attributes map[*AttributeSpec]map[RObject]RObject
+	// attributes map[*AttributeSpec]map[RObject]RObject
 
 
 	// TODO HOW do we deal with object networks that are not fully retrieved 
@@ -115,6 +115,7 @@ func init() {
 
 
 func (rt *RuntimeEnv) DebugAttributesMemory() {
+   /*
    fmt.Println("--------attributes---------- valMap lengths ---------")
 	for attr,valMap := range rt.attributes {
 	   n := len(valMap)
@@ -122,6 +123,7 @@ func (rt *RuntimeEnv) DebugAttributesMemory() {
 	      fmt.Printf("%8d %s\n",len(valMap),attr.ShortName())
       }
    }
+   */
 }
 
 
@@ -222,7 +224,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		objects:       make(map[int64]RObject),
 		objectIds:     make(map[RObject]uint64),
 		idGen:         NewIdGenerator(),
-		attributes:    make(map[*AttributeSpec]map[RObject]RObject),
+		// attributes:    make(map[*AttributeSpec]map[RObject]RObject),
 		context:       make(map[string]RObject),
 		constants:     make(map[string]RObject),
 		inTransit:     make(map[RObject]uint32),
@@ -263,13 +265,74 @@ func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, fo
 	return rt.AttrValue(obj, attr, true, true, true)
 }
 
+
+/*
+   Return the value of the specified attribute for the specified object.
+   Does not currently distinguish between multi-value attributes and single-valued.
+   If it is a multi-valued attribute, returns the RCollection which implements
+   the multi-value attribute.
+   What does it return if no value has been defined? val = nil (Go nil) and found=false.
+*/
+func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
+	
+
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    val = unit.attrs[i]
+
+    if val != nil {
+    	found = true
+    	return
+    }
+
+    if (! checkPersistence) && (! allowNoValue) {
+	   panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
+	}    	
+
+	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
+	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
+	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
+	if checkPersistence && obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
+		var err error
+		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
+		if err != nil {
+			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
+			
+            if strings.Contains(err.Error(), "has no value for attribute") {
+               if ! allowNoValue {
+          	      panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))     	
+               }
+		    } else {
+		       panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
+			}
+		}
+        if val != nil {
+			Logln(PERSIST2_, "AttrVal (fetched) =", val)
+            found = true
+		}
+	}
+
+	if val == nil && attr.Part.ArityHigh != 1 && attr.Part.CollectionType != ""  {
+		var err error
+	   	val, err = rt.EnsureMultiValuedAttributeCollection(obj, attr)
+		if err != nil {
+          	panic(fmt.Sprintf("Error ensure multivalued attribute collection %s.%s: %s", obj, attr.Part.Name, err))  
+		}   
+		found = true          	
+	}
+
+	return
+}
+
+
 /*
    Return the value of the specified attribute for the specified object.
    Does not currently distinguish between multi-value attributes and single-valued.
    If it is a multi-valued attribute, returns the RCollection which implements
    the multi-value attribute.
    What does it return if no value has been defined? How about a found boolean
-*/
+
 func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
 	
     if lock {
@@ -325,7 +388,7 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 
 	return
 }
-
+*/
 
 
 
@@ -356,15 +419,10 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject
 	
 	defer Un(Trace(PERSIST_TR2, "RestoreAttr", obj, attr, val))
 
-    attrMutex.Lock()
-	attrVals, found := rt.attributes[attr]
-	if !found {
-		attrVals = make(map[RObject]RObject)
-		rt.attributes[attr] = attrVals
-	}
-	attrVals[obj] = val
-    attrMutex.Unlock()
-	return
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    unit.attrs[i] = val
 }
 
 /*
@@ -375,14 +433,10 @@ func (rt *RuntimeEnv) RestoreAttrNonLocking(obj RObject,  attr *AttributeSpec, v
 	
 	defer Un(Trace(PERSIST_TR2, "RestoreAttrNonLocking", obj, attr, val))
 	
-	attrVals, found := rt.attributes[attr]
-	if !found {
-		attrVals = make(map[RObject]RObject)
-		rt.attributes[attr] = attrVals
-	}
-	attrVals[obj] = val
-
-	return
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    unit.attrs[i] = val
 }
 
 
@@ -456,35 +510,22 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	   }
 	}
 	
-	attrMutex.Lock()
-	attrVals, found := rt.attributes[attr]
-	
-	var oldVal RObject
-	 
-	if found {
-		oldVal, found = attrVals[obj]
-	} else {
-		attrVals = make(map[RObject]RObject)
-		rt.attributes[attr] = attrVals
-	} 
+
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    oldVal := unit.attrs[i]
+    found := (oldVal != nil)
 
     // Also have to do this in UnsetAttr !!!
 	if ! found {
 		if obj.IsStoredLocally() && attr.IsRelation() {
-			attrMutex2.Lock()
-			attrMutex.Unlock()
 			oldVal, found = rt.AttrValue(obj, attr,true,true, true)
-			attrMutex.Lock()
-			attrMutex2.Unlock()
 		}
 	}
 
+   unit.attrs[i] = val
 
-	attrVals[obj] = val
-	// fmt.Println(len(attrVals))
-
-
-	attrMutex.Unlock()
 
 	if obj.IsStoredLocally() {
 		th.DB().PersistSetAttr(obj, attr, val, found)
@@ -781,127 +822,130 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
 
 /*
 Helper method. Ensures that a collection exists in memory to manage the values of a multi-valued attribute of an object.
+Assumes the attribute is multi-valued or collection-valued.
 */
 func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *AttributeSpec) (collection RCollection, err error) {
 
     //defer Un(Trace(ALWAYS_,"EnsureMultiValuedAttributeCollection", attr.Part.Name))
-	attrVals, found := rt.attributes[attr]
-	if !found { // No assignment has ever happened (in this runtime) of a value to this attribute.
-		attrVals = make(map[RObject]RObject)
-		rt.attributes[attr] = attrVals
+
+
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    val := unit.attrs[i]
+
+    if val != nil {
+	   collection = val.(RCollection)
+       return
+    }
+
+	var owner RObject
+	var attribute *AttributeSpec
+	var minCardinality, maxCardinality int64
+	if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
+		minCardinality = 0
+		maxCardinality = -1 // largest possible collection is allowed - the attribute is not constraining it.	
+		// panic("Should not rt.EnsureMultiValuedAttributeCollection on a collection-valued attribute.")
+		// We will allow this. but we should not allow persisting of such collections really.
+		// This all has to be checked.
+	} else { // This is a multi-valued attribute. The collection is a hidden implementation detail. 
+		minCardinality = int64(attr.Part.ArityLow)
+		maxCardinality = int64(attr.Part.ArityHigh)
+		owner = obj //  	Collection is owned by the "whole" object.
+		attribute = attr
+
 	}
+	// Create the list or set collection
 
-	objColl, foundCollection := attrVals[obj]
-	if foundCollection { // this object does not already have the collection implementation of this multi-valued attribute
-	   collection = objColl.(RCollection)
-	} else {
-		var owner RObject
-		var attribute *AttributeSpec
-		var minCardinality, maxCardinality int64
-		if attr.Part.ArityHigh == 1 { // This is a collection-valued attribute of arity 1. (1 collection)
-			minCardinality = 0
-			maxCardinality = -1 // largest possible collection is allowed - the attribute is not constraining it.	
-			// panic("Should not rt.EnsureMultiValuedAttributeCollection on a collection-valued attribute.")
-			// We will allow this. but we should not allow persisting of such collections really.
-			// This all has to be checked.
-		} else { // This is a multi-valued attribute. The collection is a hidden implementation detail. 
-			minCardinality = int64(attr.Part.ArityLow)
-			maxCardinality = int64(attr.Part.ArityHigh)
-			owner = obj //  	Collection is owned by the "whole" object.
-			attribute = attr
+	var unaryMethod *RMultiMethod
+	var binaryMethod *RMultiMethod
+	var orderAttr *AttributeSpec
+	var isAscending bool
 
-		}
-		// Create the list or set collection
+	// fmt.Println(attr.Part.CollectionType)
 
-		var unaryMethod *RMultiMethod
-		var binaryMethod *RMultiMethod
-		var orderAttr *AttributeSpec
-		var isAscending bool
-
-		// fmt.Println(attr.Part.CollectionType)
-
-		if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
-			if attr.Part.OrderMethodArity == 1 {
-				unaryMethod = attr.Part.OrderMethod
-			} else if attr.Part.OrderMethodArity == 2 {
-				binaryMethod = attr.Part.OrderMethod
-			} else { // must be an attribute
-				orderAttr = attr.Part.OrderAttr
-			}			
-			isAscending = attr.Part.IsAscending	
+	if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
+		if attr.Part.OrderMethodArity == 1 {
+			unaryMethod = attr.Part.OrderMethod
+		} else if attr.Part.OrderMethodArity == 2 {
+			binaryMethod = attr.Part.OrderMethod
+		} else { // must be an attribute
+			orderAttr = attr.Part.OrderAttr
+		}			
+		isAscending = attr.Part.IsAscending	
 /*
-			if binaryMethod == nil {
-				binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]
-			}
-
-			sortWith = &sortOp{
-				attr:          orderAttr,
-				unaryFunction: unaryMethod,
-				lessFunction:  binaryMethod,
-				descending:    !attr.Part.IsAscending,
-			}
-*/			
+		if binaryMethod == nil {
+			binaryMethod, _ = rt.InbuiltFunctionsPackage.MultiMethods["lt"]
 		}
 
-		/*
-			@@@@@@@@@@@@@@@@@@@@@@@
-
-			NEED TO FIND OUT IF THERE IS A UNARY METHOD OF THE TYP2, otherwise it must be a binary method.
-
-			Only one of the attr or unaryFunction will be non-nil.
-			If attr or unaryFunction is non-nil, then lessFunction must be the "lt" multiMethod.
-
-			collection.sortWith.lessFunction,_ := RT.MultiMethods["lt"]
-
-			If attr and unaryFunction are nil, lessFunction may be any binary boolean function which has a method whose
-			parameter signature is compatible with a pair of values of the elementType of the collection. lessFunction MAY
-			be the "lt" function in this case but need not be. The function is treated as a "less-than" predicate.
-
-			type sortOp struct {
-				attr *AttributeSpec
-				unaryFunction *RMultiMethod
-				lessFunction *RMultiMethod
-				descending bool
-			}
-
-			$$$$$$$$$$$$$$$$$$$$$$$$
-
-
-			  attr = &AttributeSpec{typ1,
-			                        RelEnd{
-			 									    Name:endName2,
-			                                       Type:typ2,
-			                                       ArityLow:arityLow2,
-			                                       ArityHigh:arityHigh2,
-			                                       CollectionType:collectionType2,
-			                                       OrderAttr:orderAttrName,
-			                                       OrderMethod: orderMethod,
-			 									   OrderMethodArity: int32,
-			                                       IsAscending:isAscending,
-			                                      },
-
-			@@@@@@@@@@@@@@
-		*/
-
-
-	/////////
-	
-	
-      collection,err = rt.NewCollection(minCardinality,
-         maxCardinality,
-         owner,   
-         attribute,
-         attr.Part.CollectionType, 
-         isAscending,
-         unaryMethod,
-         binaryMethod,
-         orderAttr,  
-         nil, // keyType *RType, 
-         attr.Part.Type) 
-	
-		attrVals[obj] = collection
+		sortWith = &sortOp{
+			attr:          orderAttr,
+			unaryFunction: unaryMethod,
+			lessFunction:  binaryMethod,
+			descending:    !attr.Part.IsAscending,
+		}
+*/			
 	}
-	return
+
+	/*
+		@@@@@@@@@@@@@@@@@@@@@@@
+
+		NEED TO FIND OUT IF THERE IS A UNARY METHOD OF THE TYP2, otherwise it must be a binary method.
+
+		Only one of the attr or unaryFunction will be non-nil.
+		If attr or unaryFunction is non-nil, then lessFunction must be the "lt" multiMethod.
+
+		collection.sortWith.lessFunction,_ := RT.MultiMethods["lt"]
+
+		If attr and unaryFunction are nil, lessFunction may be any binary boolean function which has a method whose
+		parameter signature is compatible with a pair of values of the elementType of the collection. lessFunction MAY
+		be the "lt" function in this case but need not be. The function is treated as a "less-than" predicate.
+
+		type sortOp struct {
+			attr *AttributeSpec
+			unaryFunction *RMultiMethod
+			lessFunction *RMultiMethod
+			descending bool
+		}
+
+		$$$$$$$$$$$$$$$$$$$$$$$$
+
+
+		  attr = &AttributeSpec{typ1,
+		                        RelEnd{
+		 									    Name:endName2,
+		                                       Type:typ2,
+		                                       ArityLow:arityLow2,
+		                                       ArityHigh:arityHigh2,
+		                                       CollectionType:collectionType2,
+		                                       OrderAttr:orderAttrName,
+		                                       OrderMethod: orderMethod,
+		 									   OrderMethodArity: int32,
+		                                       IsAscending:isAscending,
+		                                      },
+
+		@@@@@@@@@@@@@@
+	*/
+
+
+/////////
+
+
+   collection,err = rt.NewCollection(minCardinality,
+     maxCardinality,
+     owner,   
+     attribute,
+     attr.Part.CollectionType, 
+     isAscending,
+     unaryMethod,
+     binaryMethod,
+     orderAttr,  
+     nil, // keyType *RType, 
+     attr.Part.Type) 
+
+	unit.attrs[i] = collection
+
+   return
 }
 
 
@@ -1360,29 +1404,22 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
        return
     }
 
-    attrMutex.Lock()
-	attrVals, found := rt.attributes[attr]
-    var val RObject
-
-	if found {
-		val, found = attrVals[obj]
-    }
+    t := obj.Type()
+    i := attr.Index[t]
+    unit := obj.(*runit)
+    val := unit.attrs[i] 
+    found := (val != nil)
 
 	if ! found {
 		if obj.IsStoredLocally() {
-			attrMutex2.Lock()
-			attrMutex.Unlock()
+
 			val, found = rt.AttrVal(obj, attr)
-			attrMutex.Lock()
-			attrMutex2.Unlock()			
-			attrVals = rt.attributes[attr]
 		}
 	}
 
-
 	if found {
-	   delete(attrVals,obj)
-	   attrMutex.Unlock()
+
+      unit.attrs[i] = nil
 
        if removePersistent && obj.IsStoredLocally() {
 	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
@@ -1393,7 +1430,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
            err = rt.RemoveAttrGeneral(th, val, attr.Inverse, obj, true, removePersistent)
        }
     } else {
-    	attrMutex.Unlock()
+
     }	
 	
     return

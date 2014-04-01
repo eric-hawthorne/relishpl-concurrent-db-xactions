@@ -52,6 +52,7 @@ type RType struct {
 	Attributes             []*AttributeSpec
 	AttributesByName       map[string]*AttributeSpec
 	NumPrimitiveAttributes int
+	TotalAttributeCount    int   // Including supertype attributes - used to size instances
 	IsParameterized        bool  // Is a parameterized specific type or a parameterized type-pattern
 	IsPattern              bool  // True if this is a parameterized type-pattern with type parameter constraints 
 	                             // but no actual type parameters
@@ -609,6 +610,9 @@ type AttributeSpec struct {
 	IsForwardRelation bool
 	IsReverseRelation bool
 	Inverse *AttributeSpec
+
+    Index map[*RType]int  // The index in an object of each type where the value of this attribute is found.
+
 }
 
 func (attr *AttributeSpec) IsRelation() bool {
@@ -1059,6 +1063,7 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		isForwardRelation,
 		isReverseRelation,
 		nil,
+		make(map[*RType]int),
 	}
 
     if orderFuncOrAttrName != "" {
@@ -1352,9 +1357,17 @@ type TypeTupleTreeNode struct {
 
 */
 func (tttn *TypeTupleTreeNode) GetTypeTuple(mObjects []RObject) *RTypeTuple {
-
+   fmt.Println("===GetTypeTuple===")
    var typ *RType
    m := len(mObjects)
+   for i:= 0; i < m; i++ {
+   	  if mObjects[i] == nil {
+   	  	  fmt.Println("nil")
+   	  } else {
+         fmt.Println(mObjects[i].Type().ShortName())
+      }
+   }
+   fmt.Println("---")
    if m > 0 {
       typ = mObjects[0].Type()      
       last := tttn.LastTypeTuple[typ]
@@ -1385,9 +1398,13 @@ TODO How can this be made thread-safe?????
 Does each thread need its own typeTupleTree? Or do we have a single thread that supplies typetuples and dispatch results.
 */
 func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObjects []RObject) *RTypeTuple {
+	fmt.Println("findOrCreateTypeTuple:",len(mObjects))
 	if len(mObjects) == 0 {
 		if tttn.tuple == nil {
+			fmt.Println("here1")
 			tttn.tuple = createTypeTuple(allObjects)
+		} else {
+			fmt.Println("existing tuple in tree found.")
 		}
 		return tttn.tuple
 	}
@@ -1409,11 +1426,15 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObje
 			}
 			// If got here need to create a new nextType node in the 
 			// list under key typ
+
+			fmt.Println("here2")			
 			newNode := &TypeTupleTreeNode{mType: typ}
 			tttn.nextType[typ] = append(tttn.nextType[typ], newNode)
 		}
 		// If got here need to create a list of nodes with a
 		// single new node for the typ, and store the list under key typ
+
+	    fmt.Println("here3")		
 		newNode := &TypeTupleTreeNode{mType: typ}
 		tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
 	}
@@ -1421,6 +1442,7 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObje
 	// create a list of nodes with a
 	// single new node for the typ, and store the list under key typ
 
+	fmt.Println("here4")
 	newNode := &TypeTupleTreeNode{mType: typ}
 	tttn.nextType = make(map[*RType][]*TypeTupleTreeNode)
 	tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
