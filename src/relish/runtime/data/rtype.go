@@ -1357,17 +1357,17 @@ type TypeTupleTreeNode struct {
 
 */
 func (tttn *TypeTupleTreeNode) GetTypeTuple(mObjects []RObject) *RTypeTuple {
-   fmt.Println("===GetTypeTuple===")
+   // fmt.Println("===GetTypeTuple===")
    var typ *RType
    m := len(mObjects)
-   for i:= 0; i < m; i++ {
-   	  if mObjects[i] == nil {
-   	  	  fmt.Println("nil")
-   	  } else {
-         fmt.Println(mObjects[i].Type().ShortName())
-      }
-   }
-   fmt.Println("---")
+//   for i:= 0; i < m; i++ {
+//   	  if mObjects[i] == nil {
+//   	  	  fmt.Println("nil")
+//   	  } else {
+//         fmt.Println(mObjects[i].Type().ShortName())
+//      }
+//   }
+//   fmt.Println("---")
    if m > 0 {
       typ = mObjects[0].Type()      
       last := tttn.LastTypeTuple[typ]
@@ -1398,14 +1398,26 @@ TODO How can this be made thread-safe?????
 Does each thread need its own typeTupleTree? Or do we have a single thread that supplies typetuples and dispatch results.
 */
 func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObjects []RObject) *RTypeTuple {
-	fmt.Println("findOrCreateTypeTuple:",len(mObjects))
+	// tttnType := ""
+	// if tttn.mType != nil {
+    //     tttnType = tttn.mType.ShortName()
+	// }
+	// fmt.Println("(",tttnType,") findOrCreateTypeTuple:", len(mObjects))
 	if len(mObjects) == 0 {
 		if tttn.tuple == nil {
-			fmt.Println("here1")
-			tttn.tuple = createTypeTuple(allObjects)
-		} else {
-			fmt.Println("existing tuple in tree found.")
-		}
+//		   fmt.Println("here1: allObjects types:")
+		   tttn.tuple = createTypeTuple(allObjects)
+//		   for i:= 0; i < len(allObjects); i++ {
+//		   	  if allObjects[i] == nil {
+//		   	  	  fmt.Println("nil")
+//		   	  } else {
+//		         fmt.Println(allObjects[i].Type().ShortName())
+//		      }
+//		   }
+
+		} // else {
+			// fmt.Println("existing tuple in tree found.")
+		// }
 		return tttn.tuple
 	}
 
@@ -1415,38 +1427,48 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTuple(mObjects []RObject, allObje
     } else {
 	   typ = mObjects[0].Type()  
     }
+    var newNode *TypeTupleTreeNode
 	if tttn.nextType != nil { // we need to explore the tree from here.
+//        fmt.Println("...this node has some nextType nodes")
 		nextNodes, found := tttn.nextType[typ]
 		if found {
+//		    fmt.Println("...there are", len(nextNodes),"nextNodes for type", typ.ShortName())
+
 			for _, node := range nextNodes {
 				tpl := node.findOrCreateTypeTuple(mObjects[1:], allObjects)
 				if tpl != nil {
+//					fmt.Println("(",tttnType,") FOUND a tuple for nextType",typ.ShortName())
 					return tpl
 				}
 			}
 			// If got here need to create a new nextType node in the 
 			// list under key typ
+			panic(fmt.Sprintf("searched all nodes for nextType",typ.ShortName(),"without finding or creating a tuple. SHOULD NOT GET HERE!!" ))
+//			fmt.Println("here2:nextType[", typ.ShortName(), "] is a new node")	   		
+//			newNode := &TypeTupleTreeNode{mType: typ}
+//			tttn.nextType[typ] = append(tttn.nextType[typ], newNode)
+		} else {
+//           fmt.Println("...this node has no nextType nodes for type", typ.ShortName())
+        
+		    // If got here need to create a list of nodes with a
+		    // single new node for the typ, and store the list under key typ
+	
+//			fmt.Println("here3: nextType[", typ.ShortName(), "] is a new node")	    	
+			newNode = &TypeTupleTreeNode{mType: typ}
+			tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
+	    }
+	} else {
+//		fmt.Println("...this node has no nextType nodes")
 
-			fmt.Println("here2")			
-			newNode := &TypeTupleTreeNode{mType: typ}
-			tttn.nextType[typ] = append(tttn.nextType[typ], newNode)
-		}
-		// If got here need to create a list of nodes with a
-		// single new node for the typ, and store the list under key typ
+	    // If got here need to make the nextType map and
+	    // create a list of nodes with a
+	    // single new node for the typ, and store the list under key typ
 
-	    fmt.Println("here3")		
-		newNode := &TypeTupleTreeNode{mType: typ}
-		tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
-	}
-	// If got here need to make the nextType map and
-	// create a list of nodes with a
-	// single new node for the typ, and store the list under key typ
-
-	fmt.Println("here4")
-	newNode := &TypeTupleTreeNode{mType: typ}
-	tttn.nextType = make(map[*RType][]*TypeTupleTreeNode)
-	tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
-
+//	    fmt.Println("here4: nextType[", typ.ShortName(), "] is a new node")	  	
+	    newNode = &TypeTupleTreeNode{mType: typ}
+	    tttn.nextType = make(map[*RType][]*TypeTupleTreeNode)
+	    tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
+    }
 	tpl := newNode.findOrCreateTypeTuple(mObjects[1:], allObjects)
 	return tpl
 }
@@ -1491,6 +1513,8 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTupleFromTypes(mTypes []*RType, a
 		return tttn.tuple
 	}
 	typ := mTypes[0]
+    var newNode *TypeTupleTreeNode
+
 	if tttn.nextType != nil { // we need to explore the tree from here.
 		nextNodes, found := tttn.nextType[typ]
 		if found {
@@ -1500,24 +1524,27 @@ func (tttn *TypeTupleTreeNode) findOrCreateTypeTupleFromTypes(mTypes []*RType, a
 					return tpl
 				}
 			}
+			panic(fmt.Sprintf("searched all nodes for nextType",typ.ShortName(),"without finding or creating a tuple. SHOULD NOT GET HERE!!" ))
+
 			// If got here need to create a new nextType node in the 
 			// list under key typ
-			newNode := &TypeTupleTreeNode{mType: typ}
-			tttn.nextType[typ] = append(tttn.nextType[typ], newNode)
+			//newNode := &TypeTupleTreeNode{mType: typ}
+			//tttn.nextType[typ] = append(tttn.nextType[typ], newNode)
+		} else {
+		   // If got here need to create a list of nodes with a
+		   // single new node for the typ, and store the list under key typ
+		   newNode = &TypeTupleTreeNode{mType: typ}
+		   tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
 		}
-		// If got here need to create a list of nodes with a
-		// single new node for the typ, and store the list under key typ
-		newNode := &TypeTupleTreeNode{mType: typ}
-		tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
-	}
-	// If got here need to make the nextType map and
-	// create a list of nodes with a
-	// single new node for the typ, and store the list under key typ
+	} else {
+	   // If got here need to make the nextType map and
+	   // create a list of nodes with a
+	   // single new node for the typ, and store the list under key typ
 
-	newNode := &TypeTupleTreeNode{mType: typ}
-	tttn.nextType = make(map[*RType][]*TypeTupleTreeNode)
-	tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
-
+	   newNode = &TypeTupleTreeNode{mType: typ}   
+	   tttn.nextType = make(map[*RType][]*TypeTupleTreeNode)
+	   tttn.nextType[typ] = []*TypeTupleTreeNode{newNode}
+    }
 	tpl := newNode.findOrCreateTypeTupleFromTypes(mTypes[1:], allTypes)
 	return tpl
 }
