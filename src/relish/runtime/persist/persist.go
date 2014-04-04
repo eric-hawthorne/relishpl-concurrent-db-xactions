@@ -70,6 +70,27 @@ func NewDB(dbName string) *SqliteDB {
 	return db
 }
 
+
+/*
+Notes on sqlite db use:
+TODO Must reset or finalise all open statements before rollback or commit.
+
+ (c *Conn) Exec(cmd string, args ...interface{}) error
+does a finalize at end.
+
+(s *Stmt) Exec(args ...interface{}) error
+does a reset before other stuff.
+
+func (s *Stmt) Reset() error
+
+func (s *Stmt) Finalize() error
+
+func (c *Conn) Prepare(cmd string) (*Stmt, error) 
+
+*/
+
+
+
 /*
  Should only be used for sql statements that are not dynamically constructed.
  That is, use this only for a small set of completely predefined queries, which may nonetheless have ? parameters
@@ -77,6 +98,8 @@ func NewDB(dbName string) *SqliteDB {
  Tests if the sql statement (cmd) is a key in a prepared statements map. If so, returns the already prepared
  statement. If not found in the map, asks the db connection to prepare the statement.
  Returns the prepared statement.
+
+ TODO maybe should do stmt.Reset() if found in hashtable
 */
 func (db *SqliteDB) Prepare(cmd string) (stmt *sqlite.Stmt, err error) {
    stmt,found := db.preparedStatements[cmd]
@@ -90,6 +113,7 @@ func (db *SqliteDB) Prepare(cmd string) (stmt *sqlite.Stmt, err error) {
 }
 
 /*
+This comment is not true anymore.
 Execute asynchronously a statementGroup consisting of one or more semicolon separated INSERT or UPDATE statements.
 A statementGroup is a string with semi-colon separated SQL statements in it.
 Blocks only if 10,000 statementGroups are pending execution.
