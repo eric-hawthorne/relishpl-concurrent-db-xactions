@@ -327,73 +327,6 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 
 
 /*
-   Return the value of the specified attribute for the specified object.
-   Does not currently distinguish between multi-value attributes and single-valued.
-   If it is a multi-valued attribute, returns the RCollection which implements
-   the multi-value attribute.
-   What does it return if no value has been defined? How about a found boolean
-
-func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
-	
-    if lock {
-    	attrMutex.RLock()
-    }
-	attrVals, found := rt.attributes[attr]
-	if found {
-		val, found = attrVals[obj]
-		if found {
-			if lock {
-    	       attrMutex.RUnlock()	
-            }
-			return
-		} else if (! checkPersistence) && (! allowNoValue) {
-			panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
-		}
-	}
-	if lock {
-      attrMutex.RUnlock()	
-    }
-
-	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
-	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.CollectionType=",attr.Part.CollectionType)
-	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
-	if checkPersistence && obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
-		var err error
-		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
-		if err != nil {
-			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
-			
-            if strings.Contains(err.Error(), "has no value for attribute") {
-               if ! allowNoValue {
-          	      panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))     	
-               }
-		    } else {
-		       panic(fmt.Sprintf("Error fetching attribute %s.%s from database: %s", obj, attr.Part.Name, err))
-			}
-		}
-        if val != nil {
-			Logln(PERSIST2_, "AttrVal (fetched) =", val)
-            found = true
-		}
-	}
-
-	if val == nil && attr.Part.ArityHigh != 1 && attr.Part.CollectionType != ""  {
-		var err error
-	   	val, err = rt.EnsureMultiValuedAttributeCollection(obj, attr)
-		if err != nil {
-          	panic(fmt.Sprintf("Error ensure multivalued attribute collection %s.%s: %s", obj, attr.Part.Name, err))  
-		}   
-		found = true          	
-	}
-
-	return
-}
-*/
-
-
-
-
-/*
 Version to be used in template execution.
 
 Note: Now checks relations as well as one-way attributes.
@@ -439,19 +372,6 @@ func (rt *RuntimeEnv) RestoreAttrNonLocking(obj RObject,  attr *AttributeSpec, v
     unit.attrs[i] = val
 }
 
-
-
-
-var attrMutex sync.RWMutex
-var attrMutex2 sync.Mutex
-
-func (rt *RuntimeEnv) LockAttributes() {
-   attrMutex.Lock()
-}
-
-func (rt *RuntimeEnv) UnlockAttributes() {
-	attrMutex.Unlock()
-}
 
 /*
 Optionally typechecked assignment. Never used in inverse.

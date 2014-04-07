@@ -58,7 +58,13 @@ func (sg *StatementGroup) Arg(val interface{}) {
 
 func (sg *StatementGroup) Args(args []interface{}) {
    stmt := sg.Statements[len(sg.Statements)-1]
-   stmt.Args = args
+   if stmt.Args == nil {
+      stmt.Args = args
+   } else {
+      for _,arg := range args {
+         stmt.Args = append(stmt.Args, arg)         
+      } 
+   }
 }
 
 
@@ -76,12 +82,12 @@ func (sg *StatementGroup) ClearArgs() {
 
 
 type DB interface {
-	EnsureTypeTable(typ *RType) (err error)
-	QueueStatements(statementGroup *StatementGroup)
-	QueueStatement(statement string)	
-	PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
-	PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
-	PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
+	 EnsureTypeTable(typ *RType) (err error)
+	 ExecStatements(statementGroup *StatementGroup) (err error)
+	 ExecStatement(statement string, args ...interface{}) (err error)	
+	 PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
+	 PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
+	 PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
    PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
    PersistClearAttr(obj RObject, attr *AttributeSpec) (err error)
    PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) 
@@ -89,34 +95,34 @@ type DB interface {
    PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error)    
    // Note: Missing PersistRemoveFromMap  
    PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error)   
- 	PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
- 	PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
+ 	 PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
+ 	 PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
    PersistClearCollection(coll RemovableCollection) (err error)    
      
-	EnsurePersisted(obj RObject) (err error)
-	EnsureAttributeAndRelationTables(t *RType) (err error)
+	 EnsurePersisted(obj RObject) (err error)
+	 EnsureAttributeAndRelationTables(t *RType) (err error)
 	
-	ObjectNameExists(name string) (found bool, err error)
+	 ObjectNameExists(name string) (found bool, err error)
    ObjectNames(prefix string) (names []string, err error)  
-	NameObject(obj RObject, name string)
-	RenameObject(oldName string, newName string)	
+	 NameObject(obj RObject, name string) (err error)
+	 RenameObject(oldName string, newName string) (err error)	
 	
-  /*
-  Deletes the object from the database as well as its canonical object name entry if any.
-  
-  Also removes the object from in-memory cache.
-  TODO: Consider multiple in-memory caches when we have them!!
+   /*
+   Deletes the object from the database as well as its canonical object name entry if any.
 
-  Does NOT delete attribute / relation/ collection association table entries that may exist
-  for the object in the database.
+   Also removes the object from in-memory cache.
+   TODO: Consider multiple in-memory caches when we have them!!
 
-  Is a safe no-op for objects that are not stored locally.
-  */
-  Delete(obj RObject) (err error)
-	RecordPackageName(name string, shortName string)
-	FetchByName(name string, radius int) (obj RObject, err error)
-	Fetch(id int64, radius int) (obj RObject, err error)
-	FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
+   Does NOT delete attribute / relation/ collection association table entries that may exist
+   for the object in the database.
+
+   Is a safe no-op for objects that are not stored locally.
+   */
+   Delete(obj RObject) (err error)
+	 RecordPackageName(name string, shortName string)
+	 FetchByName(name string, radius int) (obj RObject, err error)
+	 Fetch(id int64, radius int) (obj RObject, err error)
+	 FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
 
 	/*
 	
@@ -133,7 +139,7 @@ type DB interface {
     /*
     Close the connection to the database.
     */
-	Close()
+	 Close()
 
 
 	/*
@@ -141,17 +147,17 @@ type DB interface {
     Implementations may also first lock program access to the database to ensure a single goroutine at a time
     runs a database transaction and no other goroutines interact with the database at all during the transaction.
 	*/
-	BeginTransaction() (err error)
+	 BeginTransaction() (err error)
 
 	/*
     Implementations may also unlock program access to the database to allow other goroutines to use the database.
 	*/
-	CommitTransaction() (err error)
+	 CommitTransaction() (err error)
 
 	/*
     Implementations may also unlock program access to the database to allow other goroutines to use the database.
 	*/
-	RollbackTransaction() (err error)
+	 RollbackTransaction() (err error)
 	
 	/*
 	Lock the dbMutex.
@@ -161,7 +167,7 @@ type DB interface {
 
 	This method will block until no other goroutine is using the database.
 	*/
-	UseDB()
+	 UseDB()
 	
 	/*
 	If this db connection or thread-of-connection has no further interest in owning the database,
@@ -170,7 +176,7 @@ type DB interface {
 	returns false. A series of calls to this should eventually return true meaning no further
 	calls to it by this thread-of-connection are appropriate until UseDB() is called again.
 	*/	
-	ReleaseDB() bool
+	 ReleaseDB() bool
 }
 
 
@@ -356,16 +362,16 @@ func (dbt * DBThread) EnsureTypeTable(typ *RType) (err error) {
    return 
 }
 
-func (dbt * DBThread) QueueStatements(statementGroup *StatementGroup) {
+func (dbt * DBThread) ExecStatements(statementGroup *StatementGroup) (err error) {
    dbt.UseDB()
-   dbt.db.QueueStatements(statementGroup)
+   err = dbt.db.ExecStatements(statementGroup)
    dbt.ReleaseDB()
    return
 }
 
-func (dbt * DBThread) QueueStatement(statement string) {
+func (dbt * DBThread) ExecStatement(statement string, args ...interface{}) (err error) {
    dbt.UseDB()
-   dbt.db.QueueStatement(statement)
+   err = dbt.db.ExecStatement(statement, args...)
    dbt.ReleaseDB()
    return
 }
@@ -488,16 +494,16 @@ func (dbt * DBThread) ObjectNames(prefix string) (names []string, err error) {
 }
 
 
-func (dbt * DBThread) NameObject(obj RObject, name string) {
+func (dbt * DBThread) NameObject(obj RObject, name string) (err error) {
    dbt.UseDB()
-   dbt.db.NameObject(obj, name)
+   err = dbt.db.NameObject(obj, name)
    dbt.ReleaseDB() 
    return  
 }
 
-func (dbt * DBThread) RenameObject(oldName string, newName string) {
+func (dbt * DBThread) RenameObject(oldName string, newName string) (err error) {
    dbt.UseDB()
-   dbt.db.RenameObject(oldName, newName)
+   err = dbt.db.RenameObject(oldName, newName)
    dbt.ReleaseDB() 
    return  
 }
