@@ -91,10 +91,10 @@ const (
 // Was using this one for a long time.
 //const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | PERSIST2__ | PERSIST__TR2| INTERP__TR2 | INTERP2__	
 //const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | WEB__ | ALWAYS_
-//const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
+const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
 //const SOME_DEBUG_FLAGS =   PERSIST__ | PERSIST__TR | ALWAYS_
 
-const SOME_DEBUG_FLAGS =   GC__ | ALWAYS_
+// const SOME_DEBUG_FLAGS =   GC__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =   COLL2__ | ALWAYS_
 

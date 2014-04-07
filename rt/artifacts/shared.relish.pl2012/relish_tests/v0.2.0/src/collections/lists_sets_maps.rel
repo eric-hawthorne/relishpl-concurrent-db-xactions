@@ -87,7 +87,7 @@ testCollections
    passed = and assertEq spares[1].num 2 "spares 1"
                 passed
 
-   vcls = []vehicles.Vehicle "lat > 48" 
+   vcls = []vehicles.Vehicle "lat > 48 order by lat" 
    i = 0
    for vhcl in vcls 
       if eq i 0

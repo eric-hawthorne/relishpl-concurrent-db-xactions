@@ -3462,7 +3462,10 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
 	// Now we have to associate the object with its name in the database. 
 
-	th.DB().NameObject(obj, name)
+	err = th.DB().NameObject(obj, name)
+	if err != nil {
+		panic(err)
+	}
 
 	return nil
 }
@@ -3495,9 +3498,12 @@ func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
     }
     
     if errStr == "" {
-	   // Now we have to rename the object in the database. 
+	    // Now we have to rename the object in the database. 
 
-	   th.DB().RenameObject(oldName, newName)
+	    err = th.DB().RenameObject(oldName, newName)
+		if err != nil {
+			panic(err)
+		}	   
     }
 
 	return []RObject{String(errStr)}

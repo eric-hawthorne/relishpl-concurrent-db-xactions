@@ -113,12 +113,11 @@ func (db *SqliteDB) Prepare(cmd string) (stmt *sqlite.Stmt, err error) {
 }
 
 /*
-This comment is not true anymore.
-Execute asynchronously a statementGroup consisting of one or more semicolon separated INSERT or UPDATE statements.
-A statementGroup is a string with semi-colon separated SQL statements in it.
-Blocks only if 10,000 statementGroups are pending execution.
+Execute multiple sql statments, each possibly with arguments.
+Return a non-nil error and do not continue to process statements, if 
+a database error occurs.
 */
-func (db *SqliteDB) QueueStatements(statementGroup *StatementGroup) {
+func (db *SqliteDB) ExecStatements(statementGroup *StatementGroup) (err error) {
 
 	// Replace everything  with the statementQueue insertion below
 
@@ -126,54 +125,52 @@ func (db *SqliteDB) QueueStatements(statementGroup *StatementGroup) {
 
 	for _, sqlStatement := range statementGroup.Statements {
 			
-        Logln(PERSIST_, fmt.Sprintf("Executing statement:\n%s\n", sqlStatement.Statement))
-			
-		err := db.conn.Exec(sqlStatement.Statement,sqlStatement.Args...)
-		if err != nil {
-			fmt.Printf("DB ERROR on statement:\n%s\nDetail: %s\n\n", sqlStatement.Statement, err)
-		}	
+		err = db.ExecStatement(sqlStatement.Statement,sqlStatement.Args...)	
+        if err != nil {
+        	break
+        }
 	}
-	// replace from here up with statementQueue statememt below.
-
-	// db.statementQueue <- statementGroup
+	return
 }
 
-
-/*
-Execute asynchronously a statementGroup consisting of one or more semicolon separated INSERT or UPDATE statements.
-A statementGroup is a string with semi-colon separated SQL statements in it.
-Blocks only if 10,000 statementGroups are pending execution.
-New: Now return an error, since not queuing statements.
-*/
-func (db *SqliteDB) QueueStatement(statement string)  {
-
-	// Replace everything  with the statementQueue insertion below
-
-	Logln(PERSIST_, fmt.Sprintf("Executing statement:\n%s\n", statement))
-
-	err := db.conn.Exec(statement)
-	if err != nil {
-		fmt.Printf("DB ERROR on statement:\n%s\nDetail: %s\n\n", statement, err)
-	}
-}
 
 /*
 Execute a single SQL statement.
 Return the db error if any.
 */
-func (db *SqliteDB) ExecStatement(statement string) (err error) {
+func (db *SqliteDB) ExecStatement(statement string, args ...interface{}) (err error) {
 
-	// Replace everything  with the statementQueue insertion below
+    Logln(PERSIST_, fmt.Sprintf("Executing statement:\n%s\n", statement))
+		
+    stmt, prepareErr := db.Prepare(statement)
+    if prepareErr != nil {
+	err = fmt.Errorf("DB ERROR preparing statement:\n%s\nDetail: %s\n\n", statement, prepareErr) 	   
+	    return
+    }
 
-	Logln(PERSIST_, fmt.Sprintf("Executing statement:\n%s\n", statement))
+    defer stmt.Reset()
 
-	err = db.conn.Exec(statement)
-	return
+    err = stmt.Exec(args...)
+    if err != nil {
+       err = fmt.Errorf("DB ERROR executing statement:\n%s\nDetail: %s\n\n", statement, err) 	
+	   return
+    }
+
+    for stmt.Next() {}
+
+    err = stmt.Error()
+    if err != nil {
+	   err = fmt.Errorf("DB ERROR on statement:\n%s\nDetail: %s\n\n", statement, err) 	
+		   return       	
+    }
+
+    return
 }
 
 
 
 /*
+OBSOLETE
 Runs in its own goroutine, taking statements out of the queue and executing them in the sqlite database.
 Loops forever.
 TODO add good error handling.

@@ -25,7 +25,6 @@ var dbMutex sync.Mutex
  
 /*
 Begins an immediate-mode database transaction.
-TODO: Should get this out of QueueStatement so we can properly handle errors.
 */
 func (db *SqliteDB) BeginTransaction() (err error) {
    err = db.ExecStatement("BEGIN IMMEDIATE TRANSACTION")
@@ -34,7 +33,6 @@ func (db *SqliteDB) BeginTransaction() (err error) {
 
 /*
 Commits the in-effect database transaction.
-TODO: Should get this out of QueueStatement so we can properly handle errors.
 */
 func (db *SqliteDB) CommitTransaction() (err error) {
    err = db.ExecStatement("COMMIT TRANSACTION")
@@ -43,7 +41,6 @@ func (db *SqliteDB) CommitTransaction() (err error) {
 
 /*
 Rolls back the in-effect database transaction.
-TODO: Should get this out of QueueStatement so we can properly handle errors.
 */
 func (db *SqliteDB) RollbackTransaction() (err error) {
    err = db.ExecStatement("ROLLBACK TRANSACTION")
