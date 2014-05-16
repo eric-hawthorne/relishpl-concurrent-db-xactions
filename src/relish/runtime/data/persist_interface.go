@@ -85,21 +85,21 @@ type DB interface {
 	 EnsureTypeTable(typ *RType) (err error)
 	 ExecStatements(statementGroup *StatementGroup) (err error)
 	 ExecStatement(statement string, args ...interface{}) (err error)	
-	 PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
-	 PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
+	 PersistSetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
+	 PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error)
 	 PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error)
    PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) 	
    PersistClearAttr(obj RObject, attr *AttributeSpec) (err error)
-   PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) 
+   PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) 
    
-   PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error)    
+   PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error)    
    // Note: Missing PersistRemoveFromMap  
-   PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error)   
- 	 PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error)
+   PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error)   
+ 	 PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertedIndex int) (err error)
  	 PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error)
    PersistClearCollection(coll RemovableCollection) (err error)    
      
-	 EnsurePersisted(obj RObject) (err error)
+	 EnsurePersisted(th InterpreterThread, obj RObject) (err error)
 	 EnsureAttributeAndRelationTables(t *RType) (err error)
 	
 	 ObjectNameExists(name string) (found bool, err error)
@@ -122,7 +122,8 @@ type DB interface {
 	 RecordPackageName(name string, shortName string)
 	 FetchByName(name string, radius int) (obj RObject, err error)
 	 Fetch(id int64, radius int) (obj RObject, err error)
-	 FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
+   Refresh(obj RObject, radius int) (err error)
+	 FetchAttribute(th InterpreterThread, objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error)
 
 	/*
 	
@@ -237,6 +238,14 @@ type InterpreterThread interface {
 	GC()
 
 	EvaluationContext() MethodEvaluationContext
+
+  /*
+  The currently active DB transaction which this thread started or is participating in.
+  */
+  Transaction() *RTransaction 
+
+  SetTransaction(tx *RTransaction)
+
 }
 
 func NewDBThread(database DB) *DBThread {
@@ -376,16 +385,16 @@ func (dbt * DBThread) ExecStatement(statement string, args ...interface{}) (err 
    return
 }
 
-func (dbt * DBThread) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
+func (dbt * DBThread) PersistSetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistSetAttr(obj, attr, val, attrHadValue)
+   err = dbt.db.PersistSetAttr(th, obj, attr, val, attrHadValue)
    dbt.ReleaseDB()
    return
 }
 
-func (dbt * DBThread) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error) {
+func (dbt * DBThread) PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistAddToAttr(obj, attr, val, insertedIndex)
+   err = dbt.db.PersistAddToAttr(th, obj, attr, val, insertedIndex)
    dbt.ReleaseDB()
    return 
 }
@@ -412,9 +421,9 @@ func (dbt * DBThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err er
 }
 
 
-func (dbt * DBThread) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
+func (dbt * DBThread) PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistSetAttrElement(obj, attr, val, index)
+   err = dbt.db.PersistSetAttrElement(th, obj, attr, val, index)
    dbt.ReleaseDB()
    return   
 }
@@ -422,24 +431,24 @@ func (dbt * DBThread) PersistSetAttrElement(obj RObject, attr *AttributeSpec, va
 
 
       
-func (dbt * DBThread) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
+func (dbt * DBThread) PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistMapPut(theMap, key, val, isNewKey)
+   err = dbt.db.PersistMapPut(th, theMap, key, val, isNewKey)
    dbt.ReleaseDB()
    return   
 }
       
       
-func (dbt * DBThread) PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error) {
+func (dbt * DBThread) PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistSetCollectionElement(coll, val, index)
+   err = dbt.db.PersistSetCollectionElement(th, coll, val, index)
    dbt.ReleaseDB()
    return   
 }
   
-func (dbt * DBThread) PersistAddToCollection(coll AddableCollection, val RObject, insertedIndex int) (err error) {
+func (dbt * DBThread) PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertedIndex int) (err error) {
    dbt.UseDB()	
-   err = dbt.db.PersistAddToCollection(coll, val, insertedIndex)
+   err = dbt.db.PersistAddToCollection(th, coll, val, insertedIndex)
    dbt.ReleaseDB()
    return   
 }
@@ -465,9 +474,9 @@ func (dbt * DBThread) PersistClearCollection(coll RemovableCollection) (err erro
 
 
 
-func (dbt * DBThread) EnsurePersisted(obj RObject) (err error) {
+func (dbt * DBThread) EnsurePersisted(th InterpreterThread, obj RObject) (err error) {
    dbt.UseDB()	
-   err = dbt.db.EnsurePersisted(obj)
+   err = dbt.db.EnsurePersisted(th, obj)
    dbt.ReleaseDB() 
    return  
 }
@@ -538,9 +547,17 @@ func (dbt * DBThread) Fetch(id int64, radius int) (obj RObject, err error) {
    return 
 }
 
-func (dbt * DBThread) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
+func (dbt * DBThread) Refresh(obj RObject, radius int) (err error) {
    dbt.UseDB()
-   val, err = dbt.db.FetchAttribute(objId, obj, attr, radius)
+   err = dbt.db.Refresh(obj, radius)
+   dbt.ReleaseDB()  
+   return 
+}
+
+
+func (dbt * DBThread) FetchAttribute(th InterpreterThread, objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
+   dbt.UseDB()
+   val, err = dbt.db.FetchAttribute(th, objId, obj, attr, radius)
    dbt.ReleaseDB()  
    return 
 }

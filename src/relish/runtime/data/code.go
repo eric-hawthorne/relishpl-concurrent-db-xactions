@@ -224,12 +224,12 @@ func (p *RMultiMethod) Flags() int8 {
 	return 0
 }
 
-func (p *RMultiMethod) IsDirty() bool {
+func (p *RMultiMethod) IsBeingStored() bool {
 	return false
 }
-func (p *RMultiMethod) SetDirty() {
+func (p *RMultiMethod) SetBeingStored() {
 }
-func (p *RMultiMethod) ClearDirty() {
+func (p *RMultiMethod) ClearBeingStored() {
 }
 
 func (p *RMultiMethod) IsIdReversed() bool {
@@ -270,12 +270,12 @@ func (o *RMultiMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RMultiMethod) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (o *RMultiMethod) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a MultiMethod in JSON.")
    return
 }
 
-func (o *RMultiMethod) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (o *RMultiMethod) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a MultiMethod.")
    return
 }
@@ -406,12 +406,12 @@ func (p *RMethod) Flags() int8 {
 	return 0
 }
 
-func (p *RMethod) IsDirty() bool {
+func (p *RMethod) IsBeingStored() bool {
 	return false
 }
-func (p *RMethod) SetDirty() {
+func (p *RMethod) SetBeingStored() {
 }
-func (p *RMethod) ClearDirty() {
+func (p *RMethod) ClearBeingStored() {
 }
 
 func (p *RMethod) IsIdReversed() bool {
@@ -452,12 +452,12 @@ func (o *RMethod) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RMethod) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (o *RMethod) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Method in JSON.")
    return
 }
 
-func (o *RMethod) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (o *RMethod) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Method.")
    return
 }
@@ -901,12 +901,12 @@ func (o *RClosure) Flags() int8 {
 	return int8(o.flags)
 }
 
-func (p *RClosure) IsDirty() bool {
+func (p *RClosure) IsBeingStored() bool {
 	return false
 }
-func (p *RClosure) SetDirty() {
+func (p *RClosure) SetBeingStored() {
 }
-func (p *RClosure) ClearDirty() {
+func (p *RClosure) ClearBeingStored() {
 }
 
 func (p *RClosure) IsIdReversed() bool {
@@ -964,12 +964,12 @@ func (o *RClosure) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (o *RClosure) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (o *RClosure) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Closure in JSON.")
    return
 }
 
-func (o *RClosure) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (o *RClosure) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Closure.")
    return
 }

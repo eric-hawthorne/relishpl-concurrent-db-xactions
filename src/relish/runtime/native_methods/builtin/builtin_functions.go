@@ -31,6 +31,7 @@ import (
 	"encoding/json"
 	"sort"
 	"os/exec"
+	"sync"
 )
 
 // Reader for reading from standard input
@@ -3455,7 +3456,7 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
 	// Ensure that the object is persisted.
 
-	err = th.DB().EnsurePersisted(obj)
+	err = th.DB().EnsurePersisted(th, obj)
 	if err != nil {
 		panic(err)
 	}
@@ -3580,20 +3581,30 @@ func builtinDelete(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+var transactionMutex sync.Mutex
+
 
 // err = begin  // Begins a db transaction. On success returns an empty string.
 //
 func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject {
+	transactionMutex.Lock()
+	defer transactionMutex.Unlock()
 	relish.EnsureDatabase()
     var errStr string
 
-    err := th.DB().BeginTransaction()
-	if err != nil {
-		errStr = err.Error()
-	}
-
+    if th.Transaction() != nil {
+    	errStr = "Cannot begin a transaction. Goroutine is already participating in an active transaction."
+    } else {
+	    err := th.DB().BeginTransaction()
+		if err != nil {
+			errStr = err.Error()
+		} else {
+		    th.SetTransaction(NewTransaction())
+	    }
+    }
 	return []RObject{String(errStr)}
 }
+
 
 
 
@@ -3606,7 +3617,7 @@ func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject 
 func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
     var errStr string
-
+    panic("UNIMPLEMENTED")
     err := th.DB().BeginTransaction()
 	if err != nil {
 		errStr = err.Error()
@@ -3618,18 +3629,57 @@ func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []ROb
 
 
 // err = commit  // Commits the in-progress db transaction. On success returns an empty string.
-//               // TODO: If succeeds and is not a local transaction, adds new and fetched-from-db objects to the
+//               // On failure, retries after 2 seconds, then again after 4 more seconds,
+//               // then if still failed, tries a rollback.         
+//               // If failed, whether or not successfully rolled back, leaves the dirty persistent objects 
+//               // pointing to the RolledBackTransaction, so they will be refreshed from DB.
+//               // If succeeded, the dirty persistent objects are marked as clean.
+//
+//               // OBSOLETE? TODO: If succeeds and is not a local transaction, adds new and fetched-from-db objects to the
 //               // global in-memory object cache if they were not already there.
 //
 func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject {
+	transactionMutex.Lock()
+	defer transactionMutex.Unlock()	
 	relish.EnsureDatabase()
     var errStr string
 
-    err := th.DB().CommitTransaction()
-	if err != nil {
-		errStr = err.Error()
-	}
+    if th.Transaction() == nil {
+    	errStr = "Cannot commit transaction. Goroutine is not participating in an active transaction."
+    } else {
+	    err := th.DB().CommitTransaction()
+		if err != nil {
+			errStr = err.Error()
 
+            time.Sleep(2 * time.Second)
+
+	        err = th.DB().CommitTransaction()
+	        if err != nil {
+               time.Sleep(4 * time.Second)
+	           err = th.DB().CommitTransaction()	 
+	           if err != nil {
+          
+                  rollBackErrStr := rollbackTransactionCore(th)
+                  if rollBackErrStr != "" {
+                     errStr = fmt.Sprintf("%s. Rollback also failed: %s",errStr,rollBackErrStr)
+                     th.DB().ReleaseDB()
+                     // Roll back the state of the in memory objects anyway, forcing re-load
+                     // of objects from database.
+		             th.Transaction().RollBack()	
+		             th.SetTransaction(nil)	
+                  }
+	           	} else {
+	           		errStr = ""
+	           	}     	
+	        } else {
+	        	errStr = ""
+	        }
+		}
+		if errStr == "" {
+		   th.Transaction().Commit()	
+		   th.SetTransaction(nil)	
+		}	
+    }
 	return []RObject{String(errStr)}
 }
 
@@ -3643,17 +3693,39 @@ func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject
 //                 // RIGHT NOW UPON ROLLBACK, OR ON DEMAND IN GET-ATTR-VAL OPERATION?
 //
 func builtinRollbackTransaction(th InterpreterThread, objects []RObject) []RObject {
+	transactionMutex.Lock()
+	defer transactionMutex.Unlock()	
 	relish.EnsureDatabase()
-    var errStr string
+    errStr := rollbackTransactionCore(th)
 
-    err := th.DB().RollbackTransaction()
-	if err != nil {
-		errStr = err.Error()
-	}
+    if errStr != "" {
+    	th.DB().ReleaseDB()
+        // Roll back the state of the in memory objects anyway, forcing re-load
+        // of objects from database.
+        th.Transaction().RollBack()	
+        th.SetTransaction(nil)	
+    }
+
 
 	return []RObject{String(errStr)}
 }
 
+func rollbackTransactionCore(th InterpreterThread) string {
+    var errStr string
+
+    if th.Transaction() == nil {
+    	errStr = "Cannot rollback transaction. Goroutine is not participating in an active transaction."
+    } else {
+	    err := th.DB().RollbackTransaction()
+		if err != nil {
+			errStr = err.Error()
+		} else {
+		   th.Transaction().RollBack()	
+		   th.SetTransaction(nil)			
+		}
+    }
+	return errStr
+}
 
 
 //////////////////////////////////////////////////////////////////////
@@ -5077,7 +5149,7 @@ func builtinJsonMarshal(th InterpreterThread, objects []RObject) []RObject {
    if len(objects) == 2 {
       	includePrivate = bool(objects[1].(Bool))
    } 
-   encoded, err := JsonMarshal(obj, includePrivate) 
+   encoded, err := JsonMarshal(th, obj, includePrivate) 
    if err != nil {
       errStr = err.Error()
    }
@@ -5108,7 +5180,7 @@ func builtinJsonUnmarshal(th InterpreterThread, objects []RObject) []RObject {
       errStr = err.Error()
    } else if len(objects) == 2 {
 	  prototypeObj := objects[1]
-	  resultObj, err = prototypeObj.FromMapListTree(v) 
+	  resultObj, err = prototypeObj.FromMapListTree(th, v) 
       if err != nil {
          errStr = err.Error()	
       }

@@ -40,7 +40,7 @@ const TIME_LAYOUT = "2006-01-02 15:04:05.000"
    Only applies to single-valued attributes.
    Assumes that the the obj is already persisted, but does not assume that the value is.
 */
-func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
+func (db *SqliteDB) PersistSetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
 
 	if attr.Part.Type.IsPrimitive {
 
@@ -53,7 +53,9 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			timeString := t.UTC().Format(TIME_LAYOUT)
 			locationName := t.Location().String()
 			err = db.ExecStatement(fmt.Sprintf("UPDATE %s SET %s=?, %s=? WHERE id=?", table, attrName, attrLocName), timeString, locationName, obj.DBID())			
-
+			if err != nil {
+				obj.SetLoadNeeded()
+			}    
 		} else if val.Type() == MutexType || val.Type() == RWMutexType || val.Type() == OwnedMutexType {
 			// skip persisting
 		} else {
@@ -65,21 +67,30 @@ func (db *SqliteDB) PersistSetAttr(obj RObject, attr *AttributeSpec, val RObject
 			   stmt.Arg(valStr)
 			}	
 			stmt.Arg(obj.DBID())
-  	        err = db.ExecStatements(stmt)			
+  	        err = db.ExecStatements(stmt)	
+			if err != nil {
+				obj.SetLoadNeeded()
+			}      	        		
 		}
 	} else { // non-primitive value type
 
-		err = db.EnsurePersisted(val)
-		if err != nil {
+		err = db.EnsurePersisted(th, val)
+		if err != nil {		
 			return
 		}
 
 		table := db.TableNameIfy(attr.ShortName())
 
 		if attrHadValue {
-			err = db.ExecStatement(fmt.Sprintf("UPDATE %s SET id1=? WHERE id0=?", table), val.DBID(), obj.DBID())                                    
+			err = db.ExecStatement(fmt.Sprintf("UPDATE %s SET id1=? WHERE id0=?", table), val.DBID(), obj.DBID())     
+			if err != nil {
+				obj.SetLoadNeeded() // Persistence of the change failed. Memory state is invalid.
+			}                               
 		} else {
 			err = db.ExecStatement(fmt.Sprintf("INSERT INTO %s(id0,id1) VALUES(?,?)", table), obj.DBID(), val.DBID()) 
+			if err != nil {
+				obj.SetLoadNeeded()
+			}     			
 		}
 	}
 	return
@@ -176,17 +187,31 @@ func (db *SqliteDB) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err err
    Asynchronous. DB errors will not happen and be reported til later. <- to be true eventually
    NOT HAPPY WITH THE UNCERTAINTY OF STORAGE IN THE FLAG VALUE !!!
 */
-func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
+func (db *SqliteDB) EnsurePersisted(th InterpreterThread, obj RObject) (err error) {
     defer Un(Trace(PERSIST_TR2, "EnsurePersisted", obj))	
-	if obj.IsStoredLocally() {
+
+    // If being persisted in another transaction, just wait it out, and then return.
+    pers := obj.(Persistable)
+    tx := pers.Transaction()
+	if tx != nil && tx != th.Transaction() {
+		tx.RLock()
+		tx.RUnlock()
+		return
+	}
+
+	if obj.IsBeingStored() {
 		return
 	}
 	
-	obj.SetStoredLocally() // Not necessarily true yet !!!!!! Failure to persist could happen after this. Can I move it down?
+	obj.SetBeingStored() 
+    if th.Transaction() != nil {
+   		obj.(Persistable).SetTransaction(th.Transaction())
+   	}	
+
 	if obj.HasUUID() {
-		err = db.persistRemoteObject(obj)
+		err = db.persistRemoteObject(th, obj)
 	} else {
-		err = db.persistNewObject(obj)
+		err = db.persistNewObject(th, obj)
 	}
 	if err != nil {
 		return
@@ -194,16 +219,19 @@ func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
 
 	RT.Cache(obj) // Put in an in-memory object cache so that the runtime will only contain one object instance for each uuid.
 
-	err = db.PersistAttributesAndRelations(obj)
+	err = db.PersistAttributesAndRelations(th, obj)
 	if err != nil {
 	   return
    }
    
    if obj.IsCollection() {
       collection := obj.(RCollection)
-      err = db.persistCollection(collection) 
+      err = db.persistCollection(th, collection) 
    }
 	
+   if th.Transaction() == nil {
+       obj.SetStoredLocally()
+   	}	
 	return
 }
 
@@ -217,7 +245,7 @@ func (db *SqliteDB) EnsurePersisted(obj RObject) (err error) {
 
    TODO NOT DOING RELATIONS YET !! JUST ATTRIBUTES !!!! !!!!!!!!! !!!!!!!!!!!!!!!!!!! !!!! !
 */
-func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
+func (db *SqliteDB) PersistAttributesAndRelations(th InterpreterThread, obj RObject) (err error) {
 	defer Un(Trace(PERSIST_TR2, "PersistAttributesAndRelations", obj))
 
 	objTyp := obj.Type()
@@ -228,7 +256,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 
 		if ! attr.Part.Type.IsPrimitive {  
 
-			val, found := RT.AttrValue(obj, attr, false, true, true)
+			val, found := RT.AttrValue(th, obj, attr, false, true, true)
 			if !found {
 				continue
 			}
@@ -243,7 +271,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					theMap := collection.(Map)
 					for key := range theMap.Iter(nil) {
 						val, _ := theMap.Get(key)
-						err = db.EnsurePersisted(val)
+						err = db.EnsurePersisted(th, val)
 						if err != nil {
 							return
 						}
@@ -270,7 +298,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				} else {
 					i := 0
 					for val := range collection.Iter(nil) {
-						err = db.EnsurePersisted(val)
+						err = db.EnsurePersisted(th, val)
 						if err != nil {
 							return
 						}
@@ -290,7 +318,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				}
 			} else { // a single non-primitive value or independent collection of non-primitive element type.
 
-				err = db.EnsurePersisted(val)
+				err = db.EnsurePersisted(th, val)
 				if err != nil {
 					return
 				}
@@ -301,7 +329,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 			}
 		} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-		    val, found := RT.AttrValue(obj, attr, false, true, true)
+		    val, found := RT.AttrValue(th, obj, attr, false, true, true)
 		    if !found {
 		   	    continue
 		    }
@@ -315,7 +343,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				// !!!! NOT DONE YET !!!!!!
 				// !!!!!!!!!!!!!!!!!!!!!!!!
 				
-				val, found := RT.AttrValue(obj, attr, false, true, true)
+				val, found := RT.AttrValue(th, obj, attr, false, true, true)
 				if !found {
 					continue
 				}
@@ -401,7 +429,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 			
 			} else { // attr.IsIndependentCollection()  // independent collection of primitive element type
 
-				err = db.EnsurePersisted(val)
+				err = db.EnsurePersisted(th, val)
 				if err != nil {
 					return
 				}
@@ -417,7 +445,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 		for _, attr := range typ.Attributes {
 			if ! attr.Part.Type.IsPrimitive {
 
-				val, found := RT.AttrValue(obj, attr, false, true, true)
+				val, found := RT.AttrValue(th, obj, attr, false, true, true)
 				if !found {
 					continue
 				}
@@ -431,7 +459,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 						theMap := collection.(Map)
 						for key := range theMap.Iter(nil) {
 							val, _ := theMap.Get(key)
-							err = db.EnsurePersisted(val)
+							err = db.EnsurePersisted(th, val)
 							if err != nil {
 								return
 							}
@@ -458,7 +486,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					} else {
 						i := 0
 						for val := range collection.Iter(nil) {
-							err = db.EnsurePersisted(val)
+							err = db.EnsurePersisted(th, val)
 							if err != nil {
 								return
 							}
@@ -479,7 +507,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 					}
 				} else { // a single non-primitive value or independent collection of non-primitive element type.
 
-					err = db.EnsurePersisted(val)
+					err = db.EnsurePersisted(th, val)
 					if err != nil {
 						return
 					}
@@ -490,7 +518,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 				}
 			} else if attr.IsComplex() {  // multi-valued primitive type or independent collection of primitive element type
 
-			    val, found := RT.AttrValue(obj, attr, false, true, true)
+			    val, found := RT.AttrValue(th, obj, attr, false, true, true)
 			    if !found {
 			   	    continue
 			    }
@@ -579,7 +607,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
 		   			}							
 				} else {  // attr.IsIndependentCollection()  // independent collection of primitive element type
 
-					err = db.EnsurePersisted(val)
+					err = db.EnsurePersisted(th, val)
 					if err != nil {
 						return
 					}
@@ -609,7 +637,7 @@ func (db *SqliteDB) PersistAttributesAndRelations(obj RObject) (err error) {
    Persist an independent collection (list, set, or map)
    Assumes the RObject core of the collection is already persisted.
 */
-func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
+func (db *SqliteDB) persistCollection(th InterpreterThread, collection RCollection) (err error) {
 
    // Derive a collection table name from the collection's
    // collection-type and element type.
@@ -632,7 +660,7 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 
 			for key := range theMap.Iter(nil) {
 				val, _ := theMap.Get(key)
-				err = db.EnsurePersisted(val)
+				err = db.EnsurePersisted(th, val)
 				if err != nil {
 					return
 				}
@@ -682,7 +710,7 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
 
 			i := 0
 			for val := range collection.Iter(nil) {
-				err = db.EnsurePersisted(val)
+				err = db.EnsurePersisted(th, val)
 				if err != nil {
 					return
 				}
@@ -839,7 +867,7 @@ func (db *SqliteDB) persistCollection(collection RCollection) (err error) {
    Throw an exception?
    Right now it will probably create a second stored copy of the object with id reversed!!!
 */
-func (db *SqliteDB) persistRemoteObject(obj RObject) (err error) {
+func (db *SqliteDB) persistRemoteObject(th InterpreterThread, obj RObject) (err error) {
 
 	obj.ClearIdReversed()
 	id, id2 := obj.UUIDuint64s()
@@ -862,14 +890,14 @@ func (db *SqliteDB) persistRemoteObject(obj RObject) (err error) {
 			rterr.Stop("Can't store remote object locally because of db id conflict.") // Chance of this is extremely small. Two 64 bit int random ids had to be present twice. 
 		}
 	}
-	db.insert(obj, dbid, dbid2)
+	db.insert(th, obj, dbid, dbid2)
 	return
 }
 
 /*
    Persist a newly created object. Creates a uuid for it.
 */
-func (db *SqliteDB) persistNewObject(obj RObject) (err error) {
+func (db *SqliteDB) persistNewObject(th InterpreterThread, obj RObject) (err error) {
 	for { // loop til we create a first half of uuid which is unique as an object id in the local db. 
 		// Should almost never require more than one attempt.
 		var id,id2 uint64
@@ -886,11 +914,11 @@ func (db *SqliteDB) persistNewObject(obj RObject) (err error) {
 		if found {
 			obj.RemoveUUID()
 		} else {
-			err = db.insert(obj, dbid, int64(id2))
+			err = db.insert(th, obj, dbid, int64(id2))
             if err != nil {
             	return
             }
-			obj.SetStoredLocally() // We don't actually know if this is correct yet. The db statements may have failed. TODO!!! FIX
+			// obj.SetStoredLocally() // We don't actually know if this is correct yet. The db statements may have failed. TODO!!! FIX
 
 			break
 		}
@@ -1114,6 +1142,129 @@ func (db *SqliteDB) Fetch(id int64, radius int) (obj RObject, err error) {
 }
 
 /*
+   TODO Refresh the state of the object from the object data stored in the database.
+   If the object is a unit (structure), the radius determines how many related objects in the tree are also fetched.
+   0 means fetch object only. 1 means referred-to objects, 2 means referred-to by referred to etc.
+
+   TODO THIS METHOD NEEDS TO HAVE A MUTEX LOCK!!!!!!!
+
+   TODO THIS METHOD NEEDS TO FLUSH THE SQL STATEMENT QUEUE BEFORE IT RUNS THE SELECT QUERY!!!!!!!
+*/
+func (db *SqliteDB) Refresh(obj RObject , radius int) (err error) {
+	defer Un(Trace(PERSIST_TR, "Refresh", obj.DBID(), radius))
+
+	id := obj.DBID()
+	errSuffix := fmt.Sprintf("id=%v", id)
+    query := "SELECT * FROM RObject where id=?"
+
+	selectStmt, err := db.Prepare(query)
+	if err != nil {
+		return
+	}
+
+	defer selectStmt.Reset() // Ensure statement is not left open
+
+	err = selectStmt.Exec(id)
+	if err != nil {
+		return
+	}
+	if !selectStmt.Next() {
+		panic(fmt.Sprintf("No object found in database with %s.", errSuffix))
+	}
+	// var id int64
+	var id2 int64
+	var flags int
+	var typeName string
+
+	err = selectStmt.Scan(&id, &id2, &flags, &typeName)
+	if err != nil {
+		return
+	}
+
+
+   var isCollection bool 
+      
+   if typeName[0] == '[' {
+        isCollection = true
+   }
+
+	// Now we have to store the unit64(id),uint64(id2),byte(flags) into the object.
+
+	//   unit := obj.(*runit)
+	//   (&(unit.robject)).RestoreIdsAndFlags(id,id2,flags)
+
+	ob := obj.(Persistable)
+	ob.RestoreIdsAndFlags(id, id2, flags)
+
+	Logln(PERSIST2_, "id:", id, ", id2:", id2, ", flags:", flags, ", typeName:", typeName)
+
+	oid, oid2 := obj.UUIDuint64s()
+
+	Logln(PERSIST2_, "obj.id:", oid, ", obj.id2:", oid2, ", Flags():", obj.Flags(), ", obj.Type():", obj.Type())
+
+	// fmt.Printf("fetch1: cache miss w. DBID %d. created object %s from db. Its DBID is %d\n",dbid,obj.Debug(),obj.DBID())
+
+
+	
+	// Now fetch and restore the values of the unary primitive attributes of the object.
+	// These attribute values are stored in the db rows that represent the object in the db.
+	// The object in the db consists of a single row in each of several database tables.
+	// There is one table for each type the object conforms to (i.e. specific type and supertypes), 
+	// and a single row in each such table identified by the object's dbid.
+
+	err = db.fetchUnaryPrimitiveAttributeValues(id, obj)
+	if err != nil {
+		return
+	}
+
+
+	// Now fetch (at least proxies for) the non-primitive attributes (if we should do it now.)
+	// Maybe this should be fully lazy. Wait until the attribute value is asked for.
+
+	// TODO
+
+	// THIS NEEDS TO DEPEND ON DEPTH
+
+	// TODO
+
+   if isCollection {
+      collection := obj.(RCollection)
+      if collection.ElementType().IsPrimitive {
+   	   err = db.fetchPrimitiveValueCollection(collection, obj.DBID(), typeName)	   
+         if err != nil {
+         	return
+         }	          
+      } else {
+      	err = db.fetchCollection(collection,  obj.DBID(), typeName, radius)	   
+         if err != nil {
+         	return
+      	}
+      }	   
+   } else if radius > 0 {
+		err = db.fetchUnaryNonPrimitiveAttributeValues(id, obj, radius-1)
+		if err != nil {
+			return
+		}
+
+		err = db.fetchMultiValuedNonPrimitiveAttributeValues(id, obj, radius-1)
+		if err != nil {
+			return
+		}
+
+		err = db.fetchMultiValuedPrimitiveAttributeValues(id, obj)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+
+
+
+
+
+/*
    Given a name that some object has been 'dubbed' with, retrieve and return the object stored in the database.
    If the object is a unit (structure), the radius determines how many related objects in the tree are also fetched.
    0 means fetch object only. 1 means referred-to objects, 2 means referred-to by referred to etc.
@@ -1141,7 +1292,7 @@ func (db *SqliteDB) FetchByName(name string, radius int) (obj RObject, err error
    Give the dbid of an object, fetches the value of the specified attribute of the object from the database.
    The attribute should have a non-primitive value type or be multi-valued with primitive type of collection members.
 */
-func (db *SqliteDB) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
+func (db *SqliteDB) FetchAttribute(th InterpreterThread, objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchAttribute", objId, radius))
 
 	if (attr.Part.CollectionType == "" && !attr.Part.Type.IsPrimitive) || attr.IsIndependentCollection() {
@@ -1160,7 +1311,7 @@ func (db *SqliteDB) FetchAttribute(objId int64, obj RObject, attr *AttributeSpec
 			return
 		}
 	}
-	val, _ = RT.AttrVal(obj, attr)
+	val, _ = RT.AttrVal(th, obj, attr)
 	return
 }
 
@@ -2087,7 +2238,7 @@ func convertValTwoFields(valByteSlice []byte, valByteSlice2 []byte, typ *RType, 
    2. For the object's type and each type in the up chain of the type, create a row in the type's table.
 
 */
-func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) (err error) {
+func (db *SqliteDB) insert(th InterpreterThread, obj RObject, dbid, dbid2 int64) (err error) {
 
    var stmtStr string
    var args []interface{}
@@ -2108,11 +2259,11 @@ func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) (err error) {
 	  stmt.Arg(obj.Type().ShortName())
 
 
-	  stmtStr,args = db.instanceInsertStatement(obj.Type(), obj)
+	  stmtStr,args = db.instanceInsertStatement(th, obj.Type(), obj)
 	  stmt.Add(stmtStr)
 	  stmt.Args(args)
 	  for _, typ := range obj.Type().Up {
-	   	stmtStr,args = db.instanceInsertStatement(typ, obj)
+	   	stmtStr,args = db.instanceInsertStatement(th, typ, obj)
 	   	stmt.Add(stmtStr)
 	   	stmt.Args(args)		
 	  }
@@ -2129,10 +2280,10 @@ func (db *SqliteDB) insert(obj RObject, dbid, dbid2 int64) (err error) {
 
    Note: Must begin with ";"
 */
-func (db *SqliteDB) instanceInsertStatement(t *RType, obj RObject) (string,[]interface{}) {
+func (db *SqliteDB) instanceInsertStatement(th InterpreterThread, t *RType, obj RObject) (string,[]interface{}) {
 
 	table := db.TableNameIfy(t.ShortName())
-	primitiveAttrVals,args := db.primitiveAttrValsSQL(t, obj)
+	primitiveAttrVals,args := db.primitiveAttrValsSQL(th, t, obj)
 	s := fmt.Sprintf("INSERT INTO %s VALUES(%s);", table, primitiveAttrVals)
 	return s, args
 }
@@ -2145,13 +2296,13 @@ Return a string with the correct number of ?s for the type's primitive attribute
 Also return a list of the values to be inserted into a new row for the type: the id of the object and the attribute
 values.
 */
-func (db *SqliteDB) primitiveAttrValsSQL(t *RType, obj RObject) (s string, args []interface{}) {
+func (db *SqliteDB) primitiveAttrValsSQL(th InterpreterThread, t *RType, obj RObject) (s string, args []interface{}) {
     s = "?"
     args = append(args,obj.DBID())
 
 	for _, attr := range t.Attributes {
 		if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
-			val, found := RT.AttrVal(obj, attr)
+			val, found := RT.AttrVal(th, obj, attr)
 			s += ","
 			if found {
 				switch val.(type) {
