@@ -1,0 +1,31 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  console 
+
+""" 
+ console_input.rel
+
+ Test interactive input from the console (i.e. terminal).
+"""
+
+
+import
+   test
+
+
+main
+"""
+ Main program.
+"""
+   testInput
+
+
+testInput
+"""
+ Test interactive input from the console.
+"""
+   print "===== Input"
+   s = input "What is your name? (Please Enter the name Joe if you want test to pass.)\n>"
+   passed = assertEq s "Joe" "name is Joe"
+   if passed
+      print "PASSED"      

@@ -1,0 +1,97 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>The relish Programming Language Shared Code Repository</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<h2>Here are your Code-Signing Keys</h2>
+	<p>
+		You must copy them into your own files now. They will not be accessible here again.
+		</p>
+	<h3>Private Key</h3>
+	<p>
+		Copy the following key text block and paste it into a text file 
+		you create.
+		The file should be called RELISH_RUNTIME_DIR/keys/private/origin__{{.originId}}__private_key.pem
+		where RELISH_RUNTIME_DIR is your relish installation's root directory (i.e. the .../relish directory) if you have a binary distribution of relish, or is the .../relish/rt directory if you have a relish source distribution.
+	</p>
+	<p>
+		<em>IMPORTANT: It is essential that you keep this private key secret. Anyone who obtains it can publish relish code and claim that it comes from the origin {{.originId}}.</em>
+	</p>
+<div class="separatorBlock"></div>	
+<pre>
+{{.privateKey}}	
+</pre>	
+<div class="separatorBlock"> &nbsp; &nbsp;</div>
+	<h3>Public Key Certificate</h3>
+	<p>
+		Copy the following key text block and paste it into a text file 
+		you create.
+		The file should be called RELISH_RUNTIME_DIR/keys/public/origin__{{.originId}}__public_key.pem
+	</p>
+<div class="separatorBlock"></div>	
+<pre>
+{{.publicKey}}	
+</pre>	
+<div class="separatorBlock"></div>
+	<h3>XYZ</h3>
+	<p>
+Lorum ipsum.	
+</p>
+
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+	<h2>Yada yada</b>?</h2>
+	<p>
+		Every day.
+	</p>
+</div>
+</td>
+</tr>
+</table>	
+</div>
+</body>
+</html>

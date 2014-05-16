@@ -1,0 +1,52 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  model/people
+
+""" 
+ contact.rel
+
+ Contact information for a person or organization.
+"""
+
+
+Address
+"""
+ Street address.
+"""
+   address1 String
+   address2 String
+   city String
+   stateProv String
+   country Country
+   postalCode PostalCode
+
+
+PhoneNumber
+"""
+ A cursorally format-validated phone number.
+"""
+   number String
+   
+
+EmailAddress
+"""
+ A cursorally format-validate email address.
+"""
+   email String
+
+
+Country
+"""
+ A county in the world.
+"""
+   name String
+   code String
+
+
+PostalCode
+"""
+ A cursorally format-validate postal code / zip code.
+ Constructors take a Country argument and validate
+ according to the country's postal code format.
+"""
+   code String   

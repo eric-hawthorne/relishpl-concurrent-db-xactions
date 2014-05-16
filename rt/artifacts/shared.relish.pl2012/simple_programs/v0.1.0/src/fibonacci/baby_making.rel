@@ -1,0 +1,23 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  fibonacci
+
+"""
+ baby_making.rel
+
+ Fibonacci, multiple assignment
+"""
+
+import 
+   strings
+
+
+main
+"""
+ Keep track of a number of generations of parents and babies.
+"""
+   parents babies = 1 1 
+   while lt babies 100
+      print fill "This generation has %s babies" babies
+      parents babies = babies 
+                       plus parents babies
