@@ -317,7 +317,15 @@ func (t *RType) Zero() RObject {
 			
     default:
 	    if t.IsNative {
-	       z = &GoWrapper{nil,t,0}		
+	       // z = &GoWrapper{nil,t,0}		
+
+	       gw := &GoWrapper{runit{robject{rtype: t},nil},nil}
+
+           gw.initialize(t.TotalAttributeCount)
+
+           z = gw
+
+
 	       if ! markSense {
 		       z.SetMarked()
 	       }
@@ -547,12 +555,12 @@ func (p Channel) Flags() int8 {
 	return 0
 }
 
-func (p Channel) IsDirty() bool {
+func (p Channel) IsBeingStored() bool {
 	return false
 }
-func (p Channel) SetDirty() {
+func (p Channel) SetBeingStored() {
 }
-func (p Channel) ClearDirty() {
+func (p Channel) ClearBeingStored() {
 }
 
 func (p Channel) IsIdReversed() bool {
@@ -603,12 +611,12 @@ func (p Channel) Iterable() (sliceOrMap interface{}, err error) {
 }
 
 
-func (p Channel) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Channel) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Channel in JSON.")
    return
 }
 
-func (p Channel) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Channel) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Channel.")
    return
 }
@@ -745,12 +753,12 @@ func (p TimeChannel) Flags() int8 {
 	return 0
 }
 
-func (p TimeChannel) IsDirty() bool {
+func (p TimeChannel) IsBeingStored() bool {
 	return false
 }
-func (p TimeChannel) SetDirty() {
+func (p TimeChannel) SetBeingStored() {
 }
-func (p TimeChannel) ClearDirty() {
+func (p TimeChannel) ClearBeingStored() {
 }
 
 func (p TimeChannel) IsIdReversed() bool {
@@ -792,12 +800,12 @@ func (p TimeChannel) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p TimeChannel) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p TimeChannel) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Channel in JSON.")
    return
 }
 
-func (p TimeChannel) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p TimeChannel) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Channel.")
    return
 }
@@ -904,12 +912,12 @@ func (p Mutex) Flags() int8 {
 	return 0
 }
 
-func (p Mutex) IsDirty() bool {
+func (p Mutex) IsBeingStored() bool {
 	return false
 }
-func (p Mutex) SetDirty() {
+func (p Mutex) SetBeingStored() {
 }
-func (p Mutex) ClearDirty() {
+func (p Mutex) ClearBeingStored() {
 }
 
 func (p Mutex) IsIdReversed() bool {
@@ -951,12 +959,12 @@ func (p Mutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Mutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Mutex) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Mutex in JSON.")
    return
 }
 
-func (p Mutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Mutex) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Mutex.")
    return
 }
@@ -1143,12 +1151,12 @@ func (p OwnedMutex) Flags() int8 {
 	return 0
 }
 
-func (p OwnedMutex) IsDirty() bool {
+func (p OwnedMutex) IsBeingStored() bool {
 	return false
 }
-func (p OwnedMutex) SetDirty() {
+func (p OwnedMutex) SetBeingStored() {
 }
-func (p OwnedMutex) ClearDirty() {
+func (p OwnedMutex) ClearBeingStored() {
 }
 
 func (p OwnedMutex) IsIdReversed() bool {
@@ -1190,12 +1198,12 @@ func (p OwnedMutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p OwnedMutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p OwnedMutex) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a OwnedMutex in JSON.")
    return
 }
 
-func (p OwnedMutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p OwnedMutex) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a OwnedMutex.")
    return
 }
@@ -1318,12 +1326,12 @@ func (p RWMutex) Flags() int8 {
 	return 0
 }
 
-func (p RWMutex) IsDirty() bool {
+func (p RWMutex) IsBeingStored() bool {
 	return false
 }
-func (p RWMutex) SetDirty() {
+func (p RWMutex) SetBeingStored() {
 }
-func (p RWMutex) ClearDirty() {
+func (p RWMutex) ClearBeingStored() {
 }
 
 func (p RWMutex) IsIdReversed() bool {
@@ -1365,12 +1373,12 @@ func (p RWMutex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p RWMutex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p RWMutex) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent an RWMutex in JSON.")
    return
 }
 
-func (p RWMutex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p RWMutex) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Mutex.")
    return
 }
@@ -1491,12 +1499,12 @@ func (p RTime) Flags() int8 {
 	return 0
 }
 
-func (p RTime) IsDirty() bool {
+func (p RTime) IsBeingStored() bool {
 	return false
 }
-func (p RTime) SetDirty() {
+func (p RTime) SetBeingStored() {
 }
-func (p RTime) ClearDirty() {
+func (p RTime) ClearBeingStored() {
 }
 
 func (p RTime) IsIdReversed() bool {
@@ -1537,12 +1545,12 @@ func (p RTime) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p RTime) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p RTime) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = Time(p)
    return
 }
 
-func (p RTime) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p RTime) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Time.")
    return
 }
@@ -1644,12 +1652,12 @@ func (p Int) Flags() int8 {
 	return 0
 }
 
-func (p Int) IsDirty() bool {
+func (p Int) IsBeingStored() bool {
 	return false
 }
-func (p Int) SetDirty() {
+func (p Int) SetBeingStored() {
 }
-func (p Int) ClearDirty() {
+func (p Int) ClearBeingStored() {
 }
 
 func (p Int) IsIdReversed() bool {
@@ -1690,12 +1698,12 @@ func (p Int) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Int) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Int) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = int64(p)
    return
 }
 
-func (p Int) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Int) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Int(int64(tree.(float64)))
    return
 }
@@ -1793,12 +1801,12 @@ func (p Int32) Flags() int8 {
 	return 0
 }
 
-func (p Int32) IsDirty() bool {
+func (p Int32) IsBeingStored() bool {
 	return false
 }
-func (p Int32) SetDirty() {
+func (p Int32) SetBeingStored() {
 }
-func (p Int32) ClearDirty() {
+func (p Int32) ClearBeingStored() {
 }
 
 func (p Int32) IsIdReversed() bool {
@@ -1839,12 +1847,12 @@ func (p Int32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Int32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Int32) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = int32(p)
    return
 }
 
-func (p Int32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Int32) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Int32(int32(tree.(float64)))
    return
 }
@@ -1942,12 +1950,12 @@ func (p Uint) Flags() int8 {
 	return 0
 }
 
-func (p Uint) IsDirty() bool {
+func (p Uint) IsBeingStored() bool {
 	return false
 }
-func (p Uint) SetDirty() {
+func (p Uint) SetBeingStored() {
 }
-func (p Uint) ClearDirty() {
+func (p Uint) ClearBeingStored() {
 }
 
 func (p Uint) IsIdReversed() bool {
@@ -1988,12 +1996,12 @@ func (p Uint) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Uint) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Uint) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = uint64(p)
    return
 }
 
-func (p Uint) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Uint) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Uint(uint64(tree.(float64)))
    return
 }
@@ -2091,12 +2099,12 @@ func (p Uint32) Flags() int8 {
 	return 0
 }
 
-func (p Uint32) IsDirty() bool {
+func (p Uint32) IsBeingStored() bool {
 	return false
 }
-func (p Uint32) SetDirty() {
+func (p Uint32) SetBeingStored() {
 }
-func (p Uint32) ClearDirty() {
+func (p Uint32) ClearBeingStored() {
 }
 
 func (p Uint32) IsIdReversed() bool {
@@ -2137,12 +2145,12 @@ func (p Uint32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Uint32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Uint32) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = uint32(p)
    return
 }
 
-func (p Uint32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Uint32) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Uint32(uint32(tree.(float64)))
    return
 }
@@ -2240,12 +2248,12 @@ func (p Float) Flags() int8 {
 	return 0
 }
 
-func (p Float) IsDirty() bool {
+func (p Float) IsBeingStored() bool {
 	return false
 }
-func (p Float) SetDirty() {
+func (p Float) SetBeingStored() {
 }
-func (p Float) ClearDirty() {
+func (p Float) ClearBeingStored() {
 }
 
 func (p Float) IsIdReversed() bool {
@@ -2286,12 +2294,12 @@ func (p Float) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Float) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Float) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = float64(p)
    return
 }
 
-func (p Float) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Float) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Float(tree.(float64))
    return
 }
@@ -2389,12 +2397,12 @@ func (p Bool) Flags() int8 {
 	return 0
 }
 
-func (p Bool) IsDirty() bool {
+func (p Bool) IsBeingStored() bool {
 	return false
 }
-func (p Bool) SetDirty() {
+func (p Bool) SetBeingStored() {
 }
-func (p Bool) ClearDirty() {
+func (p Bool) ClearBeingStored() {
 }
 
 func (p Bool) IsIdReversed() bool {
@@ -2435,12 +2443,12 @@ func (p Bool) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Bool) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Bool) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = bool(p)
    return
 }
 
-func (p Bool) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Bool) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Bool(tree.(bool))
    return
 }
@@ -2558,12 +2566,12 @@ func (p Nil) Flags() int8 {
 	return 0
 }
 
-func (p Nil) IsDirty() bool {
+func (p Nil) IsBeingStored() bool {
 	return false
 }
-func (p Nil) SetDirty() {
+func (p Nil) SetBeingStored() {
 }
-func (p Nil) ClearDirty() {
+func (p Nil) ClearBeingStored() {
 }
 
 func (p Nil) IsIdReversed() bool {
@@ -2604,12 +2612,12 @@ func (p Nil) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Nil) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Nil) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = nil
    return
 }
 
-func (p Nil) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Nil) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = NIL
    return
 }
@@ -2714,12 +2722,12 @@ func (p Complex) Flags() int8 {
 	return 0
 }
 
-func (p Complex) IsDirty() bool {
+func (p Complex) IsBeingStored() bool {
 	return false
 }
-func (p Complex) SetDirty() {
+func (p Complex) SetBeingStored() {
 }
-func (p Complex) ClearDirty() {
+func (p Complex) ClearBeingStored() {
 }
 
 func (p Complex) IsIdReversed() bool {
@@ -2760,12 +2768,12 @@ func (p Complex) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Complex) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Complex) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Complex number in JSON.")
    return
 }
 
-func (p Complex) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Complex) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Complex number.")
    return
 }
@@ -2863,12 +2871,12 @@ func (p Complex32) Flags() int8 {
 	return 0
 }
 
-func (p Complex32) IsDirty() bool {
+func (p Complex32) IsBeingStored() bool {
 	return false
 }
-func (p Complex32) SetDirty() {
+func (p Complex32) SetBeingStored() {
 }
-func (p Complex32) ClearDirty() {
+func (p Complex32) ClearBeingStored() {
 }
 
 func (p Complex32) IsIdReversed() bool {
@@ -2909,12 +2917,12 @@ func (p Complex32) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Complex32) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Complex32) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Complex32 number in JSON.")
    return
 }
 
-func (p Complex32) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Complex32) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Complex32 number.")
    return
 }
@@ -3034,12 +3042,12 @@ func (p String) Flags() int8 {
 	return 0
 }
 
-func (p String) IsDirty() bool {
+func (p String) IsBeingStored() bool {
 	return false
 }
-func (p String) SetDirty() {
+func (p String) SetBeingStored() {
 }
-func (p String) ClearDirty() {
+func (p String) ClearBeingStored() {
 }
 
 func (p String) IsIdReversed() bool {
@@ -3080,12 +3088,12 @@ func (p String) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p String) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p String) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = string(p)
    return
 }
 
-func (p String) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p String) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = String(tree.(string))
    return
 }
@@ -3198,12 +3206,12 @@ func (p Proxy) Flags() int8 {
 	return 0
 }
 
-func (p Proxy) IsDirty() bool {
+func (p Proxy) IsBeingStored() bool {
 	return false
 }
-func (p Proxy) SetDirty() {
+func (p Proxy) SetBeingStored() {
 }
-func (p Proxy) ClearDirty() {
+func (p Proxy) ClearBeingStored() {
 }
 
 func (p Proxy) IsIdReversed() bool {
@@ -3244,12 +3252,12 @@ func (p Proxy) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Proxy) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Proxy) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Cannot represent a Proxy in JSON.")
    return
 }
 
-func (p Proxy) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Proxy) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Proxy.")
    return
 }
@@ -3388,12 +3396,12 @@ func (p Byte) Flags() int8 {
 	return 0
 }
 
-func (p Byte) IsDirty() bool {
+func (p Byte) IsBeingStored() bool {
 	return false
 }
-func (p Byte) SetDirty() {
+func (p Byte) SetBeingStored() {
 }
-func (p Byte) ClearDirty() {
+func (p Byte) ClearBeingStored() {
 }
 
 func (p Byte) IsIdReversed() bool {
@@ -3434,12 +3442,12 @@ func (p Byte) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Byte) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Byte) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = byte(p)
    return
 }
 
-func (p Byte) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Byte) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Byte(byte(tree.(float64)))
    return
 }
@@ -3545,12 +3553,12 @@ func (p Bit) Flags() int8 {
 	return 0
 }
 
-func (p Bit) IsDirty() bool {
+func (p Bit) IsBeingStored() bool {
 	return false
 }
-func (p Bit) SetDirty() {
+func (p Bit) SetBeingStored() {
 }
-func (p Bit) ClearDirty() {
+func (p Bit) ClearBeingStored() {
 }
 
 func (p Bit) IsIdReversed() bool {
@@ -3591,12 +3599,12 @@ func (p Bit) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p Bit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Bit) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = byte(p)
    return
 }
 
-func (p Bit) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Bit) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Bit(byte(tree.(float64)))
    return
 }
@@ -3703,12 +3711,12 @@ func (p CodePoint) Flags() int8 {
 	return 0
 }
 
-func (p CodePoint) IsDirty() bool {
+func (p CodePoint) IsBeingStored() bool {
 	return false
 }
-func (p CodePoint) SetDirty() {
+func (p CodePoint) SetBeingStored() {
 }
-func (p CodePoint) ClearDirty() {
+func (p CodePoint) ClearBeingStored() {
 }
 
 func (p CodePoint) IsIdReversed() bool {
@@ -3749,12 +3757,12 @@ func (p CodePoint) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p CodePoint) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p CodePoint) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = rune(p)
    return
 }
 
-func (p CodePoint) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p CodePoint) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = CodePoint(rune(tree.(float64)))
    return
 }
@@ -3894,12 +3902,12 @@ func (p Bytes) Flags() int8 {
 	return 0
 }
 
-func (p Bytes) IsDirty() bool {
+func (p Bytes) IsBeingStored() bool {
 	return false
 }
-func (p Bytes) SetDirty() {
+func (p Bytes) SetBeingStored() {
 }
-func (p Bytes) ClearDirty() {
+func (p Bytes) ClearBeingStored() {
 }
 
 func (p Bytes) IsIdReversed() bool {
@@ -3940,12 +3948,12 @@ func (p Bytes) Iterable() (sliceOrMap interface{}, err error) {
 	return ([]byte)(p),nil
 }
 
-func (p Bytes) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p Bytes) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    tree = ([]byte)(p)
    return
 }
 
-func (p Bytes) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p Bytes) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    obj = Bytes(tree.([]byte))
    return
 }
@@ -4090,12 +4098,12 @@ func (p *Bits) Flags() int8 {
 	return 0
 }
 
-func (p *Bits) IsDirty() bool {
+func (p *Bits) IsBeingStored() bool {
 	return false
 }
-func (p *Bits) SetDirty() {
+func (p *Bits) SetBeingStored() {
 }
-func (p *Bits) ClearDirty() {
+func (p *Bits) ClearBeingStored() {
 }
 
 func (p *Bits) IsIdReversed() bool {
@@ -4136,12 +4144,12 @@ func (p *Bits) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Iterable is not implemented yet for Bits.")
 }
 
-func (p *Bits) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p *Bits) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("Bits type does not yet support ToMapListTree")
    return
 }
 
-func (p *Bits) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p *Bits) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Bits type does not yet support FroMapListTree")
    return
 }
@@ -4271,12 +4279,12 @@ func (p CodePoints) Flags() int8 {
 	return 0
 }
 
-func (p CodePoints) IsDirty() bool {
+func (p CodePoints) IsBeingStored() bool {
 	return false
 }
-func (p CodePoints) SetDirty() {
+func (p CodePoints) SetBeingStored() {
 }
-func (p CodePoints) ClearDirty() {
+func (p CodePoints) ClearBeingStored() {
 }
 
 func (p CodePoints) IsIdReversed() bool {
@@ -4317,12 +4325,12 @@ func (p CodePoints) Iterable() (sliceOrMap interface{}, err error) {
 	return nil,errors.New("Expecting a collection or map.")
 }
 
-func (p CodePoints) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p CodePoints) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = errors.New("CodePoints type does not yet support ToMapListTree")
    return
 }
 
-func (p CodePoints) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p CodePoints) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("CodePoints type does not yet support FroMapListTree")
    return
 }
@@ -4339,9 +4347,10 @@ sure that NewObject sets the marked flag properly on them.
 */
 
 type GoWrapper struct {
+	runit
 	GoObj interface{}
-	rtype *RType
-	flags byte
+//	rtype *RType
+//	flags byte
 }
 
 func (p GoWrapper) IsZero() bool {
@@ -4439,12 +4448,12 @@ func (p GoWrapper) Flags() int8 {
 	return int8(p.flags)
 }
 
-func (p GoWrapper) IsDirty() bool {
+func (p GoWrapper) IsBeingStored() bool {
 	return false
 }
-func (p GoWrapper) SetDirty() {
+func (p GoWrapper) SetBeingStored() {
 }
-func (p GoWrapper) ClearDirty() {
+func (p GoWrapper) ClearBeingStored() {
 }
 
 func (p GoWrapper) IsIdReversed() bool {
@@ -4495,7 +4504,7 @@ func (o *GoWrapper) markAttributes()  {
 
 		if !attr.Part.Type.IsPrimitive {
 
-			val, found := RT.AttrValue(o, attr, false, true, false) // No need to lock - only one thread is running
+			val, found := RT.AttrValue(nil, o, attr, false, true, false) // No need to lock - only one thread is running
 			if !found {
 				break
 			}
@@ -4507,7 +4516,7 @@ func (o *GoWrapper) markAttributes()  {
 		for _, attr := range typ.Attributes {
 			if !attr.Part.Type.IsPrimitive {
 
-				val, found := RT.AttrValue(o, attr, false, true, false)  // no need to lock - only one thread is running
+				val, found := RT.AttrValue(nil, o, attr, false, true, false)  // no need to lock - only one thread is running
 				if !found {
 					break
 				}
@@ -4521,7 +4530,7 @@ func (o *GoWrapper) markAttributes()  {
 
 
 
-func (p GoWrapper) IsStoredLocally() bool { return true } // May as well think of it as safely stored. 
+func (p GoWrapper) IsStoredLocally() bool { return false } 
 func (p GoWrapper) SetStoredLocally()     {}
 func (p GoWrapper) ClearStoredLocally()   {}
 
@@ -4535,12 +4544,12 @@ func (p GoWrapper) Iterable() (sliceOrMap interface{}, err error) {
 }
 
 
-func (p GoWrapper) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (p GoWrapper) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
    err = fmt.Errorf("Cannot represent a %v in JSON.",p.Type())
    return
 }
 
-func (p GoWrapper) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (p GoWrapper) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = fmt.Errorf("Cannot unmarshal JSON into a %v.", p.Type())
    return
 }

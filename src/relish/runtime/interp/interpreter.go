@@ -838,7 +838,7 @@ func (i *Interpreter) EvalSelectorExpr(t *Thread, selector *ast.SelectorExpr) {
        rterr.Stopf1(t,selector,"Attribute or relation %s not found in type %v or supertypes.", selector.Sel.Name, obj.Type())
     }
 	
-	val, found := RT.AttrVal(obj, attr)
+	val, found := RT.AttrVal(t, obj, attr)
 	if !found {
 		if attr.Part.ArityLow > 0 {
 		    // pos = t.ExecutingMethod.File.Position(selector.Pos())
@@ -1118,7 +1118,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 //		}
 			
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
-		defer methodCallErrHandle(t,call)	
+		// defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
@@ -3401,7 +3401,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						}
 				    } else {
 				   	   // A single-valued attribute whose value is a collection
-						attrVal, found := RT.AttrVal(assignee, attr)
+						attrVal, found := RT.AttrVal(t, assignee, attr)
 						if ! found {
 							  return
 							  // Who cares.
@@ -3479,7 +3479,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						    owner := coll.Owner()                 
 		                    if owner == nil {
 		                        if coll.IsStoredLocally() {
-		                            err := t.DB().PersistSetCollectionElement(coll, val, ix)                         		
+		                            err := t.DB().PersistSetCollectionElement(t, coll, val, ix)                         		
 		                            if err != nil {					
 		   							       rterr.Stop1(t,indexExpr,err)       				                               
 		                            }    
@@ -3487,7 +3487,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		                    } else {
 		                         if owner.IsStoredLocally() {
 		                            attr := coll.Attribute()
-		                            err := t.DB().PersistSetAttrElement(owner, attr , val, ix)  
+		                            err := t.DB().PersistSetAttrElement(t, owner, attr , val, ix)  
 		                            if err != nil {					
 		         							 rterr.Stop1(t,indexExpr,err)       				                               
 		                            }   

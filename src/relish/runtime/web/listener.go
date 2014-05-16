@@ -767,7 +767,7 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
       } else if len(results) == 2 { 
 	     obj := results[1]           
 	     includePrivate := false
-         jsonContent, err = JsonMarshal(obj, includePrivate) 
+         jsonContent, err = JsonMarshal(thread, obj, includePrivate) 
          if err != nil {
 	         err = fmt.Errorf("%s JSON encoding error: %s", methodName, err.Error()) 
              return
@@ -1329,7 +1329,7 @@ func AttrVal(attrName string, obj RObject) (val RObject, err error) {
         }
         return
     } 
-	return RT.AttrValByName(obj, attrName)
+	return RT.AttrValByName(responseProcessingThread, obj, attrName)
 }
 
 /*

@@ -107,6 +107,8 @@ type Thread struct {
 	GCLockCounter int  // If 0, thread should RUnlock(),RLock() the GCMutex to allow GC to run.
 	                   // If -1, means this thread does not have an RLock on the GCMutex.
 	                   // If positive, means this thread will keep holding an RLock on GCMutex and decrementing counter
+
+	transaction *RTransaction
 }
 
 const MAX_GC_LOCKED_STACK_OPS = 100  // Do this many pops and pushes before relinquishing RLock on GCMutex.
@@ -493,4 +495,16 @@ func (t *Thread) Err() string {
 func (t *Thread) EvaluationContext() MethodEvaluationContext {
 	return t.EvalContext
 }
+
+/*
+  The currently active DB transaction which this thread started or is participating in.
+*/
+func (t *Thread) Transaction() *RTransaction {
+   return t.transaction
+}
+
+func (t *Thread) SetTransaction(tx *RTransaction) {
+	t.transaction = tx
+}
+
 

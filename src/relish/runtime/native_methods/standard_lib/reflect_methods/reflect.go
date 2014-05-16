@@ -886,7 +886,7 @@ func attrVal(th InterpreterThread, objects []RObject) []RObject {
 	attribute := objects[1].(*GoWrapper)	
 	attr := attribute.GoObj.(*AttributeSpec)
 		
-    val, found := RT.AttrVal(obj, attr)
+    val, found := RT.AttrVal(th, obj, attr)
     if ! found {
     	val = NIL
     } 
@@ -1221,7 +1221,7 @@ func getSimpleAttributes(th InterpreterThread, objects []RObject) []RObject {
 
     if obj != nil && obj != NIL {
     	
-       attrs,vals := simpleAttrs(obj)
+       attrs,vals := simpleAttrs(th, obj)
 
        for i, attr := range attrs {
 
@@ -1313,7 +1313,7 @@ func getComplexAttributes(th InterpreterThread, objects []RObject) []RObject {
     
     if obj != nil && obj != NIL {
     	
-       attrs,vals := complexAttrs(obj)
+       attrs,vals := complexAttrs(th, obj)
        // fmt.Println(len(attrs))
        for i, attr := range attrs {
 
@@ -1929,21 +1929,21 @@ func ensureReflectId1(obj RObject) (reflectId string) {
 /*
 Fetches both attribute metadata and values of the simple attributes of the object.
 */
-func simpleAttrs(obj RObject) (attrs []*AttributeSpec, vals []RObject) {
-   return getAttrs(obj,true,false)
+func simpleAttrs(th InterpreterThread, obj RObject) (attrs []*AttributeSpec, vals []RObject) {
+   return getAttrs(th, obj,true,false)
 }
 
 /*
 Fetches both attribute metadata and values of the complex attributes of the object.
 */
-func complexAttrs(obj RObject) (attrs []*AttributeSpec, vals []RObject) {
-   return getAttrs(obj,false,true)
+func complexAttrs(th InterpreterThread, obj RObject) (attrs []*AttributeSpec, vals []RObject) {
+   return getAttrs(th, obj,false,true)
 }
 
 /*
 Fetches both attribute metadata and values of the simple or complex attributes of the object.
 */
-func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []*AttributeSpec, vals []RObject) {
+func getAttrs(th InterpreterThread, obj RObject, includeSimple bool, includeComplex bool) (attrs []*AttributeSpec, vals []RObject) {
 	includeInherited := true
     attrNames := obj.Type().AttributeNames(includeSimple, includeComplex, includeInherited)
     for _,attrName := range attrNames {  
@@ -1953,7 +1953,7 @@ func getAttrs(obj RObject, includeSimple bool, includeComplex bool) (attrs []*At
     	}
     	attrs = append(attrs, attr)
 
-	    val, found := RT.AttrVal(obj, attr)
+	    val, found := RT.AttrVal(th, obj, attr)
 	    if ! found {
 	    	val = NIL
 	    }     

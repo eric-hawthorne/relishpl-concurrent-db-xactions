@@ -36,7 +36,7 @@ import (
 
   TODO create a map of prepared statements and look up the statement to use.
 */
-func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObject, insertIndex int) (err error) {
+func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertIndex int) (err error) {
 
 	table := db.TableNameIfy(attr.ShortName())
 
@@ -94,7 +94,7 @@ func (db *SqliteDB) PersistAddToAttr(obj RObject, attr *AttributeSpec, val RObje
 
 	} else { // Non-Primitive part type
 
-		err = db.EnsurePersisted(val)
+		err = db.EnsurePersisted(th, val)
 		if err != nil {
 			return
 		}
@@ -212,7 +212,7 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 
 
 
-func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
+func (db *SqliteDB) PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
 
 	table := db.TableNameIfy(attr.ShortName())
 	
@@ -231,7 +231,7 @@ func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val 
 
    } else { // non-primitive element values    
 
- 		err = db.EnsurePersisted(val)
+ 		err = db.EnsurePersisted(th, val)
  		if err != nil {
  			return
  		}
@@ -249,7 +249,7 @@ func (db *SqliteDB) PersistSetAttrElement(obj RObject, attr *AttributeSpec, val 
 }
 
       
-func (db *SqliteDB) PersistSetCollectionElement(coll IndexSettable, val RObject, index int) (err error) {
+func (db *SqliteDB) PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error) {
 
    table,_,_,_,elementType,err := db.EnsureCollectionTable(coll.(RCollection))
    if err != nil {
@@ -271,7 +271,7 @@ func (db *SqliteDB) PersistSetCollectionElement(coll IndexSettable, val RObject,
      
   } else { // non-primitive element values    
 
-		err = db.EnsurePersisted(val)
+		err = db.EnsurePersisted(th, val)
 		if err != nil {
 			return
 		}
@@ -293,7 +293,7 @@ func (db *SqliteDB) PersistSetCollectionElement(coll IndexSettable, val RObject,
 NOTE NOTE NOTE We don't have persist remove from map yet !!!!! 
 Does it remove by key? It should.
 */
-func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
+func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
 
    table,_,_,keyType,elementType,err := db.EnsureCollectionTable(theMap)
    if err != nil {
@@ -385,7 +385,7 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
    	} 	
 	} else { // non-primitive element type
       
-		err = db.EnsurePersisted(val)
+		err = db.EnsurePersisted(th, val)
 		if err != nil {
 			return
 		}      
@@ -466,7 +466,7 @@ func (db *SqliteDB) PersistMapPut(theMap Map, key RObject,val RObject, isNewKey 
 }
 
   
-func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, insertIndex int) (err error) {
+func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertIndex int) (err error) {
 
    table,_,isOrdered,_,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
@@ -510,7 +510,7 @@ func (db *SqliteDB) PersistAddToCollection(coll AddableCollection, val RObject, 
 
 	} else { // Non-Primitive part type
 
-		err = db.EnsurePersisted(val)
+		err = db.EnsurePersisted(th, val)
 		if err != nil {
 			return
 		}
