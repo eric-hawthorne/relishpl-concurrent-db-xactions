@@ -90,6 +90,13 @@ type RCollection interface {
 
     MayContainProxies() bool    // Some or all collection elements may be Proxy objects which need to be replaced by a 
                                 // db fetch of the real object.
+
+	/*
+	  The currently active DB transaction which this collection is dirty in.
+	*/
+	Transaction() *RTransaction 
+
+	SetTransaction(tx *RTransaction)    
 }
 
 /*
@@ -245,6 +252,7 @@ type rcollection struct {
 
 	mayContainProxies bool // If this collection was fetched from the db, could there still be some elements which are proxies?
 	                       // set to false when deproxified.
+	transaction *RTransaction
 }
 
 func (o *rcollection) SetMayContainProxies(status bool) {
@@ -254,6 +262,8 @@ func (o *rcollection) SetMayContainProxies(status bool) {
 func (o *rcollection) MayContainProxies() bool {
    return o.mayContainProxies
 }
+
+
 
 /*
 Only one of the attr or unaryFunction will be non-nil.
@@ -336,7 +346,7 @@ func (c rcollection) IsIndexSettable() bool {
    return false  // default, override in sub-types
 }
 
-func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (c *rcollection) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
 	
 	//fmt.Println("rcollection.ToMapListTree")
 	
@@ -356,7 +366,7 @@ func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]boo
 	        if visited[value] {
 		       continue
 	        }
-	        val, err = value.ToMapListTree(includePrivate, visited)
+	        val, err = value.ToMapListTree(th, includePrivate, visited)
 	        if err != nil {
 		       return
 	        }
@@ -371,7 +381,7 @@ func (c *rcollection) ToMapListTree(includePrivate bool, visited map[RObject]boo
             }			
             // fmt.Println("coll",coll)
             // fmt.Println ("value",value)
-	        val, err = value.ToMapListTree(includePrivate, visited)
+	        val, err = value.ToMapListTree(th, includePrivate, visited)
 	        if err != nil {
 		       return
 	        }	
@@ -478,14 +488,14 @@ func (s *rset) ClearInMemory() {
 
 /*
 */
-func (c *rset) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rset) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	var relishVal RObject
 	switch tree.(type) {
 	case []interface{}:
 		slice := tree.([]interface{})
 		for _,val := range slice {
 			prototypeObj := c.ElementType().Prototype()
-			relishVal, err = prototypeObj.FromMapListTree(val)
+			relishVal, err = prototypeObj.FromMapListTree(th, val)
 			if err != nil {
 				return
 			}
@@ -645,7 +655,7 @@ func (rt *RuntimeEnv) Newrset(elementType *RType, minCardinality, maxCardinality
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, nil, false}, nil}
+	s := &rset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, nil, false, nil}, nil}
 	s.rcollection.robject.this = s
 	coll = s		
     if ! markSense {
@@ -836,7 +846,7 @@ func (s *rsortedset) Less(i, j int) bool {
 	        default:
 				// Use the "less" multimethod to compare them.
 
-			    lessMethod, _ := evalContext.InterpThread().CallingPackage().MultiMethods["lt"]
+			    lessMethod, _ := th.CallingPackage().MultiMethods["lt"]
 			    //lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
 
 				isLess := evalContext.EvalMultiMethodCall(lessMethod, []RObject{val1, val2})        
@@ -854,13 +864,13 @@ func (s *rsortedset) Less(i, j int) bool {
 		// Get attr value of both list members
 
 		obj1 := s.At(th, i)
-		val1, found := RT.AttrVal(obj1, s.sortWith.attr)
+		val1, found := RT.AttrVal(th, obj1, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
 		}
 
 		obj2 := s.At(th, j)
-		val2, found := RT.AttrVal(obj2, s.sortWith.attr)
+		val2, found := RT.AttrVal(th, obj2, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
 		}
@@ -1088,14 +1098,14 @@ func (s *rsortedset) ClearInMemory() {
 Note: Currently, this does not sort the elements.
 This could lead to illegal state. Need a MethodEvaluationContext to sort.
 */
-func (c *rsortedset) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rsortedset) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	var relishVal RObject
 	switch tree.(type) {
 	case []interface{}:
 		slice := tree.([]interface{})
 		for _,val := range slice {
 			prototypeObj := c.ElementType().Prototype()
-			relishVal, err = prototypeObj.FromMapListTree(val)
+			relishVal, err = prototypeObj.FromMapListTree(th, val)
 			if err != nil {
 				return
 			}
@@ -1210,7 +1220,7 @@ func (rt *RuntimeEnv) Newrsortedset(elementType *RType, minCardinality, maxCardi
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false}, nil, nil}
+	s := &rsortedset{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false, nil}, nil, nil}
 	s.rcollection.robject.this = s
 	coll = s		
 	if ! markSense {
@@ -1569,7 +1579,7 @@ func (s *rlist) Less(i, j int) bool {
 	        default:
 				// Use the "less" multimethod to compare them.
 
-			    lessMethod, _ := evalContext.InterpThread().CallingPackage().MultiMethods["lt"]
+			    lessMethod, _ := th.CallingPackage().MultiMethods["lt"]
 			    //lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
 
 				isLess := evalContext.EvalMultiMethodCall(lessMethod, []RObject{val1, val2})        
@@ -1585,13 +1595,13 @@ func (s *rlist) Less(i, j int) bool {
 		// Get attr value of both list members
 
 		obj1 := s.At(th, i)
-		val1, found := RT.AttrVal(obj1, s.sortWith.attr)
+		val1, found := RT.AttrVal(th, obj1, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
 		}
 
 		obj2 := s.At(th, j)
-		val2, found := RT.AttrVal(obj2, s.sortWith.attr)
+		val2, found := RT.AttrVal(th, obj2, s.sortWith.attr)
 		if !found {
 			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
 		}
@@ -1753,14 +1763,14 @@ func (s *rlist) ClearInMemory() {
 
 /*
 */
-func (c *rlist) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rlist) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	var relishVal RObject
 	switch tree.(type) {
 	case []interface{}:
 		slice := tree.([]interface{})
 		for _,val := range slice {
 			prototypeObj := c.ElementType().Prototype()
-			relishVal, err = prototypeObj.FromMapListTree(val)
+			relishVal, err = prototypeObj.FromMapListTree(th, val)
 			if err != nil {
 				return
 			}
@@ -1785,7 +1795,7 @@ func (rt *RuntimeEnv) Newrlist(elementType *RType, minCardinality, maxCardinalit
 	if maxCardinality == -1 {
 		maxCardinality = MAX_CARDINALITY
 	}
-	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false}, nil}
+	lst := &rlist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false, nil}, nil}
 	lst.rcollection.robject.this = lst
 	coll = lst	
 	if ! markSense {
@@ -1833,22 +1843,22 @@ func (rt *RuntimeEnv) Newmap(keyType *RType, valType *RType, minCardinality, max
 	switch keyType {
 	case StringType:
 		//fmt.Println("Making a stringmap")
-		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false}, valType, make(map[string]RObject)}	
+		m := &rstringmap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false, nil}, valType, make(map[string]RObject)}	
 	    m.rcollection.robject.this = m
 	    coll = m
 	    //fmt.Println(m)
 	    //fmt.Println(m.m)
    	 //fmt.Println(m.m == nil)	    
 	case IntType, Int32Type:
-		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false}, valType, make(map[int64]RObject)}
+		m := &rint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false, nil}, valType, make(map[int64]RObject)}
 	    m.rcollection.robject.this = m
 	    coll = m	
 	case UintType, Uint32Type:
-		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false},valType, make(map[uint64]RObject)}
+		m := &ruint64map{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false, nil},valType, make(map[uint64]RObject)}
 	    m.rcollection.robject.this = m				
 	    coll = m	
 	default:
-		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false},valType, make(map[RObject]RObject)}		
+		m := &rpointermap{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, keyType, owner, attr, sortWith, false, nil},valType, make(map[RObject]RObject)}		
 	    m.rcollection.robject.this = m			
 	    coll = m				
 	}
@@ -1877,7 +1887,7 @@ func (o *rstringmap) Debug() string {
 }
 
 func (o *rstringmap) String() string {
-	encoded, err := JsonMarshal(o, false)
+	encoded, err := JsonMarshal(nil, o, false)
 	if err != nil {
 		return "({}String > T with unserializable elements)"
 	}
@@ -1990,7 +2000,7 @@ func (s *rstringmap) ClearInMemory() {
 
 /*
 */
-func (c *rstringmap) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rstringmap) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	var relishVal RObject
 	switch tree.(type) {
 	case []interface{}:
@@ -2000,7 +2010,7 @@ func (c *rstringmap) FromMapListTree(tree interface{}) (obj RObject, err error) 
 
 		for key,val := range theMap {
 			prototypeObj := c.ValType().Prototype()
-			relishVal, err = prototypeObj.FromMapListTree(val)
+			relishVal, err = prototypeObj.FromMapListTree(th, val)
 			if err != nil {
 				return
 			}
@@ -2181,7 +2191,7 @@ func (s *ruint64map) ClearInMemory() {
 
 
 
-func (c *ruint64map) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *ruint64map) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")		
 	return 
 }
@@ -2353,7 +2363,7 @@ func (s *rint64map) ClearInMemory() {
 	s.m = make(map[int64]RObject)
 }
 
-func (c *rint64map) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rint64map) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
     err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")		
 	return 
 }
@@ -2478,7 +2488,7 @@ func (s *rpointermap) ClearInMemory() {
 	s.m =  make(map[RObject]RObject)
 }
 
-func (c *rpointermap) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (c *rpointermap) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
    err = errors.New("Cannot unmarshal JSON into a Map unless the key-type is String.")			
 	return 
 }
@@ -2567,4 +2577,14 @@ func (f FakeInterpreterThread) GC() {
 
 func (f FakeInterpreterThread) EvaluationContext() MethodEvaluationContext {
 	return nil
+}
+
+/*
+  The currently active DB transaction which this thread started or is participating in.
+*/
+func (f FakeInterpreterThread) Transaction() *RTransaction {
+   return nil
+}
+
+func (f FakeInterpreterThread) SetTransaction(tx *RTransaction) {
 }

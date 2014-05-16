@@ -18,6 +18,7 @@ import (
 	. "relish/dbg"
 	"sync"
 	"strings"
+	"errors"
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -254,6 +255,10 @@ func (rt *RuntimeEnv) SetDB(db DB) {
 	rt.db = db
 }
 
+
+
+
+
 /*
    Return the value of the specified attribute for the specified object.
    Does not currently distinguish between multi-value attributes and single-valued.
@@ -261,9 +266,196 @@ func (rt *RuntimeEnv) SetDB(db DB) {
    the multi-value attribute.
    What does it return if no value has been defined? How about a found boolean
 */
-func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, found bool) {
-	return rt.AttrValue(obj, attr, true, true, true)
+func (rt *RuntimeEnv) AttrVal(th InterpreterThread, obj RObject, attr *AttributeSpec) (val RObject, found bool) {
+	return rt.AttrValue(th, obj, attr, true, true, true)
 }
+
+var txOpsMutex sync.Mutex
+
+/*
+Tries to make sure that if we are in a thread other than one participating in the transaction,
+the attribute value we will get will wait til a transaction that the
+object is dirty in commits or rolls back.
+Also makes sure that if the object state is invalid, due to a rolled back transaction it was dirty in,
+that the object state is first restored from database before getting the attribute value.
+*/
+func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency1"))
+    txOpsMutex.Lock()
+    defer txOpsMutex.Unlock()
+
+//   fmt.Println("unit.transaction=",unit.transaction)
+   if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
+//       fmt.Println("Yeah! Refreshing")
+       err := unit.Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+                         // What does refresh mean if the object was only persisted in the db
+                         // in the rolled back transaction. Need to abort the refresh before updating
+                         // the attribute value.
+                         // NB. Should set the unit's transaction to nil
+       if err != nil {
+       	  panic(err)
+       }
+    }
+
+    if unit.transaction != nil {  // Is definitely stored locally. TODO Note the race condition here.
+
+    	if th != nil && th.Transaction() != unit.transaction {
+           tx := unit.transaction	
+           txOpsMutex.Unlock()
+           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           tx.mutex.RUnlock()
+           txOpsMutex.Lock()
+        }
+        if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
+
+	       err := unit.Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+	                         // What does refresh mean if the object was only persisted in the db
+	                         // in the rolled back transaction. Need to abort the refresh before updating
+	                         // the attribute value.
+	                         // NB. Should set the unit's transaction to nil
+	       if err != nil {
+	       	  panic(err)
+	       }
+        }
+    } 
+}
+
+func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err error) {
+    txOpsMutex.Lock()
+    defer txOpsMutex.Unlock()
+    if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {
+// LOCK    	
+    	err = unit.Refresh(th)  // Should set the unit's transaction to nil
+    	if err != nil {
+    		return
+    	}
+// UNLOCK    	
+    }
+    if th.Transaction() != nil {
+
+// LOCK
+
+    	if unit.transaction == nil {  // Marking this object as dirty in the thread's transaction.
+    		unit.transaction = th.Transaction()
+
+     		unit.SetTransaction(th.Transaction())
+   	
+
+    	} else if unit.transaction != th.Transaction() {
+            err = errors.New("object transaction is different than goroutine's transaction.")
+            return
+    	}
+// UNLOCK
+
+    } else if unit.transaction != nil {  // This is a thread that is not participating in the transaction.
+        tx := unit.transaction
+        txOpsMutex.Unlock()        
+        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.mutex.RUnlock()
+        txOpsMutex.Lock()
+        if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
+
+	       err := unit.Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+	                         // What does refresh mean if the object was only persisted in the db
+	                         // in the rolled back transaction. Need to abort the refresh before updating
+	                         // the attribute value.
+	       if err != nil {
+	       	  return err
+	       }
+        }
+    }
+    return
+}
+
+
+/*
+Tries to make sure that if we are in a thread other than one participating in the transaction,
+the attribute value we will get will wait til a transaction that the
+object is dirty in commits or rolls back.
+Also makes sure that if the object state is invalid, due to a rolled back transaction it was dirty in,
+that the object state is first restored from database before getting the attribute value.
+*/
+func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection) {
+    txOpsMutex.Lock()
+    defer txOpsMutex.Unlock()
+
+   if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
+
+       err := coll.(Persistable).Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+                         // What does refresh mean if the object was only persisted in the db
+                         // in the rolled back transaction. Need to abort the refresh before updating
+                         // the attribute value.
+                         // NB. Should set the unit's transaction to nil
+       if err != nil {
+       	  panic(err)
+       }
+    }
+
+    if coll.Transaction() != nil {  // Is definitely stored locally. TODO Note the race condition here.
+
+    	if th != nil && th.Transaction() != coll.Transaction() {
+           tx := coll.Transaction()	
+           txOpsMutex.Unlock()
+           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           tx.mutex.RUnlock()
+           txOpsMutex.Lock()
+        }
+        if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
+
+	       err := coll.(Persistable).Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+	                         // What does refresh mean if the object was only persisted in the db
+	                         // in the rolled back transaction. Need to abort the refresh before updating
+	                         // the attribute value.
+	                         // NB. Should set the unit's transaction to nil
+	       if err != nil {
+	       	  panic(err)
+	       }
+        }
+    } 
+}
+
+func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection) (err error) {
+    txOpsMutex.Lock()
+    defer txOpsMutex.Unlock()
+    if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {   	
+    	err = coll.(Persistable).Refresh(th)  // Should set the unit's transaction to nil
+    	if err != nil {
+    		return
+    	}   	
+    }
+    if th.Transaction() != nil {
+    	if coll.Transaction() == nil {  // Marking this object as dirty in the thread's transaction.
+    		coll.SetTransaction(th.Transaction())
+    	} else if coll.Transaction() != th.Transaction() {
+            err = errors.New("object transaction is different than goroutine's transaction.")
+            return
+    	}
+    } else if coll.Transaction() != nil {  // This is a thread that is not participating in the transaction.
+        tx := coll.Transaction()
+        txOpsMutex.Unlock()        
+        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.mutex.RUnlock()
+        txOpsMutex.Lock()
+        if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
+
+	       err := coll.(Persistable).Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
+	                         // What does refresh mean if the object was only persisted in the db
+	                         // in the rolled back transaction. Need to abort the refresh before updating
+	                         // the attribute value.
+	       if err != nil {
+	       	  return err
+	       }
+        }
+    }
+    return
+}
+
+
+
+
+
+
+
 
 
 /*
@@ -273,12 +465,23 @@ func (rt *RuntimeEnv) AttrVal(obj RObject, attr *AttributeSpec) (val RObject, fo
    the multi-value attribute.
    What does it return if no value has been defined? val = nil (Go nil) and found=false.
 */
-func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
+func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *AttributeSpec, checkPersistence bool, allowNoValue bool, lock bool) (val RObject, found bool) {
 	
 
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }
+
+    if obj.IsBeingStored() {
+       ensureMemoryTransactionConsistency1(th, unit)
+    }
+
     val = unit.attrs[i]
 
     if val != nil {
@@ -295,7 +498,7 @@ func (rt *RuntimeEnv) AttrValue(obj RObject, attr *AttributeSpec, checkPersisten
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
 	if checkPersistence && obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
 		var err error
-		val, err = rt.db.FetchAttribute(obj.DBID(), obj, attr, 0)
+		val, err = rt.db.FetchAttribute(th, obj.DBID(), obj, attr, 0)
 		if err != nil {
 			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
 			
@@ -331,14 +534,14 @@ Version to be used in template execution.
 
 Note: Now checks relations as well as one-way attributes.
 */
-func (rt *RuntimeEnv) AttrValByName(obj RObject, attrName string) (val RObject, err error) {
+func (rt *RuntimeEnv) AttrValByName(th InterpreterThread, obj RObject, attrName string) (val RObject, err error) {
 
 	attr, found := obj.Type().GetAttribute(attrName)
 	if ! found {
        err = fmt.Errorf("Attribute or relation %s not found in type %v or supertypes.", attrName, obj.Type())		
 	   return	
 	}	
-	val, _ = RT.AttrVal(obj, attr)
+	val, _ = RT.AttrVal(th, obj, attr)
 	return
 }
 
@@ -354,7 +557,15 @@ func (rt *RuntimeEnv) RestoreAttr(obj RObject,  attr *AttributeSpec, val RObject
 
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }
+
     unit.attrs[i] = val
 }
 
@@ -368,7 +579,13 @@ func (rt *RuntimeEnv) RestoreAttrNonLocking(obj RObject,  attr *AttributeSpec, v
 	
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }
     unit.attrs[i] = val
 }
 
@@ -433,14 +650,30 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }    
+
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if obj.IsBeingStored() {
+       ensureMemoryTransactionConsistency2(th, unit)    	
+    }
+
+
     oldVal := unit.attrs[i]
     found := (oldVal != nil)
 
     // Also have to do this in UnsetAttr !!!
 	if ! found {
 		if obj.IsStoredLocally() && attr.IsRelation() {
-			oldVal, found = rt.AttrValue(obj, attr,true,true, true)
+			oldVal, found = rt.AttrValue(th, obj, attr,true,true, true)
 		}
 	}
 
@@ -448,7 +681,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 
 
 	if obj.IsStoredLocally() {
-		th.DB().PersistSetAttr(obj, attr, val, found)
+		th.DB().PersistSetAttr(th, obj, attr, val, found)
 	}
 
 	if ! isInverse && attr.Inverse != nil {
@@ -489,6 +722,15 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 		return		
 	}
 	
+
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if obj.IsBeingStored() {
+       unit := obj.(*runit)    	
+       ensureMemoryTransactionConsistency2(th, unit)    	
+    }	
+
 	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
 	// if val == NIL, reject the addition.	
 
@@ -496,6 +738,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 	if err != nil {
 		return
 	}
+
 
 	addColl := objColl.(AddableMixin)     // Will throw an exception if collection type does not implement Add(..)
 	added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
@@ -514,7 +757,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 			} else {
 				insertIndex = newLen - 1
 			}
-			th.DB().PersistAddToAttr(obj, attr, val, insertIndex)
+			th.DB().PersistAddToAttr(th, obj, attr, val, insertIndex)
 		}
 		if ! isInverse && attr.Inverse != nil {
 			err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
@@ -548,6 +791,13 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 		return
 	}
 	
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if coll.IsStoredLocally() {
+       ensureMemoryTransactionConsistency4(context.InterpThread(), coll)    	
+    }	
+
 	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
 	// if val == NIL, reject the addition.	
 
@@ -567,7 +817,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 			} else {
 				insertIndex = newLen - 1
 			}
-			err = context.InterpThread().DB().PersistAddToCollection(coll, val, insertIndex)
+			err = context.InterpThread().DB().PersistAddToCollection(context.InterpThread(),coll, val, insertIndex)
 		}
 	}
 
@@ -580,6 +830,13 @@ If removePersistent is true, also removes the value from the persistent version 
 */
 func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection RemovableCollection, val RObject, removePersistent bool) (err error) { 	
 	
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if collection.IsStoredLocally() {  	
+       ensureMemoryTransactionConsistency4(th, collection)    	
+    }	
+
 	removed, removedIndex := collection.Remove(val)
 	
 	if removed  {
@@ -601,13 +858,23 @@ func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection Remo
 */
 func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *AttributeSpec) (err error) {
 
-    objColl, foundCollection := rt.AttrVal(obj, attr)
+    objColl, foundCollection := rt.AttrVal(th, obj, attr)
 
  	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute	
                          // Must be already empty or unassigned?	
 	  return
     }
 		
+
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if obj.IsBeingStored() {
+       unit := obj.(*runit)   	
+       ensureMemoryTransactionConsistency2(th, unit)    	
+    }	
+
+
 	if attr.IsRelation() {
 	   inverseAttr := attr.Inverse
 
@@ -632,6 +899,12 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 */
 func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection RemovableCollection) (err error) {
 
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if collection.IsBeingStored() {   	
+       ensureMemoryTransactionConsistency4(th, collection)    	
+    }	
 
 	collection.ClearInMemory()	
 	
@@ -730,10 +1003,17 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
 		return
 	}	
 
-   isNewKey,_ := theMap.Put(key, val, context)
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if theMap.IsStoredLocally() {   	
+       ensureMemoryTransactionConsistency4(context.InterpThread(), theMap)    	
+    }	
+
+    isNewKey,_ := theMap.Put(key, val, context)
 	
 	if theMap.IsStoredLocally() {
-	   err = context.InterpThread().DB().PersistMapPut(theMap, key, val, isNewKey)  
+	   err = context.InterpThread().DB().PersistMapPut(context.InterpThread(), theMap, key, val, isNewKey)  
     }
 	return
 }
@@ -751,7 +1031,15 @@ func (rt *RuntimeEnv) EnsureMultiValuedAttributeCollection(obj RObject, attr *At
 
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }
+
+
     val := unit.attrs[i]
 
     if val != nil {
@@ -885,7 +1173,7 @@ Ensure the collection is assigned as value of the attribute.
 func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj RObject, attr *AttributeSpec) (collection RCollection, err error) {
 
    // A single-valued attribute whose value is a collection
-	attrVal, found := RT.AttrVal(obj, attr)
+	attrVal, found := RT.AttrVal(th, obj, attr)
 	var isCollection bool
 	if found {
 		collection, isCollection = attrVal.(RCollection)
@@ -1275,7 +1563,7 @@ If removePersistent is true, also removes the value from the persistent version 
 */
 func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, isInverse bool, removePersistent bool) (err error) { 	
 	
-	objColl, foundCollection := rt.AttrVal(obj, attr)
+	objColl, foundCollection := rt.AttrVal(th, obj, attr)
 
 	if !foundCollection { // this object does not have the collection implementation of this multi-valued attribute	
 
@@ -1286,6 +1574,16 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 
 		return
 	}
+
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if obj.IsBeingStored() {
+       unit := obj.(*runit)
+       ensureMemoryTransactionConsistency2(th, unit)    	
+    }	
+
+
 
 	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement Remove(..)
 	removed, removedIndex := collection.Remove(val)
@@ -1326,14 +1624,29 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
 
     t := obj.Type()
     i := attr.Index[t]
-    unit := obj.(*runit)
+
+    var unit *runit
+    var isUnit bool
+    unit,isUnit = obj.(*runit)
+    
+    if ! isUnit {
+        unit = &(obj.(*GoWrapper).runit)    	
+    }
+
+    // Note. This needs to be locked, so that the attribute setting only gets associated with one
+    // transaction, and there is no race.
+
+    if obj.IsBeingStored() {
+       ensureMemoryTransactionConsistency2(th, unit)    	
+    }	
+
     val := unit.attrs[i] 
     found := (val != nil)
 
 	if ! found {
 		if obj.IsStoredLocally() {
 
-			val, found = rt.AttrVal(obj, attr)
+			val, found = rt.AttrVal(th, obj, attr)
 		}
 	}
 

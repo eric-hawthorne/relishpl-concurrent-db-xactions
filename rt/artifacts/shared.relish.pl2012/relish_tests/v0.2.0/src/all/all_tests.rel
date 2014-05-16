@@ -22,6 +22,7 @@ import
    closures 
    http_client
    transcoders
+   transactions
 
 
 main
@@ -51,3 +52,4 @@ testAll
    transcoders.testCsv
    transcoders.testJson
    concurrency.testConcurrency
+   transactions.testTransactions
