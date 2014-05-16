@@ -125,9 +125,9 @@ type RObject interface {
 	/*
 	   Whether the object is modified since last committed to db.
 	*/
-	IsDirty() bool
-	SetDirty()
-	ClearDirty()
+	IsBeingStored() bool
+	SetBeingStored()
+	ClearBeingStored()
 
 	/*
 	   Whether the object's uuid is reversed in the db object (i.e. bytes 8-15 of uuid are the db id).
@@ -207,7 +207,7 @@ type RObject interface {
       The includePrivate flag determines whether private attributes of a structured object are included
       in the returned map/tree.
    */ 	
-   ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) 
+   ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) 
 
    /*
    Populate a tree of relish objects and attribute values given a map/list tree of Go values.
@@ -220,7 +220,7 @@ type RObject interface {
    object of this method, but should use the returned object as the root of the JSON-populated
    relish-object tree.
    */
-   FromMapListTree(tree interface{}) (obj RObject, err error)
+   FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error)
 	
 }
 
@@ -232,13 +232,12 @@ type robject struct {
 	uuid  []byte // will be 16 bytes
 	this  RObject
 	flags byte
-
-	// Do we need an idReversed bool attribute here?
+	transaction *RTransaction  // which db transaction this is dirty in, or nil
 }
 
 // Could it be that dirty objects are just a list in the RuntimeEnv instead?
 
-const FLAG_DIRTY = 0x1       // object's attributes or relations have been changed since last committed to db.
+const FLAG_BEING_STORED = 0x1       // Begun to store it in the db. Not necessarily finished.
 const FLAG_LOAD_NEEDED = 0x2 // object state must be reloaded from db because has uuid but never loaded 
 // or because is dirty and transaction was aborted
 const FLAG_VALID = 0x4 // Object has all valid attribute values and ok attribute and relationship cardinality
@@ -270,9 +269,9 @@ func (o robject) Iterable() (sliceOrMap interface{}, err error) {
 
 
 
-func (o robject) IsDirty() bool { return o.flags&FLAG_DIRTY != 0 }
-func (o *robject) SetDirty()    { o.flags |= FLAG_DIRTY }
-func (o *robject) ClearDirty()  { o.flags &^= FLAG_DIRTY }
+func (o robject) IsBeingStored() bool { return o.flags&FLAG_BEING_STORED != 0 }
+func (o *robject) SetBeingStored()    { o.flags |= FLAG_BEING_STORED }
+func (o *robject) ClearBeingStored()  { o.flags &^= FLAG_BEING_STORED }
 
 func (o robject) IsLoadNeeded() bool { return o.flags&FLAG_LOAD_NEEDED != 0 }
 func (o *robject) SetLoadNeeded()    { o.flags |= FLAG_LOAD_NEEDED }
@@ -559,12 +558,61 @@ func (o *robject) RestoreIdsAndFlags(id, id2 int64, flags int) {
    created in memory. Now its contents have to be restored from the DB.
    This method accepts the object's id,id2,and flags from the database and
    restores this object's UUID and flags.
+
+   Also has methods for setting and reading which db transaction the object is currently dirty in.
 */
 type Persistable interface {
 	RestoreIdsAndFlags(id, id2 int64, flags int)
+	SetTransaction(tx *RTransaction)  // Set to nil to end association with a transaction
+	Transaction() *RTransaction  // Transaction in which this is dirty, or nil, or RolledBackTransaction
+	RollBack()  // set the transaction to the RolledBackTransaction.
+	IsRolledBack() bool
+	This() RObject
+	Refresh(th InterpreterThread) error  // Re-fetch the object's state and associations from the database. Clear IsRolledBack() status.
 }
 
 func (o robject) Type() *RType { return o.rtype }
+
+
+
+func (o *robject) SetTransaction(tx *RTransaction) {
+   o.transaction = tx
+   if tx != nil && tx != RolledBackTransaction {
+   	   tx.DirtyObjects[o.This().(Persistable)] = true
+   }
+}
+
+func (o *robject) Transaction() *RTransaction {
+   return o.transaction
+}
+
+func (o *robject) RollBack() {
+	if o.IsBeingStored() && ! o.IsStoredLocally() {
+//		fmt.Println("Was not stored locally flag.")
+		o.ClearBeingStored()
+		o.SetTransaction(nil)
+	} else {
+//	   fmt.Println("Was stored locally flag.")	
+//	   fmt.Println(o.IsBeingStored(),o.IsStoredLocally())	
+	   o.transaction = RolledBackTransaction
+    }
+}
+
+func (o *robject) IsRolledBack() bool {
+	return o.transaction == RolledBackTransaction
+}
+
+/* Can only be called while txOpsMutex is locked.
+*/
+func (o *robject) Refresh(th InterpreterThread) (err error) {
+	// TODO refresh attributes from database.
+
+
+	o.SetTransaction(nil)
+    o.ClearLoadNeeded()
+	return
+}
+
 
 /*
 A unitary object. i.e. Not a collection.
@@ -593,6 +641,24 @@ func (r *runit) initialize(n int) {
    r.attrs = make([]RObject,n)
 }
 
+/* Can only be called while txOpsMutex is locked.
+   Refresh attributes from database.
+*/
+func (u *runit) Refresh(th InterpreterThread) (err error) {
+	n := len(u.attrs)
+	for i := 0; i < n; i++ {
+		u.attrs[i] = nil
+	}
+
+    th.DB().Refresh(u,1)   
+	
+
+	
+	if err == nil {
+		err = u.robject.Refresh(th)
+	}
+	return err
+}
 
 
 func (o *runit) String() string {
@@ -611,53 +677,12 @@ func (u runit) IsCollection() bool {
 	return false
 }
 
-/*
-func (o *runit) Mark() bool {
-	if (&(o.robject)).Mark() {
-		o.markAttributes()
-		return true
-	}
-	return false
-}
-
-func (o *runit) markAttributes()  {
-
-	for _, attr := range o.rtype.Attributes {
-
-		if !attr.Part.Type.IsPrimitive {
-
-			val, found := RT.AttrValue(o, attr, false, true, false) // We know only one thread is running no need to lock
-			if !found {
-				break
-			}
-			val.Mark()	
-		} 
-	}
-
-	for _, typ := range o.rtype.Up {
-		for _, attr := range typ.Attributes {
-			if !attr.Part.Type.IsPrimitive {
-
-				val, found := RT.AttrValue(o, attr, false, true, false)  // We know only one thread is running no need to lock
-				if !found {
-					break
-				}
-			    val.Mark()				
-			} 
-		}
-	}
-	return
-}
-*/
-
-
-
 
 /*
 Convert object to a map of strings (attribute names) to attribute values,
 with attribute values themselves converted to maps and slices.
 */
-func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
+func (o *runit) ToMapListTree(th InterpreterThread, includePrivate bool, visited map[RObject]bool) (tree interface{}, err error) {
 	
    // fmt.Println("runit.ToMapListTree",o.String())
 	
@@ -676,7 +701,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
         if includePrivate || attr.Part.IsPublicReadable() {
             key = attr.Part.Name
 
-			  value, found := RT.AttrVal(o, attr)
+			  value, found := RT.AttrVal(th, o, attr)
 			  // fmt.Println(attr.Part.Name,":",value)			
 			  if !found {
 			     //fmt.Println("attr val not found")
@@ -685,7 +710,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 	           continue
 	        }			
 			
-			 val, err = value.ToMapListTree(includePrivate, visited)	
+			 val, err = value.ToMapListTree(th, includePrivate, visited)	
 			 if err != nil {
 			 	return
 			 }
@@ -698,7 +723,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 	        if includePrivate || attr.Part.IsPublicReadable() {
 	            key = attr.Part.Name
 
-				value, found := RT.AttrVal(o, attr)
+				value, found := RT.AttrVal(th, o, attr)
 				//fmt.Println(attr.Part.Name,":",value)
 				if !found {
 			      //fmt.Println("attr val not found")				   
@@ -707,7 +732,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
  	            continue
  	         }
 					
-				val, err = value.ToMapListTree(includePrivate, visited)	
+				val, err = value.ToMapListTree(th, includePrivate, visited)	
 				if err != nil {
 					return
 				}
@@ -722,7 +747,7 @@ func (o *runit) ToMapListTree(includePrivate bool, visited map[RObject]bool) (tr
 }
 
 
-func (o *runit) FromMapListTree(tree interface{}) (obj RObject, err error) {
+func (o *runit) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
 	myType := o.Type()
 	
 	obj = o
@@ -760,9 +785,9 @@ func (o *runit) FromMapListTree(tree interface{}) (obj RObject, err error) {
 			
 			// check if the object already has a value of that attribute.
 			
-            val, valFound := RT.AttrVal(obj, attr) 
+            val, valFound := RT.AttrVal(th, obj, attr) 
             if valFound {
-	           relishVal, err = val.FromMapListTree(value) 
+	           relishVal, err = val.FromMapListTree(th, value) 
   	     	   if err != nil {
 				  return
 			   }	
@@ -790,7 +815,7 @@ func (o *runit) FromMapListTree(tree interface{}) (obj RObject, err error) {
 				  }			
 		       }
 
-	           relishVal, err = prototypeVal.FromMapListTree(value) 
+	           relishVal, err = prototypeVal.FromMapListTree(th, value) 
   	     	   if err != nil {
 				  return
 			   }	
@@ -889,7 +914,12 @@ func (rt *RuntimeEnv) NewObject(typeName string) (RObject, error) {
 	    	
    default:
 	   if typ.IsNative {
-		   w := &GoWrapper{nil,typ,0}
+		   // w := &GoWrapper{nil,typ,0}
+
+	       w := &GoWrapper{runit{robject{rtype: typ},nil},nil}
+
+           w.initialize(typ.TotalAttributeCount)
+
   	      if ! markSense {
   		      w.SetMarked()
   	      }
