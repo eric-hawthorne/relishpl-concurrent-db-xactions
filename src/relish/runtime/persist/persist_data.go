@@ -194,7 +194,9 @@ func (db *SqliteDB) EnsurePersisted(th InterpreterThread, obj RObject) (err erro
     pers := obj.(Persistable)
     tx := pers.Transaction()
 	if tx != nil && tx != th.Transaction() {
+		th.AllowGC()
 		tx.RLock()
+		th.DisallowGC()
 		tx.RUnlock()
 		return
 	}

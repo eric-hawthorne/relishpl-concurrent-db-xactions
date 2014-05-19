@@ -3146,6 +3146,7 @@ func builtinSleep(th InterpreterThread, objects []RObject) []RObject {
     time.Sleep(d)
     // th.DisallowGC("sleep")
     th.DisallowGC()    
+
 	return []RObject{}
 }	
 
@@ -3617,7 +3618,9 @@ var transactionMutex sync.Mutex
 // err = begin  // Begins a db transaction. On success returns an empty string.
 //
 func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject {
+	th.AllowGC()	
 	transactionMutex.Lock()
+	th.DisallowGC()
 	defer transactionMutex.Unlock()
 	relish.EnsureDatabase()
     var errStr string
@@ -3669,7 +3672,9 @@ func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []ROb
 //               // global in-memory object cache if they were not already there.
 //
 func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject {
+	th.AllowGC()
 	transactionMutex.Lock()
+	th.DisallowGC()
 	defer transactionMutex.Unlock()	
 	relish.EnsureDatabase()
     var errStr string
@@ -3723,7 +3728,9 @@ func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject
 //                 // RIGHT NOW UPON ROLLBACK, OR ON DEMAND IN GET-ATTR-VAL OPERATION?
 //
 func builtinRollbackTransaction(th InterpreterThread, objects []RObject) []RObject {
+	th.AllowGC()
 	transactionMutex.Lock()
+	th.DisallowGC()
 	defer transactionMutex.Unlock()	
 	relish.EnsureDatabase()
     errStr := rollbackTransactionCore(th)
