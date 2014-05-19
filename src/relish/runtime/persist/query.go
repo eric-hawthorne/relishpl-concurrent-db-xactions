@@ -14,6 +14,7 @@ import (
 	. "relish/runtime/data"
 	"strings"
 	"regexp"
+	"errors"
 )
 
 // Looking for "afunc" or " aFunc" or "aFuncName123" or " aFuncName123"
@@ -40,7 +41,7 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []
 	
     sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, coll, idsOnly) 	
     if err != nil {
-       if strings.StartsWith(err, "In asList") {
+       if strings.HasPrefix(err.Error(), "In asList") {
 	      err = fmt.Errorf("%v\n  (call to asList with selection criteria:\n   \"%s\")",err, oqlSelectionCriteria)
        } else {
 	      err = fmt.Errorf("Query syntax error:\n%v\n while translating selection criteria:\n\"%s\"",err, oqlSelectionCriteria)
@@ -196,23 +197,23 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
        var collectionTableName string	
        if coll.Owner() == nil { // Independent persistent collection
        	  if ! coll.IsStoredLocally() {
-       	  	 err = "In asList with OQL query, the collection must be persistent!"
+       	  	 err = errors.New("In asList with OQL query, the collection must be persistent!")
        	  	 return
        	  }
           collectionId = coll.DBID()
           collectionTableName,_,_,_,_  = db.TypeDescriptor(coll)          
        } else {
        	  if ! coll.Owner().IsStoredLocally() {
-       	  	 err = "In asList with OQL query, the object with multi-valued attribute must be persistent!"
+       	  	 err = errors.New("In asList with OQL query, the object with multi-valued attribute must be persistent!")
        	  	 return
        	  }       	
-          collection.Id = coll.Owner().DBID()
+          collectionId = coll.Owner().DBID()
           collectionTableName = db.TableNameIfy(coll.Attribute().ShortName())
        }
 
        sqlSelectQuery += " JOIN " + collectionTableName + " ON id = id1"		
 
-       collectionMembershipWhereFilter = " AND id0 = " + collectionId     
+       collectionMembershipWhereFilter = fmt.Sprintf(" AND id0 = %d",collectionId)     
     }
 
 

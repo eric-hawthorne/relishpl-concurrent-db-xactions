@@ -1963,11 +1963,11 @@ urlPathPartDecode s > String
 	// Returns a list formed by executing a select query including the conditions in the select clause
 	// joined with the condition of membership in the collection. 
 	//
-	asList2Method, err := RT.CreateMethod("",nil,"asList", []string{"c","selectConditionsWithArgs"}, []string{"Collection","List"},  []string{"List"}, false, 0, false)
+	asList3Method, err := RT.CreateMethod("",nil,"asList", []string{"c","selectConditionsWithArgs"}, []string{"Collection","List"},  []string{"List"}, false, 0, false)
 	if err != nil {
 		panic(err)
 	}
-	asList2Method.PrimitiveCode = builtinAsList2	
+	asList3Method.PrimitiveCode = builtinAsList2	
 
 
 /*
@@ -4006,9 +4006,9 @@ func builtinAsList2(th InterpreterThread, objects []RObject) []RObject {
 
 	objs := []RObject{} // TODO Use the existing List's RVector somehow
 
-	mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, coll, radius, &objs)		
+	mayContainProxies, err := th.DB().FetchN(list.ElementType(), query, queryArgs, coll, radius, &objs)		
 	if err != nil {
-	  rterr.Stop1(t, listConstruction, err)
+	  rterr.Stop(err)
 	}	
 
 	list.ReplaceContents(objs)
