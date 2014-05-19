@@ -1867,7 +1867,7 @@ func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryCond
     queryArgs := []RObject{} 
     radius := 1
     objs := []RObject{} 
-    mayContainProxies, err := th.DB().FetchN(t, queryConditions, queryArgs, radius, &objs)		
+    mayContainProxies, err := th.DB().FetchN(t, queryConditions, queryArgs, nil, radius, &objs)		
     if err != nil {
 	    dbg.Log(dbg.ALWAYS_,"Error in selectByTypeAndConditions: %s\n",err)
     }	else {
