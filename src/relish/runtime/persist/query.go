@@ -26,7 +26,7 @@ var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9
 queryArgs are values to be substituted by the SQL engine into ? parameters in the where clause.
 There may be zero or more of these. The number must match the number of ?s.
 */
-func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
+func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius))
 	
 	var sqlQuery string
@@ -38,14 +38,19 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []
 
 	mayContainProxies = idsOnly
 	
-    sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, idsOnly) 	
+    sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, coll, idsOnly) 	
     if err != nil {
+       if strings.StartsWith(err, "In asList") {
+	      err = fmt.Errorf("%v\n  (call to asList with selection criteria:\n   \"%s\")",err, oqlSelectionCriteria)
+       } else {
 	      err = fmt.Errorf("Query syntax error:\n%v\n while translating selection criteria:\n\"%s\"",err, oqlSelectionCriteria)
-	      return
+       }
+	   return
     }	
 	
 	checkCache := true
 	errSuffix := ""
+
 	err = db.fetchMultiple(sqlQuery, queryArgs, idsOnly, radius, numPrimitiveAttrColumns, errSuffix, checkCache, objs) 
 	return
 }
@@ -61,7 +66,7 @@ e.g. vehicles/Car, "speed > 60"   ==> "select id from [vehicles/Vehicle] where s
 If lazy is true, the select statement selects only ids.
 If false, it selects everything from all tables: the type and all of its supertypes
 */
-func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, idsOnly bool) (sqlSelectQuery string, numPrimAttributeColumns int, err error) {
+func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string, coll RCollection, idsOnly bool) (sqlSelectQuery string, numPrimAttributeColumns int, err error) {
 
    // 1. Parse the OQL into an ast?
 
@@ -183,7 +188,36 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 	    }
 	    first = false
     }
-    sqlSelectQuery += " WHERE " + oqlWhereCriteria
+
+    collectionMembershipWhereFilter := ""
+
+    if coll != nil {
+       var collectionId int64
+       var collectionTableName string	
+       if coll.Owner() == nil { // Independent persistent collection
+       	  if ! coll.IsStoredLocally() {
+       	  	 err = "In asList with OQL query, the collection must be persistent!"
+       	  	 return
+       	  }
+          collectionId = coll.DBID()
+          collectionTableName,_,_,_,_  = db.TypeDescriptor(coll)          
+       } else {
+       	  if ! coll.Owner().IsStoredLocally() {
+       	  	 err = "In asList with OQL query, the object with multi-valued attribute must be persistent!"
+       	  	 return
+       	  }       	
+          collection.Id = coll.Owner().DBID()
+          collectionTableName = db.TableNameIfy(coll.Attribute().ShortName())
+       }
+
+       sqlSelectQuery += " JOIN " + collectionTableName + " ON id = id1"		
+
+       collectionMembershipWhereFilter = " AND id0 = " + collectionId     
+    }
+
+
+
+    sqlSelectQuery += " WHERE " + oqlWhereCriteria + collectionMembershipWhereFilter
 
 	return
 }
