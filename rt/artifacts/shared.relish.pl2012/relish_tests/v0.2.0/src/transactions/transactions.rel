@@ -142,15 +142,20 @@ testTransactions
    passed = and assertNot err "transaction begun"
                 passed
 
+   // print "about to set a2.aVal = 6 inside transaction"    
    a2.aVal = 6
+   // print "set a2.aVal = 6 inside transaction"        
    sleep seconds 5
+   // print "finished sleep 5 inside transaction"
    passed = and assertEq a2.aVal 6 "a2.aVal is 6"
                 passed   
+   // print "about to commit"                  
    err = commit
+   // print "committed"
    passed = and assertNot err "transaction committed"
                 passed
 
-   sleep seconds 2
+   sleep seconds 4
 
    delete a2    
 
@@ -165,8 +170,11 @@ doStuff a Aa
 """
  Do stuff.
 """
+   // print "doStuff"
    sleep seconds 2
+   // print "finished sleeping 2 so doStuff about to set a2.aVal = 7"   
    a.aVal = 7
+   // print "doStuff set a2.aVal = 7"   
 
 
 

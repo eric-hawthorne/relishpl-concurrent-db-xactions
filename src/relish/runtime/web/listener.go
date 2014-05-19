@@ -1122,8 +1122,9 @@ This method's implementation grabs a mutex, so that the method's code executes a
 relish method execution within template processing knows which interpreter thread to execute the function in.
 */
 func processTemplateResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, methodName string, templateFilePath string, relishTemplateText string, obj RObject, thread *interp.Thread) (err error) {
-
+    thread.AllowGC()
     responseProcessingMutex.Lock()
+    thread.DisallowGC()
     defer responseProcessingMutex.Unlock()
     responseProcessingThread = thread
     responseProcessingPackage = pkg

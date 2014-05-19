@@ -281,8 +281,11 @@ that the object state is first restored from database before getting the attribu
 */
 func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency1"))
+	th.AllowGC()
     txOpsMutex.Lock()
+    th.DisallowGC()
     defer txOpsMutex.Unlock()
+
 
 //   fmt.Println("unit.transaction=",unit.transaction)
    if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
@@ -302,9 +305,13 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
     	if th != nil && th.Transaction() != unit.transaction {
            tx := unit.transaction	
            txOpsMutex.Unlock()
+           th.AllowGC()
            tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           th.DisallowGC()
            tx.mutex.RUnlock()
+           th.AllowGC()
            txOpsMutex.Lock()
+           th.DisallowGC()
         }
         if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
 
@@ -321,7 +328,9 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 }
 
 func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err error) {
+    th.AllowGC()	
     txOpsMutex.Lock()
+    th.DisallowGC()    
     defer txOpsMutex.Unlock()
     if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {
 // LOCK    	
@@ -349,10 +358,14 @@ func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err
 
     } else if unit.transaction != nil {  // This is a thread that is not participating in the transaction.
         tx := unit.transaction
-        txOpsMutex.Unlock()        
+        txOpsMutex.Unlock() 
+        th.AllowGC()               
         tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        th.DisallowGC()
         tx.mutex.RUnlock()
+        th.AllowGC()         
         txOpsMutex.Lock()
+        th.DisallowGC()        
         if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
 
 	       err := unit.Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
@@ -376,7 +389,9 @@ Also makes sure that if the object state is invalid, due to a rolled back transa
 that the object state is first restored from database before getting the attribute value.
 */
 func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection) {
+    th.AllowGC()   	
     txOpsMutex.Lock()
+    th.DisallowGC()    
     defer txOpsMutex.Unlock()
 
    if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
@@ -396,9 +411,13 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
     	if th != nil && th.Transaction() != coll.Transaction() {
            tx := coll.Transaction()	
            txOpsMutex.Unlock()
+           th.AllowGC()            
            tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           th.DisallowGC()            
            tx.mutex.RUnlock()
+           th.AllowGC()             
            txOpsMutex.Lock()
+           th.DisallowGC()             
         }
         if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
 
@@ -415,7 +434,9 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
 }
 
 func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection) (err error) {
+    th.AllowGC()  	
     txOpsMutex.Lock()
+    th.DisallowGC()        
     defer txOpsMutex.Unlock()
     if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {   	
     	err = coll.(Persistable).Refresh(th)  // Should set the unit's transaction to nil
@@ -432,10 +453,14 @@ func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection)
     	}
     } else if coll.Transaction() != nil {  // This is a thread that is not participating in the transaction.
         tx := coll.Transaction()
-        txOpsMutex.Unlock()        
+        txOpsMutex.Unlock()  
+        th.AllowGC()              
         tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        th.DisallowGC()         
         tx.mutex.RUnlock()
+        th.AllowGC()           
         txOpsMutex.Lock()
+        th.DisallowGC()          
         if coll.Transaction() == RolledBackTransaction || coll.IsLoadNeeded() {  // The object state has been rolled back.
 
 	       err := coll.(Persistable).Refresh(th)    // TODO Should we really refresh if not supposed to check persistence??
