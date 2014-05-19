@@ -132,10 +132,12 @@ type DB interface {
 
 	e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 
+  If coll is non-nil, it is treated as a persistent collection that the selection conditions are filtering. 
+
 	mayContainProxies will be true if the collection was fetched lazily from db.
 	*/
 	
-    FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) 
+    FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) 
 
     /*
     Close the connection to the database.
@@ -569,7 +571,7 @@ the matching objects from the the database.
 e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
 */
 	
-func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
+func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
    dbt.UseDB()
    mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, queryArgs, radius, objs)
    dbt.ReleaseDB()	
