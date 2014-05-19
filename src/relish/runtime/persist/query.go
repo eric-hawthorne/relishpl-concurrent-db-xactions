@@ -213,12 +213,12 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 
        sqlSelectQuery += " JOIN " + collectionTableName + " ON id = id1"		
 
-       collectionMembershipWhereFilter = fmt.Sprintf(" AND id0 = %d",collectionId)     
+       collectionMembershipWhereFilter = fmt.Sprintf("id0 = %d AND ",collectionId)     
     }
 
 
 
-    sqlSelectQuery += " WHERE " + oqlWhereCriteria + collectionMembershipWhereFilter
+    sqlSelectQuery += " WHERE " + collectionMembershipWhereFilter + oqlWhereCriteria 
 
 	return
 }
