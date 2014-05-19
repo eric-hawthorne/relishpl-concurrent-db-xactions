@@ -114,6 +114,33 @@ testCollections
    passed = and assertEq map1[! "Three"].num 3 "map1[? \"Three\"]"
                 passed
 
+
+
+   car = summon "JSS 994" 
+
+   lowWheels = asList car.wheels "num < 2"
+   passed = and assertEq (len lowWheels) 1 "len lowWheels is 1"
+                passed   
+
+   whMin = 1
+   highWheels = asList car.wheels 
+                       ["num > ?" whMin]IntOrString                  
+   passed = and assertEq (len highWheels) 1 "len highWheels is 1"
+                passed
+
+   lowWheels = asList car.wheels "num < 5 order by num"
+   passed = and assertEq (len lowWheels) 2 "len lowWheels is 2"
+                passed  
+   passed = and assertEq lowWheels[1].num 4 "lowWheels[1].num is 4"
+                passed  
+
+   whMin = 4
+   highWheels = asList car.wheels 
+                       ["num > ?" whMin]IntOrString                  
+   passed = and assertEq (len highWheels) 0 "len highWheels is 0"
+                passed
+
+
    keys = ""
    for key in map1
       keys = cat keys key
