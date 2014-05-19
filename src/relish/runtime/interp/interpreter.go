@@ -1445,7 +1445,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, nil, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
       }	
@@ -1551,7 +1551,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, queryArgs, radius, &objs)		
+      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, queryArgs, nil, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
       }	

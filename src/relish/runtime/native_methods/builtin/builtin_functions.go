@@ -1940,6 +1940,36 @@ urlPathPartDecode s > String
 	asListMethod.PrimitiveCode = builtinAsList
 
 
+	// asList coll Collection of T oqlSelectClause String > List of T	
+	//
+	// Assumes that the collection is stored locally.
+	// Returns a list formed by executing a select query including the conditions in the select clause
+	// joined with the condition of membership in the collection. 
+	//
+	asList2Method, err := RT.CreateMethod("",nil,"asList", []string{"c","selectConditions"}, []string{"Collection","String"},  []string{"List"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	asList2Method.PrimitiveCode = builtinAsList2	
+
+
+	// asList 
+	//    coll Collection of T 
+	//    selectClauseWithArgs List
+	// > 
+	//    List of T	
+	//
+	// Assumes that the collection is stored locally.
+	// Returns a list formed by executing a select query including the conditions in the select clause
+	// joined with the condition of membership in the collection. 
+	//
+	asList2Method, err := RT.CreateMethod("",nil,"asList", []string{"c","selectConditionsWithArgs"}, []string{"Collection","List"},  []string{"List"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	asList2Method.PrimitiveCode = builtinAsList2	
+
+
 /*
 	slice s List of T start Int end Int > List of T
 
@@ -3913,6 +3943,76 @@ func builtinAsList(th InterpreterThread, objects []RObject) []RObject {
 		list.AddSimple(obj)
 	}
 
+
+	return []RObject{list}
+}
+
+
+/*
+In the database, select the elements of the persistent collection which meet the select clause conditions,
+to form a list with the same element type constraint as
+the collection.
+*/
+func builtinAsList2(th InterpreterThread, objects []RObject) []RObject {
+	coll := objects[0].(RCollection)
+    qExpr := objects[1]
+
+    if coll.ElementType().IsPrimitive {
+		  rterr.Stop("asList with query argument can only be applied to a collection of objects, not to a collection of primitive values.")	
+    }
+
+    list, err := RT.Newrlist(coll.ElementType(),0,-1,nil,nil,nil)
+	if err != nil {
+		panic(err)
+	}
+
+	query := ""
+	queryArgs := []RObject{}
+
+	isList := false
+	qS,isString := qExpr.(String)
+	if isString {
+	 query = string(qS)		
+	} else {
+		 if qExpr.IsCollection() {
+			argColl := qExpr.(RCollection)
+			if argColl.IsList() {
+				isList = true
+				list := argColl.(List)
+				v := list.Vector()
+				objList := []RObject(*v)
+				if len(objList) < 1 {
+		           isList = false
+		        } else {				
+				   qS,isString = objList[0].(String)
+			   	   if ! isString {
+				  	  isList = false
+			  	   } else {
+		              query = string(qS)					      
+				      queryArgs = objList[1:]
+				   }
+				}	
+			} 
+		}
+		if ! (isString || isList) {   
+		  rterr.Stop("asList second argument must be a String or a list starting with a String.")	
+		}
+	}
+	radius := 1
+	if strings.HasPrefix(query, "lazy: ") {
+	 query = query[6:]
+	 radius = 0	 
+	}
+
+	objs := []RObject{} // TODO Use the existing List's RVector somehow
+
+	mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, coll, radius, &objs)		
+	if err != nil {
+	  rterr.Stop1(t, listConstruction, err)
+	}	
+
+	list.ReplaceContents(objs)
+	list.SetMayContainProxies(mayContainProxies)
 
 	return []RObject{list}
 }
