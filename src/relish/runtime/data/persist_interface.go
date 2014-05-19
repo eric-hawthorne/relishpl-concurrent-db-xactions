@@ -573,7 +573,7 @@ e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"
 	
 func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
    dbt.UseDB()
-   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, queryArgs, radius, objs)
+   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, queryArgs, coll, radius, objs)
    dbt.ReleaseDB()	
    return
 }
