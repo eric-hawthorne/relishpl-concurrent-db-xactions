@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# cleanr
+#
+# NOTE: Must be run from within a relish installation directory tree or
+# a relish project directory tree. i.e. At .../relish or below.
+#
+# Removes all pkg directories in the local (unshared) artifacts directories,
+# thus forcing all local artifacts and packages to be recompiled from relish source code
+# next time they are needed, instead of just loading .rlc intermediate-code files. 
+# Cleans all versions of all local artifacts.
+#
+# You can also clean only a single local artifact by issuing a command like
+# 
+# cleanr shared.relish.pl2012/relish_tests
+# 
+# which will clean all local (unshared) versions of the artifact.
+#
+# cleanr shared.relish.pl2012/relish_tests 1.0.23
+#
+# Cleans only local (unshared) version 1.0.23 of the specified artifact.
+#
+#
+# See also the rmdb script.
+
+
+RELISHDIR=${PWD/%relish*/relish}
+
+if [ -d $RELISHDIR/rt ] # It is a source distribution  
+then
+   ARTIFACTSDIR=$RELISHDIR/rt/artifacts
+elif [ -d $RELISHDIR/artifacts ]
+then
+   ARTIFACTSDIR=$RELISHDIR/artifacts
+else
+   echo "You must run cleanr from a working directory at root of or inside a relish directory tree."
+   exit
+fi
+
+
+if [ $# -eq 0 ]  
+then
+	rm -fr $ARTIFACTSDIR/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/*/pkg 
+	rm -fr $ARTIFACTSDIR/*/*/*/*/*/*/*/*/*/pkg 
+        echo "Removed pkg directories (intermediate-code files)"
+elif [ $# -eq 1 ]  
+then
+	ARTIFACT=$1
+	REMOVED=$ARTIFACTSDIR/$ARTIFACT/*/pkg 
+	rm -fr $ARTIFACTSDIR/$ARTIFACT/*/pkg 
+        echo "Removed $REMOVED"
+elif [ $# -eq 2 ]  
+then
+	ARTIFACT=$1
+	VERSION=$2
+	REMOVED=$ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg
+	rm -fr $ARTIFACTSDIR/$ARTIFACT/v$VERSION/pkg 
+	echo "Removed $REMOVED"
+else
+	echo "usage:" 
+	echo "cleanr" 
+	echo "cleanr shared.relish.pl2012/relish_tests" 
+	echo "cleanr shared.relish.pl2012/relish_tests 1.0.23" ; exit 0
+fi
+

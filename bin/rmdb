@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# rmdb
+#
+# Removes the default db1.db database for a relish local artifact.
+#
+# e.g.
+#
+# rmdb shared.relish.pl2012/relish_tests
+#
+# See also the cleanr script.
+
+
+RELISHDIR=${PWD/%relish*/relish}
+
+if [ -d $RELISHDIR/rt ] # It is a source distribution  
+then
+   DATADIR=$RELISHDIR/rt/data
+elif [ -d $RELISHDIR/artifacts ]
+then
+   DATADIR=$RELISHDIR/data
+else
+   echo "You must run rmdb from a working directory at root of or inside a relish directory tree."
+   exit
+fi
+
+
+
+if [ $# -eq 1 ]  
+then
+	ARTIFACT=$1
+	if [ -f $DATADIR/$ARTIFACT/db1.db ] # database exists
+	then
+		rm -fr $DATADIR/$ARTIFACT/db1.db 
+		echo "Removed $DATADIR/$ARTIFACT/db1.db" 
+	else
+		echo "$DATADIR/$ARTIFACT/db1.db NOT FOUND so did not have to be removed!" 
+	fi
+else
+	echo "usage: rmdb origin/artifact    e.g.  rmdb shared.relish.pl2012/relish_tests" 
+fi
+

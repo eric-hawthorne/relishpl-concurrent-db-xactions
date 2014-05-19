@@ -1,0 +1,149 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  http_client
+
+""" 
+ http_client.rel
+
+ Test http client methods httpGet and httpPost
+ TODO: Implement an httpPut.
+"""
+
+import
+   http
+   strings
+   test
+
+
+main
+"""
+ Main program.
+"""
+   testHttp
+
+
+testHttp
+"""
+ Tests requesting web pages with HTTP GET and posting to a form action page using HTTP POST.
+"""
+   passed = true
+
+   print "===== HTTP Client"
+
+   content err = httpGet "http://google.com/robots.txt"
+   // print "===== http://google.com/robots.txt ======================="
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
+
+   template = """
+User-agent: *
+Disallow: /search
+Disallow: /sdch
+Disallow: /groups
+Disallow: /images
+Disallow: /catalogs
+"""   
+   passed = and assert hasPrefix content template
+                       "http://google.com/robots.txt"
+                passed
+   passed = and assertNot err "err http://google.com/robots.txt"
+                passed   
+
+   content err = httpGet "https://google.com/robots.txt"
+   // print "===== https://google.com/robots.txt ======================"
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err   
+   passed = and assert hasPrefix content template
+                       "https://google.com/robots.txt"
+                passed   
+   passed = and assertNot err "err https://google.com/robots.txt"
+                passed   
+
+   content err = httpGet "http://echidnoid.org/"
+   // print "===== http://echidnoid.org/ ================================"
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
+   template = "Get http://echidnoid.org/: dial tcp: lookup echidnoid.org: no such host"   
+   passed = and assertEq err 
+                         template
+                         "err http://echidnoid.org"
+                passed 
+
+   // content err = httpGet "http://relish.pl"
+   // print "===== http://relish.pl ==================================="
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err
+
+   keysVals = {
+                 "firstName" => "Charlie"
+                 "lastName"  => "Brown"
+                 "friend"    => ["Alice" "Bob"]
+              }String > Any
+
+   content err = httpPost "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi" keysVals
+   // print "===== POST http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi ====="
+   // for key val in keysVals
+   //    print fill "%s=%s" key val
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err   
+   template = """
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en-US">
+<head>
+<title>Echoing submitted form data</title>
+</head>
+<body>
+<h1 style="font-size:1.2em">Echoing submitted form data</h1>
+<table border="1" cellspacing="0">
+<tr><th align="left" nowrap><tt>firstName</tt></th><td nowrap><tt>Charlie</tt></td></tr>
+<tr><th align="left" nowrap><tt>friend</tt></th><td nowrap><tt>Alice</tt></td></tr>
+<tr><th align="left" nowrap><tt>friend</tt></th><td nowrap><tt>Bob</tt></td></tr>
+<tr><th align="left" nowrap><tt>lastName</tt></th><td nowrap><tt>Brown</tt></td></tr>
+</table>
+"""
+   passed = and assert hasPrefix content template 
+                       "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi"
+                passed 
+
+   csvFileContents = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+   content err = httpPost "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi" "text/csv" csvFileContents
+   // print "===== POST text/csv to http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi ====="
+   // print "Content:"
+   // print content
+   // print "Err:"
+   // print err  
+
+   template = """
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en-US">
+<head>
+<title>Echoing submitted form data</title>
+</head>
+<body>
+<h1 style="font-size:1.2em">Echoing submitted form data</h1>
+<table border="1" cellspacing="0">
+<tr><th align="left" nowrap><tt>POSTDATA</tt></th><td nowrap><tt>&quot;John,
+"""
+   template = slice template 0 -1
+
+   passed = and assert hasPrefix content template 
+                       "http://www.cs.tut.fi/cgi-bin/run/~jkorpela/echo.cgi 2"
+                passed 
+
+   if passed
+      print "PASSED"

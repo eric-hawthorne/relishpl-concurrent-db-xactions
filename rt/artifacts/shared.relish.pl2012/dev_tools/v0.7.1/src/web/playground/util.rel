@@ -1,0 +1,372 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web/playground 
+
+""" 
+ util.rel
+
+ Miscellaneous methods in the trial program running environment.
+"""
+
+
+import
+   strings
+   datetime
+   env
+
+
+CONSTANTS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ constants.rel
+
+ Constant declarations.
+%s
+
+
+"""
+
+
+TYPES_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ types_and_relations.rel
+
+ Data Type and relation declarations.
+%s
+
+
+"""
+
+
+METHODS_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s 
+ methods.rel
+
+ Method declarations.
+%s
+
+
+"""
+
+
+MAIN_FILE_HEADER = """
+origin   local.relish.pl2012
+artifact %s
+package  playground
+
+%s
+ main.rel
+
+ Main program.
+%s
+
+
+%s
+main
+%s
+ The main program.
+%s
+"""
+
+
+METADATA_FILE = """
+relish artifact metadata: %s
+origin: local.relish.pl2012
+artifact: %s
+current version: 0.7.0
+release date: %s
+tags: application,trial program
+
+%s
+"""
+
+
+metadataFile artfct String description String > String
+"""
+ Generates the content of the trial program metadata file.
+"""
+   if neq (last description 1) "."
+      description = cat description "."
+
+   t = now "Local"
+   date = format t "2006/01/02"
+   => fill METADATA_FILE
+           date
+           artfct
+           date
+           description
+
+
+importSection raw String > String
+"""
+ Generates an import section to insert into another source code file.
+ If there are no imports, returns the empty string.
+"""
+   if raw
+      => fill """
+import    
+%s
+
+
+"""
+              indentWithSpaces 3 (replace raw "\r" "")              
+   else 
+      => ""
+
+
+fixConstants raw String artfct String imports String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill CONSTANTS_FILE_HEADER artfct "\"\"\"" "\"\"\""
+          importSection imports
+          replace raw "\r" ""
+
+
+fixTypes raw String artfct String imports String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill TYPES_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          importSection imports   
+          replace raw "\r" ""
+
+
+
+fixMethods raw String artfct String imports String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill METHODS_FILE_HEADER artfct "\"\"\"" "\"\"\"" 
+          importSection imports   
+          replace raw "\r" ""
+
+
+fixMain raw String artfct String imports String > String
+"""
+ Prepends the file header info.
+"""
+   => cat fill MAIN_FILE_HEADER artfct "\"\"\"" "\"\"\"" (importSection imports) "\"\"\"" "\"\"\""   
+          indentWithSpaces 3 (replace raw "\r" "")
+
+
+fixErrorLocation output String importRows Int > String
+"""
+ Given relish program execution output, determines if there is an error message in it.
+ If so, repairs the line number reference to account for the hidden file headers.
+"""
+   // print cat "|" output "|"
+   if hasPrefix output "\nplayground/main.rel:"
+      row col remainder = errorMessageParts output
+      if not importRows
+         importRows = 1
+      headerRows = plus 15 importRows
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 12
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else
+         => cat "Statements of Main Method:"
+                minus row headerRows
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder
+   elif hasPrefix output "\nplayground/constants.rel:"
+      row col remainder = errorMessageParts output
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else
+         => cat "Constants:"
+                minus row headerRows
+                ":"
+                col
+                ":"
+                remainder       
+   elif hasPrefix output "\nplayground/types_and_relations.rel:"
+      row col remainder = errorMessageParts output
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else        
+         => cat "Data Types and Relations:"
+                minus row 11
+                ":"
+                col
+                ":"
+                remainder                
+   elif hasPrefix output "\nplayground/methods.rel:"
+      row col remainder = errorMessageParts output
+      headerRows = plus 11 importRows    
+      if lte row headerRows  // It is an error in the imports declarations
+         => cat "Imports:"
+                minus row 11
+                ":"
+                shiftLeft col 3
+                ":"
+                remainder      
+      else          
+         => cat "Methods:"
+                minus row 11
+                ":"
+                col
+                ":"
+                remainder                      
+   => output
+
+
+shiftLeft col Int cols Int > Int
+"""
+ Helper for fixErrorLocation. Fixes column position of error message to account
+ for different formatting in playground text areas.
+"""
+   if lte col cols
+      => 1
+   else
+      => minus col cols  
+
+
+errorMessageParts output String > row Int col Int remainder String
+"""
+ Helper for fixErrorLocation.
+ Returns the file row and column info from the output, as well
+ as the remainder of the output after (including) the first linefeed character.
+ Assumes the row col info is present.
+"""
+   output = slice output 1
+   lineEndPos = index output "\n"
+   line = slice output 0 lineEndPos
+   remainder = slice output lineEndPos
+   artifactMessagePos = index remainder "Error in software artifact"
+   remainder = slice remainder 0 artifactMessagePos   
+   startPos = plus (index line ":") 1
+   lastColonPos = lastIndex line ":"
+   rowCol = slice line startPos lastColonPos
+   rc = split rowCol ":"
+   row err = Int rc[0]
+   col err = Int rc[1]
+
+
+indentWithSpaces numSpaces Int raw String > indented String
+"""
+ Return the result of prepending the specified number of spaces to each line of the raw string.
+"""
+   lines = split raw "\n"
+   lineSep = ""
+   for line in lines
+      for i = 0   lt i numSpaces   i = plus i 1 
+         line = cat " " line
+      
+      indented = cat indented lineSep line
+      lineSep = "\n"
+
+
+
+
+
+
+
+
+
+
+
+
+// RELISH_RUNTIME_DIR = "/opt/devel/relish/rt"
+
+
+// RELISH_RUNTIME_DIR = "/Users/eric/devel/relish/rt"
+
+
+playgroundSrcPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/artifacts/local.relish.pl2012/" artfct "/v0.7.0/src/playground"
+
+
+playgroundArtifactPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/artifacts/local.relish.pl2012/" artfct 
+
+
+playgroundDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/data/local.relish.pl2012/" artfct
+
+
+localDataPath artfct String > String
+"""
+ Temporary. This should be a builtin function.
+"""
+   => cat (env.rtPath) "/data/" artfct
+
+
+ensureReflectImport imports String > String
+"""
+ Add reflect package as an import if not there already.
+"""
+   if not contains imports "reflect"
+      if imports
+         => cat imports "\nreflect"
+      => "reflect"
+   => imports
+
+
+ensureReflectPause mainStatements String > String
+"""
+ Add reflect.pause call if not there already and if there is no explore call.
+"""
+   if and eq (index mainStatements "explore ") -1
+          eq (index mainStatements "reflect.pause") -1
+      => cat mainStatements "\nexplore nil"
+   => mainStatements
+
+
+errf err String > String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s
+</p>
+</center>
+</html>
+"""
+           err
