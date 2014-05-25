@@ -65,7 +65,7 @@ Remember to call this when thread execution is done!
 */
 func (i *Interpreter) DeregisterThread(t *Thread) {
     LoglnM(t, GC3_, "DeregisterThread(")
-
+    // fmt.Println("DeregisterThread")
 	delete(i.threads,t)
     RemoveContext(t) 	
 
@@ -370,6 +370,7 @@ You must call DisallowGC() as soon as the potentially-blocking operation is comp
 */
 //func (t *Thread) AllowGC(msg string) {
 func (t *Thread) AllowGC() {
+//	fmt.Printf("%p.AllowGC\n",t)
     if t.GCLockCounter == -1 {
     	panic("thread is attempting to doubly runlock the GCMutex.")
     }
@@ -386,7 +387,7 @@ be potentially blocked.
 */
 //func (t *Thread) DisallowGC(msg string) {
 func (t *Thread) DisallowGC() {
-
+//	fmt.Printf("%p.DisallowGC\n",t)
     if t.GCLockCounter != -1 {
     	panic("thread is attempting to doubly rlock the GCMutex.")
     }

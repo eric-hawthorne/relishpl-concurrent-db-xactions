@@ -68,9 +68,12 @@ type RType struct {
    Returns true iff t is a strict subtype of t2.
 */
 func (t *RType) Less(t2 *RType) bool {
+
+	// Note do we need to move to type constrained *nil*s ??? Complicated.
 	if t == NothingType {
 		return t2 != NothingType
 	}
+
     if t2 == AnyType && t != AnyType {
     	return true
     }	

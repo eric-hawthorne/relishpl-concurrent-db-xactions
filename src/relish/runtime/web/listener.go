@@ -406,6 +406,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    t := interpreter.NewThread(nil)
 
+   defer interpreter.DeregisterThread(t)   
+
    Log(GC2_,"Running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)   
@@ -420,7 +422,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	                                                 keywordArgStringValues,
 	                                                 r)   
 
-   interpreter.DeregisterThread(t)
    Log(GC2_,"Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)      
@@ -431,14 +432,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
       return  
    }   
 
-   
    err = processResponse(w,r,pkg, handlerMethod.Name, resultObjects, t)
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
       return	
    }	
-
 }
 
 
@@ -566,6 +565,8 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 
    t := interpreter.NewThread(nil)
 
+   defer interpreter.DeregisterThread(t)
+
    t.DB().BeginTransaction()
 
    defer t.CommitOrRollback()
@@ -576,16 +577,14 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 	                                                 keywordArgStringValues,
 	                                                 r)   
 
-   interpreter.DeregisterThread(t)
-     
    if err != nil {
       fmt.Println(err)  
       fmt.Fprintln(w, err)
       return  
    }   
-
    
    err = processResponse(w,r,pkg, handlerMethod.Name, resultObjects, t)
+
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
