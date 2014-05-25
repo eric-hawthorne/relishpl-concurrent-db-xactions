@@ -215,7 +215,7 @@ fixErrorLocation output String importRows Int > String
                 remainder      
       else        
          => cat "Data Types and Relations:"
-                minus row 11
+                minus row headerRows
                 ":"
                 col
                 ":"
@@ -232,7 +232,7 @@ fixErrorLocation output String importRows Int > String
                 remainder      
       else          
          => cat "Methods:"
-                minus row 11
+                minus row headerRows
                 ":"
                 col
                 ":"
