@@ -84,8 +84,19 @@ testModel
    truck1.lat = 49.265
    truck1.long = 123.778
    truck1.bedLength = 8.3
+   truck1.vin = "W1E26S7244QD7139B"
+
+   truck2 = vehicles.PickupTruck
+   truck2.lat = 47.135
+   truck2.long = 123.721
+   truck2.bedLength = 5.3   
+   truck2.vin = "X8W74F8831TF8932C"   
 
    addEngine car1 120 243.5
+
+   addEngine truck1 150 317.1   
+
+   addEngine truck2 130 289.6  
 
    passed = and assertEq car1.engine.horsepower 120 "attribute selector chaining 1"  
                 passed 
@@ -114,6 +125,7 @@ testModel
       firstPass = true
       dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
       dub truck1 "JAT 057"
+      dub truck2 "FEC 092"
    
    car1.wheels += wheel1  
    car1.wheels += wheel2  

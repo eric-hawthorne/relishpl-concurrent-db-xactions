@@ -20,8 +20,11 @@ import (
 // Looking for "afunc" or " aFunc" or "aFuncName123" or " aFuncName123"
 //var re *regexp.Regexp = regexp.MustCompile(`[a-z][A-Za-z0-9]*     ^\(   `)
 
-var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9])`)
+// Before May 20 2014
+//var re *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9])`)
 
+var re *regexp.Regexp = regexp.MustCompile(`(?:^|[^.A-Za-z0-9])([a-z][A-Za-z0-9]*)(?:$|[^(.A-Za-z0-9])`)	
+var re2 *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)\.([a-z][A-Za-z0-9]*)(?:$|[^(A-Za-z0-9])`)
 
 /*
 queryArgs are values to be substituted by the SQL engine into ? parameters in the where clause.
@@ -84,6 +87,8 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
    // Do we do this lazy or all in one?
 
     attributeNames := make(map[string]bool)
+    otherAttributeNames := make(map[string][]string)  // map from join attr name to list of other attr names
+    joinAttrs := make(map[string]*AttributeSpec)
 
     // These will have to be made illegal for attribute names in relish TODO !!!
     reservedWords := map[string]bool {
@@ -102,6 +107,50 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 
     s := removeLiteralStrings(oqlWhereCriteria)
  
+    // Find b.c and d.e in expression like b.c < 2 and d.e = 'foo'
+    //
+	joinedAttrMatches := re2.FindAllStringSubmatch(s,-1)
+	
+    hasJoinedConditions := len(joinedAttrMatches) > 0
+
+
+	joinAttrWords := []string{}
+	joinAttrOtherAttrWords := []string{}	
+	for _,match := range joinedAttrMatches {
+		joinAttrWords = append(joinAttrWords, match[1])
+		joinAttrOtherAttrWords = append(joinAttrOtherAttrWords, match[2])		
+	}
+
+    for i := range joinAttrWords {
+        joinAttrWord := joinAttrWords[i]
+        joinAttrOtherAttrWord := joinAttrOtherAttrWords[i]
+
+        otherAttrs,othersFound := otherAttributeNames[joinAttrWord]
+        if othersFound {
+        	otherAttributeNames[joinAttrWord] = append(otherAttrs,joinAttrOtherAttrWord)
+        } else {
+        	otherAttributeNames[joinAttrWord] = []string{joinAttrOtherAttrWord}
+        	attr, attrFound := objType.GetAttribute(joinAttrWord)
+            if ! attrFound {
+            	err = fmt.Errorf("Attribute '%s' not found in type %s or supertypes.", joinAttrWord, objType.Name)
+                return    
+            }    	
+        	joinAttrs[joinAttrWord] = attr
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    // Original code, before join-table handling, is below here.
+
     // words := re.FindAllString(s,-1)
 	matches := re.FindAllStringSubmatch(s,-1)
 	words := []string{}
@@ -116,41 +165,56 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
         }
     } 
 
-    tableNameAliases, aliasedAttrNames, err := db.findAliases(objType, attributeNames, idsOnly)
+    // tableNameAliases is a map from tableName to alias
+    // aliasedAttrNames has each attribute b prefixed by its table's alias e.g. t1.b
+    tableNameAliases, aliasedAttrNames, err := db.findAliases(objType, attributeNames, idsOnly, hasJoinedConditions)
     if err != nil {
        return 	
     }
 
+    var literalMap map[string]string 
+    oqlWhereCriteria, literalMap = substituteLiteralStrings(oqlWhereCriteria) 
+
     // replace references to attributes (columns) with table-alias prefixed versions
-    // 
-    // TODO This is going to replace attribute names that occur inside literal single-quoted strings
-    // and that is INCORRECT!!!
-    // WILL HAVE TO CREATE A SUBSTITUTION MAP WITH THINGS LIKE @@@@2@@@@ in the quoted strings, then replace
-    // them with the real values at the last minute. 
-    //
+ 
     for attrName, aliasedAttrName := range aliasedAttrNames {
 	   oqlWhereCriteria = strings.Replace(oqlWhereCriteria, attrName, aliasedAttrName, -1)
     }
+
+
+
+
 
     var first bool
     if idsOnly {
        sqlSelectQuery = "SELECT ro.id FROM RObject ro"  // TODO This is going to be an ambiguous column name
        //   first = true
     } else {
-
 		sqlSelectQuery = "SELECT ro.id,id2,flags,typeName"
 		sep := ","		
 		
+
+// Question: What are the right t1, t2 ... table aliases to prepend if hasJoinedConditions ?
+
+        var tableName string 
+        var alias string
+
+        if hasJoinedConditions {
+        	tableName = db.TableNameIfy(objType.ShortName())
+        	alias = tableNameAliases[tableName] + "."
+        }
+
 		for _, attr := range objType.Attributes {
+
 			if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
 				if attr.Part.Type == TimeType {
-				   sqlSelectQuery += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+				   sqlSelectQuery += sep + alias + attr.Part.Name + "," + attr.Part.Name + "_loc" 
 				   numPrimAttributeColumns += 2							
 				} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
-				   sqlSelectQuery += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+				   sqlSelectQuery += sep + alias + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 				   numPrimAttributeColumns += 2
 				} else {
-				   sqlSelectQuery += sep + attr.Part.Name
+				   sqlSelectQuery += sep + alias + attr.Part.Name
 				   numPrimAttributeColumns ++
 			    }
 				sep = ","
@@ -158,16 +222,24 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 		}		
 		
 		for _, typ := range objType.Up {
+
+	        if hasJoinedConditions {
+	        	tableName = db.TableNameIfy(typ.ShortName())
+	        	alias = tableNameAliases[tableName]
+	        } else {
+	        	alias = ""
+	        }
+
 			for _, attr := range typ.Attributes {
 					if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
 					if attr.Part.Type == TimeType {
-					   sqlSelectQuery += sep + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
+					   sqlSelectQuery += sep + alias + attr.Part.Name	+ "," + attr.Part.Name + "_loc" 
 					   numPrimAttributeColumns += 2							
 					} else if attr.Part.Type == ComplexType || attr.Part.Type == Complex32Type {
-					   sqlSelectQuery += sep + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
+					   sqlSelectQuery += sep + alias + attr.Part.Name	+ "_r," + attr.Part.Name + "_i" 	
 					   numPrimAttributeColumns += 2
 					} else {
-					   sqlSelectQuery += sep + attr.Part.Name
+					   sqlSelectQuery += sep + alias + attr.Part.Name
 					   numPrimAttributeColumns ++
 				    }
 					sep = ","				
@@ -185,7 +257,11 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 	    if first {
 		   sqlSelectQuery += tableName + tableAlias
 	    } else {
-		   sqlSelectQuery += " JOIN " + tableName + tableAlias + " USING (id)"		
+	       if hasJoinedConditions {
+		      sqlSelectQuery += " JOIN " + tableName + tableAlias + " ON ro.id =" + tableAlias + ".id"			       	   
+	       } else {	
+		      sqlSelectQuery += " JOIN " + tableName + tableAlias + " USING (id)"		
+		   }
 	    }
 	    first = false
     }
@@ -211,10 +287,85 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
           collectionTableName = db.TableNameIfy(coll.Attribute().ShortName())
        }
 
-       sqlSelectQuery += " JOIN " + collectionTableName + " ON id = id1"		
+       sqlSelectQuery += " JOIN " + collectionTableName + " ctbl ON ro.id = ctbl.id1"		
 
-       collectionMembershipWhereFilter = fmt.Sprintf("id0 = %d AND ",collectionId)     
+       collectionMembershipWhereFilter = fmt.Sprintf("ctbl.id0 = %d AND ",collectionId)     
     }
+
+
+
+/////////////// JOINED OTHER OBJECT ATTR TABLES
+
+    // otherAttributeNames is a map from joinAttrName to list of other obj primitive attrNames
+    // joinAttrs is a map form joinAttrName to actual attribute object (from which can get table name)
+
+    // THE FOLLOWING MIGHT HAVE TO BE MOVED LATER!!
+
+    otherAttrNamesToAliasedAttrNames :=  make(map[string]string)
+
+    i := 0
+    j := 0
+    for joinAttrName, joinAttr := range joinAttrs {
+        i++
+    	otherAttrNames := otherAttributeNames[joinAttrName]
+
+    	joinTable := db.TableNameIfy(joinAttr.ShortName())
+    	joinTableAlias := fmt.Sprintf("jt%d",i)
+
+
+        sqlSelectQuery += " JOIN " + joinTable + " " + joinTableAlias + " ON ro.id = " + joinTableAlias + ".id0" 
+
+        joinedObjectType := joinAttr.Part.Type
+
+
+
+
+        otherObjectTableAliases := make ( map[string]string )   // table name to alias
+
+    	// find table name for each other attrName, given joinAttr.Part.Type
+
+    	for _,otherAttrName := range otherAttrNames {
+            otherAttr, attrFound := joinedObjectType.GetAttribute(otherAttrName)
+            if ! attrFound {
+            	err = fmt.Errorf("Attribute '%s' not found in attribute type %s or supertypes.", otherAttrName, joinedObjectType.Name)
+                return 
+            }
+            otherObjectTypeWithAttr := otherAttr.WholeType
+            otherTableName := db.TableNameIfy(otherObjectTypeWithAttr.ShortName())
+            otherTableAlias, found := otherObjectTableAliases[otherTableName]
+            if ! found {
+            	j++
+    	        otherTableAlias = fmt.Sprintf("ot%d",j) 
+    	        otherObjectTableAliases[otherTableName] = otherTableAlias      
+
+               sqlSelectQuery += " JOIN " + otherTableName + " " + otherTableAlias + " ON " + joinTableAlias + ".id1 = " + otherTableAlias + ".id" 
+
+            }
+
+            qualifiedOtherAttrName := joinAttrName + "." + otherAttrName
+            otherAttrNamesToAliasedAttrNames[qualifiedOtherAttrName] = otherTableAlias + "." + otherAttrName
+    	} 
+    }
+
+
+
+
+    // replace references to attributes (columns) with table-alias prefixed versions
+ 
+    for qualifiedOtherAttrName, aliasedOtherAttrName := range otherAttrNamesToAliasedAttrNames {
+	   oqlWhereCriteria = strings.Replace(oqlWhereCriteria, qualifiedOtherAttrName, aliasedOtherAttrName, -1)
+    }
+
+    oqlWhereCriteria = restoreLiteralStrings(oqlWhereCriteria, literalMap)
+
+
+
+/////////////// END OF JOINED OTHER OBJECT ATTR TABLES
+
+
+
+
+
 
 
 
@@ -222,6 +373,7 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
 
 	return
 }
+
 
 /*
 Removes single-quoted literal strings from sql query text and returns all of the query text
@@ -236,6 +388,29 @@ func removeLiteralStrings(queryString string) string {
 		}
 	}
 	return s
+}
+
+func substituteLiteralStrings(queryString string) (subbed string, literalMap map[string]string) {
+	literalMap = make(map[string]string)
+	strs := strings.Split(queryString, "'")
+	for i, r := range strs {
+		if i%2 == 0 {
+			subbed += r
+		} else {
+			token := fmt.Sprintf("'%d'",i)
+
+			subbed += token
+			literalMap[token] = "'" + r + "'"
+		}
+	}
+	return 
+}
+
+func restoreLiteralStrings(queryString string, literalMap map[string]string) string {
+	for token,original := range literalMap {
+       queryString = strings.Replace(queryString, token, original, 1)
+	}
+	return queryString
 }
 
 /*
@@ -286,14 +461,14 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, lazy
 }
 */
 
-func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsOnly bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
+func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsOnly bool, hasJoinedCondition bool) (tableNamesToAliases map[string]string, attrNamesToAliasedAttrNames map[string]string, err error) {
    tableNamesToAliases = make(map[string]string)
    attrNamesToAliasedAttrNames =  make(map[string]string)
    aliasNum := 1
    var alias string
    typeTableName := db.TableNameIfy(typ.ShortName())
    var foundAttribute bool  // Whether type has at least one primitive attribute
-   var matchedAttribute bool
+   var matchedAttribute bool   // Whether an attribute from the type is mentioned in the where conditions of the query
    for _, attr := range typ.Attributes {
 	  if attr.Part.Type.IsPrimitive && attr.Part.CollectionType == "" {
 		 foundAttribute = true // type has at least one primitive attribute
@@ -313,6 +488,10 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsO
 	  }
    }
 
+   if hasJoinedCondition && alias == "" {
+	  alias = fmt.Sprintf("t%v",aliasNum)
+	  aliasNum ++   	   
+   }
    tableNamesToAliases[typeTableName] = alias  // original type must always be included in the join. 	
    /*
    if (foundAttribute && ! idsOnly) || matchedAttribute {
@@ -324,7 +503,7 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsO
 
    for _, superType := range typ.Up {	
 	  foundAttribute = false   // Whether at least one attribute of this type has been found in the query expression
-	  matchedAttribute = false
+	  matchedAttribute = false // Whether an attribute from the type is mentioned in the where conditions of the query
 	  alias = ""
       typeTableName = db.TableNameIfy(superType.ShortName())	
 	  for _, attr := range superType.Attributes {
@@ -345,10 +524,16 @@ func (db *SqliteDB) findAliases(typ *RType, attributeNames map[string]bool, idsO
 	      }
 	  }	
 	  if (foundAttribute && ! idsOnly) || matchedAttribute {
+	     if hasJoinedCondition && alias == "" {
+		     alias = fmt.Sprintf("t%v",aliasNum)
+		     aliasNum ++   	   
+	     }
 	     tableNamesToAliases[typeTableName] = alias	
 	  }	      	
    }
 
+   // Make sure each (non-join) attribute in select conditions is a primitive attribute of the object type
+   // being selected or of one of the object type's supertypes.
    for attrName := range attributeNames {
 	   if attrNamesToAliasedAttrNames[attrName] == "" {
            // attribute name from query was not matched by a primitive-valued attribute of the type or its supertypes.

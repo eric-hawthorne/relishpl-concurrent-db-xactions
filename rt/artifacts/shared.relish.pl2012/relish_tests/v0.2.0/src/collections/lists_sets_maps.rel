@@ -141,6 +141,27 @@ testCollections
                 passed
 
 
+   bigVehicles = []vehicles.Automobile "engine.horsepower > 120 order by engine.horsepower desc"
+   i = 0
+   for bv in bigVehicles
+      if eq i 0
+         passed = and assertEq bv.vin "W1E26S7244QD7139B" "vin of truck1"
+                      passed
+      else
+         passed = and assertEq bv.vin "X8W74F8831TF8932C" "vin of truck2"
+                      passed      
+      i = plus i 1
+
+   drivenVehicles = []vehicles.Automobile "driver.firstName = 'Jane' order by engine.horsepower desc"
+   for dv in drivenVehicles
+      passed = and assertEq dv.driver.firstName "Jane" "driven by Jane"
+                   passed
+    
+   drivenVehicles = []vehicles.Automobile "driver.dateOfBirth > '1983-06-01' order by engine.horsepower desc"
+   for dv in drivenVehicles
+      passed = and assertEq dv.driver.firstName "Joe" "driven by Joe"
+                   passed  
+
    keys = ""
    for key in map1
       keys = cat keys key
