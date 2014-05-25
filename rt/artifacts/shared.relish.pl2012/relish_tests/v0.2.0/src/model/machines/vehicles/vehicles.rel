@@ -31,6 +31,7 @@ Automobile <: Vehicle ManufacturedObject
  A vehicle which travels on roads on rubber wheels.
 """
    vin String
+   engine engines.Engine   
 
 
 Wheel <: phys.MovementCapableObject ManufacturedObject
@@ -40,26 +41,22 @@ Wheel <: phys.MovementCapableObject ManufacturedObject
    num Int
 
 
-
-
-
 Car <: Automobile
 """
  A relatively small passenger-carrying automobile, typically capable of conveying 2 to 5 passengers.
  Car 0 1 -- N Wheel 
 """
-   engine engines.Engine
    wheels 3 4 [>num] Wheel  // wheels 3 4 [] Wheel
 
 
-addEngine car Car horsepower Int weightKg Float
+addEngine auto Automobile horsepower Int weightKg Float
 """
  Installs an engine in the car.
 """
    engine = engines.Engine
    engine.horsepower = horsepower
    engine.weightKg = weightKg
-   car.engine = engine
+   auto.engine = engine
 
 
 PickupTruck <: Automobile
