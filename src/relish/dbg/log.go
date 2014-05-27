@@ -96,7 +96,7 @@ const (
 
 //const SOME_DEBUG_FLAGS =   PERSIST__ | PERSIST__TR | ALWAYS_
 
-const SOME_DEBUG_FLAGS =   GC__ | ALWAYS_
+const SOME_DEBUG_FLAGS =   INTERP_TR | GC__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =   COLL2__ | ALWAYS_
 

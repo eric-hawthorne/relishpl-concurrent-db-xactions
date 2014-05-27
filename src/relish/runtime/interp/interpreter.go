@@ -559,7 +559,7 @@ IS THIS EVEN USED ANYMORE??
 
 */
 func (i *Interpreter) RunMultiMethod(mm *RMultiMethod, args []RObject) (resultObjects []RObject) {
-	defer Un(Trace(INTERP_TR, "RunMultiMethod", fmt.Sprintf("%s", mm.Name)))	
+//	defer Un(Trace(INTERP_TR, "RunMultiMethod", fmt.Sprintf("%s", mm.Name)))	
 
 
 	t := i.NewThread(nil)
@@ -1055,7 +1055,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
     // Why not just have EvalFunExpr return the method or multimethod as an RObject? breaks Eval.. method conventions, but more efficient.
 
 
-	LoglnM(t,INTERP_TR, meth)
+	// LoglnM(t,INTERP_TR, meth)
 	switch meth.(type) {
 	case *RMultiMethod:
 		nReturnArgs = meth.(*RMultiMethod).NumReturnArgs
@@ -1670,7 +1670,7 @@ Used for example to evaluate collection-sort comparison functions on collection 
 */
 func (i *Interpreter) evalMultiMethodCall1ReturnVal(t *Thread, mm *RMultiMethod, args []RObject) RObject {
 	// defer UnM(t,TraceM(t,INTERP_TR, "evalMultiMethodCall"))
-	LoglnM(t,INTERP_TR, mm)
+	// LoglnM(t,INTERP_TR, mm)
 
 	//   t.Push(multiMethod)
 
@@ -1815,7 +1815,8 @@ TODO TODO We cannot have the return values on the stack in reverse order like th
 It will not work for using the values as args to the next outer method.
 */
 func (i *Interpreter) apply1(t *Thread, m *RMethod, args []RObject) (err error) {
-	// defer UnM(t, TraceM(t,INTERP_TR, "apply1", m, "to", args))	
+//	defer UnM(t, TraceM(t,INTERP_TR, "apply1", m, "to", args))	
+//	defer UnM(t, TraceM(t,INTERP_TR, m.String()))		
 //	if strings.Contains(m.String(),"spew") {
 //		fmt.Println(args)
 //	} 
