@@ -3628,7 +3628,9 @@ func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject 
     if th.Transaction() != nil {
     	errStr = "Cannot begin a transaction. Goroutine is already participating in an active transaction."
     } else {
+	    transactionMutex.Unlock()    	
 	    err := th.DB().BeginTransaction()
+	    transactionMutex.Lock()	    
 		if err != nil {
 			errStr = err.Error()
 		} else {
