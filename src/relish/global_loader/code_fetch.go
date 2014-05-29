@@ -14,6 +14,7 @@ import (
     "regexp"
     "strings"
     "os"
+    "util/net_util"
 )
 
 /*
@@ -129,6 +130,7 @@ var reMetadataDate *regexp.Regexp = regexp.MustCompile(`relish artifact metadata
 var reCurrentVersion *regexp.Regexp = regexp.MustCompile(`current version: ([0-9]+\.[0-9]+\.[0-9]+)`)
 
 
+var artifactLoaderClient *http.Client = net_util.HttpTimeoutClient(10)
 
 /*
    Params:
@@ -157,7 +159,8 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 
 	url = fmt.Sprintf("%s/relish/%s/%s/%s",hostUrl,dir,originAndArtifactPath,zipFileName)
 	
-	resp, err := http.Get(url)
+  //resp, err := http.Get(url)  
+	resp, err := artifactLoaderClient.Get(url)
 	if err != nil {
 		return nil, zipFileName, err
 	}
@@ -197,7 +200,8 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, localMe
       var resp *http.Response
       var body []byte
 
-  	resp, err = http.Get(url)
+  	//resp, err = http.Get(url)
+    resp, err = artifactLoaderClient.Get(url)    
   	if err != nil {
   		return 
   	}
