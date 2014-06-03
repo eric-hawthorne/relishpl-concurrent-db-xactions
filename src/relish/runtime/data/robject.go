@@ -531,6 +531,8 @@ func (o *robject) RestoreIdsAndFlags(id, id2 int64, flags int) {
 		o.ClearMarked()
 	}
 
+    o.SetBeingStored() // Kludge so that old db data without this flag set is ok.
+
 	if o.IsIdReversed() {
 		id, id2 = id2, id
 	}
