@@ -531,7 +531,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           var orderFuncOrAttrName string = ""
           var isAscending bool 
 
-	       if attrDecl.Type.CollectionSpec != nil {
+	       if multiValuedAttribute {  // && attrDecl.Type.CollectionSpec != nil {
               switch attrDecl.Type.CollectionSpec.Kind {
 	             case token.SET:
 			        if attrDecl.Type.CollectionSpec.IsSorting {
@@ -570,10 +570,30 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
 	   OrderFunc string
 	}
 */	
- 
-          attributeTypeName := g.qualifyTypeName(attrDecl.Type.Name.Name)
-                            // g.ensureTypeName(attrDecl.Type, sourceFilename)  ??????
 
+// If the attribute is a non-owned collection, we should use g.ensureTypeName(...) here.
+
+// But if it is a multivalued attribute (owned collection with cardinality specified),
+// we should check if there is a Type.Name. If so, use qualifyTypeName on it.
+// If not, use the Name of Type.params[0] and use qualifyTypeName on that.
+// If there is no Name on the params[0], that is the error of using a non-simple type at end of a multi-valued
+// attribute and should be reported as such.	
+
+          var attributeTypeName string
+
+          if multiValuedAttribute {
+          	  if attrDecl.Type.Name ==  nil {
+                   if attrDecl.Type.Params[0].Name == nil {
+		              rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, "A Multi-valued attribute (with arity specification) must have a simple type, not a collection of collections.")          	
+                   } else {
+                     attributeTypeName = g.qualifyTypeName(attrDecl.Type.Params[0].Name.Name)                  	   
+                   }
+          	  } else {
+          	  	   attributeTypeName = g.qualifyTypeName(attrDecl.Type.Name.Name)
+          	  }
+          } else {
+              attributeTypeName = g.ensureTypeName(attrDecl.Type, sourceFilename)
+          }
           
 /*"vector"
 RelEnd

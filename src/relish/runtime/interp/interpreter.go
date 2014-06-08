@@ -1261,7 +1261,7 @@ If not found in the runtime types list, creates the type.
 Returns the type corresponding to the TypeSpec.
 If the base simple type is not found, returns nil and an appropriate error message.
 */
-func (i *Interpreter) EnsureType(packagePath string, typeSpec *ast.TypeSpec) (typ *RType, err error) {
+func (i *Interpreter) EnsureTypeOriginal(packagePath string, typeSpec *ast.TypeSpec) (typ *RType, err error) {
 	
    baseTypeName := i.QualifyTypeName(packagePath, typeSpec.Name.Name) 
    baseType, baseTypeFound := i.rt.Types[baseTypeName]
@@ -1298,6 +1298,62 @@ func (i *Interpreter) EnsureType(packagePath string, typeSpec *ast.TypeSpec) (ty
 	}	
     return
 }
+
+
+func (i *Interpreter) EnsureType(packagePath string, typeSpec *ast.TypeSpec) (typ *RType, err error) {
+	
+
+   if typeSpec.CollectionSpec == nil {	
+	   baseTypeName := i.QualifyTypeName(packagePath, typeSpec.Name.Name) 
+	   baseType, baseTypeFound := i.rt.Types[baseTypeName]
+
+	   if ! baseTypeFound {
+	      err = fmt.Errorf("Type %s not found.",baseTypeName)
+	      return		
+	   }
+	   typ = baseType
+    } else {
+		var elementTyp *RType
+        if typeSpec.Name != nil {  // A relation-end with an implied set-collection type
+	       baseTypeName := i.QualifyTypeName(packagePath, typeSpec.Name.Name) 
+	       baseType, baseTypeFound := i.rt.Types[baseTypeName]
+
+	       if ! baseTypeFound {
+	          err = fmt.Errorf("Type %s not found.",baseTypeName)
+	          return		
+	       }
+	       elementTyp = baseType
+        } else {
+			elementTyp, err = i.EnsureType(packagePath, typeSpec.Params[0])
+			if err != nil {
+			   return			
+			}	    
+		}	
+	    switch typeSpec.CollectionSpec.Kind {
+	    case token.LIST:		
+			typ, err = i.rt.GetListType(elementTyp)
+			if err != nil {
+			   return			
+			}
+	    case token.SET:
+			typ, err = i.rt.GetSetType(elementTyp)
+			if err != nil {
+			   return			
+			}			
+	    case token.MAP:
+		    var valTyp *RType
+			valTyp, err = i.EnsureType(packagePath, typeSpec.Params[1])
+			if err != nil {
+			   return			
+			}		
+            typ, err = i.rt.GetMapType(elementTyp, valTyp) 		
+		
+	        // panic("I don't handle Map type specifications in this context yet.")			
+	    }   	
+    }
+    return
+}
+
 
 
 func (i *Interpreter) CreateList(t *Thread, elementType *ast.TypeSpec) (List, error) {

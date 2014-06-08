@@ -2441,7 +2441,7 @@ func (p *parser) parseTypeAssertion(assertion **ast.TypeAssertion) bool {
    For now, just parse a simple type name. or a collection type spec TODO handle parameterized types.
    Also, need to be able to handle T <: T1
    Re: parameterized type specs. Need to know when you can have a SomeType of T1 T2 vs a SomeType of Int Float
-
+   canBeMaybe means the type spec could be like ?SomeType which means nil or a valid instance of the type.
    canBeParameterized means allow this to be a parameterized type
    canBeVariable means this is allowed to be a type variable
    canSpecifySuperTypes means this expression can include <: supTyp1 supTyp2 etc
@@ -2477,16 +2477,26 @@ func (p *parser) parseTypeSpec(canBeMultiLineOrMap bool,  // if false, single li
     }
 
 	var typeName *ast.Ident
-	
-	if collectionTypeSpecFound {
-    	if p.Match1('?') {
-           nilElementsAllowed = true
-    	}		
-	}
+
+// egh 2014	
+//	if collectionTypeSpecFound {
+//    	if p.Match1('?') {
+//           nilElementsAllowed = true
+//    	}		
+//	}
+
+	var params []*ast.TypeSpec = nil
 	
 	typeCol := p.Col()
 	
-	if ! p.parseTypeName(true, &typeName) {   // TODO This needs to be another full typespec here!!!!!!!!
+	if collectionTypeSpecFound {
+	   var elementTypeSpec *ast.TypeSpec		
+       if p.parseTypeSpec(canBeMultiLineOrMap, true,true,false,false,false,&elementTypeSpec) {
+		   params = append(params, elementTypeSpec)	       
+       } else {
+	      return p.Fail(st)       	
+       }
+	} else if ! p.parseTypeName(true, &typeName) {   // TODO This needs to be another full typespec here!!!!!!!!
 	   return p.Fail(st)
 	}
 	
@@ -2500,7 +2510,7 @@ func (p *parser) parseTypeSpec(canBeMultiLineOrMap bool,  // if false, single li
 	
 	// Look for evidence that it is a Map type as opposed to a Set.
 	
-	var params []*ast.TypeSpec = nil
+
 
 	
 	if canBeMultiLineOrMap && collectionTypeSpec != nil && collectionTypeSpec.Kind == token.SET {

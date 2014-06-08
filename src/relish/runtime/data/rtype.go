@@ -55,10 +55,12 @@ type RType struct {
 	TotalAttributeCount    int   // Including supertype attributes - used to size instances
 	IsParameterized        bool  // Is a parameterized specific type or a parameterized type-pattern
 	IsPattern              bool  // True if this is a parameterized type-pattern with type parameter constraints 
-	                             // but no actual type parameters
+	                             // but no actual type parameters (might it have some parameter constraints and some
+                                 // actual parameters?)
 	ParameterConstraints   []*RType   // One or more types which type parameters must be same as or a subtype of
 	ParameterTypeVarNames  []string   // Type variable names - the use is to identify which parameter types must be the same
 	ActualParameters       []*RType   // An instantiated parameterized type lists its actual types of its parameters
+	                                  //   Perhaps some of these can be nil if mixed constraints and actuals in type Spec.
 }
 
 
