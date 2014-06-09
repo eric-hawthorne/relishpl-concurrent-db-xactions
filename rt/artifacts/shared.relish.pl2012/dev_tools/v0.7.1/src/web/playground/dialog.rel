@@ -140,7 +140,7 @@ playAction
 
    importLines = split imports "\n"
    nImports = len importLines
-   if nImports
+   if len imports
       importRows = plus nImports 3
    else
       importRows = 0 

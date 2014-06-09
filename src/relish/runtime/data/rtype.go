@@ -1374,11 +1374,33 @@ func (tttn *TypeTupleTreeNode) GetTypeTuple(mObjects []RObject) *RTypeTuple {
 //   }
 //   fmt.Println("---")
    if m > 0 {
-      typ = mObjects[0].Type()      
+      obj := mObjects[0]
+	  if obj == nil {
+        errMsg := fmt.Sprintf("Argument %v is uninitialized.\nMethod Call Arguments:\n",1);
+
+		//fmt.Println("len mObjects = ",len(mObjects),"i =",i )			
+        for j, ob := range mObjects {
+		   errMsg += fmt.Sprintf("%d:%v\n", j+1,ob)		       
+	    }
+	    panic(errMsg)			
+      }
+
+      typ = obj.Type()      
       last := tttn.LastTypeTuple[typ]
       if  last != nil {
          for i := 1; i < m; i++ {
-            if mObjects[i].Type() != last.Types[i] {
+            obj := mObjects[i]
+		    if obj == nil {
+	           errMsg := fmt.Sprintf("Argument %v is uninitialized.\nMethod Call Arguments:\n",i+1);
+
+			   //fmt.Println("len mObjects = ",len(mObjects),"i =",i )			
+	           for j, ob := range mObjects {
+			      errMsg += fmt.Sprintf("%d:%v\n", j+1,ob)		       
+		       }
+		       panic(errMsg)			
+	        }
+
+            if obj.Type() != last.Types[i] {
                goto find
             }
          }
