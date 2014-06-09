@@ -167,76 +167,116 @@ fixErrorLocation output String importRows Int > String
  If so, repairs the line number reference to account for the hidden file headers.
 """
    // print cat "|" output "|"
-   if hasPrefix output "\nplayground/main.rel:"
-      row col remainder = errorMessageParts output
-      if not importRows
-         importRows = 1
-      headerRows = plus 15 importRows
-      if lte row headerRows  // It is an error in the imports declarations
-         => cat "Imports:"
-                minus row 12
-                ":"
-                shiftLeft col 3
-                ":"
-                remainder      
-      else
-         => cat "Statements of Main Method:"
-                minus row headerRows
-                ":"
-                shiftLeft col 3
-                ":"
-                remainder
-   elif hasPrefix output "\nplayground/constants.rel:"
-      row col remainder = errorMessageParts output
-      headerRows = plus 11 importRows    
-      if lte row headerRows  // It is an error in the imports declarations
-         => cat "Imports:"
-                minus row 11
-                ":"
-                shiftLeft col 3
-                ":"
-                remainder      
-      else
-         => cat "Constants:"
-                minus row headerRows
-                ":"
-                col
-                ":"
-                remainder       
-   elif hasPrefix output "\nplayground/types_and_relations.rel:"
-      row col remainder = errorMessageParts output
-      headerRows = plus 11 importRows    
-      if lte row headerRows  // It is an error in the imports declarations
-         => cat "Imports:"
-                minus row 11
-                ":"
-                shiftLeft col 3
-                ":"
-                remainder      
-      else        
-         => cat "Data Types and Relations:"
-                minus row headerRows
-                ":"
-                col
-                ":"
-                remainder                
-   elif hasPrefix output "\nplayground/methods.rel:"
-      row col remainder = errorMessageParts output
-      headerRows = plus 11 importRows    
-      if lte row headerRows  // It is an error in the imports declarations
-         => cat "Imports:"
-                minus row 11
-                ":"
-                shiftLeft col 3
-                ":"
-                remainder      
-      else          
-         => cat "Methods:"
-                minus row headerRows
-                ":"
-                col
-                ":"
-                remainder                      
+
+   errIndex = index output "Error in software artifact"
+   if neq errIndex -1
+      fileIndex = lastIndex output "\nplayground/main.rel:"
+      if neq fileIndex -1
+
+         beforeError = ""
+         if gt fileIndex 0
+            beforeError = cat (slice output 0 fileIndex) "\n\n" 
+            output = slice output fileIndex
+
+         row col remainder = errorMessageParts output
+         headerRows = plus 16 importRows
+         if lte row headerRows  // It is an error in the imports declarations
+            => cat beforeError 
+                   "Imports:"
+                   minus row 12
+                   ":"
+                   shiftLeft col 3
+                   ":"
+                   remainder      
+         else
+            => cat beforeError
+                   "Statements of Main Method:"
+                   minus row headerRows
+                   ":"
+                   shiftLeft col 3
+                   ":"
+                   remainder
+
+      fileIndex = lastIndex output "\nplayground/constants.rel:"
+      if neq fileIndex -1
+
+         beforeError = ""
+         if gt fileIndex 0
+            beforeError = cat (slice output 0 fileIndex) "\n\n" 
+            output = slice output fileIndex
+
+         row col remainder = errorMessageParts output
+         headerRows = plus 11 importRows    
+         if lte row headerRows  // It is an error in the imports declarations
+            => cat beforeError 
+                   "Imports:"
+                   minus row 11
+                   ":"
+                   shiftLeft col 3
+                   ":"
+                   remainder      
+         else
+            => cat beforeError
+                   "Constants:"
+                   minus row headerRows
+                   ":"
+                   col
+                   ":"
+                   remainder       
+
+      fileIndex = lastIndex output "\nplayground/types_and_relations.rel:"
+      if neq fileIndex -1
+
+         beforeError = ""
+         if gt fileIndex 0
+            beforeError = cat (slice output 0 fileIndex) "\n\n" 
+            output = slice output fileIndex
+
+         row col remainder = errorMessageParts output
+         headerRows = plus 11 importRows    
+         if lte row headerRows  // It is an error in the imports declarations
+            => cat beforeError
+                   "Imports:"
+                   minus row 11
+                   ":"
+                   shiftLeft col 3
+                   ":"
+                   remainder      
+         else        
+            => cat beforeError
+                   "Data Types and Relations:"
+                   minus row headerRows
+                   ":"
+                   col
+                   ":"
+                   remainder                
+
+      fileIndex = lastIndex output "\nplayground/methods.rel:"
+      if neq fileIndex -1
+
+         beforeError = ""
+         if gt fileIndex 0
+            beforeError = cat (slice output 0 fileIndex) "\n\n" 
+            output = slice output fileIndex
+
+         row col remainder = errorMessageParts output
+         headerRows = plus 11 importRows    
+         if lte row headerRows  // It is an error in the imports declarations
+            => cat beforeError
+                   "Imports:"
+                   minus row 11
+                   ":"
+                   shiftLeft col 3
+                   ":"
+                   remainder      
+         else          
+            => cat beforeError
+                   "Methods:"
+                   minus row headerRows
+                   ":"
+                   col
+                   ":"
+                   remainder                      
    => output
 
 

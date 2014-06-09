@@ -32,6 +32,33 @@ listTest
    => theList
 
 
+Aa
+"""
+ A type used to test list of list of ... as an attribute type.
+"""
+   b [] [] Bb
+
+
+Bb
+"""
+ Dummy type used in list of lists tests.
+"""
+   name String
+
+
+garb bbs [] [] Bb > String
+"""
+ Testing lists of lists as a method input parameter specification.
+"""
+   names = ""
+   sep = ""
+   for aa in bbs
+      for bb in aa
+         names = cat names sep bb.name
+         sep = ","
+   => names
+
+
 main
 """
  Main program.
@@ -470,6 +497,26 @@ testCollections
       passed = and assert false "fakeCollection"
                    passed
       
+
+   b1 = Bb
+   b1.name = "Bob"
+   b2 = Bb
+   b2.name = "Charles"
+   bs = [b1 b2]Bb
+
+   bbs = [bs][] Bb
+
+   a1 = Aa
+   a1.b = bbs
+
+   passed = and assertEq (garb a1.b) "Bob,Charles" "list of lists 1"
+                passed
+
+   bbs2 = a1.b
+
+   passed = and assertEq (garb bbs2) "Bob,Charles" "list of lists 2"
+                passed
+
    if passed
       print "PASSED"
 
