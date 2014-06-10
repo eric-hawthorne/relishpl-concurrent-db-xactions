@@ -8,6 +8,7 @@ package ast
 import (
 	"encoding/gob"
 	"os"
+	"util/gos"
 )
 
 /*
@@ -16,7 +17,7 @@ import (
 */
 func Pickle(fileNode *File, pickleFilePath string) (err error) {
 	var file *os.File	
-	file,err = os.Create(pickleFilePath) 
+	file,err = gos.Create(pickleFilePath) 
 	defer file.Close()
 
 	encoder := gob.NewEncoder(file) 	
@@ -119,7 +120,7 @@ func registerAstNodeTypes() {
 */
 func Unpickle(pickleFilePath string) (fileNode *File, err error) {
 	var file *os.File
-	file, err = os.Open(pickleFilePath)
+	file, err = gos.Open(pickleFilePath)
 	if err != nil {
 		return
 	}

@@ -9,7 +9,6 @@ package global_publisher
 import (
     "fmt"
 //    "net/http"
-	"io/ioutil"
   "bufio"
 //    "regexp"
     "io"
@@ -17,6 +16,7 @@ import (
     "strings"
 //    "strconv"
     "os"
+    "util/gos"
 //	. "relish/runtime/data"
 //    "relish/compiler/ast"
 //    "relish/compiler/parser"
@@ -152,11 +152,11 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
    // Check if metadata.txt file exists in shared. If not, create it by copying local metadata.txt file
 
    sharedMetadataPath := sharedArtifactPath + "metadata.txt"
-   _,err = os.Stat(sharedMetadataPath)    
+   _,err = gos.Stat(sharedMetadataPath)    
    if err != nil {
         if os.IsNotExist(err) {
 
-           err = os.MkdirAll(sharedArtifactPath,0777)       
+           err = gos.MkdirAll(sharedArtifactPath,0777)       
            if err != nil {
               fmt.Printf("Error making shared artifact directory %s: %s\n", sharedArtifactPath,err)
               return 
@@ -164,11 +164,11 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
            localMetadataPath := localArtifactPath + "metadata.txt"
            var content []byte
-           content, err = ioutil.ReadFile(localMetadataPath)
+           content, err = gos.ReadFile(localMetadataPath)
            if err != nil {
              return
            }
-           err = ioutil.WriteFile(sharedMetadataPath, content, 0666)
+           err = gos.WriteFile(sharedMetadataPath, content, 0666)
            if err != nil {
               return
            }              
@@ -187,7 +187,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
    sharedArtifactVersionPath := sharedArtifactPath + versionPath 
 
-   _,err = os.Stat(sharedArtifactVersionPath)    
+   _,err = gos.Stat(sharedArtifactVersionPath)    
    foundVersionShared := false
    if err != nil {
         if ! os.IsNotExist(err) {
@@ -209,7 +209,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
     // mkdir the version of the shared directory
 
-    err = os.MkdirAll(sharedArtifactVersionPath,0777)
+    err = gos.MkdirAll(sharedArtifactVersionPath,0777)
 
     if err != nil {
         fmt.Printf("Error making shared artifact version directory %s: %s\n", sharedArtifactVersionPath,err)
@@ -224,7 +224,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
         return 
     }   
 
-    _,statErr := os.Stat(localDocDirPath)
+    _,statErr := gos.Stat(localDocDirPath)
     if statErr == nil {
 	    err = copyDocDirTree(localDocDirPath, docDirPath)
 	    if err != nil {
@@ -253,7 +253,7 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
         return 
     } 
 
-    err = os.Remove(srcZipFilePath)
+    err = gos.Remove(srcZipFilePath)
     if err != nil {
        fmt.Printf("Error removing %s: %s\n", srcZipFilePath,err)
        return 
@@ -266,14 +266,14 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
    
    var dir *os.File
    var filesInDir []os.FileInfo
-   dir, err = os.Open(fromSrcDirPath)
+   dir, err = gos.Open(fromSrcDirPath)
    filesInDir, err = dir.Readdir(0)
    if err != nil {
      return
    }
    err = dir.Close()
 
-   err = os.Mkdir(toSrcDirPath,0777)
+   err = gos.Mkdir(toSrcDirPath,0777)
 
    for _, fileInfo := range filesInDir {
         fromItemPath := fromSrcDirPath + "/" + fileInfo.Name()
@@ -286,11 +286,11 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
         } else { // plain old file to be copied.
            if strings.HasSuffix(fileInfo.Name(), ".rel") {
               var content []byte
-              content, err = ioutil.ReadFile(fromItemPath)
+              content, err = gos.ReadFile(fromItemPath)
               if err != nil {
                  return
               }
-              err = ioutil.WriteFile(toItemPath, content, 0666)
+              err = gos.WriteFile(toItemPath, content, 0666)
               if err != nil {
                  return
               }              
@@ -304,14 +304,14 @@ func copyDocDirTree(fromDocDirPath string, toDocDirPath string) (err error) {
    
    var dir *os.File
    var filesInDir []os.FileInfo
-   dir, err = os.Open(fromDocDirPath)
+   dir, err = gos.Open(fromDocDirPath)
    filesInDir, err = dir.Readdir(0)
    if err != nil {
      return
    }
    err = dir.Close()
 
-   err = os.Mkdir(toDocDirPath,0777)
+   err = gos.Mkdir(toDocDirPath,0777)
 
    for _, fileInfo := range filesInDir {
         fromItemPath := fromDocDirPath + "/" + fileInfo.Name()
@@ -324,11 +324,11 @@ func copyDocDirTree(fromDocDirPath string, toDocDirPath string) (err error) {
         } else { // plain old file to be copied.
            if strings.HasSuffix(fileInfo.Name(), ".txt") || strings.HasSuffix(fileInfo.Name(), ".html") || strings.HasSuffix(fileInfo.Name(), ".htm") || strings.HasSuffix(fileInfo.Name(), ".css") {
               var content []byte
-              content, err = ioutil.ReadFile(fromItemPath)
+              content, err = gos.ReadFile(fromItemPath)
               if err != nil {
                  return
               }
-              err = ioutil.WriteFile(toItemPath, content, 0666)
+              err = gos.WriteFile(toItemPath, content, 0666)
               if err != nil {
                  return
               }              
@@ -376,7 +376,7 @@ func signZippedSrc(srcZipPath string,
    wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
  
     var srcZipContents []byte
-    srcZipContents, err = ioutil.ReadFile(srcZipPath) 
+    srcZipContents, err = gos.ReadFile(srcZipPath) 
     if err != nil {
         return
     }
@@ -389,7 +389,7 @@ func signZippedSrc(srcZipPath string,
 
 
     var file *os.File
-    file, err = os.Create(wrapperFilePath)
+    file, err = gos.Create(wrapperFilePath)
     if err != nil {
         return
     }
@@ -437,7 +437,7 @@ func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate
    }   
 
    var f *os.File
-   f,err = os.Open(srcZipPath)
+   f,err = gos.Open(srcZipPath)
    if err != nil {
       return
    }            
@@ -490,7 +490,7 @@ func zipSrcAndDocDirTrees(srcDirectoryPath string, docDirectoryPath string, zipF
     buf, err = zipSrcDirTree1(srcDirectoryPath, docDirectoryPath)
 
     var file *os.File
-	file, err = os.Create(zipFilePath)
+	file, err = gos.Create(zipFilePath)
     if err != nil {
         return
     }
@@ -515,7 +515,7 @@ func zipSrcAndDocDirTrees(srcDirectoryPath string, docDirectoryPath string, zipF
 func zipSrcDirTree1(srcDirectoryPath string, docDirectoryPath string) (buf *bytes.Buffer, err error) {
 
    var srcRootDirFileInfo os.FileInfo
-   srcRootDirFileInfo, err = os.Stat(srcDirectoryPath)
+   srcRootDirFileInfo, err = gos.Stat(srcDirectoryPath)
    if err != nil {
        return
    }
@@ -535,7 +535,7 @@ func zipSrcDirTree1(srcDirectoryPath string, docDirectoryPath string) (buf *byte
    }    
 
    var docRootDirFileInfo os.FileInfo
-   docRootDirFileInfo, err = os.Stat(docDirectoryPath)
+   docRootDirFileInfo, err = gos.Stat(docDirectoryPath)
    if err == nil {
      if ! docRootDirFileInfo.IsDir() {
         err = fmt.Errorf("%s is not a directory.", docDirectoryPath)
@@ -569,7 +569,7 @@ func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string)
 
    var dir *os.File
    var filesInDir []os.FileInfo
-   dir, err = os.Open(directoryPath)
+   dir, err = gos.Open(directoryPath)
    filesInDir, err = dir.Readdir(0)
    if err != nil {
      return
@@ -602,7 +602,7 @@ func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string)
                  return
               }    
               var f *os.File
-              f,err = os.Open(subItemPath)
+              f,err = gos.Open(subItemPath)
               if err != nil {
                  return
               }

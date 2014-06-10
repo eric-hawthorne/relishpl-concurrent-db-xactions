@@ -78,6 +78,7 @@ import (
         "flag"
         "strings"
         "os"
+        "util/gos"
 //		"relish/compiler/token"
 //		"relish/compiler/ast"	
 //		"relish/compiler/parser"
@@ -140,7 +141,7 @@ func main() {
 
 
     if cpuprofile != "" {
-        f, err := os.Create(cpuprofile)
+        f, err := gos.Create(cpuprofile)
         if err != nil {
 		     fmt.Println(err)
 		     return 
@@ -162,7 +163,7 @@ func main() {
 	                       // i.e. /opt/relish if this is a binary distribution,
 	                       // or /opt/relish/rt if this is a source distribution
 	
-    workingDirectory, err := os.Getwd()
+    workingDirectory, err := gos.Getwd()
     if err != nil {
 	   fmt.Printf("Cannot determine working directory: %s\n",err)	
     }
@@ -183,7 +184,7 @@ func main() {
          if projectPath != "" {  // Must be creating a relish dir under a new project dir
             relishRoot = workingDirectory + "/relish"
          
-            err = os.MkdirAll(relishRoot,0777)       
+            err = gos.MkdirAll(relishRoot,0777)       
             if err != nil {
               fmt.Printf("Error making relish project directory %s: %s\n", relishRoot,err)
               return 
@@ -198,7 +199,7 @@ func main() {
        relishRoot = workingDirectory[:relishIndexInWd + 7]
     }
     
-    _,err = os.Stat(relishRoot + "/rt")	
+    _,err = gos.Stat(relishRoot + "/rt")	
     if err == nil {
        relishRoot += "/rt"
        isSourceDist = true

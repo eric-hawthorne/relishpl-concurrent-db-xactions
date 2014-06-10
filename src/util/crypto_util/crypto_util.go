@@ -17,8 +17,8 @@ import (
     "crypto/x509"
     "errors"
     "encoding/pem"
-    "io/ioutil"
     "os"
+    "util/gos"
     "fmt"
 )
 
@@ -464,7 +464,7 @@ func GetPrivateKey(entityType string, entityName string) (privateKeyPEM string, 
 	fileName := entityType + "__" + entityName + "__private_key.pem"
 	path := relishRuntimeLocation + "/keys/private/" + fileName
 	
-	bts, err := ioutil.ReadFile(path) 
+	bts, err := gos.ReadFile(path) 
 	if err != nil {
 		return
 	}
@@ -481,7 +481,7 @@ func GetPublicKeyCert(entityType string, entityName string) (publicKeyCertPEM st
 	fileName := entityType + "__" + entityName + "__public_key.pem"
 	path := relishRuntimeLocation + "/keys/public/" + fileName
 	
-	bts, err := ioutil.ReadFile(path) 
+	bts, err := gos.ReadFile(path) 
 	if err != nil {
 		return
 	}
@@ -497,7 +497,7 @@ func StorePrivateKey(entityType string, entityName string, privateKeyPEM string)
 	fileName := entityType + "__" + entityName + "__private_key.pem"
 	path := relishRuntimeLocation + "/keys/private/" + fileName
 	var perm os.FileMode = 0666
-    err = ioutil.WriteFile(path, ([]byte)(privateKeyPEM), perm) 	
+    err = gos.WriteFile(path, ([]byte)(privateKeyPEM), perm) 	
     return    
 }
 
@@ -510,7 +510,7 @@ func StorePublicKeyCert(entityType string, entityName string, publicKeyCertPEM s
 	fileName := entityType + "__" + entityName + "__public_key.pem"
 	path := relishRuntimeLocation + "/keys/public/" + fileName
 	var perm os.FileMode = 0666
-    err = ioutil.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
+    err = gos.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
     return
 }
 

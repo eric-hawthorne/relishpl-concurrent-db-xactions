@@ -18,7 +18,7 @@ import (
    "relish/runtime/data"
    "relish/params"
    "runtime/pprof"   
-   "os"
+   "util/gos"
    "fmt"
 )
 
@@ -81,7 +81,7 @@ func (i *Interpreter) GCLoop() {
          }      
          if Logging(GC2_) {
             memProfileFilename := fmt.Sprintf("memory%d.prof", nGCs)
-            f, err := os.Create(memProfileFilename)
+            f, err := gos.Create(memProfileFilename)
             if err == nil {
               pprof.WriteHeapProfile(f)
               f.Close()

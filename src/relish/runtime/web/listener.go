@@ -10,7 +10,7 @@ import (
     "fmt"
     "net/http"
 	"html/template"
-	"io/ioutil"
+   "util/gos"
 	"regexp"
 	"bytes"
     "strings"
@@ -1103,7 +1103,7 @@ func makeAbsoluteFilePath(methodName string, filePath string) string {
 }
 
 func processTemplateFileResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, methodName string, templateFilePath string, obj RObject, thread *interp.Thread) (err error) {
-   bytes,err := ioutil.ReadFile(templateFilePath)
+   bytes,err := gos.ReadFile(templateFilePath)
     if err != nil {
        fmt.Println(err)		
        fmt.Fprintln(w, err)

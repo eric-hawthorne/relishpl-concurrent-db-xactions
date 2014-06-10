@@ -79,6 +79,19 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   The files.File type in relish subclasses the io.Reader, io.Writer, and io.Closer types.<br/>
   See <a href="http://golang.org/pkg/io/" target="_blank">Go io package documentation</a> and <a href="http://golang.org/pkg/os/" target="_blank">Go os package documentaton</a> (File and FileInfo types and methods section) for further details.
 </p>
+<p>
+  IMPORTANT NOTE: relish file methods which accept filesystem-path arguments accept only unix-style
+  path syntax, with "/" as directory separator. "\" or "\\" separated paths are not accepted.
+  These paths will be translated automatically to Windows-style paths if relish is running on MS-Windows,
+  using Go's filepath.FromSlash(path string) method.
+  </p>
+  <p>
+  Similarly the tempDir method returns a "/" separated path, regardless of operating system relish is running on.
+</p>
+<p>
+  The Windows path C:\foo\bar.txt should be expressed "C:/foo/bar.txt".\br/>
+  The Windows UNC path \\myserver\share\foo\bar.txt should be expressed "//myserver/share/foo/bar.txt"
+</p>
     
 
 

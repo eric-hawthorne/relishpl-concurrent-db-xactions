@@ -8,10 +8,9 @@ package main
 
 import (
         "fmt"
-        "os"
+        "util/gos"
         "strings"
         "time"
-        "io/ioutil"
         "encoding/base64"
 )
 
@@ -524,12 +523,12 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
    metadataFilePath := artifactDir + "/metadata.txt"
    date := time.Now().Format("2006/01/02")  
    
-   err = os.MkdirAll(artifactDir,0777)       
+   err = gos.MkdirAll(artifactDir,0777)       
    if err != nil {
       return 
    } 
    mainPackageDir := artifactDir + "/v0.1.0/src/main"
-   err = os.MkdirAll(mainPackageDir,0777)       
+   err = gos.MkdirAll(mainPackageDir,0777)       
    if err != nil {
       return 
    } 
@@ -539,28 +538,28 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       
       metadata := fmt.Sprintf(WEB_APP_METADATA_FILE,date,origin,artifact)     
       
-      err = ioutil.WriteFile(metadataFilePath, ([]byte)(metadata), 0777)  
+      err = gos.WriteFile(metadataFilePath, ([]byte)(metadata), 0777)  
       if err != nil {
          return 
       }      
       
       // TODO Create web package directory with template index.html and dialog.rel and static/ with styles and an image and a static html file.
       webPackageDir := artifactDir + "/v0.1.0/src/web"
-      err = os.MkdirAll(webPackageDir,0777)       
+      err = gos.MkdirAll(webPackageDir,0777)       
       if err != nil {
          return 
       } 
       
       indexPath := webPackageDir + "/index.html"
       
-      err = ioutil.WriteFile(indexPath, ([]byte)(INDEX_HTML_FILE), 0777)  
+      err = gos.WriteFile(indexPath, ([]byte)(INDEX_HTML_FILE), 0777)  
       if err != nil {
          return 
       }    
       
       visitCountPath := webPackageDir + "/visit_count.html"
       
-      err = ioutil.WriteFile(visitCountPath, ([]byte)(VISIT_COUNT_HTML_FILE), 0777)  
+      err = gos.WriteFile(visitCountPath, ([]byte)(VISIT_COUNT_HTML_FILE), 0777)  
       if err != nil {
          return 
       }      
@@ -568,14 +567,14 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       
       gotItPath := webPackageDir + "/got_it.html"
       
-      err = ioutil.WriteFile(gotItPath, ([]byte)(GOT_IT_HTML_FILE), 0777)  
+      err = gos.WriteFile(gotItPath, ([]byte)(GOT_IT_HTML_FILE), 0777)  
       if err != nil {
          return 
       }     
       
       tryAgainPath := webPackageDir + "/try_again.html"
       
-      err = ioutil.WriteFile(tryAgainPath, ([]byte)(TRY_AGAIN_HTML_FILE), 0777)  
+      err = gos.WriteFile(tryAgainPath, ([]byte)(TRY_AGAIN_HTML_FILE), 0777)  
       if err != nil {
          return 
       }         
@@ -584,34 +583,34 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       
       dialogContent := fmt.Sprintf(DIALOG_FILE,origin,artifact) 
             
-      err = ioutil.WriteFile(dialogPath, ([]byte)(dialogContent), 0777)  
+      err = gos.WriteFile(dialogPath, ([]byte)(dialogContent), 0777)  
       if err != nil {
          return 
       }      
       
       stylesDir := webPackageDir + "/static/styles"
-      err = os.MkdirAll(stylesDir,0777)       
+      err = gos.MkdirAll(stylesDir,0777)       
       if err != nil {
          return 
       }    
       
       cssPath := stylesDir + "/default.css"
       
-      err = ioutil.WriteFile(cssPath, ([]byte)(CSS_FILE), 0777)  
+      err = gos.WriteFile(cssPath, ([]byte)(CSS_FILE), 0777)  
       if err != nil {
          return 
       }      
       
       staticPath := webPackageDir + "/static/example.html"
       
-      err = ioutil.WriteFile(staticPath, ([]byte)(STATIC_HTML_FILE), 0777)  
+      err = gos.WriteFile(staticPath, ([]byte)(STATIC_HTML_FILE), 0777)  
       if err != nil {
          return 
       }      
       
       
       imgDir := webPackageDir + "/static/img"
-      err = os.MkdirAll(imgDir,0777)       
+      err = gos.MkdirAll(imgDir,0777)       
       if err != nil {
          return 
       }            
@@ -623,14 +622,14 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       if err != nil {
          return 
       }	       
-      err = ioutil.WriteFile(imagePath, imageBytes, 0777)  
+      err = gos.WriteFile(imagePath, imageBytes, 0777)  
       if err != nil {
          return 
       }
       
       mainContent := fmt.Sprintf(WEB_APP_MAIN_PROGRAM_FILE,origin,artifact,artifact,origin,artifact) 
  
-      err = ioutil.WriteFile(mainFilePath, ([]byte)(mainContent), 0777)  
+      err = gos.WriteFile(mainFilePath, ([]byte)(mainContent), 0777)  
       if err != nil {
          return 
       }      
@@ -640,14 +639,14 @@ func initProject(relishRoot, projectPath, projectType string) (err error) {
       
       metadata := fmt.Sprintf(APP_METADATA_FILE,date,origin,artifact)        
       
-      err = ioutil.WriteFile(metadataFilePath, ([]byte)(metadata), 0777)  
+      err = gos.WriteFile(metadataFilePath, ([]byte)(metadata), 0777)  
       if err != nil {
          return 
       }            
       
       mainContent := fmt.Sprintf(APP_MAIN_PROGRAM_FILE,origin,artifact,artifact,origin,artifact)
       
-      err = ioutil.WriteFile(mainFilePath, ([]byte)(mainContent), 0777)  
+      err = gos.WriteFile(mainFilePath, ([]byte)(mainContent), 0777)  
       if err != nil {
          return 
       }      
