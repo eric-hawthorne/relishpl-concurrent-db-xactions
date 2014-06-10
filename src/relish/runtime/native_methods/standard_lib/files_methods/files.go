@@ -10,10 +10,10 @@ package files_methods
 import (
 	. "relish/runtime/data"
 	"os"
+	"util/gos"
 	"io"
 	"bufio"
     "util/zip_util"
-    "io/ioutil"
 )
 
 
@@ -405,11 +405,11 @@ func copy(th InterpreterThread, objects []RObject) []RObject {
 
     perm, errStr := getFilePermissions(permStr)
     if errStr == "" {
-	   content, err := ioutil.ReadFile(filePath1)
+	   content, err := gos.ReadFile(filePath1)
 	   if err != nil {
 	      errStr = err.Error()
 	   } else {
-		  err = ioutil.WriteFile(filePath2, content, perm)
+		  err = gos.WriteFile(filePath2, content, perm)
 	      if err != nil {
 	         errStr = err.Error()
 	      }		
@@ -443,7 +443,7 @@ func remove(th InterpreterThread, objects []RObject) []RObject {
 	
     path := string(objects[0].(String))
 
-	err := os.Remove(path)
+	err := gos.Remove(path)
 	errStr := ""
 	if err != nil {
 	   errStr = err.Error()
@@ -461,7 +461,7 @@ func removeAll(th InterpreterThread, objects []RObject) []RObject {
 	
     path := string(objects[0].(String))
 
-	err := os.RemoveAll(path)
+	err := gos.RemoveAll(path)
 	errStr := ""
 	if err != nil {
 	   errStr = err.Error()
@@ -479,7 +479,7 @@ func rename(th InterpreterThread, objects []RObject) []RObject {
 	
     path1 := string(objects[0].(String))
     path2 := string(objects[1].(String))
-	err := os.Rename(path1, path2)
+	err := gos.Rename(path1, path2)
 	errStr := ""
 	if err != nil {
 	   errStr = err.Error()
@@ -496,7 +496,7 @@ func statPrimitive(th InterpreterThread, objects []RObject) []RObject {
 	
     path := string(objects[0].(String))
 
-	fi, err := os.Stat(path)
+	fi, err := gos.Stat(path)
 	errStr := ""
 	var name String
 	var size Int
@@ -527,7 +527,7 @@ func lstatPrimitive(th InterpreterThread, objects []RObject) []RObject {
 	
     path := string(objects[0].(String))
 
-	fi, err := os.Lstat(path)
+	fi, err := gos.Lstat(path)
 	errStr := ""
 	var name String
 	var size Int
@@ -585,7 +585,7 @@ func mkdir(th InterpreterThread, objects []RObject) []RObject {
     perm, errStr := getFilePermissions(permStr)
     var err error
     if errStr == "" {
-	   err = os.Mkdir(path, perm)
+	   err = gos.Mkdir(path, perm)
     }
 	if err != nil {
 	   errStr = err.Error()
@@ -611,7 +611,7 @@ func mkdirAll(th InterpreterThread, objects []RObject) []RObject {
     perm, errStr := getFilePermissions(permStr)
     var err error
     if errStr == "" {
-	   err = os.MkdirAll(path, perm)
+	   err = gos.MkdirAll(path, perm)
     }
 	if err != nil {
 	   errStr = err.Error()
@@ -625,7 +625,7 @@ func mkdirAll(th InterpreterThread, objects []RObject) []RObject {
 //
 func tempDir(th InterpreterThread, objects []RObject) []RObject {
 	
-	path := os.TempDir()
+	path := gos.TempDir()
 	
 	return []RObject{String(path)}
 }
@@ -750,7 +750,7 @@ func initFile(th InterpreterThread, objects []RObject) []RObject {
     }
 
     if errStr == "" {
-	    file,err := os.OpenFile(filePath, flag, perm) 
+	    file,err := gos.OpenFile(filePath, flag, perm) 
 
 		if err != nil {
 			errStr = err.Error()

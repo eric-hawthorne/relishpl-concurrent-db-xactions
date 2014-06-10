@@ -10,8 +10,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
+	"util/gos"
 	"path/filepath"
 	"relish/compiler/ast"
 	"relish/compiler/scanner"
@@ -46,7 +46,7 @@ func readSource(filename string, src interface{}) ([]byte, error) {
 		}
 	}
 
-	return ioutil.ReadFile(filename)
+	return gos.ReadFile(filename)
 }
 
 func (p *parser) errors() error {

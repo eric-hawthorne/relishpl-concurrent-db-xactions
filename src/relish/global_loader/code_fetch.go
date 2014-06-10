@@ -10,11 +10,12 @@ package global_loader
 import (
     "fmt"
     "net/http"
-	  "io/ioutil"
     "regexp"
     "strings"
     "os"
+    "util/gos"
     "util/net_util"
+    "io/ioutil"
 )
 
 /*
@@ -236,14 +237,14 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, localMe
 
         artifactReplicaDir := sharedArtifactMetadataFilePath[:len(sharedArtifactMetadataFilePath)-len("/metadata.txt")]
 
-        err = os.MkdirAll(artifactReplicaDir, perm)
+        err = gos.MkdirAll(artifactReplicaDir, perm)
         if err != nil {
            return
         }
 
         // Write body to local shared metadata.txt file
 
-        err = ioutil.WriteFile(sharedArtifactMetadataFilePath, body, perm)
+        err = gos.WriteFile(sharedArtifactMetadataFilePath, body, perm)
 	    if err != nil {
 		   return 
 	    }	

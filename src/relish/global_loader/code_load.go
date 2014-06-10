@@ -10,10 +10,10 @@ package global_loader
 
 import (
     "fmt"
-	"io/ioutil"
     "strings"
     "bufio"
     "os"
+    "util/gos"
     "relish/compiler/ast"
     "relish/compiler/parser"
     "relish/compiler/token"
@@ -117,7 +117,7 @@ func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version string
 
     // Read the filenames of sub directories in the /src/... package directory
 
-    sourceDirFile, err := os.Open(packageSourcePath) 
+    sourceDirFile, err := gos.Open(packageSourcePath) 
     if err != nil {
       return
     }
@@ -137,7 +137,7 @@ func (ldr *Loader) loadPackageTree (originAndArtifactPath string, version string
 	       // Doing it NOW!!
 	       subDirFilePath := packageSourcePath + "/" + filename	
 
-	       subDirFileInfo,statErr := os.Stat(subDirFilePath)	
+	       subDirFileInfo,statErr := gos.Stat(subDirFilePath)	
 	       if statErr != nil {
 	           if ! os.IsNotExist(statErr) {
 			   	  err = fmt.Errorf("Can't stat relish source directory or file '%s': %v\n", subDirFilePath, statErr)
@@ -410,7 +410,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
             // try local artifacts dir tree
 		    artifactVersionDir = ldr.RelishRuntimeLocation + "/artifacts/" + originAndArtifactPath + versionStr
 
-		    _,statErr := os.Stat(artifactVersionDir)
+		    _,statErr := gos.Stat(artifactVersionDir)
 		    if statErr != nil {
 		        if ! os.IsNotExist(statErr) {
 					err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
@@ -429,7 +429,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	       // try published shared artifacts dir tree 
 	       artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/artifacts/" + originAndArtifactPath + versionStr
 
-	       _,statErr := os.Stat(artifactVersionDir)
+	       _,statErr := gos.Stat(artifactVersionDir)
 	       if statErr != nil {
 	           if ! os.IsNotExist(statErr) {
 			   	   err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
@@ -448,7 +448,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	       // try downloaded shared replicas dir tree 
 	       artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + versionStr
 
-	       _,statErr := os.Stat(artifactVersionDir)
+	       _,statErr := gos.Stat(artifactVersionDir)
 	       if statErr != nil {
 	           if ! os.IsNotExist(statErr) {
 			   	   err = fmt.Errorf("Can't stat relish artifact version directory '%s': %v\n", artifactVersionDir, statErr)
@@ -617,15 +617,15 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 	   versionStr := "/v" +version
 	   artifactVersionDir = ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + versionStr
 
-	   //os.MkdirAll(name string, perm FileMode) error
+	   //gos.MkdirAll(name string, perm FileMode) error
 	   var perm os.FileMode = 0777
-	   err = os.MkdirAll(artifactVersionDir, perm)
+	   err = gos.MkdirAll(artifactVersionDir, perm)
 	   if err != nil {
 	      return
 	   }
 
        zipFilePath := ldr.RelishRuntimeLocation + "/shared/relish/replicas/" + originAndArtifactPath + "/" + zipFileName
-       err = ioutil.WriteFile(zipFilePath, zipFileContents, perm)
+       err = gos.WriteFile(zipFilePath, zipFileContents, perm)
        if err != nil {
           return
        }
@@ -741,11 +741,11 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
         builtFilePath := artifactVersionDir + "/built.txt"
 	    var builtFileContents []byte
 
-		_,statErr := os.Stat(builtFilePath)
+		_,statErr := gos.Stat(builtFilePath)
 
 		if statErr == nil {
 
-			builtFileContents, err = ioutil.ReadFile(builtFilePath)	
+			builtFileContents, err = gos.ReadFile(builtFilePath)	
 			if err != nil {
 				return
 			}
@@ -790,7 +790,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
     // Read the filenames of source files etc. in the /src/... package directory
 
     var sourceDirFile *os.File
-    sourceDirFile, err = os.Open(packageSourcePath) 
+    sourceDirFile, err = gos.Open(packageSourcePath) 
     if err != nil {
       return
     }
@@ -805,14 +805,14 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
 
     // Create /pkg/ dir tree if does not exist already
-    _,statErr := os.Stat(packageCompiledPath)
+    _,statErr := gos.Stat(packageCompiledPath)
      if statErr != nil {
          if ! os.IsNotExist(statErr) {
 			 err = fmt.Errorf("Can't stat relish intermediate-code directory '%s': %v\n", packageCompiledPath, statErr)
 			 return		       
          } 
 	     var perm os.FileMode = 0777
-	     err = os.MkdirAll(packageCompiledPath, perm)
+	     err = gos.MkdirAll(packageCompiledPath, perm)
 	     if err != nil {
 	        return
          }
@@ -837,7 +837,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
        dbDirPath := ldr.databaseDirPath(originAndArtifactPath) 
 
 	   var perm os.FileMode = 0777
-	   err = os.MkdirAll(dbDirPath, perm)
+	   err = gos.MkdirAll(dbDirPath, perm)
 	   if err != nil {
 	      return
 	   }
@@ -870,7 +870,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
 
 
 
-           sourceFileInfo,statErr := os.Stat(sourceFilePath)	
+           sourceFileInfo,statErr := gos.Stat(sourceFilePath)	
            if statErr != nil {
 	           if ! os.IsNotExist(statErr) {
 			   	  err = fmt.Errorf("Can't stat relish source file '%s': %v\n", sourceFilePath, statErr)
@@ -880,7 +880,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
               sourceFound = true
            }
 
-           pickleFileInfo,statErr := os.Stat(pickleFilePath)
+           pickleFileInfo,statErr := gos.Stat(pickleFilePath)
            if statErr != nil {
 	           if ! os.IsNotExist(statErr) {
 				 err = fmt.Errorf("Can't stat relish intermediate-code file '%s': %v\n", pickleFilePath, statErr)
@@ -989,7 +989,7 @@ If file exists but not a properly formatted metadata file, returns an error.
 */
 func (ldr *Loader) readMetadataFile(path string) (currentVersion string, metadataDate string, err error) {
 
-	_,statErr := os.Stat(path)
+	_,statErr := gos.Stat(path)
 	if statErr != nil {
 	    if ! os.IsNotExist(statErr) {
 			err = fmt.Errorf("Can't stat '%s': %v\n", path, statErr)
@@ -1003,7 +1003,7 @@ func (ldr *Loader) readMetadataFile(path string) (currentVersion string, metadat
 	} else { // found the metadata.txt file in the local (private) artifact dir tree
  
 	    var body []byte
-		body, err = ioutil.ReadFile(path)	
+		body, err = gos.ReadFile(path)	
 		if err != nil {
 			return
 		}
@@ -1138,7 +1138,7 @@ func (ldr *Loader) initCodeLocations() {
 	replicasFilePath := xtrasDirPath + "relish_code_replicas.txt"
 	repositoriesFilePath := xtrasDirPath + "relish_code_repositories.txt"			
 
-	f,err := os.Open(stagingServersFilePath)
+	f,err := gos.Open(stagingServersFilePath)
 	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
@@ -1167,7 +1167,7 @@ func (ldr *Loader) initCodeLocations() {
 	   f.Close()	 
     }	
 
-	f,err = os.Open(originsFilePath)
+	f,err = gos.Open(originsFilePath)
 	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
@@ -1196,7 +1196,7 @@ func (ldr *Loader) initCodeLocations() {
 	   f.Close()	 
     }
 
-	f,err = os.Open(replicasFilePath)
+	f,err = gos.Open(replicasFilePath)
 	if err == nil {
 	   r := bufio.NewReader(f)
 	   for {
@@ -1226,7 +1226,7 @@ func (ldr *Loader) initCodeLocations() {
     }
 
     var b []byte
-	b,err = ioutil.ReadFile(repositoriesFilePath)
+	b,err = gos.ReadFile(repositoriesFilePath)
 	if err == nil {
 		servers := strings.Fields(string(b))
 		var serverURLs []string

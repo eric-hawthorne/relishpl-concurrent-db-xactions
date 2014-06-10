@@ -12,6 +12,7 @@ import (
   "bytes"
     "strings"
     "os"
+    "util/gos"
     "archive/zip" 
     . "relish/dbg"
 )
@@ -66,6 +67,7 @@ func ExtractFileFromZipFileContents(zipFileContents []byte, innerFileName string
 /*
 Extracts contents of a zip file into the specified directory, which must exist and be writeable.
 The directory path must not end with a "/".
+The directory path must be expressed in unix-style path syntax, with "/" separators not "\" or "\\"
 Always excludes __MACOSX folders from what it writes to the target directory tree.
 */
 func ExtractZipFileContents(zipFileContents []byte, dirPath string) (err error) {
@@ -94,7 +96,7 @@ func ExtractZipFileContents(zipFileContents []byte, dirPath string) (err error) 
       }
       if fileInfo.IsDir() {  
           Log(LOAD2_,"Directory %s:\n", f.Name) 
-          err = os.MkdirAll(dirPath + "/" + f.Name,perm)
+          err = gos.MkdirAll(dirPath + "/" + f.Name,perm)
           if err != nil {
              return
           } 
@@ -109,14 +111,14 @@ func ExtractZipFileContents(zipFileContents []byte, dirPath string) (err error) 
           slashPos := strings.LastIndex(f.Name,"/")
           if slashPos != -1 {
              relativeDirPath := f.Name[:slashPos]
-             err = os.MkdirAll(dirPath + "/" + relativeDirPath,perm)
+             err = gos.MkdirAll(dirPath + "/" + relativeDirPath,perm)
              if err != nil {
                 return
              } 
           }
 
           var outFile *os.File
-          outFile, err = os.Create(dirPath + "/" + f.Name)  
+          outFile, err = gos.Create(dirPath + "/" + f.Name)  
           if err != nil {
             return
           }
