@@ -24,6 +24,7 @@ import (
 	"fmt"
 	. "relish/dbg"
 	. "relish/runtime/data"
+   "io"
 )
 
 // 
@@ -948,8 +949,8 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 
       	defer selectStmt.Reset() // Ensure statement does not remain open
 
-      	err = selectStmt.Exec(collectionOrOwnerId)
-      	if err != nil {
+      	err = selectStmt.Query(collectionOrOwnerId)
+      	if err != nil && err != io.EOF {
       		return
       	}
 
@@ -960,7 +961,9 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
    		var id1 int64
    		var keyStr string
    		
-      	for selectStmt.Next() {
+      	// for selectStmt.Next() {
+
+         for ; err == nil ; err = selectStmt.Next() {
 
       		err = selectStmt.Scan(&id1,&keyStr)
       		if err != nil {
@@ -978,6 +981,12 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       		
 	         theMap.PutSimple(key, val)     		
       	}
+         if err == io.EOF {
+            err = nil 
+         } else {
+            err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+            return  
+         }         
               
          
       } else {  // An object-keyed map
@@ -991,10 +1000,11 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 
          defer selectStmt.Reset() // Ensure statement does not remain open
 
-      	err = selectStmt.Exec(collectionOrOwnerId)
-      	if err != nil {
-      		return
-      	}
+      	err = selectStmt.Query(collectionOrOwnerId)
+         if err != nil && err != io.EOF {
+            return
+         }
+
 
          collection.SetMayContainProxies(radius <= 0) 
 
@@ -1002,8 +1012,8 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       	var key RObject
    		var id1 int64
    		var ord1 int64
-   		
-      	for selectStmt.Next() {
+
+         for ; err == nil ; err = selectStmt.Next() {
 
       		err = selectStmt.Scan(&id1,&ord1)
       		if err != nil {
@@ -1025,7 +1035,13 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
       		}
       		
 	         theMap.PutSimple(key, val)     		
-      	}         
+      	}   
+         if err == io.EOF {
+            err = nil 
+         } else {
+            err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+            return  
+         } 
       }
       
    } else { // Not a map
@@ -1040,16 +1056,16 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 
       defer selectStmt.Reset() // Ensure statement does not remain open
 
-   	err = selectStmt.Exec(collectionOrOwnerId)
-   	if err != nil {
-   		return
-   	}
+   	err = selectStmt.Query(collectionOrOwnerId)
+      if err != nil && err != io.EOF {
+         return
+      }
 
        collection.SetMayContainProxies(radius <= 0) 
 
    	var val RObject
 
-   	for selectStmt.Next() {
+      for ; err == nil; err = selectStmt.Next() {
    		var id1 int64
    		err = selectStmt.Scan(&id1)
    		if err != nil {
@@ -1066,6 +1082,13 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
    		addColl := collection.(AddableMixin)
    		addColl.AddSimple(val)
    	}
+
+      if err == io.EOF {
+         err = nil 
+      } else {
+         err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+         return  
+      } 
 	}
 	return
 }
@@ -1104,10 +1127,10 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
          defer selectStmt.Reset() // Ensure statement does not remain open
 
-      	err = selectStmt.Exec(collectionOrOwnerId)
-      	if err != nil {
-      		return
-      	}
+         err = selectStmt.Query(collectionOrOwnerId)
+         if err != nil && err != io.EOF {
+            return
+         }         
 
          collection.SetMayContainProxies(false) 
 
@@ -1132,7 +1155,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       	valsBytes[numColumns] = &keyStr
 
          var nonNil bool
-      	for selectStmt.Next() {
+
+         for ; err == nil; err = selectStmt.Next() {
+
          	err = selectStmt.Scan(valsBytes...)
          	if err != nil {
          		return
@@ -1172,6 +1197,15 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       		
 	         theMap.PutSimple(key, val)     		
       	}
+         if err == io.EOF {
+            err = nil 
+         } else {
+            err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+            return  
+         } 
+
+
+
               
       } else if theMap.KeyType() == IntType || theMap.KeyType() == UintType {  // An integer keyed map
 
@@ -1185,10 +1219,10 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
          defer selectStmt.Reset() // Ensure statement does not remain open
 
-         err = selectStmt.Exec(collectionOrOwnerId)
-         if err != nil {
+         err = selectStmt.Query(collectionOrOwnerId)
+         if err != nil && err != io.EOF {
             return
-         }
+         } 
 
          collection.SetMayContainProxies(false) 
 
@@ -1213,7 +1247,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
          valsBytes[numColumns] = &ord1
 
          var nonNil bool
-         for selectStmt.Next() {
+
+         for ; err == nil; err = selectStmt.Next() {         
+
             err = selectStmt.Scan(valsBytes...)
             if err != nil {
                return
@@ -1260,7 +1296,15 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 */          
             
             theMap.PutSimple(key, val)          
-         }         
+         }       
+
+         if err == io.EOF {
+            err = nil 
+         } else {
+            err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+            return  
+         } 
+
 
       } else {  // An object-keyed map
          
@@ -1275,10 +1319,10 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
       	defer selectStmt.Reset() // Ensure statement does not remain open
 
-      	err = selectStmt.Exec(collectionOrOwnerId)
-      	if err != nil {
-      		return
-      	}
+         err = selectStmt.Query(collectionOrOwnerId)
+         if err != nil && err != io.EOF {
+            return
+         } 
 
          collection.SetMayContainProxies(false) 
 
@@ -1303,7 +1347,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
       	valsBytes[numColumns] = &ord1
 
          var nonNil bool
-      	for selectStmt.Next() {
+
+         for ; err == nil; err = selectStmt.Next() {   
+
          	err = selectStmt.Scan(valsBytes...)
          	if err != nil {
          		return
@@ -1350,7 +1396,15 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 */      		
       		
 	         theMap.PutSimple(key, val)     		
-      	}         
+      	}   
+         if err == io.EOF {
+            err = nil 
+         } else {
+            err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+            return  
+         } 
+
+
       }
    } else { // not a map
 
@@ -1368,10 +1422,10 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
 
    	defer selectStmt.Reset() // Ensure statement does not remain open
 
-   	err = selectStmt.Exec(collectionOrOwnerId)
-   	if err != nil {
-   		return
-   	}
+      err = selectStmt.Query(collectionOrOwnerId)
+      if err != nil && err != io.EOF {
+         return
+      } 
 
    	var val RObject
       var numColumns int
@@ -1390,7 +1444,9 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
    	}
 
       var nonNil bool
-   	for selectStmt.Next() {
+
+      for ; err == nil; err = selectStmt.Next() {   
+
       	err = selectStmt.Scan(valsBytes...)
       	if err != nil {
       		return
@@ -1409,6 +1465,14 @@ func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collec
    		addColl := collection.(AddableMixin)
    		addColl.AddSimple(val)
    	}
+
+      if err == io.EOF {
+         err = nil 
+      } else {
+         err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+         return  
+      } 
+
    }
 	return
 }
