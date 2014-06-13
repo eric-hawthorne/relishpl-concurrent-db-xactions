@@ -1,0 +1,56 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  test
+
+""" 
+ test_methods.rel
+
+ Utility functions supporting testing.
+"""
+
+
+assert predicate ?Any assertion String > result Bool
+"""
+ If the predicate is true, returns true.
+ If the predicate is false, prints the fail message and returns false.
+"""
+   result = not not predicate
+   if not result
+      print "Failed Assertion:" assertion
+
+
+assertEq leftSide ?Any rightSide ?Any assertion String > result Bool
+"""
+ If the predicate is true, returns true.
+ If the predicate is false, prints the fail message and returns false.
+"""
+   result = eq leftSide rightSide
+   if not result
+      print "Failed Assertion:" assertion
+
+
+assertNeq leftSide ?Any rightSide ?Any assertion String > result Bool
+"""
+ If the predicate is true, returns true.
+ If the predicate is false, prints the fail message and returns false.
+"""
+   result = neq leftSide rightSide
+   if not result
+      print "Failed Assertion:" assertion
+
+
+assertNot predicate ?Any assertion String > result Bool
+"""
+ If the predicate is true, returns true.
+ If the predicate is false, prints the fail message and returns false.
+"""
+   result = not predicate
+   if not result
+      print "Failed Assertion:" assertion
+
+
+pass
+"""
+ Does nothing. Just a placeholder.
+"""
+   a = 1  // needs a statement

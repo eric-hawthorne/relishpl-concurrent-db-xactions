@@ -1,0 +1,27 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  playground
+
+""" 
+ main.rel
+
+ Starts up the dev_tools web app in a manner so that it will display the
+ playground (simple program trial environment) app first.
+"""
+
+
+import 
+   web
+
+
+main
+"""
+ Set which app to display when the root url of the web app is requested.
+"""
+   if exists "Dev Tools View State"
+      viewState = summon "Dev Tools View State"
+   else
+      viewState = web.DevToolsViewState
+      dub viewState "Dev Tools View State"
+
+   viewState.appToLaunch = "playground"  

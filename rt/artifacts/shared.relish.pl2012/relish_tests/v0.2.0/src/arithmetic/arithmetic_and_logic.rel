@@ -1,0 +1,336 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  arithmetic
+
+""" 
+ arithmetic_and_logic.rel
+
+ Test arithmetic and boolean logic operators.
+"""
+
+import
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+   test as t
+
+
+
+// This is an example of a comment at the top-level of the file.
+// It must be separated from other things by oat least 
+// one blank/empty line before it and one after it.
+
+
+MAX_RADIUS = 10
+
+
+circleCircumference radius Float > Float
+"""
+ Calculates the circumference of a circle of a given radius.
+"""
+   => times 2 (times phys.PI radius) 
+
+
+circleArea radius Float > Float
+"""
+ Calculates the area of a circle of a given radius.
+ Has a maximum allowed radius. Adjusts the argument radius to the maximum
+ if it is greater before calculating the area.
+"""
+   if gt radius MAX_RADIUS
+      radius = MAX_RADIUS
+   r2 = times radius radius
+   => times phys.PI r2
+
+
+circleProperty radius Float prop String > Float
+"""
+ If prop is "a" calculates the area otherwise the circumference of a circle.
+"""
+   if eq "a" prop
+      => circleArea radius
+   else
+      => circleCircumference radius
+
+
+testReturns2More > Int Int
+"""
+ Returns two items. This is really part of a test of returning multiple values
+ and passing them through as the return values of another two-value returning
+ method.
+"""
+   => 4 5
+
+
+testReturns2 > Int Int
+"""
+ Returns two items. This is really part of a test of returning multiple values
+ and passing them through as the return values of another two-value returning
+ method.
+"""
+   => testReturns2More
+
+
+absorb arg1 Int arg2 Int > Int Int
+"""
+ Just passes two arguments through.
+"""
+   => arg1 arg2
+
+
+testReturnsTheTwoItGotMultiplied x Int y Int > Int 
+"""
+ Testing returning multiple values and receiving multiple values from
+ another method call.
+"""
+   => times x y
+
+
+Basic
+"""
+ Dummy structured object data type.
+"""
+   b Bool
+   n Int
+   f Float
+
+
+main
+"""
+ Main program.
+"""
+   testArithmeticAndLogic
+
+
+testArithmeticAndLogic
+"""
+ Tests arithmetic and boolean logic functions/operators.
+ All "operators" on any type in relish are just ordinary method calls, with the exception
+ of assignment, collection-add/remove, and channel send/receive which are infix operators.
+"""
+   passed = true
+
+   print "===== Arithmetic and Logic and Method Call Formatting"
+
+   passed = and assert (lt 1 2) "lt i i"
+                passed
+
+   passed = and assert (lt 1.0 2.0) "lt f f"
+                passed
+
+   passed = and assert (lt 1 2.0) "lt i f"
+                passed
+
+   passed = and assert (lt 1.0 2) "lt f i"
+                passed
+
+
+   passed = and assertNot (gt 1 2) "gt i i"
+                passed
+
+   passed = and assertNot (gt 1.0 2.0) "gt f f"
+                passed
+
+   passed = and assertNot (gt 1 2.0) "gt i f"
+                passed
+
+   passed = and assertNot (gt 1.0 2) "gt f i"
+                passed
+
+
+   passed = and assert (lte 1 2) "lte i i"
+                passed
+
+   passed = and assert (lte 1.0 2.0) "lte f f"
+                passed
+
+   passed = and assert (lte 1 2.0) "lte i f"
+                passed
+
+   passed = and assert (lte 1.0 2) "lte f i"
+                passed
+
+
+   passed = and assertNot (gte 1 2) "gte i i"
+                passed
+
+   passed = and assertNot (gte 1.0 2.0) "gte f f"
+                passed
+
+   passed = and assertNot (gte 1 2.0) "gte i f"
+                passed
+
+   passed = and assertNot (gte 1.0 2) "gte f i"
+                passed
+
+
+
+
+   passed = and assert (lt "a" "aa") "lt s s"
+                passed
+
+
+   passed = and assertNot (gt "a" "aa") "gt s s"
+                passed
+
+   passed = and assert (lte "a" "aa") "lte s s"
+                passed
+
+
+   passed = and assertNot (gte "a" "aa") "gte s s"
+                passed
+
+
+
+
+
+   cp = circleProperty 9.0 
+                       "a"
+
+   passed = and assertEq cp 243 "circleProperty1"
+                passed
+
+   cpOk = eq circleProperty 9.0 
+                            "a" 
+             243
+
+   passed = and assert cpOk "circleProperty2" 
+                passed
+
+   cpOk = eq circleProperty 
+                9.0 
+                "a" 
+             243
+
+   passed = and assert cpOk "circleProperty3"
+                passed
+     
+   cpOk =                          
+      eq 
+         circleProperty 
+            9.0 
+            "a"
+         243
+
+   passed = and assert cpOk "circleProperty4" 
+                passed
+
+   cp = circleProperty 9.0 "c"
+
+   passed = and assertEq cp 54 "circleProperty5"
+                passed   
+
+   v1 v2 = testReturns2
+
+   passed = and assert and (eq v1 4) (eq v2 5) 
+                       "testReturns1" 
+                passed   
+
+
+   v3 = plus testReturns2
+
+   passed = and assertEq v3 9 "testReturns2" 
+                passed   
+
+   v4 = testReturnsTheTwoItGotMultiplied testReturns2
+  
+   passed = and assertEq v4 20 "testReturns3" 
+                passed   
+
+
+   if not 0
+      t.pass
+   else
+      passed = and assert false "zeroTest1"
+                   passed
+
+
+   basic1 = Basic
+   basic1.b = true
+   basic1.n = 0
+   basic1.f = 0.
+  
+   passed = and assertNot (not basic1) "zeroTest2"
+                passed    
+
+   passed = and assert (not basic1.n) "zeroTest3" 
+                passed
+
+   passed = and assertNot (not basic1.b) "zeroTest4"
+                passed
+
+   passed = and assert (not basic1.f) "zeroTest5"
+                passed
+
+   passed = and assertNot (eq basic1 nil) "zeroTest6" 
+                passed
+
+   basic2 = nil  
+
+   passed = and assert (not basic2) "zeroTest7" 
+                passed
+   
+   theBasics = [basic1]Basic
+   moreBasics = []Basic
+ 
+   passed = and assertNot (not theBasics) "zeroTest8"    // is not an empty list
+                passed   
+
+   passed = and assertNot eq (len moreBasics) 1   // length of list is 0
+                          "zeroTest9"
+                passed   
+ 
+   passed = and assert (not moreBasics) "zeroTest10"  // is an empty list
+                passed
+
+
+   // Test "boolean" "and" operator.
+   // Note that the function returns either false or its last argument, which is guaranteed
+   // at that point to be a non-false-equivalent object/value.
+   // All argument expressions, however, are evaluated, regardless if one is found to be false-equivalent.
+   // This is unlike a LISP "and", which lazily evaluates its argument exprs from left to right and
+   // stops evaluating arg exprs upon encountering the first false-equivalent argument.
+
+   lastOne = and 2 "three" true "five"
+
+   passed = and assertEq lastOne "five" "and" 
+                passed
+
+
+   // Test "boolean" "or" operator.
+   // Note that the function returns either false or its left-most non-false-equivalent argument.
+   // All argument expressions, however, are evaluated, unlike a LISP "or".
+   firstOne = or 0 0.0 "" "this one" "is true"
+
+   passed = and assertEq firstOne "this one" "or"  
+                passed
+
+
+   passed = and assertEq 4 (plus 2 2) "plus1"
+                passed   
+
+   passed = and assertEq 4.3 (plus 2 2.3) "plus2" 
+                passed
+   
+
+   passed = and assertEq 0.2999999999999998 (minus 2.3 2) "minus1"
+                passed 
+
+   passed = and assertEq 1 (minus 3 2) "minus2"
+                passed 
+
+   passed = and assertEq 2 (div 8 3) "div1"
+                passed 
+
+   passed = and assertEq 2.6666666666666665 (div 8 3.0) "div2"
+                passed 
+
+   passed = and assertEq 1 (mod 7 3) "mod"
+                passed 
+
+   passed = and assertEq -4 (neg 4) "neg"
+                passed 
+
+   passed = and assertEq -9 (plus -4 -5) "plus3"
+                passed 
+
+   if passed
+      print "PASSED"

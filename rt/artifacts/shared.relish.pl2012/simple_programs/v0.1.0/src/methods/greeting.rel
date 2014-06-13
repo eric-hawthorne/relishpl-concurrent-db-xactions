@@ -1,0 +1,26 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  methods
+
+"""
+ greeting.rel
+
+ Methods - declaration of, application of.
+"""
+
+
+greet name String 
+"""
+ Issue a greeting to the named person.
+"""
+   print "Hello" name
+
+
+main
+"""
+ Be polite.
+"""
+   greet "Jack"
+   greet "Jill"
+   greet
+      "Alice"

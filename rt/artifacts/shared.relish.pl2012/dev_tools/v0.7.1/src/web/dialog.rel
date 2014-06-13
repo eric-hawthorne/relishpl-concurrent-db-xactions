@@ -1,0 +1,32 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web 
+
+""" 
+ dialog.rel
+
+ When the root url of this web app is requested, a persistent view-state is fetched to
+ decide whether to redirect to display the data explorer app or the playground app.
+"""
+
+
+import
+   strings
+
+
+index
+> 
+   String 
+   String
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+ Redirects to /explorer or /playground
+"""
+   viewState = summon "Dev Tools View State"
+   => "REDIRECT"
+      cat "/" viewState.appToLaunch  
+
+
+
+
+

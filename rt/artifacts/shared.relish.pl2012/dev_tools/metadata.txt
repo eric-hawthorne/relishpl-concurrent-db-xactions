@@ -1,0 +1,38 @@
+relish artifact metadata: 2013/12/13
+origin: shared.relish.pl2012
+artifact: dev_tools
+current version: 0.7.1
+release date: 2013/12/13
+tags: web application,relish,debugging,development
+
+Web application which serves as a suite of software development tools to support 
+relish programming.
+
+Tools:
+
+Simple Program Trial Environment (also known as the playground)
+--------------------------------
+This interactive environment allows simple relish programs to be typed in quickly and run. 
+This is suitable for learning relish programming, for testing/experimenting relish program 
+syntax rules, or for testing/learning the functioning of basic program constructs
+or library methods.
+
+The Data Explorer
+-------------------
+This web app is for exploring and debugging the data objects (and networks of inter-related data objects) 
+within a running relish program.
+The data explorer can be invoked from the simple program trial environment, to look at
+data within the program under trial, or it can be invoked independently and pointed at
+an existing large complex relish software application to examine its data while it runs.
+The data explorer can be focussed on a particular object within the runtime memory or database of
+a running relish program.
+It displays that object and its attributes, including other objects which 
+are attributes / relations of the focus object. It displays a portion of the object reference tree
+(object network) out from the focus object.
+The explorer can be refocussed on any of the displayed objects by clicking on the object.
+Queries can be performed in the explorer's user interface 
+to select objects for potential focus of the explorer.
+This explorer runs as one program (process), and the relish program being debugged is another program, 
+which must be invoked with the relish -explore <port> option to allow the explorer to query its data.
+
+See /doc/README.txt in the artifact for instructions on use of these tools.

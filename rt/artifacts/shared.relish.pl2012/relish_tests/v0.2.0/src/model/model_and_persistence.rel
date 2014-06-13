@@ -1,0 +1,261 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  model 
+
+""" 
+ model_and_persistence.rel
+
+ Test creation of a data model consisting of structured object data types, attributes, relations.
+ Test relish support for transparent persistence of these.
+"""
+
+import
+   model/machines/vehicles
+   model/machines/engines
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+   model/people
+   strings
+   test as t
+
+
+
+Basic
+"""
+ A datatype for testing storage and retrieval of primitive values.
+"""
+   b Bool
+
+
+main
+"""
+ Main program.
+"""
+   testModel
+
+
+testModel
+"""
+ Creates various structured objects, attributes, and relations, and tests persistence
+ and retrieval of them. See also the 'collections' test package which tests
+ retrieval of persisted objects by SQL query.
+"""
+   passed = true
+   
+   print "===== Model and Persistence"
+
+   basic1 = Basic
+   basic1.b = true
+
+   if exists "BASIC 1"
+      basic2 = summon "BASIC 1"
+   else
+      dub basic1 "BASIC 1"
+      basic2 = basic1
+
+   passed = and assert basic2.b "struct persistence 1"  
+                passed
+
+   basic2.b = false
+
+   passed = and assertNot basic2.b "struct persistence 2"
+                passed
+
+   basic2.b = true
+
+   passed = and assert basic2.b "struct persistence 3"  
+                passed   
+
+
+   basic3 = Basic
+   basic3.b = true
+   dub basic3 "BASIC 3"
+   delete basic3
+   if exists "BASIC 3"
+      passed = and assert false "delete from db"
+                   passed
+
+
+   car1 = vehicles.Car
+   car1.lat = 49.243
+   car1.long = 123.761  // - operator is not handled yet
+   car1.vin = "V0E44R8139WT6214A"
+
+   truck1 = vehicles.PickupTruck
+   truck1.lat = 49.265
+   truck1.long = 123.778
+   truck1.bedLength = 8.3
+   truck1.vin = "W1E26S7244QD7139B"
+
+   truck2 = vehicles.PickupTruck
+   truck2.lat = 47.135
+   truck2.long = 123.721
+   truck2.bedLength = 5.3   
+   truck2.vin = "X8W74F8831TF8932C"   
+
+   addEngine car1 120 243.5
+
+   addEngine truck1 150 317.1   
+
+   addEngine truck2 130 289.6  
+
+   passed = and assertEq car1.engine.horsepower 120 "attribute selector chaining 1"  
+                passed 
+
+   passed = and assertEq car1.engine.weightKg 243.5 "attribute selector chaining 2"  
+                passed                 
+  
+   passed = and assertEq (powerToWeight car1.engine) 0.4928131416837782 "method call on attribute selector"
+                passed
+
+   wheel1 = vehicles.Wheel
+   wheel1.num = 1
+   wheel2 = vehicles.Wheel
+   wheel2.num = 2
+   wheel3 = vehicles.Wheel
+   wheel3.num = 3
+   wheel4 = vehicles.Wheel
+   wheel4.num = 4
+
+   car1.wheels += wheel4  // Also NOT HANDLING // comment at beginning of indented line !!!
+   car1.wheels += wheel3  
+
+   if exists "JSS 994"
+      firstPass = false
+   else
+      firstPass = true
+      dub car1 "JSS 994"  // Moved this after some car1.wheels += to test persisting collection attr with owner obj
+      dub truck1 "JAT 057"
+      dub truck2 "FEC 092"
+   
+   car1.wheels += wheel1  
+   car1.wheels += wheel2  
+
+   car2 = summon "JSS 994"  // Was Car summon - should it be: Car: summon
+
+   passed = and assertEq car2.lat 49.243 "attribute selector after object summoned from db"
+                passed
+
+   passed = and assertEq car2.vin "V0E44R8139WT6214A" "attribute selector after object summoned from db 2"
+                passed
+
+   // print "car2.wheels:"
+
+   if firstPass
+      for i wheel in car2.wheels
+         passed = and assertEq wheel.num (minus 4 i) "wheel.num 1"
+                      passed   
+      // print "wheel[" i "] =" wheel.num
+   else
+      for i wheel in car2.wheels
+         if eq i 0
+            passed = and assertEq wheel.num 4 "wheel.num 2"
+                         passed         
+         else
+            passed = and assertEq wheel.num 1 "wheel.num 3"
+                         passed  
+
+   car2.wheels -= wheel2
+   car2.wheels -= wheel3
+
+
+   for i wheel in car2.wheels
+      if eq i 0
+         passed = and assertEq wheel.num 4 "wheel.num 4"
+                      passed         
+      else
+         passed = and assertEq wheel.num 1 "wheel.num 5"
+                      passed  
+
+   // print "After removing wheels 2 and 3 from car2.wheels, car2.wheels is:"
+                         
+   // for i wheel in car2.wheels
+   //    print "wheel[" i "] =" wheel.num
+
+    
+   passed = and assertEq 2 (len car2.wheels) "len car2.wheels"
+                passed
+
+   driver1 = people.Person
+   driver1.firstName = "Joe"
+   driver1.lastName = "Armstrong"
+   driver1.dateOfBirth err = Time "1983-09-25T22:13:45.875Z"
+   if err
+      print err
+
+   passed = and assertEq (String driver1.dateOfBirth) "1983-09-25 22:13:45.875 +0000 UTC" "driver1.dateOfBirth"
+                passed
+
+   passenger1 = people.Person
+   passenger1.firstName = "Alice"
+   passenger1.lastName = "Wong"
+   passenger1.dateOfBirth err = Time "1990-02-13 22:13:45 America/Los_Angeles"   
+   if err
+      print err   
+
+   passenger2 = people.Person
+   passenger2.firstName = "Ernie"
+   passenger2.lastName = "Kovacs"
+   passenger2.dateOfBirth err = Time "February 3, 1969 8:08am -0700 PDT" "January 2, 2006 3:04pm -0700 MST"    
+   if err
+      print err   
+
+   driver2 = people.Person
+   driver2.firstName = "Jane"
+   driver2.lastName = "Sterrit"
+   driver2.dateOfBirth err = Time 1983 5 27 15 4 0 0 "Local"
+   if err
+      print err   
+
+   car2.driver = driver1
+   car2.passengers += passenger1
+   car2.passengers += passenger2
+
+   for i person in car2.passengers
+      if eq i 0
+         passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
+                               "Ernie Kovacs 1969-02-03 08:08:00 -0700 PDT"
+                               "car2.passengers 1"
+                      passed
+      else
+         passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
+                               "Alice Wong 1990-02-13 22:13:45 -0800 PST"     
+                               "car2.passengers 2"                                 
+                      passed                      
+
+
+   car3 = passenger2.vehicleRiddenIn
+   passed = and assertEq car3.vin "V0E44R8139WT6214A" "car3.vin"
+                passed 
+
+   passed = and assertEq car2.passengers[1].firstName "Alice" "passenger firstName"
+                passed
+
+   truck1.driver = driver2
+
+   // Clear the passengers
+   car2.passengers = nil
+
+   passed = and assertEq (len car2.passengers) 0 "len car2.passengers 1"
+                passed
+
+   passed = and assertEq (String passenger2.vehicleRiddenIn) "*nil*" "passenger2.vehicleRiddenIn"
+                passed
+
+   passengerList = [passenger1 passenger2]people.Person
+
+   car2.passengers = passengerList
+
+   passed = and assertEq (len car2.passengers) 2 "len car2.passengers 2"
+                passed
+
+   car3 = passenger2.vehicleRiddenIn
+   
+   // print car3.vin
+
+   passed = and assertEq car3.vin "V0E44R8139WT6214A" "car3.vin"
+                passed 
+
+   if passed
+      print "PASSED"
+
+ 

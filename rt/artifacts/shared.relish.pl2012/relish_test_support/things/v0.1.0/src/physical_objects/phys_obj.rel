@@ -1,0 +1,45 @@
+origin   shared.relish.pl2012
+artifact relish_test_support/things
+package  physical_objects
+
+""" 
+ phys_obj.rel
+
+ Physical objects in the spatio-temporal world.
+"""
+
+
+PI = 3  // Circle circumference to diameter ratio
+
+
+PhysObj
+"""
+ An object with a position in spacetime. We confine ourselves to terrestrial objects.
+"""
+   lat Float
+
+   long Float
+
+   elev Float  // m above or below MSL
+
+
+MovementCapableObject <: PhysObj
+"""
+ Any object capable of movement.
+ Note. It is really important we enforce two blank lines above each Type or method declaration!!!! TODO!!!
+"""
+   speed Float  // m/s
+   
+   direction Float  // degrees True 0..359.999
+   
+
+SelfLocomotive <: MovementCapableObject
+"""
+ Any object that moves of its own accord ("under its own steam").
+"""
+
+
+Conveyer <: MovementCapableObject
+"""
+ A movement-capable object which conveys motion on one or more other objects which rest on or in it.
+"""

@@ -1,0 +1,20 @@
+<html>
+<head>
+<title>
+bar Foo Page
+</title>
+</head>
+<body>
+<br/>
+<br/>
+<center>
+<p>
+bar Foo Foo!
+</p>
+<br/>
+<br/>
+{{with .wheels}}{{with index . 0}}{{.num}}{{end}}{{end}}
+{{/*range $key,$val := .wheels}}<p><b>{{$key}} = {{$val.num}}</b></p>{{end*/}}
+</center>
+</body>
+</html>
