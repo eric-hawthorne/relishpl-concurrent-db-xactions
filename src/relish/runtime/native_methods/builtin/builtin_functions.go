@@ -2346,7 +2346,13 @@ func builtinInput(th InterpreterThread, objects []RObject) []RObject {
    if err != nil {
       result = err.Error()
    }
-   result = result[:len(result)-1]
+   n := len(result)
+   if n > 1 && result[n-2] == '\r'  {   // Windows
+   	  n -= 2
+   } else {
+   	  n--
+   }
+   result = result[:n]
    return []RObject{String(result)}
 }
 
