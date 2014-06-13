@@ -24,6 +24,7 @@ package persist
 import (
 	"fmt"
 	. "relish/runtime/data"
+	"io"
 )
 
 /*
@@ -141,14 +142,15 @@ func (db *SqliteDB) restorePackageNameMappings() (err error) {
 		return
 	}
 
-	defer selectStmt.Finalize()
+	defer selectStmt.Close()
 
-	err = selectStmt.Exec()
-	if err != nil {
+	err = selectStmt.Query()
+	if err != nil && err != io.EOF {
 		return
 	}
 
-	for selectStmt.Next() {
+    for ; err == nil ; err = selectStmt.Next() {   
+
 		var name string
 		var shortName string
 		err = selectStmt.Scan(&name,&shortName)
@@ -158,6 +160,15 @@ func (db *SqliteDB) restorePackageNameMappings() (err error) {
 		RT.PkgNameToShortName[name] = shortName
 		RT.PkgShortNameToName[shortName] = name
 	}
+	if err == io.EOF {
+	   err = nil 
+	} else {
+	   err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+	   return  
+	} 
+
+
+
 	return
 }
 
@@ -426,7 +437,7 @@ func (db *SqliteDB) TypeDescriptor(collection RCollection) (table string, isMap 
 // IntType,Int32Type,UintType,Uint32Type    
       
       
-      
+   
       
       
    } else {
