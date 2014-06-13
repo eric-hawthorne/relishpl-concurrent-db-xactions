@@ -24,7 +24,7 @@ package persist
 */
 
 import (
-	"code.google.com/p/gosqlite/sqlite"
+	sqlite "code.google.com/p/go-sqlite/go1/sqlite3"
 	"fmt"
 	. "relish/dbg"
 	"strings"
@@ -154,19 +154,9 @@ func (db *SqliteDB) ExecStatement(statement string, args ...interface{}) (err er
     if err != nil {
        err = fmt.Errorf("DB ERROR executing statement:\n%s\nDetail: %s\n\n", statement, err) 	
 	   return
-    }
-
-    for stmt.Next() {}
-
-    err = stmt.Error()
-    if err != nil {
-	   err = fmt.Errorf("DB ERROR on statement:\n%s\nDetail: %s\n\n", statement, err) 	
-		   return       	
-    }
-
+    }   
     return
 }
-
 
 
 /*

@@ -31,6 +31,7 @@ import (
 	"strings"
 	"time"
 	// "relish/global_loader"
+	"io"
 )
 
 const TIME_LAYOUT = "2006-01-02 15:04:05.000"
@@ -940,26 +941,28 @@ func (db *SqliteDB) exists(id int64) (found bool, err error) {
 
 	defer selectStmt.Reset()
 
-	err = selectStmt.Exec(id)
+	err = selectStmt.Query(id)
+    if err != nil {
+    	if err == io.EOF {
+    	   panic("exists: Why is there no result of a count(*) statement???")
+        } else {
+        	return
+        }
+    }
+
+	var n int64
+
+	err = selectStmt.Scan(&n)
 	if err != nil {
 		return
 	}
-	if selectStmt.Next() {
-		var n int64
-
-		err = selectStmt.Scan(&n)
-		if err != nil {
-			return
+	if n >= 1 {
+		found = true
+		if n > 1 {
+			rterr.Stop("More than one object with same id in sqlite db!")
 		}
-		if n >= 1 {
-			found = true
-			if n > 1 {
-				rterr.Stop("More than one object with same id in sqlite db!")
-			}
-		}
-	} else {
-		panic("Why is there no result of a count(*) statement???")
 	}
+
 	return
 }
 
@@ -1002,21 +1005,23 @@ func (db *SqliteDB) ObjectNameExists(name string) (found bool, err error) {
     // This is a well used prepared statement so does not need to be destroyed with Finalize.
 	// defer selectStmt.Finalize()
 
-	err = selectStmt.Exec(name)
+	err = selectStmt.Query(name)
+    if err != nil {
+    	if err == io.EOF {
+    	   panic("exists: Why is there no result of a count(*) statement???")
+        } else {
+        	return
+        }
+    }
+
+	var n int64
+
+	err = selectStmt.Scan(&n)
 	if err != nil {
 		return
 	}
-	if selectStmt.Next() {
-		var n int64
+	found = (n > 0)
 
-		err = selectStmt.Scan(&n)
-		if err != nil {
-			return
-		}
-		found = (n > 0)
-	} else {
-		panic("Why is there no result of a count(*) statement???")
-	}
 	return
 }
 
@@ -1034,11 +1039,13 @@ func (db * SqliteDB) ObjectNames(prefix string) (names []string, err error) {
 
 		defer selectStmt.Reset()  // Ensure the statement is not left open 
 
-		err = selectStmt.Exec()
-		if err != nil {
+		err = selectStmt.Query()
+		if err != nil && err != io.EOF {
 			return
 		}
-		for selectStmt.Next() {
+
+        for ; err == nil ; err = selectStmt.Next() {   
+
 			var name string
 
 			err = selectStmt.Scan(&name)
@@ -1047,6 +1054,12 @@ func (db * SqliteDB) ObjectNames(prefix string) (names []string, err error) {
 			}
 			names = append(names,name)
 		}
+		if err == io.EOF {
+		 err = nil 
+		} else {
+		 err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", stmt, err)   
+		 return  
+		} 
 
    } else {
         prefix = SqlStringValueEscape(prefix) + "%"
@@ -1059,11 +1072,13 @@ func (db * SqliteDB) ObjectNames(prefix string) (names []string, err error) {
 
 		defer selectStmt.Reset()  // Ensure the statement is not left open 
 
-		err = selectStmt.Exec(prefix)
-		if err != nil {
+		err = selectStmt.Query(prefix)
+		if err != nil && err != io.EOF {
 			return
 		}
-		for selectStmt.Next() {
+
+        for ; err == nil; err = selectStmt.Next() { 		
+
 			var name string
 
 			err = selectStmt.Scan(&name)
@@ -1072,6 +1087,12 @@ func (db * SqliteDB) ObjectNames(prefix string) (names []string, err error) {
 			}
 			names = append(names,name)
 		}
+		if err == io.EOF {
+		 err = nil 
+		} else {
+		 err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", stmt, err)   
+		 return  
+		} 
    }
    return
 }
@@ -1166,13 +1187,15 @@ func (db *SqliteDB) Refresh(obj RObject , radius int) (err error) {
 
 	defer selectStmt.Reset() // Ensure statement is not left open
 
-	err = selectStmt.Exec(id)
-	if err != nil {
-		return
-	}
-	if !selectStmt.Next() {
-		panic(fmt.Sprintf("No object found in database with %s.", errSuffix))
-	}
+	err = selectStmt.Query(id)
+    if err != nil {
+    	if err == io.EOF {
+		   panic(fmt.Sprintf("No object found in database with %s.", errSuffix))    		
+        } else {
+           return
+        }
+    }
+
 	// var id int64
 	var id2 int64
 	var flags int
@@ -1334,13 +1357,15 @@ func (db *SqliteDB) fetch1(query string, arg interface{}, radius int, errSuffix 
 
 	defer selectStmt.Reset() // Ensure statement is not left open
 
-	err = selectStmt.Exec(arg)
-	if err != nil {
-		return
-	}
-	if !selectStmt.Next() {
-		panic(fmt.Sprintf("No object found in database with %s.", errSuffix))
-	}
+	err = selectStmt.Query(arg)
+    if err != nil {
+    	if err == io.EOF {
+		   panic(fmt.Sprintf("No object found in database with %s.", errSuffix)) 		
+        } else {
+           return
+        }
+    }
+
 	var id int64
 	var id2 int64
 	var flags int
@@ -1519,16 +1544,23 @@ func (db *SqliteDB) fetchMultiple(query string, queryArgObjs []RObject, idsOnly 
 	if len(queryArgObjs) > 0 {
 		queryArgs = make([]interface{},len(queryArgObjs))
 		for i,arg := range queryArgObjs {
-			queryArgs[i] = arg
+			var convertedArg interface{}
+			switch arg.(type) {
+			case Bool:
+               convertedArg = bool(arg.(Bool))  
+			default:
+			   convertedArg = fmt.Sprint(arg)
+			}
+			queryArgs[i] = convertedArg
 		}
 	}
 
-	err = selectStmt.Exec(queryArgs...)  // Exec(args...)
-	if err != nil {
+	err = selectStmt.Query(queryArgs...)  // Exec(args...)
+	if err != nil && err != io.EOF {
 		return
 	}
 
-	for selectStmt.Next() {
+    for ; err == nil ; err = selectStmt.Next() {   
 	
 	    var obj RObject
 		var id int64
@@ -1677,13 +1709,16 @@ func (db *SqliteDB) fetchMultiple(query string, queryArgObjs []RObject, idsOnly 
 					return
 				}
 			}
-		}
-		
-		
+		}	
 		
 		*objs = append(*objs, obj)
-
     }
+	if err == io.EOF {
+	 err = nil 
+	} else {
+	 err = fmt.Errorf("DB ERROR on query:\n%s\nDetail: %s\n\n", query, err)   
+	 return  
+	} 
 
 	return
 }
@@ -1775,13 +1810,15 @@ func (db *SqliteDB) fetchUnaryPrimitiveAttributeValues(id int64, obj RObject) (e
 
 		defer selectStmt.Reset()
 
-		err = selectStmt.Exec(id)
-		if err != nil {
-			return
-		}
-		if !selectStmt.Next() {
-			panic(fmt.Sprintf("No object found in database with id=%v", id))
-		}
+		err = selectStmt.Query(id)
+	    if err != nil {
+	    	if err == io.EOF {
+			   panic(fmt.Sprintf("No object found in database with id=%v", id))  		
+	        } else {
+	           return
+	        }
+	    }
+
 
 		// Now construct a Scan call with [] *[]byte
 		/*
@@ -1916,17 +1953,16 @@ func (db *SqliteDB) fetchUnaryNonPrimitiveAttributeValue(objId int64, obj RObjec
 
 	defer selectStmt.Reset()
 
-	err = selectStmt.Exec(objId)
-	if err != nil {
-		// panic(err) // debug		
-		return
-	}
-
-	if !selectStmt.Next() {
-		// TODO NOT SURE IF THIS SHOULD BE AN ERROR!!!!!!
-		err = errors.New(fmt.Sprintf("Object %s has no value for attribute %s", objId, attr.Part.Name))
-		return
-	}
+	err = selectStmt.Query(objId)
+    if err != nil {
+    	if err == io.EOF {
+		   // TODO NOT SURE IF THIS SHOULD BE AN ERROR!!!!!!    		
+		   err = errors.New(fmt.Sprintf("Object %s has no value for attribute %s", objId, attr.Part.Name))		
+        }  else {
+		   err = errors.New(fmt.Sprintf("Error fetching value Object %s attribute %s: %s", objId, attr.Part.Name, err))	        	
+        }
+        return
+    }
 
 	var id1 int64
 	err = selectStmt.Scan(&id1)
@@ -2251,13 +2287,13 @@ func (db *SqliteDB) insert(th InterpreterThread, obj RObject, dbid, dbid2 int64)
 	  stmt = Stmt("INSERT INTO RObject(id,id2,flags,typeName) VALUES(?,?,?,?);")
 	  stmt.Arg(dbid)   
 	  stmt.Arg(dbid2)  
-	  stmt.Arg(obj.Flags())
+	  stmt.Arg(int(obj.Flags()))
 	  stmt.Arg(collectionTypeDescriptor)
    } else {
 	  stmt = Stmt("INSERT INTO RObject(id,id2,flags,typeName) VALUES(?,?,?,?);")
 	  stmt.Arg(dbid)   
 	  stmt.Arg(dbid2)  
-	  stmt.Arg(obj.Flags())
+	  stmt.Arg(int(obj.Flags()))
 	  stmt.Arg(obj.Type().ShortName())
 
 

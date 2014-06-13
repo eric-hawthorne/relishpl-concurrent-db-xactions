@@ -69,10 +69,14 @@ Disallow: /catalogs
    // print content
    // print "Err:"
    // print err
-   template = "Get http://echidnoid.org/: dial tcp: lookup echidnoid.org: no such host"   
-   passed = and assertEq err 
+   template = "Get http://echidnoid.org/: dial tcp: lookup echidnoid.org: no such host"  
+   templateWindows = "Get http://echidnoid.org/: dial tcp: GetAddrInfoW: No such host is known." 
+   passed = and assert
+                   or eq err 
                          template
-                         "err http://echidnoid.org"
+                      eq err
+                         templateWindows
+                   "err http://echidnoid.org"
                 passed 
 
    // content err = httpGet "http://relish.pl"
