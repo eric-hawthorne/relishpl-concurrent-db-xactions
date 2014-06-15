@@ -968,7 +968,7 @@ func (S *Scanner) interpretLineComment(text []byte) {
 	}
 }
 
-// EGH Obsolete
+// EGH Obsolete (Go-specific) but may be handy for extending relish to include /* comments.
 //
 func (S *Scanner) scanComment() {
 	// initial '/' already consumed; S.ch == '/' || S.ch == '*'
@@ -1480,6 +1480,8 @@ func (S *Scanner) skipWhitespace() {
 // of ch_i. If a token ends in '=', the result is tok1 or tok3
 // respectively. Otherwise, the result is tok0 if there was no other
 // matching character, or tok2 if the matching character was ch2.
+//
+// Go-specific but may be handy for adding more relish operators.
 
 func (S *Scanner) switch2(tok0, tok1 token.Token) token.Token {
 	if S.ch == '=' {
@@ -1517,180 +1519,4 @@ func (S *Scanner) switch4(tok0, tok1 token.Token, ch2 rune, tok2, tok3 token.Tok
 	return tok0
 }
 
-// Scan scans the next token and returns the token position,
-// the token, and the literal string corresponding to the
-// token. The source end is indicated by token.EOF.
-//
-// If the returned token is token.SEMICOLON, the corresponding
-// literal string is ";" if the semicolon was present in the source,
-// and "\n" if the semicolon was inserted because of a newline or
-// at EOF.
-//
-// For more tolerant parsing, Scan will return a valid token if
-// possible even if a syntax error was encountered. Thus, even
-// if the resulting token sequence contains no illegal tokens,
-// a client may not assume that no error occurred. Instead it
-// must check the scanner's ErrorCount or the number of calls
-// of the error handler, if there was one installed.
-//
-// Scan adds line information to the file added to the file
-// set with Init. Token positions are relative to that file
-// and thus relative to the file set.
-//
-func (S *Scanner) Scan() (token.Pos, token.Token, string) {
-scanAgain:
-	S.skipWhitespace()
 
-	// current token start
-	insertSemi := false
-	offs := S.offset
-	tok := token.ILLEGAL
-
-	// determine token value
-	switch ch := S.ch; {
-	case isLetter(ch):
-		tok = S.scanIdentifier()
-		switch tok {
-		case token.IDENT, token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.RETURN:
-			insertSemi = true
-		}
-	case digitVal(ch) < 10:
-		insertSemi = true
-		tok = S.scanNumber(false)
-	default:
-		S.Next() // always make progress
-		switch ch {
-		case -1:
-			if S.insertSemi {
-				S.insertSemi = false // EOF consumed
-				return S.file.Pos(offs), token.SEMICOLON, "\n"
-			}
-			tok = token.EOF
-		case '\n':
-			// we only reach here if S.insertSemi was
-			// set in the first place and exited early
-			// from S.skipWhitespace()
-			S.insertSemi = false // newline consumed
-			return S.file.Pos(offs), token.SEMICOLON, "\n"
-		case '"':
-			insertSemi = true
-			tok = token.STRING
-			S.scanString()
-		case '\'':
-			insertSemi = true
-			tok = token.CHAR
-			S.scanChar()
-		case '`':
-			insertSemi = true
-			tok = token.STRING
-			S.scanRawString()
-		case ':':
-			tok = S.switch2(token.COLON, token.DEFINE)
-		case '.':
-			if digitVal(S.ch) < 10 {
-				insertSemi = true
-				tok = S.scanNumber(true)
-			} else if S.ch == '.' {
-				S.Next()
-				if S.ch == '.' {
-					S.Next()
-					tok = token.ELLIPSIS
-				}
-			} else {
-				tok = token.PERIOD
-			}
-		case ',':
-			tok = token.COMMA
-		case ';':
-			tok = token.SEMICOLON
-		case '(':
-			tok = token.LPAREN
-		case ')':
-			insertSemi = true
-			tok = token.RPAREN
-		case '[':
-			tok = token.LBRACK
-		case ']':
-			insertSemi = true
-			tok = token.RBRACK
-		case '{':
-			tok = token.LBRACE
-		case '}':
-			insertSemi = true
-			tok = token.RBRACE
-		case '+':
-			tok = S.switch3(token.ADD, token.ADD_ASSIGN, '+', token.INC)
-			if tok == token.INC {
-				insertSemi = true
-			}
-		case '-':
-			tok = S.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
-			if tok == token.DEC {
-				insertSemi = true
-			}
-		case '*':
-			tok = S.switch2(token.MUL, token.MUL_ASSIGN)
-		case '/':
-			if S.ch == '/' || S.ch == '*' {
-				// comment
-				if S.insertSemi && S.findLineEnd() {
-					// reset position to the beginning of the comment
-					S.ch = '/'
-					S.offset = offs
-					S.rdOffset = offs + 1
-					S.insertSemi = false // newline consumed
-					return S.file.Pos(offs), token.SEMICOLON, "\n"
-				}
-				S.scanComment()
-				if S.mode&ScanComments == 0 {
-					// skip comment
-					S.insertSemi = false // newline consumed
-					goto scanAgain
-				}
-				tok = token.COMMENT
-			} else {
-				tok = S.switch2(token.QUO, token.QUO_ASSIGN)
-			}
-		case '%':
-			tok = S.switch2(token.REM, token.REM_ASSIGN)
-		case '^':
-			tok = S.switch2(token.XOR, token.XOR_ASSIGN)
-		case '<':
-			if S.ch == '-' {
-				S.Next()
-				tok = token.ARROW
-			} else {
-				tok = S.switch4(token.LSS, token.LEQ, '<', token.SHL, token.SHL_ASSIGN)
-			}
-		case '>':
-			tok = S.switch4(token.GTR, token.GEQ, '>', token.SHR, token.SHR_ASSIGN)
-		case '=':
-			tok = S.switch2(token.ASSIGN, token.EQL)
-		case '!':
-			tok = S.switch2(token.NOT, token.NEQ)
-		case '&':
-			if S.ch == '^' {
-				S.Next()
-				tok = S.switch2(token.AND_NOT, token.AND_NOT_ASSIGN)
-			} else {
-				tok = S.switch3(token.AND, token.AND_ASSIGN, '&', token.LAND)
-			}
-		case '|':
-			tok = S.switch3(token.OR, token.OR_ASSIGN, '|', token.LOR)
-		default:
-			if S.mode&AllowIllegalChars == 0 {
-				S.error(offs, fmt.Sprintf("illegal character %#U", ch))
-			}
-			insertSemi = S.insertSemi // preserve insertSemi info
-		}
-	}
-
-	if S.mode&InsertSemis != 0 {
-		S.insertSemi = insertSemi
-	}
-
-	// TODO(gri): The scanner API should change such that the literal string
-	//            is only valid if an actual literal was scanned. This will
-	//            permit a more efficient implementation.
-	return S.file.Pos(offs), tok, string(S.src[offs:S.offset])
-}
