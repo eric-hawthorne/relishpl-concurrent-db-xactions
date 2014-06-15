@@ -10,8 +10,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
+	"io/ioutil"
 	"os"
-	"util/gos"
 	"path/filepath"
 	"relish/compiler/ast"
 	"relish/compiler/scanner"
@@ -46,7 +46,7 @@ func readSource(filename string, src interface{}) ([]byte, error) {
 		}
 	}
 
-	return gos.ReadFile(filename)
+	return ioutil.ReadFile(filename)
 }
 
 func (p *parser) errors() error {
@@ -57,65 +57,7 @@ func (p *parser) errors() error {
 	return p.GetError(mode)
 }
 
-// ParseExpr parses a Go expression and returns the corresponding
-// AST node. The fset, filename, and src arguments have the same interpretation
-// as for ParseFile. If there is an error, the result expression
-// may be nil or contain a partial AST.
-//
-func ParseExpr(fset *token.FileSet, filename string, src interface{}) (ast.Expr, error) {
-	data, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
 
-	var p parser
-	p.init(fset, filename, data, 0)
-	x := p.parseRhs()
-	if p.tok == token.SEMICOLON {
-		p.next() // consume automatically inserted semicolon, if any
-	}
-	p.expect(token.EOF)
-
-	return x, p.errors()
-}
-
-// ParseStmtList parses a list of Go statements and returns the list
-// of corresponding AST nodes. The fset, filename, and src arguments have the same
-// interpretation as for ParseFile. If there is an error, the node
-// list may be nil or contain partial ASTs.
-//
-func ParseStmtList(fset *token.FileSet, filename string, src interface{}) ([]ast.Stmt, error) {
-	data, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
-
-	var p parser
-	p.init(fset, filename, data, 0)
-	list := p.parseStmtList()
-	p.expect(token.EOF)
-
-	return list, p.errors()
-}
-
-// ParseDeclList parses a list of Go declarations and returns the list
-// of corresponding AST nodes. The fset, filename, and src arguments have the same
-// interpretation as for ParseFile. If there is an error, the node
-// list may be nil or contain partial ASTs.
-//
-func ParseDeclList(fset *token.FileSet, filename string, src interface{}) ([]ast.Decl, error) {
-	data, err := readSource(filename, src)
-	if err != nil {
-		return nil, err
-	}
-
-	var p parser
-	p.init(fset, filename, data, 0)
-	list := p.parseDeclList()
-	p.expect(token.EOF)
-
-	return list, p.errors()
-}
 
 // ParseFile parses the source code of a single Go source file and returns
 // the corresponding ast.File node. The source code may be provided via
