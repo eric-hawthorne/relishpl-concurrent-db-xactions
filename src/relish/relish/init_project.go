@@ -3,6 +3,17 @@
 
 /*
 Creates new relish project directory tree templates.
+There is a template for an application project, 
+
+Usage: cd ~/relish
+       relish -init willywonka.com2014/chocolate_factory_controller
+
+and a template for a web-application project.
+
+Usage: cd ~/relish
+       relish -init willywonka.com2014/online_chocolate_shop webapp
+
+
 */
 package main
 

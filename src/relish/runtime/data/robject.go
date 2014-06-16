@@ -7,8 +7,10 @@
 package data
 
 /*
-   robject.go -  relish data objects - this source fie defines
+   robject.go -  relish data objects - this source file defines
                  generic object stuff + unitary (non-collection) objects 
+
+
 */
 
 import (
@@ -16,7 +18,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-//	"os"
 	"strconv"
 	"io"
 	"crypto/rand"
@@ -33,6 +34,15 @@ Represents an instance of an object in the Relish data model.
 Objects have a type
 They can have attributes and participate in relations.
 They may be a collection or a unit.
+
+TODO: It would be nice to separate the RObject interface out, creating a sub-interface
+called Storable which has all the stuff concerned with persistence.
+Because right now, all the relish primitive value types have a whole bunch of spurious
+methods with dummy implementations.
+
+Or alternatively, a super-interface RValue could be the core interface, and RObject
+would have the persistance-specific methods. RValue would still have flags. All methods
+which accept or return RObject or []RObject now would then accept or return RValue or []RValue
 */
 type RObject interface {
 	Type() *RType

@@ -53,9 +53,11 @@ Command line options:
                or failing that 8421, or, if behind apache2 modproxy, any other port is fine but apache2 should
                present it as port 80 or port 8421. It is ok for the share port to be the same as the web port.
 
+
+-init origin/artifact 
+-init origin/artifact webapp
+
 TODO 
--initproject origin/artifact 
--initwebproject origin/artifact
 
 -refresh origin[/artifact] delete the local replica metadata.txt files for the specified origin, or 
  just the single metadata.txt file for the specified artifact, so that a newest metadata.txt file will
@@ -79,20 +81,16 @@ import (
         "strings"
         "os"
         "util/gos"
-//		"relish/compiler/token"
-//		"relish/compiler/ast"	
-//		"relish/compiler/parser"
-		"relish/compiler/generator"
-		"relish/runtime/native_methods/builtin"
-		"relish/runtime/web"	  
-		"relish/dbg"
-		"relish/global_loader"
-		"relish/global_publisher"
-		"relish/params"		
-		"util/crypto_util"
-		"regexp"
-//		"strconv"
-		"runtime/pprof"
+		    "relish/compiler/generator"
+		    "relish/runtime/native_methods/builtin"
+    		"relish/runtime/web"	  
+    		"relish/dbg"
+    		"relish/global_loader"
+    		"relish/global_publisher"
+    		"relish/params"		
+    		"util/crypto_util"
+    		"regexp"
+    		"runtime/pprof"
 )
 
 var reVersionAtEnd *regexp.Regexp = regexp.MustCompile("/v([0-9]+\\.[0-9]+\\.[0-9]+)$")

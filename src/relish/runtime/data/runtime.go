@@ -9,8 +9,6 @@ package data
 /*
    runtime.go - the runtime environment for a relish program - manages other entities such
    as packages, types, methods, and object instances and their attributes and relations.
-
-   runtimeenv
 */
 
 import (

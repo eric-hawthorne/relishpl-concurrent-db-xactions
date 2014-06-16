@@ -38,6 +38,8 @@ Don't use this for zero arity of course.
 
 The zero arity method should be findable from a special type tuple with a zero-length list of types.
 
+
+TODO Variadic last parameter and wildcard keywords parameter, as in python.
 */
 type RMultiMethod struct {
 	Name          string
@@ -651,7 +653,7 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	      return nil, fmt.Errorf("Method '%v' variadic parameter type %v not found.", methodName, variadicParameterType)
 	   } 		
 	}
-/*
+/* TODO Not sure the status of this suggestion. Is it older code or a suggested change. I forget.
     if wildcardKeywordsParameterName != "" {
        typ, typFound := rt.Types[wildcardKeywordsParameterType]
        if ! typFound {

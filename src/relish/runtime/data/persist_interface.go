@@ -4,10 +4,12 @@
 // this package is concerned with the expression and management of runtime data (objects and values) 
 // in the relish language.
 
-// Abstraction of persistence service for relish data.
-
 package data
 
+/*
+   persist_interface.go -  Abstraction of persistence service for relish data.
+*/
+   
 import (
 	. "relish/dbg"
 )
