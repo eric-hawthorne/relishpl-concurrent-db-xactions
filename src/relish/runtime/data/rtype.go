@@ -18,7 +18,6 @@ import (
 	"hash/adler32"
 	. "relish/dbg"
 	. "relish/defs"	
-	// "relish/rterr"
 	"sort"
 	"relish/runtime/native_types"
 )

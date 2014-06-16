@@ -8,6 +8,19 @@ package data
 
 /*
    transaction.go - metadata for tracking database transactions and their effect on in-memory objects.
+                    Used as part of a mechanism which keeps the state of in-memory relish data objects
+                    consistent with the committed database state of those objects.
+
+                    LIMITATION: Currently, each relish application serializes each database query/update and each
+                    transaction until committed/rolled back.
+                    Also, if an application both reads and modifies relish persistent objects, then only
+                    one instance of the application should be run at a time on a given computer with a local db.
+
+                    These restrictions may be lifted once even better mechanisms are built to ensure
+                    memory vs database object state consistency. The restrictions are currently in place because
+                    it would be horribly bad in relish if the in-memory state of an object got inconsistent with 
+                    the db state unbeknownst to the relish program, and then further updates were made by the program
+                    to the object state.
 */
 
 

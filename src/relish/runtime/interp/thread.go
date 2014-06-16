@@ -11,7 +11,6 @@ package interp
 */
 
 import (
-	//"os"
 	"fmt"
 	"relish/compiler/ast"
 	. "relish/dbg"

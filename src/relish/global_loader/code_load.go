@@ -1,7 +1,8 @@
 // Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
-// loads relish code packages into the runtime, from the local relish artifacts directory tree, 
+// loads relish code packages into the runtime, from the local relish artifacts directory tree,
+// shared relish artifacts tree, and shared relish replicas tree, 
 // or failing that, from the Internet, assuming strong choice-free conventions
 // about where a given version of a given artifact will reside or how it will be found, 
 // both on the Internet as a whole, and on each server that hosts it.

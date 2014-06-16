@@ -6,6 +6,13 @@
 
 package data
 
+/*
+   rprimitive.go - Primitive data types in relish. These all implement the RObject interface.
+                   Most of them are simple value types, like numbers, strings, boolean etc.
+                   Others are included too, like Channel, GoWrapper which represent relish object
+                   instances, like File instances, that are wrappers around a Go-native object instance.
+*/
+
 import ( 
 	     "strconv"
          "errors"
@@ -16,7 +23,6 @@ import (
 	      . "relish/dbg"	         
 )
 
-//"fmt"
 
 /*
 STRATEGY FOR PRIMITIVES

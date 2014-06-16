@@ -10,10 +10,12 @@
 // this package is concerned with the expression and management of runtime data (objects and values) 
 // in the relish language.
 
-// Derived from the vector.Vector package in pre-1.0 Go standard library.
-
 package data
 
+/*
+   rvector.go - Derived from the vector.Vector package in pre-1.0 Go standard library.
+                Used to implement List and sorted-Set (and eventually sorted-Map) collections in relish
+*/
 
 
 // RVector is a container for numbered sequences of elements of type RObject.

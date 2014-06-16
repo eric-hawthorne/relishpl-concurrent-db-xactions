@@ -7,7 +7,7 @@
 package interp
 
 /*
-   gc.go -  garbage collection
+   gc.go -  garbage collection - see also relish/runtime/data/gc.go
 */
 
 
@@ -138,9 +138,7 @@ func (i *Interpreter) mark() {
 
     i.rt.MarkDataTypes()
 
-    i.rt.MarkAttributes()
-    
-    i.rt.MarkAttributeVals()    
+    i.rt.MarkAttributes()  
 
     i.rt.MarkContext()
 }

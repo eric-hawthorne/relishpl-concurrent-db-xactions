@@ -5,6 +5,8 @@
 // about where a given version of a given artifact will reside or how it will be found, 
 // both on the Internet as a whole, and on each server that hosts it.
 
+// TODO The extensive comments below are out of date.
+
 package global_loader
 
 import (

@@ -8,13 +8,8 @@ package data
 
 /*
    rpackage.go - A package is a universally unique hierarchically named namespace for
-   types, methods (and global variables?)
-   Packages will also be the name-exporting boundaries.
-
-data.go
-runtimeenv
-type
-object
+                 types, methods (and global variables?)
+                 Packages will also be the name-exporting boundaries.
 */
 
 import (
@@ -30,7 +25,10 @@ import (
 /*
 A package in the relish language. 
 A package is the namespace and export protection domain for types, methods etc.
-Note 
+
+Each package has its own multimethod dispatch table/cache, containing only those 
+method-implementations of each multimethod which are visible from the package,
+given the package's import dependencies.
 */
 type RPackage struct {
 	runit
@@ -115,26 +113,29 @@ func (p *RPackage) ListMethod(name string) {
 
 
 /*
-THIS IS OBSOLETE COMMENT
+   Create an in-memory representation of a relish code package, for use during interpreter runtime.
+
+   Example package path (globally unique full name of a relish code package):
+
+   alphaworks.ibm.com1995/relish/editor/pkg/frontend/parser/stringutils/regexp
+
+   consisting of:
    orgDomain - e.g. ibm.com - may be a subdomain e.g. compsci.berkeley.edu or research.ca.ibm.com
    orgFoundedYear - first full calendar year in which the organization owns the domain name
-   projectName - the name of the overall project, library, or application (can be dotted)
-   path - the context in which the package is a sub part - may be an empty string
+   artifactPath - the name of the overall project, library, or application  
+   "/pkg/" separator between artifact path and package path
+   packageparentdir(s) - super-directories of the package path, within the artifact, may be none
    name - the local name of the package. This is how it is known in a program that has imported it.
 
-   everybitcounts.net.2007/relish/editor/frontend.parser.stringutils.regexp
-   everybitcounts.net.2007/relish/editor/utils/3.1/4097/frontend.parser.stringutils.regexp
-   everybitcounts.net.2007/relish/3.1/243/editor/utils/frontend.parser.stringutils.regexp
-   everybitcounts.net.2007/relish/editor/3.1/utils/frontend.parser.stringutils.regexp
+   Each package will have its globally unique (no really, worldwide and perpetually unique) full name, 
+   its local name (e.g. regexp), and
+   its short name which is a short name guaranteed to be unique in the local database e.g. P3a_regexp
 
-   Somwhere we need checking of all these conventions.!!!!!!
-
-   Each package will have its full name, its local name (e.g. regexp), and
-   its short name which is a locally unique short name e.g. P3a_regexp
-
-   Note: As soon as we persist packages, we cannot recreate them from source into memory, because
-   they will get a different uuid and may be defined in different order giving them a different
+   Obscure Note: As soon as we persist packages in the local db, we cannot recreate them from source into memory, 
+   because they will get a different uuid and may be defined in different order giving them a different
    shortName, and package shortnames are part of the name of type tables and relation tables. 
+   Therefore, on initialization of a relish application, RPackage objects are resurrected out of the
+   database into memory, before relish code is loaded.
 */
 func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPackage {
 

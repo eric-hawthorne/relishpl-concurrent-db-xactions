@@ -7,11 +7,38 @@
 package interp
 
 /*
-   interpreter.go - Interpreter
+   interpreter.go - Interpreter 
+
+   Runs a relish program, after the code objects such as datatypes, methods, constants etc
+   have been loaded into the runtime.
+   
+   Each relish method ** has a code body which is represented by an abstract-syntax-tree (ast).
+
+   The method's ast is executed (interpreted) directly by the interpreter. 
+   There is no translation into a sequence of virtual-machine instruction codes.  
+
+   relish compilation (prior to interpretation) then, is simply the parsing of relish syntax to create the
+   asts. Relish intermediate-code files are simply GOB-serialized asts which are written as .rlc files by the
+   compiler, then loaded from file and de-serialized back into an in-memory tree prior to interpretation. 
+
+   ** Some relish methods (relish built-in methods and some standard-library methods) 
+      actually have a Go-native implementation, rather than an ast to be interpreted.
+
+
+   A note on debugging relish runtime errors which may be caused by an error in the relish implementation,
+   assuming you have a source distribution of relish and can recompile relish:
+
+   Search for "defer m" in this interpreter.go file.  
+   Comment out the  
+   		defer methodCallErrHandle(t,call)
+   and go install relish/relish
+
+   This will get you a relish interpreter which will panic with a full Go stack trace on the occurrence of 
+   the runtime error. Without commenting out the methodCallErrHandle, you will instead get an error
+   message which gives the relish source file line number which induced the runtime error, but no Go stack trace.
 */
 
 import (
-	//"os"
 	"fmt"
 	"relish/compiler/ast"
 	"relish/compiler/token"
@@ -60,13 +87,15 @@ func (i *Interpreter) SetPackageLoader(loader PackageLoader) {
 
 /*
 Runs the main method found in the specified package. 
-Currently, when multimethods/methods are generated, "main" ones are prefixed by full unversioned package name, as should be zero arg methods.
+
+Detail: Currently, when multimethods/methods are generated, "main" ones are prefixed by full unversioned package name
+(as are zero arg methods).
 */
 func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 	if ! quiet {
 	   Logln(ANY_, " ")
 	   Logln(ANY_, "==============================")
-	   Logln(ANY_, "== RELISH Interpreter 0.1.0 ==")
+	   Logln(ANY_, "== RELISH Interpreter 0.1.1 ==")
 	   Logln(ANY_, "==============================")
     }
 	Logln(GENERATE2_, " ")
@@ -2050,548 +2079,12 @@ func (i *Interpreter) ExecForStatement(t *Thread, stmt *ast.ForStatement) (break
 
 
 
-
-
-/* ast.RangeStatement
-For        token.Pos   // position of "for" keyword
-KeyAndValues   []Expr           // Any of Key or Values may be nil, though all should not be.
-
-X          []Expr        // collectionsto range over are the values of these exprs. Need to handle multiple expressions.
-Body       *BlockStatement
-*/
-
 /*
-func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement) (breakLoop, continueLoop, returnFrom bool) {
-	// defer UnM(t,TraceM(t,INTERP_TR2, "ExecForRangeStatement"))
-
-	kvLen := len(stmt.KeyAndValues)
-
-	stackPosBefore := t.Pos
-
-	// evaluate the collection expression(s) and push it (them) on the stack.
-
-	// Collection 0 is first one pushed on stack. Others up from there.
-	for _, expr := range stmt.X {
-		i.EvalExpr(t, expr)
-	}
-	lastCollectionPos := t.Pos
-	nCollections := lastCollectionPos - stackPosBefore // the number of collections pushed onto the stack.	
-
-    var haveNilCollection bool = false  // check for a special case
-
-	var iters []<-chan RObject
-	for collPos := stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
-		var iter <-chan RObject
-		coll := t.Stack[collPos]
-		switch coll.(type) {
-		   case Nil:
-		   	  haveNilCollection = true
-		   	  break
-		   	  // iter = coll.(Nil).Iter(t)  // unnecessary
-		   default:
-			 collection, isCollection := coll.(RCollection)
-			 if ! isCollection {
-				rterr.Stopf1(t, stmt, "Attempt to iterate over an object which is not a list, set, or map.")	
-			 }		 
-		     iter = collection.Iter(t)	   	
-		}
-		iters = append(iters, iter)
-	}
-
-	if haveNilCollection {
-	    t.PopN(nCollections) // Pop the collections off the stack. 
-	   return
-	}
-
-	var idx int64 = 0 // value of index integer in each loop iteration
-
-	keyOffset := kvLen - len(iters) // number of index or key vars before the first value var in for statement
-
-	// TODO Move the decision on what kind this is to here!
-	// Based on num and type of collections and lvars
-
-	// Here are the different varieties this could be:
-	// 1. for i key val in orderedMap  // keyOffset == 2, 1 coll, coll[0] is map
-	// 2. for key val in mapOrOrderedMap // keyOffset == 1, 1 coll, coll[0] is map
-	// 3. for i val in listOrOrderedSet // keyOffset == 1, 1 coll, coll[0] is listOrOrderedSet
-	// 4. for i val1 val2 in listOrOrderedSetOrOrderedMap listOrOrderedSetOrOrderedMap  // if map is keys
-	// 5. for val in anyCollection  // if map then is keys	
-	// 6. for val1 val2 in listOfOrderedSetOrOrderedMap listOrOrderedSetOrOrderedMap  // if map is keys
-
-	collPos := stackPosBefore + 1
-	collection := t.Stack[collPos].(RCollection)
-
-	switch keyOffset {
-	case 2:
-
-		// 1. for i key val in orderedMap  // keyOffset == 2, 1 coll, coll[0] is map		
-
-		if nCollections != 1 {
-			rterr.Stop1(t,stmt,"Expecting only one collection, (an ordered map), when there are two more vars than collections.")
-		}
-		if !collection.IsMap() {
-			rterr.Stop1(t,stmt,"Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
-		}
-		if !collection.IsOrdered() {
-			rterr.Stop1(t,stmt,"Expecting an ordered map, when construct is 'for i key val in orderedMap'.")
-		}
-
-		// now do the looping
-
-		for {
-			moreMembers := false
-
-			key, nextMemberFound := <-iters[0]
-
-			if nextMemberFound {
-				moreMembers = true
-			}
-
-			if !moreMembers {
-				break
-			}
-
-			// Assign to the index variable
-
-			idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
-			t.Stack[t.Base+idxVar.Offset] = Int(idx)
-
-			// Assign to the key variable
-
-			keyVar := stmt.KeyAndValues[1].(*ast.Ident)
-			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, keyVar.Name, keyVar.Offset)
-			t.Stack[t.Base+keyVar.Offset] = key
-
-			// Fetch the map value for the key 	
-
-			mapColl := collection.(Map)
-			obj, _ := mapColl.Get(key) // TODO Implement Get!!!!!!!!!!!!	
-
-			// Assign to the value variable
-
-			valVar := stmt.KeyAndValues[2].(*ast.Ident)
-			LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-			t.Stack[t.Base+valVar.Offset] = obj
-
-			// Execute loop body	
-
-			breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-			if breakLoop || returnFrom {
-				breakLoop = false
-				continueLoop = false
-				break
-			}
-
-			// increment the loop iteration index
-			idx += 1
-
-		}
-	case 1:
-
-		if nCollections == 1 {
-			if collection.IsMap() {
-
-				// 2. for key val in mapOrOrderedMap 
-				
-				theMap := collection.(Map)
-				
-				for {
-					moreMembers := false
-
-					key, nextMemberFound := <-iters[0]
-
-					if nextMemberFound {
-						moreMembers = true
-					}
-
-					if !moreMembers {
-						break
-					}
-
-					// Assign to the key variable
-
-					keyVar := stmt.KeyAndValues[0].(*ast.Ident)
-					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, keyVar.Name, keyVar.Offset)
-					t.Stack[t.Base+keyVar.Offset] = key
-
-					// Assign to the value variable
-
-					valVar := stmt.KeyAndValues[1].(*ast.Ident)
-					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-					t.Stack[t.Base+valVar.Offset],_ = theMap.Get(key)
-
-					// Execute loop body	
-
-					breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-					if breakLoop || returnFrom {
-						breakLoop = false
-						continueLoop = false
-						break
-					}
-				}				
-
-			} else {
-
-				// 3. for i val in listOrOrderedSet 
-
-				if !collection.IsOrdered() {
-					rterr.Stop1(t,stmt,"Expecting a list or ordered set when construct is 'for i val in listOrOrderedSet'.")
-				}
-
-				// now do the looping
-
-				for {
-					moreMembers := false
-
-					obj, nextMemberFound := <-iters[0]
-
-					if nextMemberFound {
-						moreMembers = true
-					}
-
-					if !moreMembers {
-						break
-					}
-
-					// Assign to the index variable
-
-					idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
-					t.Stack[t.Base+idxVar.Offset] = Int(idx)
-
-					// Assign to the value variable
-
-					valVar := stmt.KeyAndValues[1].(*ast.Ident)
-					LogM(t, INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-					t.Stack[t.Base+valVar.Offset] = obj
-
-					// Execute loop body	
-
-					breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-					if breakLoop || returnFrom {
-						breakLoop = false
-						continueLoop = false
-						break
-					}
-
-					// increment the loop iteration index
-					idx += 1
-				}
-			}
-		} else { // more than one collection
-
-			// 4. for i val1 val2 in listOrOrderedSetOrOrderedMap listOrOrderedSetOrOrderedMap  // if map, is keys
-
-			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
-				collection := t.Stack[collPos].(RCollection)
-				if !collection.IsOrdered() {
-					rterr.Stop1(t,stmt,"Expecting lists or other ordered collections when construct is 'for i val1 val2 ... in coll1 coll2 ...'.")
-				}
-			}
-
-			// now do the looping
-
-			for {
-				moreMembers := false
-
-				for k := 0; k < len(iters); k++ {
-					obj, nextMemberFound := <-iters[k]
-
-					if nextMemberFound {
-						moreMembers = true
-					} else if (k == len(iters)-1) && (!moreMembers) { // we are done. All iterators are exhausted.
-						break
-					}
-
-					// Assign to the value variable
-
-					valVar := stmt.KeyAndValues[k+1].(*ast.Ident)
-					LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-					t.Stack[t.Base+valVar.Offset] = obj
-				}
-
-				if !moreMembers {
-					break
-				}
-
-				// Assign to the index variable
-
-				idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-				LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, idxVar.Name, idxVar.Offset)
-				t.Stack[t.Base+idxVar.Offset] = Int(idx)
-
-				// Execute loop body	
-
-				breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-				if breakLoop || returnFrom {
-					breakLoop = false
-					continueLoop = false
-					break
-				}
-
-				// increment the loop iteration index
-				idx += 1
-			}
-
-		}
-
-	case 0:
-		if nCollections == 1 {
-
-			// 5. for val in anyCollection  // if map, is keys	
-
-			// now do the looping
-
-			for {
-				moreMembers := false
-
-				obj, nextMemberFound := <-iters[0]
-
-				if nextMemberFound {
-					moreMembers = true
-				}
-
-				if !moreMembers {
-					break
-				}
-
-				// Assign to the value variable
-
-				valVar := stmt.KeyAndValues[0].(*ast.Ident)
-				LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-				t.Stack[t.Base+valVar.Offset] = obj
-
-				// Execute loop body	
-
-				breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-				if breakLoop || returnFrom {
-					breakLoop = false
-					continueLoop = false
-					break
-				}
-
-				// increment the loop iteration index
-				idx += 1
-			}
-		} else { // more than one collection - they must be ordered 	
-
-			// 6. for val1 val2 in listOfOrderedSetOrOrderedMap listOrOrderedSetOrOrderedMap  // if map, is keys
-
-			for collPos = stackPosBefore + 1; collPos <= lastCollectionPos; collPos++ {
-				collection := t.Stack[collPos].(RCollection)
-				if !collection.IsOrdered() {
-					rterr.Stop1(t,stmt,"Expecting lists or other ordered collections when construct is 'for val1 val2 ... in coll1 coll2 ...'.")
-				}
-			}
-
-			// now do the looping
-
-			for {
-				moreMembers := false
-
-				for k := 0; k < len(iters); k++ {
-					obj, nextMemberFound := <-iters[k]
-
-					if nextMemberFound {
-						moreMembers = true
-					} else if (k == len(iters)-1) && (!moreMembers) { // we are done. All iterators are exhausted.
-						break
-					}
-
-					// Assign to the value variable
-
-					valVar := stmt.KeyAndValues[k].(*ast.Ident)
-					LogM(t,INTERP2_, "for range assignment base %d varname %s offset %d\n", t.Base, valVar.Name, valVar.Offset)
-					t.Stack[t.Base+valVar.Offset] = obj
-				}
-
-				if !moreMembers {
-					break
-				}
-
-				// Execute loop body	
-
-				breakLoop, _, returnFrom = i.ExecBlock(t, stmt.Body)
-
-				if breakLoop || returnFrom {
-					breakLoop = false
-					continueLoop = false
-					break
-				}
-
-				// increment the loop iteration index
-				idx += 1
-			}
-
-		}
-
-	default:
-		rterr.Stop1(t,stmt,"too many or too few variables in for statement.")
-	}
+If there is only a single collection to be ranged over, this if possible uses an optimized iteration that does not
+use the Iter() method of the collection.
+If there is more than one collection, though, or the collection is a map, we have to use the Iter() method of the
+collection, which uses a Go channel in a closure to do the iterating, and could be a tad slow. 
 */
-	/*	
-
-
-
-
-			for  {
-				moreMembers := false
-
-			    var key RObject 
-
-				handled := false
-
-				switch keyOffset {
-				   case 2: // there must be a single ordered map collection
-
-		              idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-				      Log(INTERP2_,"for range assignment base %d varname %s offset %d\n",t.Base,idxVar.Name,idxVar.Offset)
-					  t.Stack[t.Base + idxVar.Offset] = Int(idx)
-
-					  key = <-iters[0] 
-
-		              keyVar := stmt.KeyAndValues[1].(*ast.Ident)	
-				      Log(INTERP2_,"for range assignment base %d varname %s offset %d\n",t.Base,keyVar.Name,keyVar.Offset)
-					  t.Stack[t.Base + keyVar.Offset] = key			
-
-					  collPos := stackPosBefore + 1
-					  mapColl := t.Stack[collPos].(Map)
-				      obj,_ = mapColl.Get(key)		       // TODO Implement Get!!!!!!!!!!!!	
-
-		              valVar := stmt.KeyAndValues[2].(*ast.Ident)	
-				      Log(INTERP2_,"for range assignment base %d varname %s offset %d\n",t.Base,valVar.Name,valVar.Offset)
-					  t.Stack[t.Base + valVar.Offset] = obj	
-
-				 case 1:	 
-		              idxVar := stmt.KeyAndValues[0].(*ast.Ident)
-
-		              // TODO TODO !!!!
-		              // Have to check if the first and only collection is a Map
-		              // - if so, idxVar gets the key - if not, it gets the index
-
-					  collPos := stackPosBefore + 1
-					  coll := t.Stack[collPos].(RCollection)
-			          if coll.IsMap() && nCollections == 1 {
-				      }
-
-				      Log(INTERP2_,"for range assignment base %d varname %s offset %d\n",t.Base,idxVar.Name,idxVar.Offset)
-					  t.Stack[t.Base + idxVar.Offset] = Int(idx)
-
-				}	
-
-				for j:= 0; j < len(iters); j++ {
-					obj, nextMemberFound := <-iters[j]
-					if nextMemberFound {
-						moreMembers = true
-					} 
-
-					switch keyOffset {
-				       case 2: // Collection must be an OrderedMap
-					      key = obj
-						  mapColl := t.Stack[collPos].(Map)
-					      obj,_ = mapColl.Get(key)
-
-					      stmt.KeyAndValues[0]   // assign it Int(idx)
-					      stmt.KeyAndValues[1]   // assign it key
-					      stmt.KeyAndValues[2]   // assign it obj
-					   case 1:
-						  // Have
-
-					   case 0:
-					   default: 
-					      rterr.Stop("More l-values than allowed in for range statement.")	
-					}
-
-					// Assign to the right variable
-
-
-
-				}
-				if ! moreMembers {
-					break
-				}
-
-				// set index variable if there is one to idx
-
-				// Execute loop body
-
-
-
-				idx += 1
-			}
-
-
-
-
-
-
-			collection := t.Pop().(RCollection)
-			if collection.IsList() {
-				list := collection.(List)
-				v := list.Vector()
-		        len := v.Length()
-
-		        for i := 0; i < len; i++ {
-			         idx := Int(i)
-			         obj := v.At(i)
-		        }		
-			} else if collection.IsSet() {
-				set := collection.(Set)
-			}	
-
-			   case *rlist:
-		          list := collection.(*rlist)
-		          len := list.Length()		
-		          for i := 0; i < len; i++ {
-			         idx := Int(i)
-
-		          }
-
-			   case *rset:
-			   // TODO: maps
-			   default:
-				  rterr.Stop("Argument to 'for var(s) in collection(s)' is not a collection.")
-
-			}
-			for i,val := range 
-
-
-				i.EvalExpr(t, stmt.Cond) 
-				if t.Pop().IsZero() {
-
-				} else {
-				   breakLoop,_,returnFrom = i.ExecBlock(t, stmt.Body)
-				   for (! breakLoop) && (! returnFrom) {
-				      i.EvalExpr(t, stmt.Cond) 		
-				      if t.Pop().IsZero() {
-					     break
-					  }	   	
-			          breakLoop,_,returnFrom = i.ExecBlock(t, stmt.Body)		    
-				   }
-				   breakLoop = false
-				   continueLoop = false
-				}
-		    }
-
-
-
-	*/
-	
-/*	
-	
-	t.PopN(nCollections) // Pop the collections off the stack. 
-
-	return
-}
-*/
-
-
 func (i *Interpreter) ExecForRangeStatement(t *Thread, stmt *ast.RangeStatement) (breakLoop, continueLoop, returnFrom bool) {
 	// defer UnM(t,TraceM(t,INTERP_TR2, "ExecForRangeStatement"))
 

@@ -8,6 +8,57 @@ package interp
 
 /*
    dispatcher.go -  multi-method dispatcher
+
+   The gist of multi-method dispatch in relish is as follows:
+
+   The types of all actual arguments at runtime to a method call are used to select
+   which method implementation, of the method-name, will be executed.
+
+   The tuple of argument types is matched with the input-parameter type-signature of
+   each visible method-implementation, to select the best implementation to run on the
+   arguments.
+
+   The matching considers 3 factors:
+   - ** Type compatibility ** - actual arguments must be type-compatible with method type-signature
+   - ** Closest match **, in terms of specialization-distance down the program's multiple-inheritance
+     type lattice, between the argument type tuple and the method type-signature.
+   - ** Type-specificity ** of method-implementation's type signature:
+     If a tie exists with two method-implementations equally closely matching the actual argument types,
+     then the tie is resolved by picking the method-implementation whose type signature is
+     more specific in an absolute sense in the program's type lattice.
+
+   A few more details:
+
+   When a multi-method of a given name is called: 
+   1. The most-specific type of each actual argument at runtime to a method call is collected
+      to form a unique type-tuple. 
+      - A tree index of type-tuples, and 
+      - a cache of most recent tuples starting at a given type, 
+      speeds this type-tuple finding or creation process.
+   2. The type-tuple of the actual arguments is matched against the input-parameter signature type-tuple
+      of each method-declaration which: 
+      - has the same method-name, 
+      - has the same number of input parameters as the number of actual arguments, and
+      - is visible (directly or by a chain of package imports) from within the 
+        currently executing package.
+   3. A particular method-declaration (and its method implementation) is selected for execution
+      if its input-parameter signature type-tuple is:
+      a) Type-compatible with the actual-arguments type tuple; that is, each type in the method parameters signature
+         is the same as or a supertype of the corresponding type in the actual arguments type-tuple.
+      b) Closest above the actual-arguments type-tuple in the program's type lattice. Specialization distance is measured
+         between each argument-type and the corresponding method-parameter-type pair, and the distances are averaged.
+         All different paths up the type lattice between the argument type and the parameter type are distance-measured.
+         The average type-specialization-distance between the two type-tuples is the sum of all lattice-path distances 
+         divided by the  total number of lattice paths found between the pairs of types. 
+      c) In the case of a tie (more than one method's signature is equally close in type-distance above the
+          actual-arguments type-tuple), then a secondary test picks the method of those tied whose
+          parameters signature type-tuple is the more specific in the type lattice as a whole; that is
+          the signature whose type-tuple is the furthest type-specialization-distance from the top "Any" type, again
+          considering the average length of all paths down the lattice between "Any" and each type in the method type-signature.
+   4. For any given method-name executed in a package, this assessment is done only once for each encountered
+      actual-arguments type-tuple in the program run. The method-implementation chosen for the actual-arguments type-tuple
+      is cached, and subsequently, a single map lookup selects the best-matching method-implementation whenever the 
+      method-name is called again with arguments with that tuple of types.    
 */
 
 
