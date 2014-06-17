@@ -6,6 +6,8 @@
 package persist
 
 /*
+   transaction.go 
+   
    This file implements transaction management and database access serialization aspects of
    sqlite persistence of relish objects
 

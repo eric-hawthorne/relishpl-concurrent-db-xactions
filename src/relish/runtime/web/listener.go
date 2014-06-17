@@ -5,6 +5,13 @@
 
 package web
 
+/*
+   listener.go - implementation of an http listener (web server) 
+
+   with routing of URLs to relish method calls, execution of URL-mapped methods,
+   and formatting and processing of method results into http-returned response content.
+*/
+
 import (
     . "relish/dbg"
     "fmt"

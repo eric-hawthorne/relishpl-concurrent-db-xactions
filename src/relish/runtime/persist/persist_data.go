@@ -6,7 +6,7 @@
 package persist
 
 /*
-    sqlite persistence of relish objects
+    persist_data.go - sqlite persistence of relish objects
 
 	Specific methods of the database abstraction layer for persisting relish objects and attribute assignments.
 

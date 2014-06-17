@@ -5,8 +5,13 @@
 
 package persist
 
-// This file contains methods that transform query syntax from an object & object-attribute query language to SQL.
-// Currently is possibly specific to SQLITE 3 dbs.
+/*
+   query.go - OQL to SQL translation and multi-object fetch query implementation.
+
+   This file contains methods that transform query syntax from an object & object-attribute query language to SQL.
+   
+   Currently is possibly specific to SQLITE 3 dbs.
+*/
 
 import (
 	"fmt"
