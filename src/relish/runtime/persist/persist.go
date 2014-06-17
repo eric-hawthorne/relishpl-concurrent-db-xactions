@@ -6,7 +6,7 @@
 package persist
 
 /*
-   sqlite persistence of relish objects
+   persist.go - sqlite-specific implementation of generic persistence operations
 
    This file handles definition of the database abstraction layer type, and basic generic persistence operations.
    See also persist_schema.go, and persist_data.go, which add specific methods to the database abstraction layer

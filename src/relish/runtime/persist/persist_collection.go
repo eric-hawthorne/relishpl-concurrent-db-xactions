@@ -6,7 +6,7 @@
 package persist
 
 /*
-    sqlite persistence of relish collections
+   persist_collection.go - sqlite persistence of relish collections
 
 	Specific methods of the database abstraction layer for persisting relish collections.
 
