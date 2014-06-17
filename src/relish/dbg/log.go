@@ -1,7 +1,23 @@
 // Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
 // Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
 
-// This file implements configurable, multi-concern, multi-level logging.
+// This file implements configurable, multi-concern, multi-level logging
+// for purposes of debugging relish.
+
+// Usage: 
+// relish -log 1 otherargs
+// relish -log 2 otherargs
+//  
+// To change what will be printed out by -log 1, set below, as shown in examples
+// const SOME_DEBUG_FLAGS = some flag constants bit-OR'ed together  
+// 
+// To change what will be printed out by -log 1, set below, as shown in examples
+// const FULL_DEBUG_FLAGS = SOME_DEBUG_FLAGS | some more flag constants bit-OR'ed together  
+//
+// then 
+// go install relish/relish 
+// to recompile the language with the  new logging topics and levels.
+
 
 package dbg
 
@@ -84,6 +100,12 @@ const (
 )
 	
 	
+
+
+
+	
+
+
 //const DEBUG_FLAGS = INTERP__TR3 | INTERP3__ | STACK__ | AST__ | PARSE__
 //const DEBUG_FLAGS = INTERP__TR | INTERP__ | STACK__ | AST__ | PARSE__	
 //const DEBUG_FLAGS = INTERP__TR | INTERP__ | AST__ | PARSE__	
@@ -131,6 +153,7 @@ var DEBUG_FLAGS uint64 = NO_DEBUG_FLAGS
 
 /*
    Set the overall debug level to 0 (none), 1 (some), or 2 (full). Debug level defaults to 0 if this method is not called.
+   This is called during initialization of the relish compiler+interpreter.
 */
 func InitLogging(masterLevel int32) {
 	switch masterLevel {
@@ -145,6 +168,9 @@ func InitLogging(masterLevel int32) {
 
 var LogMutex sync.Mutex
 	
+/*
+Equivalent of fmt.Printf
+*/	
 func Log(flags uint64,s string,args ...interface{}) {
    if flags & DEBUG_FLAGS != 0 {
       printDots(threadNum, indent)		
@@ -152,6 +178,9 @@ func Log(flags uint64,s string,args ...interface{}) {
    }
 }
 
+/*
+Equivalent of fmt.Println
+*/
 func Logln(flags uint64,s ...interface{}) {
    if flags & DEBUG_FLAGS != 0 {
       printDots(threadNum, indent)		
@@ -167,8 +196,11 @@ func Logging(flags uint64) bool {
    return flags & DEBUG_FLAGS != 0 	
 }
 
-
-
+// Nested printing of the message and arguments. Use single-threaded only!!
+// The message might be a Go method name and args some of the arguments passed
+// to it.
+// Used to trace execution of the relish parser. 
+// See Un() function below.
 func Trace(flags uint64, msg string, args ...interface{}) string {
 	if flags & DEBUG_FLAGS != 0 {
 		
@@ -191,7 +223,9 @@ func Un(msg string) {
 }
 
 
-
+/*
+Multi-threaded version of Log (like fmt.Printf) used to log inside the multi-threaded relish interpreter.
+*/
 func LogM(context interface{}, flags uint64,s string,args ...interface{}) {
 
    if flags & DEBUG_FLAGS != 0 {
@@ -203,6 +237,8 @@ func LogM(context interface{}, flags uint64,s string,args ...interface{}) {
 
 }
 
+/*
+*/
 func LoglnM(context interface{}, flags uint64,s ...interface{}) {
 
    if flags & DEBUG_FLAGS != 0 {
@@ -213,6 +249,11 @@ func LoglnM(context interface{}, flags uint64,s ...interface{}) {
    }
 }
 
+// Nested printing of the message and arguments. Multi-threaded version.
+// The message might be a Go method name and args some of the arguments passed
+// to it.
+// Used to trace execution of the multi-threaded relish interpreter. 
+// See Un() function below.
 func TraceM(context interface{}, flags uint64, msg string, args ...interface{}) string {
 	if flags & DEBUG_FLAGS != 0 {
        LogMutex.Lock()		
@@ -242,7 +283,8 @@ func RemoveContext(context interface{}) {
 	delete(threadNums,context)
 }
 
-// Usage pattern: defer Un(Trace("..."))
+// Multi-threaded version of Un() for use to trace execution of the multi-threaded relish interpreter
+// Usage pattern: defer UnM(TraceM("..."))
 func UnM(context interface{}, msg string) {
 	if msg != "" {
        LogMutex.Lock()		
@@ -255,7 +297,11 @@ func UnM(context interface{}, msg string) {
 
 
 
-
+/*
+Nested (indented) printing of  message.
+Prints a number of dots to the left, corresponding to logical nesting level of executing code.
+Then prints the message, indented after the dots.
+*/
 func printTrace(tNum uint, indnt uint, a ...interface{}) {
 	printDots(tNum, indnt)
 	fmt.Println(a...)

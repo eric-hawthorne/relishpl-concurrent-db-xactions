@@ -4,7 +4,9 @@
 package native_methods
 
 /*
-   init_native_package.go 
+   init_native_package.go - metadata which allows relish to access Go-native methods in certain packages.
+
+   Any package which has some native methods must be registered here.
 */
 
 import (

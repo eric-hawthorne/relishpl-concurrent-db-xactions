@@ -4,7 +4,8 @@
 package native_types
 
 /*
-   init_native_types.go 
+   init_native_types.go - metadata for relish types whose instances are GoWrapper objects wrapping
+                          a Go-native object instance.
 */
 
 
