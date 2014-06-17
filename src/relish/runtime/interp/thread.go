@@ -19,7 +19,7 @@ import (
 )
 
 
-const DEFAULT_STACK_DEPTH = 50 // DEFAULT INITIAL STACK DEPTH PER THREAD
+const DEFAULT_STACK_DEPTH = 50 // DEFAULT INITIAL STACK DEPTH PER THREAD - stack grows as needed
 
 /*
 If parent is nil, something else must take care of initializing 

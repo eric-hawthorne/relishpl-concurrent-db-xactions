@@ -4,11 +4,11 @@
 package builtin
 
 /*
-   builtin_functions.go - functions which require no package specification. They are visible in every package.
+   builtin_functions.go - functions with Go-native implementaiton 
+                          which require no package specification. They are visible in every package.
 */
 
 import (
-	//"os"
 	"fmt"
 	"relish"
 	. "relish/runtime/data"
