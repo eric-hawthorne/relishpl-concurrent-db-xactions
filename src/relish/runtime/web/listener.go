@@ -609,7 +609,9 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 */
 func getKeywordArgs(r *http.Request) (args url.Values, err error) {
    err = r.ParseMultipartForm(10000000) // ok to call this even if it is not a mime/multipart request.
-   if err != nil {
+   if err == http.ErrNotMultipart {
+      err = nil
+   } else if err != nil {
        return
    }
    args = r.Form
