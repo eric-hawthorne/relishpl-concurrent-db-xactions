@@ -189,19 +189,41 @@ testCollections
       passed = and assertEq dv.driver.firstName "Joe" "driven by Joe"
                    passed  
 
-   keys = ""
+   keys = "-"
    for key in map1
-      keys = cat keys key
+      keys = cat keys key "-"
 
-   passed = and assertEq keys "OneTwoThree" "keys 1"
+   passed = and assertNeq (index keys "-One-") -1 "keys 1a"
                 passed
 
-   keys = ""
+   passed = and assertNeq (index keys "-Two-") -1 "keys 1b"
+                passed
+
+   passed = and assertNeq (index keys "-Three-") -1 "keys 1c"
+                passed
+
+   keys = "-"
    for key val in map1
-      keys = cat keys key val.num
+      keys = cat keys key "-" val.num "-"
 
-   passed = and assertEq keys "One1Two2Three3" "keys 2"
+   passed = and assertNeq (index keys "-One-") -1 "keys 2a"
                 passed
+
+   passed = and assertNeq (index keys "-Two-") -1 "keys 2b"
+                passed
+
+   passed = and assertNeq (index keys "-Three-") -1 "keys 2c"
+                passed
+
+   passed = and assertNeq (index keys "-1-") -1 "keys 2d"
+                passed
+
+   passed = and assertNeq (index keys "-2-") -1 "keys 2e"
+                passed
+
+   passed = and assertNeq (index keys "-3-") -1 "keys 2f"
+                passed
+
 
    wh2 found = map1["Two"]
 
@@ -246,12 +268,21 @@ testCollections
                          "Neptune" => 8
                       }String > Int 
 
-   keyVals = ""
+   keyVals = "-"
    for k v in outerSolarSystem  
-      keyVals = cat keyVals k v
+      keyVals = cat keyVals k v "-"
 
-   passed = and assertEq keyVals "Jupiter5Saturn6Uranus7Neptune8" "outerSolarSystem"
+   passed = and assertNeq (index keyVals "-Jupiter5-") -1 "outerSolarSystem 1"
                 passed
+
+   passed = and assertNeq (index keyVals "-Saturn6-") -1 "outerSolarSystem 2"
+                passed
+
+   passed = and assertNeq (index keyVals "-Uranus7-") -1 "outerSolarSystem 3"
+                passed
+
+   passed = and assertNeq (index keyVals "-Neptune8-") -1 "outerSolarSystem 4"
+                passed   
 
    sales = [1.29 4.25 0.33 5.981]
 
@@ -321,12 +352,19 @@ testCollections
                 ky vl
           }String > String
    
-   keyVals = ""
+   keyVals = "-"
    for key9 val9 in opps
-      keyVals = cat keyVals key9 val9
+      keyVals = cat keyVals key9 val9 "-"
 
-   passed = and assertEq keyVals "leftrightupdowninsideoutside" "opps 1"
+   passed = and assertNeq (index keyVals "-leftright-") -1 "opps 1a"
                 passed
+
+   passed = and assertNeq (index keyVals "-updown-") -1 "opps 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-insideoutside-") -1 "opps 1c"
+                passed
+
 
    val found = opps["left"] 
 
@@ -351,12 +389,19 @@ testCollections
                  cat "[" val3 "]"
            }String > String
    
-   keyVals = ""
+   keyVals = "-"
    for key8 val8 in opps2
-      keyVals = cat keyVals key8 val8
+      keyVals = cat keyVals key8 val8 "-"
 
-   passed = and assertEq keyVals "left[left]up[up]inside[inside]" "opps2 1"
+   passed = and assertNeq (index keyVals "-left[left]-") -1 "opps2 1a"
                 passed
+
+   passed = and assertNeq (index keyVals "-up[up]-") -1 "opps2 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-inside[inside]-") -1 "opps2 1c"
+                passed
+
 
    val found = opps2["left"]
    passed = and assertEq val "[left]" "opps2 2"
@@ -380,11 +425,17 @@ testCollections
                  cat "[" val4 "]"
            }String > String
    
-   keyVals = ""   
+   keyVals = "-"   
    for key7 val7 in opps3
-      keyVals = cat keyVals key7 val7
+      keyVals = cat keyVals key7 val7 "-"
 
-   passed = and assertEq keyVals "left[left]inside[inside]up[up]" "opps3 1"
+   passed = and assertNeq (index keyVals "-left[left]-") -1 "opps3 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-up[up]-") -1 "opps3 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-inside[inside]-") -1 "opps3 1c"
                 passed
 
 
@@ -422,11 +473,17 @@ testCollections
                        first val6 3
            }String > String
    
-   keyVals = ""      
+   keyVals = "-"      
    for key5 val5 in opps4
-      keyVals = cat keyVals key5 val5
+      keyVals = cat keyVals key5 val5 "-"
 
-   passed = and assertEq keyVals "leftrigupdowninsout" "opps4 1"
+   passed = and assertNeq (index keyVals "-leftrig-") -1 "opps4 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-updown-") -1 "opps4 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-insout-") -1 "opps4 1c"
                 passed
 
 
