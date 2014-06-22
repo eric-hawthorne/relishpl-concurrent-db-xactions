@@ -58,6 +58,11 @@ cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
 
 cp -p $SRCDIR/COPYING* $RELEASEDIR/pl
 
+
+mkdir -p $RELEASEDIR/tools
+cp -p $SRCDIR/tools/README.txt $RELEASEDIR/tools
+cp -p $SRCDIR/tools/Relish.tmLanguage* $RELEASEDIR/tools
+
 cp -p $SRCDIR/install.sh $RELEASEDIR
 chmod +x $RELEASEDIR/install.sh
 
