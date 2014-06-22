@@ -25,3 +25,15 @@ main
       dub viewState "Dev Tools View State"
 
    viewState.appToLaunch = "playground"  
+   print
+   print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   print
+   print "Now open a web browser window,"
+   print "Type http://localhost:8080 into the address bar"
+   print "at the top, and press enter/return."
+   print
+   print "Then, choose a program example from the drop-down menu"
+   print "and run it in the playground !"
+   print
+   print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+   print

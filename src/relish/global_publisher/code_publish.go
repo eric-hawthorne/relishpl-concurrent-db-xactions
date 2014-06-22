@@ -17,6 +17,7 @@ import (
     "archive/zip"	 
     "util/crypto_util"  
     "errors"
+    "path/filepath"
 )
 
 /*
@@ -248,6 +249,112 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
     return
 }
 
+// Note: This is an insufficient way of ensuring a shared relish artifact is not malicious.
+// A reputation system should be developed at shared.relish.pl
+
+var blacklistFileExtensions map[string]bool = map[string]bool { 
+   ".AD" : true,
+   ".ADE" : true,
+   ".ADP" : true,  
+   ".APP" : true,
+   ".ASP" : true,
+   ".ASX" : true,
+   ".BAS" : true,
+   ".BAT" : true, 
+   ".BZ" : true,
+   ".BZ2" : true,
+   ".CHM" : true,
+   ".CMD" : true,
+   ".CNF" : true,  
+   ".COM" : true,    
+   ".CPL" : true,
+   ".CRT" : true,
+   ".DBX" : true,
+   ".DLL" : true,
+   ".EMAIL" : true,
+   ".EML" : true,
+   ".EMF" : true,
+   ".EMZ" : true,
+   ".EXE" : true,
+   ".FXP" : true,  
+   ".HLP" : true,
+   ".HTA" : true,  
+   ".INF" : true,
+   ".INS" : true,  
+   ".ISP" : true,
+   ".JSE" : true,  
+   ".LNK" : true,
+   ".MAD" : true,
+   ".MAF" : true,
+   ".MAG" : true,
+   ".MAM" : true,
+   ".MAQ" : true,
+   ".MAR" : true,
+   ".MAS" : true,
+   ".MAT" : true,
+   ".MAU" : true,    
+   ".MAV" : true, 
+   ".MAW" : true,  
+   ".MDA" : true,
+   ".MDB" : true,
+   ".MDE" : true,
+   ".MDT" : true,
+   ".MDW" : true,
+   ".MDZ" : true,
+   ".MHT" : true,
+   ".MHTML" : true,  
+   ".MSC" : true,
+   ".MSI" : true,  
+   ".MSP" : true,
+   ".MST" : true,
+   ".NCH" : true,
+   ".OPS" : true,
+   ".PCD" : true,  
+   ".PIF" : true,
+   ".PRF" : true,
+   ".PRG" : true,  
+   ".PST" : true, 
+   ".REG" : true,  
+   ".SCF" : true,
+   ".SCR" : true,
+   ".SCT" : true,
+   ".SHB" : true,  
+   ".SHS" : true,
+   ".SYS" : true,
+   ".URL" : true,  
+   ".VB" : true,
+   ".VBE" : true,  
+   ".VBS" : true,
+   ".VSD" : true,
+   ".VSMACROS" : true,
+   ".VSS" : true,
+   ".VST" : true,
+   ".VSW" : true,
+   ".VXD" : true,
+   ".WMF" : true,
+   ".WMS" : true,
+   ".WSC" : true,  
+   ".WSF" : true,
+   ".WSH" : true, 
+   ".XNK" : true,
+   ".XBAP" : true,
+   ".Z" : true,
+   ".ZOO" : true,
+   ".BASH" : true,
+   ".COMMAND" : true,
+   ".CSH" : true, 
+   ".DMG" : true,
+   ".GZ" : true,
+   ".KSH" : true,
+   ".LZH" : true,
+   ".PKG" : true,
+   ".RAR" : true,
+   ".SH" : true, 
+   ".TAR" : true,
+   ".TCSH" : true,
+   ".XSL" : true,  
+   ".ZIP" : true,   
+}
 
 func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
    
@@ -271,17 +378,25 @@ func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
               return
            }
         } else { // plain old file to be copied.
-           if strings.HasSuffix(fileInfo.Name(), ".rel") {
-              var content []byte
-              content, err = gos.ReadFile(fromItemPath)
-              if err != nil {
-                 return
-              }
-              err = gos.WriteFile(toItemPath, content, 0666)
-              if err != nil {
-                 return
-              }              
+
+           // cursory malicious file check
+           suffix := filepath.Ext(fileInfo.Name())
+           if suffix != "" {
+               suffix = strings.ToUpper(suffix)
+               if blacklistFileExtensions[suffix] {
+                  continue
+               }
            }
+
+           var content []byte
+           content, err = gos.ReadFile(fromItemPath)
+           if err != nil {
+              return
+           }
+           err = gos.WriteFile(toItemPath, content, 0666)
+           if err != nil {
+              return
+           }              
         }
     }
     return
