@@ -1,20 +1,23 @@
 Relish.tmLanguage (and its companion file, Relish.tmLanguage.ForBundleEditor) is a 
 syntax highlighter configuration file for relish programming language source code files (.rel files)
 
-This configuration file works in Sublime Text 2 and TextMate (a text editor for Macs) to enable
+This configuration file works in Sublime Text 2 (or 3) and TextMate (a text editor for Macs) to enable
 relish source code syntax colouring in these editors.
 
 ------------------------------
-To install in Sublime Text 2, place the file as follows
+To install in Sublime Text 2 (or 3), place the file as follows
 
 Linux: ~/.config/sublime-text-2/Packages/Relish/Relish.tmLanguage
 OS X: ~/Library/Application Support/Sublime Text 2/Packages/Relish/Relish.tmLanguage
 Windows: %APPDATA%\Sublime Text 2/Packages/Relish/Relish.tmLanguage
 
-and restart Sublime Text 2
+You may have to restart Sublime Text 2 (or 3) but recent experience is that you don't.
 
-Then, in Sublime Text 2
+Then, in Sublime Text 2 (or 3)
 1. Open a .rel file
+
+It may then just work, colouring the program text. If not, ...
+
 2. Go to the View menu
       Syntax 
         Open all with current extension as...

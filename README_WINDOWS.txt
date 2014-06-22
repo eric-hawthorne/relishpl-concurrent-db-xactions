@@ -1,0 +1,9 @@
+README_WINDOWS.txt
+==================
+
+To get a first look at relish programming, read the "Simple Program Trial Environment" Quick-Start Guide, in the Tutorials tab of the http://relish.pl website.
+NOTE that the relish windows .msi installer will start up the Simple Program Trial Environment (also known as relish playground) at the end of the installation process. 
+
+To learn how to program in relish, read the "relish Syntax and Semantics By Example - From the Inside Out" reference manual in the References tab of the http://relish.pl website.
+
+To edit relish programs, you should probably use the "Sublime Text" editor, because it's a pretty decent code editing tool, and because there is a relish syntax colouring extension package for Sublime Text. Instructions for adding relish syntax colouring to Sublime Text can be found in the tools\README_WINDOWS.txt file in your relish installation directory tree. 
