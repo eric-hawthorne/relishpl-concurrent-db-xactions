@@ -53,6 +53,7 @@ mkdir -p $RELEASEDIR/pl/bin
 cp -p $SRCDIR/bin/relish $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 cp -p $SRCDIR/bin/cleanr $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 cp -p $SRCDIR/bin/rmdb $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
+cp -p $SRCDIR/bin/post_install_macosx.sh $RELEASEDIR/pl/bin     # preserve executable mode, timestamps
 
 cp -p $SRCDIR/LICENSE* $RELEASEDIR/pl
 
