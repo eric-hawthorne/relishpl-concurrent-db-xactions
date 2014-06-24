@@ -15,4 +15,9 @@ ln -sf /opt/relish/pl/bin/relish /usr/local/bin/relish
 ln -sf /opt/relish/pl/bin/rmdb /usr/local/bin/rmdb   
 ln -sf /opt/relish/pl/bin/cleanr /usr/local/bin/cleanr   
 chmod go+w /opt/relish      
-chmod -R go+w /opt/relish/keys      
+chmod -R go+w /opt/relish/keys     
+
+osascript <<END
+tell app "Terminal" to do script "cd /opt/relish; relish -web 8080 shared.relish.pl2012/dev_tools playground" 
+END
+

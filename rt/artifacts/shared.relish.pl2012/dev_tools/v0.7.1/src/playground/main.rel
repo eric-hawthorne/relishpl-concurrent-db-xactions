@@ -24,16 +24,22 @@ main
       viewState = web.DevToolsViewState
       dub viewState "Dev Tools View State"
 
-   viewState.appToLaunch = "playground"  
-   print
-   print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-   print
-   print "Now open a web browser window,"
-   print "Type http://localhost:8080 into the address bar"
-   print "at the top, and press enter/return."
-   print
-   print "Then, choose a program example from the drop-down menu"
-   print "and run it in the playground !"
-   print
-   print "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-   print
+   viewState.appToLaunch = "playground" 
+   print """
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Now open a web browser window,
+Type http://localhost:8080 into the address bar
+at the top, and press enter/return.
+
+Then, choose a program example from the drop-down menu
+and run it in the playground !
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+Press control C in this terminal/command window 
+when you want to end the playground web-app.
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+"""
