@@ -1,0 +1,264 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  multimethods
+
+"""
+ skeleton.rel
+
+ A demonstration of relish's multiple-dispatch polymorphism.
+ A method is selected for execution, from amongst a multimethod (group of methods of the same name)
+ based on matching the method parameter-type signature against the types of all of the arguments to the method.
+ This process of the language choosing which method implementation to execute based on argument types
+ encountered at program run-time is called method dispatch. When the types of multiple arguments are
+ used to choose which method to execute, it is called multiple-dispatch, which is how relish does it.
+
+ Here's one toy example of multiple dispatch of methods in action. 
+
+ See http://supersimplelearning.com/songs/themes-series/halloween/the-skeleton-dance/
+
+ This file contains type definitions and relation definitions for bones of the body.
+"""
+
+
+import 
+   strings
+
+
+Skeleton
+"""
+ A skeleton, at least most of one, according to the song "Dem Bones".
+ Has a list of the bones ordered from top down.
+"""
+   bones 0 12 [>height] Bone
+
+
+Bone
+"""
+ A part of a skeleton.
+"""
+   name String
+   isLeft Bool
+   isRight Bool
+   height Int  // Position in body from ground up
+
+
+Bone 0 1 connectedUpTo -- connectedDownTo 0 2 Bone
+
+
+isFullyConnected bone Bone > Bool
+"""
+ Returns true if the bone is fully connected to other bones.
+"""
+
+
+initBone bone Bone side String name String height Int > Bone
+"""
+ Create a left or right bone.
+"""
+   initBone bone name height
+   if eq side "left"
+      bone.isLeft = true
+   else
+      bone.isRight = true
+   => bone
+
+
+initBone bone Bone name String height Int > Bone
+"""
+ Create a bone that is neither left or right.
+"""
+   bone.name = name
+   bone.height = height
+   bone.isLeft = false
+   bone.isRight = false
+   => bone
+
+
+initString s String bone Bone > String
+"""
+ Return the full name of the bone.
+"""
+   if bone.isLeft
+      fullName = "left "
+   elif bone.isRight
+      fullName = "right "
+   else
+      fullName = ""
+   fullName = cat fullName bone.name " bone"
+   => fullName
+
+
+
+DownConnected <: Bone
+"""
+ A bone which only connects down to one other bone.
+"""
+
+
+UpConnected <: Bone
+"""
+ A bone which only connects up to one other bone.
+"""
+
+
+UpDownConnected <: Bone
+"""
+ A bone which connects up to a bone and down to a bone.
+"""
+
+
+UpDoubleDownConnected <: Bone
+"""
+ A bone which connects down to two bones of opposite sides.
+"""
+
+
+
+isFullyConnected bone DownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => eq 1 (len bone.connectedDownTo) 
+
+
+isFullyConnected bone UpConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => neq nil bone.connectedUpTo
+
+
+isFullyConnected bone UpDownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => and bone.connectedUpTo
+          eq 1 (len bone.connectedDownTo) 
+
+
+isFullyConnected bone UpDoubleDownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => and bone.connectedUpTo
+          eq 2 (len bone.connectedDownTo)
+
+
+
+HeadBone <: DownConnected
+"""
+ Skull.
+"""
+
+
+initHeadBone head HeadBone > HeadBone
+"""
+ Create a head.
+"""
+   initBone head "head" 8
+   => head
+
+
+
+NeckBone <: UpDownConnected
+"""
+ Neck.
+"""
+
+
+initNeckBone neck NeckBone > NeckBone
+"""
+ Create a neck.
+"""
+   initBone neck "neck" 7
+   => neck
+
+
+
+BackBone <: UpDownConnected
+"""
+ Backbone.
+"""
+
+
+initBackBone back BackBone > BackBone
+"""
+ Create a neck.
+"""
+   initBone back "back" 6
+   => back
+
+
+
+HipBone <: UpDoubleDownConnected
+"""
+ Hip bone.
+"""
+
+
+initHipBone hip HipBone > HipBone
+"""
+ Create a hip bone.
+"""
+   initBone hip "hip" 5
+   => hip
+
+
+
+ThighBone <: UpDownConnected
+"""
+ Thigh bone.
+"""
+
+
+initThighBone thigh ThighBone side String > ThighBone
+"""
+ Create a thigh bone.
+"""
+   initBone thigh side "thigh" 4
+   => thigh
+
+
+
+KneeBone <: UpDownConnected
+"""
+ Knee bone.
+"""
+
+
+initKneeBone knee KneeBone side String > KneeBone
+"""
+ Create a knee bone.
+"""
+   initBone knee side "knee" 3
+   => knee
+
+
+
+LegBone <: UpDownConnected
+"""
+ Leg bone.
+"""
+
+
+initLegBone leg LegBone side String > LegBone
+"""
+ Create a (lower) leg bone.
+"""
+   initBone leg side "leg" 2
+   => leg
+
+
+
+FootBone <: UpConnected
+"""
+ Foot bone.
+"""
+
+
+initFootBone foot FootBone side String > FootBone
+"""
+ Create a foot bone.
+"""
+   initBone foot side "foot" 1
+   => foot

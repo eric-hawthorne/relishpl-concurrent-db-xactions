@@ -1,0 +1,170 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  multimethods
+
+"""
+ skeleton.rel
+
+ A demonstration of relish's multiple-dispatch polymorphism.
+ A method is selected for execution, from amongst a multimethod (group of methods of the same name)
+ based on matching the method parameter-type signature against the types of all of the arguments to the method.
+ This process of the language choosing which method implementation to execute based on argument types
+ encountered at program run-time is called method dispatch. When the types of multiple arguments are
+ used to choose which method to execute, it is called multiple-dispatch, which is how relish does it.
+
+ Here's one toy example of multiple dispatch of methods in action. 
+
+ See http://supersimplelearning.com/songs/themes-series/halloween/the-skeleton-dance/
+"""
+
+
+import 
+   strings
+
+
+makeBodyParts > {} Bone
+"""
+ Make a pile of bones from which to assemble a skeleton.
+ The order of the bones in the pile is indeterminate.
+"""
+   bones = {}Bone
+   bones += HipBone   
+   bones += NeckBone   
+   bones += FootBone "right"   
+   bones += FootBone "left"
+   bones += HeadBone 
+   bones += LegBone "left"     
+   bones += ThighBone "left"
+   bones += LegBone "right"   
+   bones += ThighBone "right"
+   bones += KneeBone "left"
+   bones += BackBone  
+   bones += KneeBone "right"
+   => bones
+
+
+
+connect neck NeckBone head HeadBone > Bool
+"""
+ Connect neck to head. 
+"""
+   neck.connectedUpTo = head
+   => true
+
+
+connect back BackBone neck NeckBone > Bool
+"""
+ Connect back to neck.
+"""
+   back.connectedUpTo = neck
+   => true
+
+
+connect hip HipBone back BackBone > Bool
+"""
+ Connect hip to back.
+"""
+   hip.connectedUpTo = back
+   => true
+
+
+connect thigh ThighBone hip HipBone > Bool
+"""
+ Connect thigh to hip. Left or right doesn't matter.
+"""
+   thigh.connectedUpTo = hip
+   => true
+
+
+connect knee KneeBone thigh ThighBone > Bool
+"""
+ Connect knee to thigh. Only the correct side bones can connect.
+"""
+   if eq knee.isLeft thigh.isLeft 
+      knee.connectedUpTo = thigh
+      => true 
+   => false  
+
+
+connect leg LegBone knee KneeBone > Bool
+"""
+ Connect leg to knee. Only the correct side bones can connect.
+"""
+   if eq leg.isLeft knee.isLeft
+      leg.connectedUpTo = knee
+      => true
+   => false
+
+
+connect foot FootBone leg LegBone > Bool
+"""
+ Connect foot to leg. Only the correct side bones can connect.
+"""
+   if eq foot.isLeft leg.isLeft
+      foot.connectedUpTo = leg
+      => true
+   => false
+
+
+connect bone1 Bone bone2 Bone > Bool
+"""
+ Unconnectable.
+"""
+   => false
+
+
+connectEitherWay bone1 Bone bone2 Bone > Bool
+"""
+ Try connecting both ways around.
+"""
+   if connect bone1 bone2
+      => true
+   => connect bone2 bone1
+
+
+reciteStructure skeleton Skeleton
+"""
+ Tell the story of the skeleton.
+"""
+   print "Dem bones, dem bones, dem dancing bones."
+   print "Doin' the skeleton dance."
+   head = skeleton.bones[0]
+   reciteStructure head
+   print "Dem bones, dem bones, dem dancing bones."   
+   print "Doin' the skeleton dance."
+
+
+reciteStructure bone Bone
+"""
+ Tell the story of the local connections of the bone.
+"""   
+   for otherBone in bone.connectedDownTo
+      reciteStructure otherBone
+      print cat "The " (String otherBone) "'s connected to the " (String bone) "."
+
+
+main
+"""
+ Connect up a skeleton.
+"""
+   bonePile = makeBodyParts
+ 
+   skeleton = Skeleton
+
+   while bonePile
+      bonePile2 = asList bonePile
+      fullyConnectedPile = {}Bone   
+      firstBone = bonePile2[0]  
+      bonePile2 = bonePile2[1:]
+      for otherBone in bonePile2
+         if connectEitherWay firstBone otherBone
+            if isFullyConnected otherBone
+               fullyConnectedPile += otherBone 
+            if isFullyConnected firstBone
+               fullyConnectedPile += firstBone
+               break 
+      for bone in fullyConnectedPile
+         bonePile -= bone
+         skeleton.bones += bone
+
+   reciteStructure skeleton
