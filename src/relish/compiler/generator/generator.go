@@ -813,6 +813,8 @@ func (g *Generator) generateMethods() {
 	       } else {
 		       allowRedefinition := false	
 
+               isTraitAbstractMethod := methodDeclaration.Body == nil && g.pkg.IsTrait
+
 			   // FuncType.	Params  []*InputArgDecl // input parameter declarations. Can be empty list.
 		   	   // 	        Results []*ReturnArgDecl // (outgoing) result declarations; Can be empty list.	
 	
@@ -829,6 +831,7 @@ func (g *Generator) generateMethods() {
 				                                   returnValTypes,
 				                                   returnArgsAreNamed,
 				                                   methodDeclaration.NumLocalVars,
+                                                   isTraitAbstractMethod,
 				                                   allowRedefinition  )
 		   }
 		
@@ -839,6 +842,8 @@ func (g *Generator) generateMethods() {
 	
 	       rMethod.Code = methodDeclaration // abstract syntax tree	
 
+
+          
 		   Logln(GENERATE__, rMethod)		
 	    }	
     }

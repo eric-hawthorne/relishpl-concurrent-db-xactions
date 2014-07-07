@@ -310,6 +310,7 @@ OutChannel &lt;: Any                A channel which can be written to
 Channel &lt;: InChannel OutChannel  A channel which can be read from and written to
 Mutex &lt;: Any                     A mutual-exclusion lock to serialize access to a resource
 RWMutex &lt;: Any                   A mutual-exclusion lock allowing many readers or one writer
+OwnedMutex &lt; Any                 A mutual-exclusion lock that is owned by the goroutine that locks it
 </pre></code>
 <p><span class="future"><em>Some issues here. Should Struct and Collection and Channel be NonPrimitive? </em></span></p>
 		   
@@ -2077,6 +2078,51 @@ asList coll Collection of T > List of T
 """
 
 
+asList coll Collection of T oqlWhereConditionsAndOrdering String > List of T
+"""
+ e.g. 
+
+ youngsters = asList school.pupils "age &lt; 9 order by age desc"
+
+ coll must be a locally persisted collection.  e.g. 
+
+ youngsters = asList school.pupils "age &lt; 9 order by age desc"
+
+ coll must be a locally persisted collection or a multi-valued attribute of a persisted object. 
+ (See persistence section of this manual.). 
+
+ Queries the database using the "where" and ordering clauses to filter the elements of
+ coll and return a list of the elements which meet the "where" criteria.
+ The returned list is ordered according to the order clause in the query, if present.
+ Otherwise order is arbitrary.
+ The returned list is a non-persistent and independent new list of the elements.
+"""
+
+
+asList coll Collection of T queryAndArguments List > List of T
+"""
+ e.g. 
+
+ youngsters = asList school.pupils ["age &lt; ? order by age desc" oldAge]Any
+
+ coll must be a locally persisted collection or a multi-valued attribute of a persisted object. 
+ (See persistence section of this manual.)
+ Queries the database using the "where" and ordering clauses to filter the elements of
+ coll and return a list of the elements which meet the "where" criteria.
+ The returned list is ordered according to the order clause in the query, if present.
+ Otherwise order is arbitrary.
+
+ IMPORTANT NOTE: 
+ This variant of the asList method accepts query arguments, to be substituted for ?s in
+ the query conditions. This variant should be used if the variable values for the query
+ are coming from external input data, such as web form submissions, to prevent
+ SQL injection attacks.
+
+ The returned list is a non-persistent and independent new list of the elements.
+"""
+
+
+
 sort coll Collection
 """
  Sorts the collection according to the natural ordering of the type of its elements.
@@ -2142,6 +2188,31 @@ runlock m RwMutex
 """
  Unlocks the read-lock on the mutex. A goroutine  is free to write-lock the mutex now.
 """
+
+
+lock m OwnedMutex
+"""
+ Locks the mutex. When lock is acquired, go-routines attempting to lock this mutex will block.
+ The goroutine that locks this mutex owns the mutex for the duration it has it locked.
+ The same goroutine can nestedly lock this mutex as many times as it wants without error,
+ and must unlock it exactly as many times as it locked it.
+
+ Regular Mutexes and RwMutexes are not owned by any goroutine. A goroutine must take care
+ not to doubly lock a Mutex or RwMutex it already has locked. Also, with regular mutexes,
+ any goroutine may unlock a locked mutex regardless of who locked it, whereas with OwnedMutexes,
+ the locking goroutine must be the one to unlock it.
+
+ Currently there is no OwnedRwMutex type.
+"""
+
+
+unlock m OwnedMutex
+"""
+ Unlocks the write-lock on the mutex. If this is the final unlocking by the owning goroutine, then
+ any goroutine is free to lock the mutex now.
+ This method can only be called by the goroutine that originally locked the mutex.
+"""
+
 
 
 
@@ -2315,6 +2386,43 @@ slice bytes Bytes start Int > Byte
  NOTE!! This method will likely be replaced by myBytes[start:end] syntax, as is
  already implemented for lists.
 """
+
+
+
+
+// "Global variable" context methods
+//
+// Currently, relish does not have global variable syntax.
+// Instead, it has a thread-safe global hashtable called the context, which holds
+// (non-persistent) global associations between String object-names and named objects.
+
+context name String > Any
+"""
+ Returns the object with the specified global name in the context.
+ Returns NIL if there is no object in the context under the given name.
+"""
+
+
+contextPut obj Any name String
+"""
+ Associates the object with the name in the global (non-persistent) context.
+ Replaces any previous object that was associated with the name.
+"""
+
+
+contextExists name String > Bool
+"""
+ Returns true if the name is mapped to some object, in the global (non-persistent) context.
+"""
+
+
+contextRemove name String
+"""
+ Removes the association between the name and an object, in the global (non-persistent) context.
+ Does nothing and does not complain if there was no such association.
+"""
+
+
 
 
 // Operating system methods

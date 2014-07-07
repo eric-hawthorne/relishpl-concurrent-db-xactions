@@ -1165,7 +1165,7 @@ func (node *SpecializationPathNode) copyUpwards1(downNode *SpecializationPathNod
 
 /*
    Glues the specialization path to the types by giving the types a reference
-   to their node in the path. Second stage of specializeation-path creation.
+   to their node in the path. Second stage of specialization-path creation.
 */
 func (node *SpecializationPathNode) glue() {
 	for nd := node; nd != nil; nd = nd.Up {
@@ -1241,7 +1241,6 @@ func (tt *RTypeTuple) String() string {
 }
 
 /*
-   TODO 
    Returns the specialization distance 
    (Squared Euclidian distance in a multi-dimensional type-specialization space) from
    the presumed more general type tuple (superTT) to the presumed more specific type 
@@ -1291,13 +1290,13 @@ func (subTT *RTypeTuple) SpecializationDistanceFrom(superTT *RTypeTuple) (float6
 						found = true
 						foundOnePathForTypeSpecialization = true
 					}
-   			} else if superType == StructType {
-   				if node.Type.IsStruct { // Special case 
-   					levelDiff = 98
-   					found = true
-   					foundOnePathForTypeSpecialization = true
-   				}
-   			} else {
+	   			} else if superType == StructType {
+	   				if node.Type.IsStruct { // Special case 
+	   					levelDiff = 98
+	   					found = true
+	   					foundOnePathForTypeSpecialization = true
+	   				}
+	   			} else {
 					for levelDiff = 0; ; levelDiff++ {
 						if node.Type == superType {
 							found = true
@@ -1322,6 +1321,78 @@ func (subTT *RTypeTuple) SpecializationDistanceFrom(superTT *RTypeTuple) (float6
 	}
 	return float64(sumSquaredLevelDiff) / float64(nDimensions), float64(sumSquaredSupertypeSpecificity) / float64(nDimensions), false
 }
+
+
+/*
+   Returns true if the presumed sub typetuple is the same as or a specialization of the super typetuple.
+
+   Returns false if the sub typetuple is neither the same as nor a specialization of the super typetuple.
+
+   Same logic as SpecializationDistanceFrom without the distance calculations.
+
+   Assumes the two type tuples are the same length (arity).
+*/
+func (subTT *RTypeTuple) LessEq(superTT *RTypeTuple) bool {
+	if len(superTT.Types) == 0 { // Degenerate case. No types to compare.
+		return true
+	}
+	for i, subType := range subTT.Types {
+		superType := superTT.Types[i]
+		var foundOnePathForTypeSpecialization bool = false
+		
+		if subType == NothingType { // type of *nil*
+
+			foundOnePathForTypeSpecialization = true	
+								
+		} else {
+			for _, pathNode := range subType.SpecializationPathNodes {
+				node := pathNode
+				if superType == AnyType { // Special case
+					foundOnePathForTypeSpecialization = true
+				} else if superType == NonPrimitiveType {
+					if !node.Type.IsPrimitive { // Special case 
+						foundOnePathForTypeSpecialization = true
+					}
+	   			} else if superType == StructType {
+	   				if node.Type.IsStruct { // Special case 
+	   					foundOnePathForTypeSpecialization = true
+	   				}
+	   			} else {
+					for {
+						if node.Type == superType {
+							foundOnePathForTypeSpecialization = true
+							break
+						} else if node.Up == nil {
+							break
+						} else {
+							node = node.Up
+					    }
+					}
+				}
+
+			}
+	    }
+		if !foundOnePathForTypeSpecialization {
+			return false
+		}
+	}
+	return true
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ////////////////////////////////////////////////////////////////////////////
 //////// The tree index of type tuples

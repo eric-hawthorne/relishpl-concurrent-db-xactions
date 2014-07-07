@@ -42,7 +42,6 @@ import (
 type RuntimeEnv struct {
 	Types         map[string]*RType        // map from type name to RType object. 
 	Typs          map[string]*RType        // map from type.ShortName() to RType object. 
-	MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
 	Packages      map[string]*RPackage     // by package Name
 	Pkgs          map[string]*RPackage     // by package ShortName
 	PkgShortNameToName map[string]string   
@@ -103,7 +102,36 @@ type RuntimeEnv struct {
 	evalContexts map[RObject]MethodEvaluationContext
 
 	evalContextMutex sync.Mutex
+
+
+    // Each package also has its own multimethod map.
+    // This global one is only used to find implementations for trait abstract methods.
+    //
+    // This particular multimethods map contains only exported methods which are not trait abstract
+    // methods and which have at least one positional argument.
+    //
+	// MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
+	//
+	MultiMethods  map[string]*RMultiMethod // map from method name to RMultiMethod object.
+
+
+    // This keeps track of all multimethods which include the abstract method and implementing
+    // methods of a trait method. The multimethods in this map are the same ones that are
+    // owned by packages. 
+    // Whenever a new non-trait package is loaded, its non trait-abstract methods need to be checked
+    // against these traitMultimethods, and if name and type-compatible, added to the trait-multimethod
+    // here. A multi-method here needs to be cache-cleared if it is added to.
+    //
+	TraitMultiMethods map[string][]*RMultiMethod
 }
+
+
+
+func (rt *RuntimeEnv) AddTraitMultiMethod(mm *RMultiMethod) {
+    globalMethodName := fmt.Sprintf("%s___%d",mm.Name, mm.NumReturnArgs)
+    rt.TraitMultiMethods[globalMethodName] = append(rt.TraitMultiMethods[globalMethodName], mm)
+}
+
 
 var RT *RuntimeEnv
 
@@ -230,6 +258,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 	    ReflectedDataTypes: make(map[string]RObject),
 	    ReflectedAttributes: make(map[string]RObject),
 		evalContexts:  make(map[RObject]MethodEvaluationContext),
+		TraitMultiMethods: make(map[string][]*RMultiMethod),
 	}
 	for i := 0; i < 20; i++ {
 	   tttn := &TypeTupleTreeNode{}
@@ -1734,6 +1763,7 @@ func (rt *RuntimeEnv) ContextRemove(name string) {
 	defer rt.contextMutex.Unlock()
 	delete(rt.context,name)
 }
+
 
 
 
