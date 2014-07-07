@@ -44,6 +44,11 @@ type RPackage struct {
 	
 	Dependencies map[string]*RPackage   // Packages that this package is dependent on		
 
+    IsTrait bool  // Package has only abstract, bodiless methods and final (non-overrideable) methods.
+
+    IsPureTrait bool  // Package is a trait and only refers to primitive types 
+                      // or types defined in a pure trait package.
+                      // TODO: Compute this at end of package generation.
 }
 
 func (p *RPackage) Origin() string {
@@ -150,12 +155,15 @@ func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPa
 			panic(fmt.Sprintf("Unable to define type 'relish.pl2012/core/pkg/relish/lang/Package' : %s", err))
 		}
 	}
+
+
 	pkg := &RPackage{runit: runit{robject: robject{rtype: typ}},
 		Name:  path,
 		Path: path + "/",
         MultiMethods: make(map[string]*RMultiMethod),	
         ClosureMethods: make(map[string]*RMethod),	
         Dependencies: make(map[string]*RPackage),
+        IsTrait: strings.HasSuffix(path, "_trait"),
 	}
 	pkg.runit.robject.this = pkg
 

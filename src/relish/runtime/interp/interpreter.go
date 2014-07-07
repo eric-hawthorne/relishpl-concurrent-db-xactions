@@ -1134,6 +1134,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 
 	var method *RMethod
 	var typeTuple *RTypeTuple
+
 	switch meth.(type) {
 	case *RMultiMethod:
 		mm := meth.(*RMultiMethod)
@@ -1146,6 +1147,8 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 //			}
 //		}
 			
+        // fmt.Println(mm.Debug())
+
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
 		defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
@@ -1167,6 +1170,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
 			rterr.Stopf1(t, call, "No method '%s' visible from within %s is compatible with %s", mm.Name, t.ExecutingPackage.Name,typeTuple)
 		}
 		LoglnM(t,INTERP_, "Multi-method dispatched to ", method)
+		// fmt.Println("Multi-method dispatched to ", method)		
 	case *RMethod:
 		method = meth.(*RMethod)
 	case *RClosure:
@@ -1840,7 +1844,9 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 		case token.FUNC:
 			multiMethod, found := t.ExecutingPackage.MultiMethods[id.Name]
 			if !found {
+			    // t.ExecutingPackage.ListMethods()				
 				rterr.Stopf1(t, fun, "'%s' is not a method visible from within package %s, nor an assigned local variable, nor a method-parameter name.", id.Name, t.ExecutingPackage.Name)
+
 			}
 			t.Push(multiMethod)
 			args = call.Args

@@ -51,6 +51,7 @@ type RMultiMethod struct {
 	                          // Note that a method may be referenced by multiple packages' multimethods
 	                          // the method itself points to one of these (does not matter which - it just gets its name from the mm)	
     IsExported    bool  // If true, this is a public method exported to packages that import this package.
+    TraitAbstractMethod *RMethod  // If non-nil, this multimethod is the implementation map for a trait abstract method.
 }
 
 /*
@@ -76,6 +77,7 @@ func (p * RMultiMethod) Clone(pkg *RPackage) *RMultiMethod {
 	}
 	mm.MaxArity = p.MaxArity
 	mm.IsExported = p.IsExported
+	mm.TraitAbstractMethod = p.TraitAbstractMethod
 	return mm
 }
 
@@ -282,6 +284,10 @@ func (o *RMultiMethod) FromMapListTree(th InterpreterThread, tree interface{}) (
    return
 }
 
+
+
+
+
 /*
    A method implementation that applies to a particular tuple of argument types.
 */
@@ -308,6 +314,19 @@ type RMethod struct {
 	PrimitiveCode  func(InterpreterThread, []RObject) []RObject
 	Pkg            *RPackage  // the package that this method is defined in
 	File           *ast.File
+}
+
+
+func (p *RMethod) IsAbstract() bool {
+   return p.Code != nil && p.Code.Body == nil
+}
+
+/*
+Number of named positional parameters.
+Does not include a variadic (list of extra last args) parameter. Does not include a wildcard keywords parameter. 
+*/
+func (p *RMethod) Arity() int {
+   return len(p.Signature.Types)
 }
 
 /*
@@ -488,6 +507,8 @@ func (o *RMethod) FromMapListTree(th InterpreterThread, tree interface{}) (obj R
    already exists. (What scope?)
    TODO How do we handle incremental compilation that includes redefinitions of method
    implementations?
+
+   This is the variant that is used I think to create built-in methods.   
 */
 func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodName string, parameterNames []string, parameterTypes []string, 
 	returnValTypes []string,
@@ -503,17 +524,24 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 						                  returnValTypes,
 						                  returnValNamed, 
 						                  numLocalVars, 
+						                  false,
 						                  allowRedefinition)
 }
 
 
+/*
+This is the variant that is called by the generator. It is starting to handle variadic and wildcard keyword args.
+*/
 func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodName string, parameterNames []string, nilArgAllowed []bool, parameterTypes []string, 
     wildcardKeywordsParameterName string,
     wildcardKeywordsParameterType string,	
 	variadicParameterName string,
 	variadicParameterType string,
 	returnValTypes []string,
-	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
+	returnValNamed bool, 
+	numLocalVars int, 
+	isTraitAbstractMethod bool,
+	allowRedefinition bool) (*RMethod, error) {
 		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -524,6 +552,7 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
 						                  returnValTypes,
 						                  returnValNamed, 
 						                  numLocalVars, 
+						                  isTraitAbstractMethod,
 						                  allowRedefinition)
 }
 
@@ -560,7 +589,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	                  // FROM HERE UP IS NEW
 	                  returnValTypes []string,
 	                  returnArgsNamed bool,
-	                  numLocalVars int, allowRedefinition bool) (*RMethod, error) {
+	                  numLocalVars int, 
+	                  isTraitAbstractMethod bool, 
+	                  allowRedefinition bool) (*RMethod, error) {
 
     isExported := true // Temporary: All multimethods are "public" - change this when __private__ is introduced to relish
 
@@ -590,40 +621,42 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	arity := len(parameterTypes)
     numReturnArgs := len(returnValTypes)
 
-    // TODO - Have to find and/or create this in the pkg object !!!!!!!!!!!!!!!!!
-    //
-    //
-    //
-    //
+    var multiMethod *RMultiMethod
+    var found bool
 
-	//multiMethod, found := rt.MultiMethods[methodName]
-	multiMethod, found := pkg.MultiMethods[methodName]
-
-
-	if !found {
+    if isTraitAbstractMethod {
 		multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
-		pkg.MultiMethods[methodName] = multiMethod
-	} else {
-		if multiMethod.NumReturnArgs != numReturnArgs {
-		   return nil, fmt.Errorf("Method '%v' is already defined to have %v return arguments and cannot have other than that.", methodName, multiMethod.NumReturnArgs)
-        }
-        if multiMethod.Pkg != pkg { // Make sure we have a multimethod that this package is allowed to modify
-	
-	                                // TODO ---- WARNING ----- We modify a multimethod when caching! is it ok to 
-	                                // do caching on a dependency package's multimethod? probably not!! 
-	                                // Needs more thought. Ok for a package's multimethod to cache typetuples
-	                                // where the types are not even known within that package??? Maybe it's ok
-	                                // because we only cache based on a lookup done with that multimethod in first place!!!
-	
-	        multiMethod = multiMethod.Clone(pkg)
-	        pkg.MultiMethods[methodName] = multiMethod
-        }
+	    pkg.MultiMethods[methodName] = multiMethod	
+
+    } else {
+		//multiMethod, found := rt.MultiMethods[methodName]
+		multiMethod, found = pkg.MultiMethods[methodName]
+
+		if !found {
+			multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
+			pkg.MultiMethods[methodName] = multiMethod
+		} else {
+			if multiMethod.NumReturnArgs != numReturnArgs {
+			   return nil, fmt.Errorf("Method '%v' is already defined to have %v return arguments and cannot have other than that.", methodName, multiMethod.NumReturnArgs)
+	        }
+	        if multiMethod.Pkg != pkg { // Make sure we have a multimethod that this package is allowed to modify
+		
+		                                // TODO ---- WARNING ----- We modify a multimethod when caching! is it ok to 
+		                                // do caching on a dependency package's multimethod? probably not!! 
+		                                // Needs more thought. Ok for a package's multimethod to cache typetuples
+		                                // where the types are not even known within that package??? Maybe it's ok
+		                                // because we only cache based on a lookup done with that multimethod in first place!!!
+		
+		        multiMethod = multiMethod.Clone(pkg)
+		        pkg.MultiMethods[methodName] = multiMethod
+	        }
+		}
 	}
-	
-	
+		
 	if arity > multiMethod.MaxArity {
 		multiMethod.MaxArity = arity
 	}
+    
 
 	typeTuple, err := rt.getTypeTupleFromTypes(parameterTypes)
 	if err != nil {
@@ -717,14 +750,102 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			multiMethod.Methods[arity] = []*RMethod{method}
 		}
 	}
+
+
+
+	if isTraitAbstractMethod {
+		multiMethod.TraitAbstractMethod = method
+
+		// Search rt.MultiMethods for compatible implementing methods.
+		// Add each of them into this multiMethod
+
+        globalMethodName := fmt.Sprintf("%s___%d",methodName, numReturnArgs)
+
+        implementorsMultiMethod := rt.MultiMethods[globalMethodName]
+        if implementorsMultiMethod != nil {
+            possibleImplementorMethods := implementorsMultiMethod.Methods[arity]
+            for _,possibleImplementorMethod := range possibleImplementorMethods {
+            	if possibleImplementorMethod.Signature.LessEq(method.Signature) {
+            	   // Yes. This method is an implementor of the trait abstract method (interface).
+			       if possibleImplementorMethod.Signature == method.Signature {
+			       	  // Remove the abstract method from the multimethod.Methods
+			       	  meths := multiMethod.Methods[arity]
+			       	  meths2 := []*RMethod{}
+			       	  for _,meth := range meths {
+			       	  	  if meth != method {
+			       	  	     meths2 = append(meths2, meth)
+			       	  	  }
+			       	  }
+			       	  multiMethod.Methods[arity] = meths2 
+			       } 
+
+			       multiMethod.Methods[arity] = append(multiMethod.Methods[arity], possibleImplementorMethod)  
+
+			    }   
+
+            }
+        }
+
+        // Keep a global record of the multimethods of all trait abstract methods.
+		rt.AddTraitMultiMethod(multiMethod)
+
+	} else if arity > 0 && isExported {  // Add to the global runtime multimethod map.
+
+        globalMethodName := fmt.Sprintf("%s___%d",methodName, numReturnArgs)
+
+		globalMultiMethod, found := rt.MultiMethods[globalMethodName]
+
+
+		if !found {
+			globalMultiMethod = newRMultiMethod(globalMethodName, numReturnArgs, nil, isExported)
+			rt.MultiMethods[globalMethodName] = globalMultiMethod
+		}
+		
+		
+		if arity > globalMultiMethod.MaxArity {
+			globalMultiMethod.MaxArity = arity
+		}
+
+
+        traitMultiMethods := rt.TraitMultiMethods[globalMethodName]
+        for _,traitMultiMethod := range traitMultiMethods {
+             traitMethod := traitMultiMethod.TraitAbstractMethod        	
+        	if traitMethod.Arity() == arity {
+
+               if method.Signature.LessEq(traitMethod.Signature) {
+        	   
+               	   // This new method is type compatible with the trait abstract method.
+
+
+			       if method.Signature == traitMethod.Signature {
+
+			       	  // Remove the abstract method from the multimethod.Methods
+			       	  meths := traitMultiMethod.Methods[arity]
+			       	  meths2 := []*RMethod{}
+			       	  for _,meth := range meths {
+			       	  	  if meth != traitMethod {
+			       	  	     meths2 = append(meths2, meth)
+			       	  	  }
+			       	  }
+			       	  traitMultiMethod.Methods[arity] = meths2 
+			       } 
+
+                   // So add this new method to the trait multimethod.
+
+			       traitMultiMethod.Methods[arity] = append(traitMultiMethod.Methods[arity], method)  
+
+                   // Uncache the multimethod methods. A new method means the best method per
+                   // argument typetuple needs to be recomputed by specialization distance comparison.
+                   if len(traitMultiMethod.CachedMethods) > 0 {
+                      traitMultiMethod.CachedMethods = make(map[*RTypeTuple]*RMethod)			
+                   }                      	
+               }	
+        	}
+        }
+	}
+
 	return method, nil
 }
-
-
-
-
-
-
 
 
 	
