@@ -94,8 +94,16 @@
 		</dict>
 		<dict>
 			<key>include</key>
+			<string>#raw_string</string>
+		</dict>		
+		<dict>
+			<key>include</key>
 			<string>#multiline_string</string>
 		</dict>
+		<dict>
+			<key>include</key>
+			<string>#char</string>
+		</dict>		
 		<dict>
 			<key>include</key>
 			<string>#numeric</string>
@@ -181,6 +189,38 @@
 				</dict>
 			</array>
 		</dict>
+		<key>raw_string</key>
+		<dict>
+			<key>begin</key>
+			<string>(```)</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>string.quoted.other.relish</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>(```)</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>string.quoted.other.relish</string>
+				</dict>
+			</dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>match</key>
+					<string>.</string>
+					<key>name</key>
+					<string>string.quoted.other.relish</string>
+				</dict>
+			</array>
+		</dict>
 		<key>numeric</key>
 		<dict>
 			<key>patterns</key>
@@ -238,6 +278,42 @@
 					<string>.</string>
 					<key>name</key>
 					<string>string.quoted.double.relish</string>
+				</dict>
+			</array>
+		</dict>
+        <key>char</key>
+		<dict>
+			<key>begin</key>
+			<string>(')</string>
+			<key>beginCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>string.quoted.single.relish</string>
+				</dict>
+			</dict>
+			<key>end</key>
+			<string>(')</string>
+			<key>endCaptures</key>
+			<dict>
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>string.quoted.single.relish</string>
+				</dict>
+			</dict>
+			<key>patterns</key>
+			<array>
+				<dict>
+					<key>include</key>
+					<string>#string</string>
+				</dict>
+				<dict>
+					<key>match</key>
+					<string>.</string>
+					<key>name</key>
+					<string>string.quoted.single.relish</string>
 				</dict>
 			</array>
 		</dict>

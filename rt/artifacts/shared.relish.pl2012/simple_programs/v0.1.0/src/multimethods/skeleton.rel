@@ -14,6 +14,9 @@ package  multimethods
 
  Here's one toy example of multiple dispatch of methods in action. 
 
+ Admittedly, this may not fit the definition of a simple program.
+ It does illustrate many features of relish however.
+
  See http://supersimplelearning.com/songs/themes-series/halloween/the-skeleton-dance/
 """
 

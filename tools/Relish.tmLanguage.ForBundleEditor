@@ -33,7 +33,9 @@
 			match = '[a-z][a-z0-9]*([A-Z][a-z]+[a-z0-9]*)*';
 		},
 		{	include = '#string'; },
+		{	include = '#raw_string'; },		
 		{	include = '#multiline_string'; },
+		{	include = '#char'; },		
 		{	include = '#numeric'; },
 		{	include = '#datatype'; },
 	);
@@ -63,6 +65,29 @@
 				},
 			);
 		};
+		raw_string = {
+			begin = '(```)';
+			end = '(```)';
+			beginCaptures = { 1 = { name = 'string.quoted.other.relish'; }; };
+			endCaptures = { 1 = { name = 'string.quoted.other.relish'; }; };
+			patterns = (
+				{	name = 'string.quoted.other.relish';
+					match = '.';
+				},
+			);
+		};		
+		char = {
+			begin = "(')";
+			end = "(')";
+			beginCaptures = { 1 = { name = 'string.quoted.single.relish'; }; };
+			endCaptures = { 1 = { name = 'string.quoted.single.relish'; }; };
+			patterns = (
+				{	include = '#char'; },
+				{	name = 'string.quoted.single.relish';
+					match = '.';
+				},
+			);
+		};		
 		numeric = {
 			patterns = (
 				{	match = '\b((0(x|X)[0-9a-fA-F]*)|(([0-9]+\.?[0-9]*)|(\.[0-9]+))((e|E)(\+|-)?[0-9]+)?)\b';
