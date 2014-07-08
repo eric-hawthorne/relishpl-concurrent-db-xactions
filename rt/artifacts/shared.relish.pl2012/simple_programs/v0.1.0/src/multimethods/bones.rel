@@ -3,20 +3,23 @@ artifact simple_programs
 package  multimethods
 
 """
- skeleton.rel
+ bones.rel
 
- A demonstration of relish's multiple-dispatch polymorphism.
- A method is selected for execution, from amongst a multimethod (group of methods of the same name)
- based on matching the method parameter-type signature against the types of all of the arguments to the method.
- This process of the language choosing which method implementation to execute based on argument types
- encountered at program run-time is called method dispatch. When the types of multiple arguments are
- used to choose which method to execute, it is called multiple-dispatch, which is how relish does it.
+ This file contains type definitions and relation definitions for bones of the body.
 
- Here's one toy example of multiple dispatch of methods in action. 
+ This file is the data type definitions in support of the demonstration of relish's multiple-dispatch polymorphism
+ which is found in skeleton.rel
+
+ Admittedly, this may not fit the definition of a simple program.
+ It does illustrate many features of relish however.
 
  See http://supersimplelearning.com/songs/themes-series/halloween/the-skeleton-dance/
 
- This file contains type definitions and relation definitions for bones of the body.
+ This file also demonstrates the use of type constructor methods; that is, methods whose name 
+ fits the pattern initSomeType
+ Such a method is called automatically if an object of the type is created with arguments that
+ match the init method's signature. See the makeBodyParts method in skeleton.rel for the object
+ creation statements that automatically call the constructor methods below.
 """
 
 

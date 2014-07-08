@@ -1588,7 +1588,7 @@ func (p *parser) parseOneLineLiteral(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "OneLineLiteral"))
     }
-    return p.parseNumberLiteral(x) || p.parseStringLiteral(x) || p.parseBooleanLiteral(x) || p.parseNilLiteral(x)
+    return p.parseNumberLiteral(x) || p.parseStringLiteral(x) || p.parseBooleanLiteral(x) || p.parseNilLiteral(x) || p.parseRawStringLiteral(x, false)
 }
 
 func (p *parser) parseNumberLiteral(x *ast.Expr) bool {
@@ -1683,7 +1683,7 @@ func (p *parser) parseMultilineLiteral(x *ast.Expr) bool {
 	if p.trace {
        defer un(trace(p, "MultilineLiteral"))
     }
-    return  p.parseMultilineStringLiteral(x)
+    return  p.parseMultilineStringLiteral(x) || p.parseRawStringLiteral(x, true)
 }
 
 func (p *parser) parseMultilineStringLiteral(x *ast.Expr) bool {
@@ -1724,6 +1724,48 @@ func (p *parser) parseMultilineStringLiteral(x *ast.Expr) bool {
     return true
 }
 
+
+func (p *parser) parseRawStringLiteral(x *ast.Expr, multiLine bool) bool {
+  if p.trace {
+       defer un(trace(p, "RawStringLiteral"))
+    }
+    pos := p.Pos()
+    st := p.State()
+  if ! p.Match("```") {
+      return false
+  }
+// Formerly had another """ at column 1 to start the multi-line string literal. 
+//    p.required(p.Below(1) && p.Match(`"""`), `""" at beginning of line`)
+//    p.required(p.BlankToEOL(),`nothing on line after """`)
+    var ch rune
+    ch = p.Ch() 
+    if ch < 0 {
+     p.stop("Raw string not terminated. Expecting terminating ```")
+     return false
+    } else if ch == '\n' {  // Special case for multi-line raw strings. Do not include the first \n
+      p.Next()     
+    } 
+    st2 := p.State()
+    
+    startOffset := st2.Offset
+    
+    
+    found,isMultiLine,contentEndOffset := p.ConsumeTilMatch("```")
+    if ! found {
+       p.stop("Raw string not terminated. Expecting terminating ```")  
+       return false
+    }
+    if isMultiLine != multiLine {
+       return p.Fail(st)
+    }
+
+    lit := p.Substring(startOffset, contentEndOffset) 
+        
+    dbg.Log(dbg.PARSE_,"String literal \"%s\"\n",lit)
+
+    *x = &ast.BasicLit{pos,token.STRING,lit}
+    return true
+}
 
 
 

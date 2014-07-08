@@ -390,6 +390,34 @@ func (S *Scanner) ConsumeTilMatchAtColumn(s string, column int) (found bool, con
 	return
 }
 
+
+/*
+Consume all characters until matching the string s.
+Returns whether the terminator pattern was found, and if so, the byte-offset in the src
+at which the pattern was found.
+If the end is not found, the scanner state is returned to as before the function was called.
+*/
+func (S *Scanner) ConsumeTilMatch(s string) (found bool, isMultiLine bool, contentEndOffset int) {
+	st := S.State()
+
+	c, _ := utf8.DecodeRuneInString(s)
+
+	for ; S.ch != -1; S.Next() {
+		if S.ch == c {
+			contentEndOffset = S.offset
+			if S.Match(s) {
+				found = true
+				return
+			}
+		} else if S.ch == '\n' {
+			isMultiLine = true
+		}
+	}
+	S.Fail(st)
+	return
+}
+
+
 //p.ConsumeToEOL() &&
 
 //p.EmptyOrBelowOrRightOf(2)
