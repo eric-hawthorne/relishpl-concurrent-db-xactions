@@ -1248,7 +1248,8 @@ func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj ROb
 
 	// fmt.Println(attr.Part.CollectionType)
 
-	if attr.Part.CollectionType == "sortedlist" || attr.Part.CollectionType == "sortedset" || attr.Part.CollectionType == "sortedmap" || attr.Part.CollectionType == "sortedstringmap" {
+    collectionType := attr.Part.Type.CollectionImplementationType()
+	if collectionType == "sortedlist" || collectionType == "sortedset" || collectionType == "sortedmap" || collectionType == "sortedstringmap" {
 		if attr.Part.OrderMethodArity == 1 {
 			unaryMethod = attr.Part.OrderMethod
 		} else if attr.Part.OrderMethodArity == 2 {
@@ -1264,13 +1265,13 @@ func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj ROb
          maxCardinality,
          nil, // owner,   
          nil, // attribute,
-         attr.Part.CollectionType, 
+         collectionType, 
          isAscending,
          unaryMethod,
          binaryMethod,
          orderAttr,  
          nil, // keyType *RType, 
-         attr.Part.Type)  // TODO This will become incorrect when collection types are expressed correctly.
+         attr.Part.Type.ElementType())  
 	
 
     err = RT.SetAttr(th, obj, attr, collection, true, th.EvaluationContext(), false)

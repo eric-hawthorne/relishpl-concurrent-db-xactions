@@ -1131,6 +1131,7 @@ func (db *SqliteDB)  Delete(obj RObject) (err error) {
     	return
     }
 	obj.ClearStoredLocally()
+	obj.ClearBeingStored()
 
     RT.Uncache(obj)
 

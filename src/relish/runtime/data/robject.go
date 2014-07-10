@@ -814,11 +814,14 @@ func (o *runit) FromMapListTree(th InterpreterThread, tree interface{}) (obj ROb
 			   attrValType := attr.Part.Type
 		
 		      
-			   // Is it a collection type? Handle later
-						 
-			   // Is it a primitive type?
+			   // Is it a collection type? Only handling lists so far. TODO others
 
-               if attrValType.IsPrimitive {
+			   if attrValType.LessEq(ListType) {
+                  prototypeVal, err = RT.Newrlist(attrValType.ElementType(),0,-1,nil,nil,nil)
+				  if err != nil {
+					 return
+				  }	                  
+               } else if attrValType.IsPrimitive {    // Is it a primitive type?
 	              prototypeVal = attrValType.Zero()
                } else {			
 				  prototypeVal, err = RT.NewObject(attrValType.Name) 

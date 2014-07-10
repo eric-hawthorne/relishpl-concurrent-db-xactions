@@ -601,6 +601,29 @@ func (t *RType) AttributeNames(includeSimple bool, includeComplex bool, includeI
 }
 
 
+/*
+Return a string name of the underlying implementation type of an instance of the type.
+Currently only works for collection types.
+
+"list", "sortedlist"
+
+"set", "sortedset"
+
+"map","sortedmap","stringmap","sortedstringmap","uint64map","int64map"
+
+TODO Finish implementing this !!!
+
+*/
+func (t *RType) CollectionImplementationType() string {
+    if strings.HasPrefix(t.Name, "List_of_") {
+       return "list"
+    } else if strings.HasPrefix(t.Name, "Set_of_") {
+       return "set"
+    } 
+    return ""
+}
+
+
 
 
 /*
