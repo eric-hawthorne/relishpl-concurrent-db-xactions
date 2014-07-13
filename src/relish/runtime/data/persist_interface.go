@@ -84,6 +84,16 @@ func (sg *StatementGroup) ClearArgs() {
 
 
 type DB interface {
+   GrabConnection() Connection
+   ReleaseConnection(conn Connection)
+
+   /*
+   Returns a DBConnectionThread 
+   */
+   NewDBThread() DBThread    
+}
+
+type DBThread interface {
 	 EnsureTypeTable(typ *RType) (err error)
 	 ExecStatements(statementGroup *StatementGroup) (err error)
 	 ExecStatement(statement string, args ...interface{}) (err error)	
@@ -182,8 +192,48 @@ type DB interface {
 	calls to it by this thread-of-connection are appropriate until UseDB() is called again.
 	*/	
 	 ReleaseDB() bool
+
+   /*
+   Returns a DBConnectionThread 
+   */
+   NewDBThread() DBT 
 }
 
+
+/*
+Abstraction of a connection to a SQL database.
+*/
+type Connection interface {
+   // TODO Method signatures
+
+    Prepare(sql string) (Statement, error)
+  /*
+  Return a previously prepared statement matching the sql string,
+  and an indication of one was found or not.
+  */
+  PreparedStatement(sql string) (statement Statement, found bool)
+
+  /*
+  Save the prepared statement in the connection.
+  */
+  CachePreparedStatement(sql string, statement Statement)
+}
+
+/* 
+A SQL statement
+*/
+type Statement interface {
+
+    Exec(args ...interface{}) error
+
+    Query(args ...interface{}) error
+
+    Scan(dst ...interface{}) error 
+    
+    Next() error      
+
+    Reset() 
+}
 
 /*
 A single "thread" of execution of the relish interpreter, complete with its own relish data stack (hidden).
@@ -221,10 +271,12 @@ type InterpreterThread interface {
 
 
    /*
-    A db connection thread. Used to serialize access to the database in a multi-threaded environment,
-    and to manage database transactions.
+    A db connection thread. Used to control access to the database in a multi-threaded environment,
+    and to manage database transactions. Makes use of a connection pool, which may be smaller than
+    the total number of DBThreads, so sometimes operations on the DBThread block until a real DB 
+    connection is available for use.
   */
-	DB() DB
+	DB() DBThread
 	
 	/*
 	Will be "" unless we are in a stack-unrolling panic, in which case, should be the error message.
@@ -252,9 +304,17 @@ type InterpreterThread interface {
 
 }
 
+// Move this to persist
 func NewDBThread(database DB) *DBThread {
    return &DBThread{db:database}
 }
+
+
+// TODO: Move this to persistence package and have it get a reference to a SqliteDBThread, which 
+// is most of the methods of SqliteDB
+
+
+
 
 /*
     Has a reference to the DB. 
@@ -271,6 +331,8 @@ type DBThread struct {
                               // If > 0, this thread owns and has locked the dbMutex.
                               // Note: thread "ownership" of dbMutex is an abstract concept imposed by this DBThread s/w,
                               // because Go Mutexes are not inherently owned by any particular goroutine.	
+
+  conn Connection // SQL db connection
 }
 
 /*
@@ -337,7 +399,11 @@ func (dbt * DBThread) UseDB() {
    }	
    if dbt.dbLockOwnershipDepth == 0 {
    	   dbt.acquiringDbLock = true
-   	   dbt.db.UseDB()
+
+       dbt.conn = dbt.db.GrabConnection()
+
+   	   // dbt.db.UseDB()
+       
        dbt.acquiringDbLock = false      	
    }
    dbt.dbLockOwnershipDepth++
@@ -358,7 +424,11 @@ func (dbt * DBThread) ReleaseDB() bool {
 	   dbt.dbLockOwnershipDepth--
        Logln(PERSIST2_,"DBThread.ReleaseDB: Set ownership level to",dbt.dbLockOwnershipDepth)  	
 	   if dbt.dbLockOwnershipDepth == 0 {
-		  dbt.db.ReleaseDB()	
+
+        dbt.db.ReleaseConnection(dbt.conn)
+        dbt.conn = nil
+
+		  // dbt.db.ReleaseDB()	
 	   } else {
 	      return false	
 	   }

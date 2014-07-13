@@ -13,3 +13,7 @@ var GcIntervalSeconds = 20
 
 // If the last relish GC was longer than this long ago, relish GC is run for sure.
 var GcForceIntervalSeconds = 600  // 10 minutes
+
+
+// Maximum connection pool size
+var DbMaxConnections = 20

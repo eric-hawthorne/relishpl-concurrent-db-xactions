@@ -29,6 +29,7 @@ import (
 	. "relish/dbg"
 	"strings"
 	. "relish/runtime/data"
+	"relish/params"
 )
 
 /*
@@ -38,9 +39,11 @@ import (
 */
 type SqliteDB struct {
 	dbName         string
-	conn           *sqlite.Conn
+	// conn           *sqlite.Conn
+	pool           *ConnectionPool
+	
 	statementQueue chan string
-	preparedStatements map[string]*sqlite.Stmt
+	// preparedStatements map[string]*sqlite.Stmt
 }
 
 /*
@@ -52,13 +55,15 @@ type SqliteDB struct {
 */
 func NewDB(dbName string) *SqliteDB {
 	db := &SqliteDB{dbName: dbName, statementQueue: make(chan string, 1000)}
-	conn, err := sqlite.Open(dbName)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to open the database '%s': %s", dbName, err))
-	}
-	db.conn = conn
+	// conn, err := sqlite.Open(dbName)
+	// if err != nil {
+	//	panic(fmt.Sprintf("Unable to open the database '%s': %s", dbName, err))
+	// }
+	// db.conn = conn
 
-    db.preparedStatements = make(map[string]*sqlite.Stmt)
+	db.pool = NewConnectiionPool(dbName, params.DbMaxConnections, NewSqliteConn)
+
+    // db.preparedStatements = make(map[string]*sqlite.Stmt)
 	db.EnsureObjectTable()
 	db.EnsureObjectNameTable()
 	db.EnsurePackageTable()	
@@ -89,6 +94,58 @@ func (c *Conn) Prepare(cmd string) (*Stmt, error)
 
 */
 
+
+
+/*
+Function that creates a sql db connection.
+*/
+type ConnectionFactory func (string) (conn Connection, err error)
+
+
+/*
+A SQLITE3 connection which implements the Connection interface.
+*/
+type SqliteConn struct {
+	conn *sqlite.Conn
+	preparedStatements map[string]*sqlite.Stmt
+}
+
+/*
+Return a prepared statement based on the sql string.
+Returns a cached, pre-prepared statement if the sql string has been used before in this connection.
+*/
+func (conn *SqliteConn) Prepare(sql string) (statement Statement, err error) {
+	statement, err = conn.conn.Prepare(sql)
+}
+
+func (conn *SqliteConn) PreparedStatement(sql string) (statement Statement, found bool) {
+	statement, found = conn.preparedStatements[sql]
+	return
+}
+
+func (conn *SqliteConn) CachePreparedStatement(sql string, statement Statement) {
+	conn.preparedStatements[sql] = statement.(*sqlite.Stmt)
+}
+
+
+
+func NewSqliteConn(dbName string) (conn Connection, err error) {
+	s3conn, err := sqlite.Open(dbName)
+    if err != nil {
+    	return
+    }
+    sConn := &SqliteConn{conn: s3conn, preparedStatements: make(map[string]*sqlite.Stmt)}    
+	conn = sConn
+	return
+}
+
+func (db *SqliteDB) GrabCollection() Connection {
+	return pool.GrabCollection()
+}
+
+func (db *SqliteDB) ReleaseCollection(conn Connection) {
+	return pool.GrabCollection()
+}
 
 
 /*
