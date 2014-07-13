@@ -1,0 +1,21 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  input
+
+"""
+ conversation.rel
+
+ Input, assignment
+"""
+
+import
+   strings
+
+
+main
+"""
+ Prints on the console a request for the user's name. Waits til the name is typed in and [Enter] is pressed,
+ then prints out a greeting to the user by name.
+"""
+   name = input "What is your name?\n>"
+   print fill "Hi, %s." name

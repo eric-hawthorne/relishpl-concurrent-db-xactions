@@ -1,0 +1,22 @@
+origin   shared.relish.pl2012
+artifact simple_programs
+package  loops
+
+"""
+ friends.rel
+
+ "for" loop; built-in enumeration of elements of a collection
+"""
+
+import
+   strings
+
+
+main
+"""
+ Create a list of friends. 
+ Loop through the list, printing my friend's names.
+"""
+   friends = ["john" "pat" "gary" "michael"]
+   for i name in friends
+      print fill "iteration %s is %s" i name

@@ -1,0 +1,82 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  closures
+
+""" 
+ closures.rel
+
+ Test the declaration and application of function closures; anonymous lambda expressions
+ declared inside the body of a regular method.
+ These nested lambda (function) declarations can contain free variables in their body statements
+ which refer to the values of local variables of the enclosing method's body.
+"""
+
+
+import 
+   strings
+   test as t
+
+
+main
+"""
+ Main program.
+"""
+   testClosures
+
+
+outerMethod a Int > msg String
+"""
+ Just serves as an enclosing method for the closures.
+
+"""
+   b = 1
+   while lt b 4
+
+      c = func i Int s String > String
+          """
+           The first closure. Does it work?
+          """
+             => fill 
+                   "var %s = %s" 
+                   s 
+                   times i b         
+
+      out = apply c a "baz"
+      msg = cat msg out "|"
+      b = plus b 1
+
+   msg = 
+      cat
+         msg 
+         "|"
+         exclaim
+            func j Int > Int
+            """
+             Whoa!
+            """
+               => plus j b
+            7
+
+
+exclaim f Callable n Int > String
+"""
+ Just print it!
+"""
+   => String apply f n
+
+
+testClosures
+"""
+ Test the declaration and application of closures.
+"""
+   passed = true
+
+   print "===== Closures"
+
+   passed = and assertEq "var baz = 7|var baz = 14|var baz = 21||11" (outerMethod 7) "outerMethod"
+                passed
+
+   if passed
+      print "PASSED"
+
+

@@ -1,0 +1,280 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  transcoders
+
+""" 
+ csv_read_write.rel
+
+ Test reading and writing text/CSV data.
+"""
+
+import
+   csv
+   strings
+   test
+
+
+main
+"""
+ Main program.
+"""
+   testCsv
+   testJson
+
+
+testCsv
+"""
+ Tests reading CSV-encoded data from a big, multi-line String, and writing records
+ out in CSV format to a big, multi-line String.
+"""
+   passed = true
+
+   print "===== CSV"
+
+   csvFileContents = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+
+   records1 = """
+|John, Q.|Public|604-221-3455|He said "I am innocent!" in a loud voice.|
+|Alice|Lin|323-665-4343|No problem here.   |
+|Red|O'Kelly|||
+|James|Earl Jones,Jr.|   4349893434||
+"""
+   records2 = """
+|John, Q.|Public|604-221-3455|He said "I am innocent!" in a loud voice.|
+|Alice|Lin|323-665-4343|No problem here.|
+|Red|O'Kelly|||
+|James|Earl Jones,Jr.|4349893434||
+"""
+   records3 = """
+|John, Q.|Public|604-221-3455|He said "I am innocent!" in a loud voice.|
+|Alice|Lin|323-665-4343|No problem here.|   |
+|Red|O'Kelly|||
+|James|Earl Jones,Jr.|   4349893434||
+"""
+   records4 = """
+|John, Q.|Public|604-221-3455|He said "I am innocent!" in a loud voice.|
+|Alice|Lin|323-665-4343|No problem here.||
+|Red|O'Kelly|||
+|James|Earl Jones,Jr.|4349893434||
+"""
+
+   records err = csvRead csvFileContents
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq records1 (catRecords records) "records1"   
+                   passed 
+   // print ""
+   // print "==================== Now trimming spaces ================="
+   // print ""
+
+   // Now test trimming leading and trailing spaces from fields
+   recordsTrimmed err = csvRead csvFileContents true
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq records2 (catRecords recordsTrimmed) "records2"
+                   passed           
+
+   // print ""
+   // print "==================== Now checking extra field err =================="
+   // print ""
+
+   csvFileContents2 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.,   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+
+
+   recordsBad err = csvRead csvFileContents2
+   if err
+      passed = and assertEq err "line 2, column 0: wrong number of fields in line" "wrong number of fields error"
+                   passed
+   else
+      passed = and assert false "oops should have detected a fields error"
+                   passed
+
+   // print ""
+   // print "==================== Now allowing extra field ================="
+   // print ""
+
+   // Now test accepting the extra record in line 2
+   recordsExtra err = csvRead csvFileContents2 false -1
+   if err
+      passed = false
+      print err   
+   else
+      passed = and assertEq records3 (catRecords recordsExtra) "records3"
+                   passed
+   // print ""
+   // print "======= Now allowing extra field and trimming ================="
+   // print ""
+
+   // Now test accepting the extra record in line 2
+   recordsExtraTrimmed err = csvRead csvFileContents2 true (neg 1)
+   if err
+      passed = false
+      print err   
+   else
+      passed = and assertEq records4 (catRecords recordsExtraTrimmed) "records4"  
+                   passed    
+
+   // print ""
+   // print "==================== Now checking bad quote ================="
+   // print ""
+
+   csvFileContents3 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+"Alice,Lin,323-665-4343,No problem here.,   
+Red,O'Kelly,,
+James,"Earl Jones,Jr.",   4349893434,""
+"""
+   recordsBad err = csvRead csvFileContents3
+   if err
+      passed = and assertEq err "line 4, column 6: extraneous \" in field" "extraneous quote"
+                   passed
+      dummy = "\""
+   else
+      passed = and assert false "oops should have detected an extra quote error"
+                   passed
+   // print ""
+   // print "==================== Done csvRead tests ================="
+   // print ""
+   // print ""
+   // print "==================== Testing csvWrite ==================="
+   // print ""   
+
+   records5 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.   
+Red,O'Kelly,"",""
+James,"Earl Jones,Jr.","   4349893434",""
+"""
+
+   content err = csvWrite records
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq content records5 "csvWrite1"
+                   passed
+
+   // print ""
+   // print "==================== Now with spaces trimmed ================="
+   // print ""
+
+   records6 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.
+Red,O'Kelly,"",""
+James,"Earl Jones,Jr.",4349893434,""
+"""
+
+   content err = csvWrite recordsTrimmed
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq content records6 "csvWrite2"
+                   passed 
+
+   // print ""
+   // print "==================== Extra Field in row 2 ================="
+   // print ""
+
+   records7 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.,"   "
+Red,O'Kelly,"",""
+James,"Earl Jones,Jr.","   4349893434",""
+"""
+
+   content err = csvWrite recordsExtra
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq content records7 "csvWrite3"
+                   passed   
+
+   // print ""
+   // print "=========== Extra and Trimmed ================="
+   // print ""
+
+   records8 = """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."
+Alice,Lin,323-665-4343,No problem here.,""
+Red,O'Kelly,"",""
+James,"Earl Jones,Jr.",4349893434,""
+"""
+
+   content err = csvWrite recordsExtraTrimmed
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq content records8 "csvWrite4"
+                   passed    
+
+      passed = and assertEq (len content) 175 "len content"   
+                   passed
+
+   // print ""
+   // print "=========== Windows line-ends ================="
+   // print ""
+
+   records9 = fill """
+"John, Q.",Public,604-221-3455,"He said ""I am innocent!"" in a loud voice."%s
+Alice,Lin,323-665-4343,No problem here.,""%s
+Red,O'Kelly,"",""%s
+James,"Earl Jones,Jr.",4349893434,""%s
+"""
+                   "\r"
+                   "\r"
+                   "\r"
+                   "\r"
+   content err = csvWrite recordsExtraTrimmed true
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq content records9 "csvWrite6"
+                   passed    
+
+      passed = and assertEq (len content) 179 "len content"   
+                   passed      
+
+   // print ""
+   // print "==================== Done csvWrite tests ================="
+   // print ""     
+
+   if passed
+      print "PASSED"
+
+
+catRecords records List > rows String
+"""
+ Prints out each record, with each field enclosed in | |
+"""
+   for record in records
+      row = ""
+      sep = "|"
+      for field in record
+         row = cat row sep field
+      row = cat row sep
+      rows = cat rows row "\n"
+
+
+
+
+
+

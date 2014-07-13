@@ -1,0 +1,126 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+</head>
+<body>	
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>  
+	  <td>	
+        <h2>Method Declarations</h2>	
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+<p>
+In relish, you can declare methods (parameterized subroutines) as in all other structured programming languages.
+</p>
+<p>
+Methods can specify zero or more input parameters, and can be specified to return zero or more output values (also known as return-values).
+</p>
+<h3>Example</h3>
+<code><pre>
+cube i Int > Int
+"""
+ Returns the cube of the input argument value.
+"""	
+   => times i (times i i)
+
+
+assess card PlayingCard
+"""
+ Decides whether the card is a winner.
+"""	
+   if and eq card.type "Ace" 
+          eq card.suit "Spades"
+      print "I win"
+   else
+      print "You win"
+
+
+assessment card PlayingCard > String
+"""
+ Decides whether the card is a winner.
+"""	
+   if and eq card.type "Ace" 
+          eq card.suit "Spades"
+      => "I win"
+
+   => "You win"
+     
+
+factor 
+   polynomial AlgebraicExpression 
+   maxTrialSteps Int
+> 
+   factors [] AlgebraicExpression
+   err String
+"""
+ Attempts to factor the polynomial, but gives up if it exceeds a maximum number of evaluation steps.
+"""
+   methodStatements
+   occur here
+   for step = 0   lt step maxTrialSteps   step = plus step 1
+      ...
+      ...
+      if someCondition
+         err = "Problem diverges. No solution found."
+         =>
+      if successCriterion
+         factors = trialFactors
+         =>
+
+   err = "Maximum steps exceeded. Solution not found."
+
+</pre></code>
+
+<p>
+You can re-use the same method name multiple times for method declarations that accept differing numbers or data-types of input parameters. The same method name can occur multiply in the same package, and also in different packages and artifacts. However, in a single program, packages can only be imported into another package if all methods of the same method-name declare the same number of output values (return-values).
+</p>
+<p>
+	When a method is called by the mention of its name in an expression in the program, the particular method of that name that is executed is determined at runtime by an argument data type matching algorithm. This process of dynamically choosing the method to execute is known as multi-argument multi-method dispatch. The details are complicated but the essence is that relish chooses the method that is is closest in parameter-type-signature to the datatypes of the tuple of actual arguments supplied in the method call. If there is ambiguity between multiple method declarations in their type similarity to the supplied arguments, the method with more specific compatible parameter types is chosen. 
+</p>
+
+	
+</p>
+<h3>Reference</h3>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#MethodDeclarations">Method declaration syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#InbuiltDataTypes">relish built-in datatypes</a>
+</p>
+</div>
+</body>
+</html>

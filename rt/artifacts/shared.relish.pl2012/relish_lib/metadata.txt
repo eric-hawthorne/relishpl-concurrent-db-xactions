@@ -1,0 +1,8 @@
+relish artifact metadata: 2013/09/25
+origin: shared.relish.pl2012
+artifact: relish_lib
+current version: 0.1.0
+release date: 2013/04/20  
+tags: library,core,relish
+
+relish programming language standard library.
