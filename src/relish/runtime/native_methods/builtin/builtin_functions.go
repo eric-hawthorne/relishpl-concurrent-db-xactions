@@ -3484,7 +3484,7 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
 	// Ensure that the name is not already used for a persistent object in this database.
 
-	found, err := th.DB().ObjectNameExists(name)
+	found, err := th.DBT().ObjectNameExists(name)
 	if err != nil {
 		panic(err)
 	} else if found {
@@ -3493,14 +3493,14 @@ func builtinDub(th InterpreterThread, objects []RObject) []RObject {
 
 	// Ensure that the object is persisted.
 
-	err = th.DB().EnsurePersisted(th, obj)
+	err = th.DBT().EnsurePersisted(th, obj)
 	if err != nil {
 		panic(err)
 	}
 
 	// Now we have to associate the object with its name in the database. 
 
-	err = th.DB().NameObject(obj, name)
+	err = th.DBT().NameObject(obj, name)
 	if err != nil {
 		panic(err)
 	}
@@ -3519,7 +3519,7 @@ func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
 
 	// Ensure that the name is not already used for a persistent object in this database.
 
-	found, err := th.DB().ObjectNameExists(oldName)
+	found, err := th.DBT().ObjectNameExists(oldName)
 	if err != nil {
 		panic(err)
 	} else if ! found {
@@ -3527,7 +3527,7 @@ func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
 	}
 	
 	if errStr != "" {
-		found, err = th.DB().ObjectNameExists(newName)
+		found, err = th.DBT().ObjectNameExists(newName)
 		if err != nil {
 			panic(err)
 		} else if found {
@@ -3538,7 +3538,7 @@ func builtinRenameObject(th InterpreterThread, objects []RObject) []RObject {
     if errStr == "" {
 	    // Now we have to rename the object in the database. 
 
-	    err = th.DB().RenameObject(oldName, newName)
+	    err = th.DBT().RenameObject(oldName, newName)
 		if err != nil {
 			panic(err)
 		}	   
@@ -3562,7 +3562,7 @@ func builtinSummon(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	name := objects[0].String()
 
-	obj, err := th.DB().FetchByName(name, 0)
+	obj, err := th.DBT().FetchByName(name, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -3575,7 +3575,7 @@ func builtinSummonById(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	dbid := int64(objects[0].(Int))
 
-	obj, err := th.DB().Fetch(dbid, 0)
+	obj, err := th.DBT().Fetch(dbid, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -3595,7 +3595,7 @@ func builtinExists(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	name := objects[0].String()
 
-	found, err := th.DB().ObjectNameExists(name) 
+	found, err := th.DBT().ObjectNameExists(name) 
 	if err != nil {
 		panic(err)
 	}
@@ -3609,7 +3609,7 @@ func builtinDelete(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
 	obj := objects[0]
 
-	err := th.DB().Delete(obj) 
+	err := th.DBT().Delete(obj) 
 	if err != nil {
 		panic(err)
 	}
@@ -3635,7 +3635,7 @@ func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject 
     	errStr = "Cannot begin a transaction. Goroutine is already participating in an active transaction."
     } else {
 	    transactionMutex.Unlock()    	
-	    err := th.DB().BeginTransaction()
+	    err := th.DBT().BeginTransaction()
 	    transactionMutex.Lock()	    
 		if err != nil {
 			errStr = err.Error()
@@ -3659,7 +3659,7 @@ func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []ROb
 	relish.EnsureDatabase()
     var errStr string
     panic("UNIMPLEMENTED")
-    err := th.DB().BeginTransaction()
+    err := th.DBT().BeginTransaction()
 	if err != nil {
 		errStr = err.Error()
 	}
@@ -3690,22 +3690,22 @@ func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject
     if th.Transaction() == nil {
     	errStr = "Cannot commit transaction. Goroutine is not participating in an active transaction."
     } else {
-	    err := th.DB().CommitTransaction()
+	    err := th.DBT().CommitTransaction()
 		if err != nil {
 			errStr = err.Error()
 
             time.Sleep(2 * time.Second)
 
-	        err = th.DB().CommitTransaction()
+	        err = th.DBT().CommitTransaction()
 	        if err != nil {
                time.Sleep(4 * time.Second)
-	           err = th.DB().CommitTransaction()	 
+	           err = th.DBT().CommitTransaction()	 
 	           if err != nil {
           
                   rollBackErrStr := rollbackTransactionCore(th)
                   if rollBackErrStr != "" {
                      errStr = fmt.Sprintf("%s. Rollback also failed: %s",errStr,rollBackErrStr)
-                     th.DB().ReleaseDB()
+                     th.DBT().ReleaseDB()
                      // Roll back the state of the in memory objects anyway, forcing re-load
                      // of objects from database.
 		             th.Transaction().RollBack()	
@@ -3744,7 +3744,7 @@ func builtinRollbackTransaction(th InterpreterThread, objects []RObject) []RObje
     errStr := rollbackTransactionCore(th)
 
     if errStr != "" {
-    	th.DB().ReleaseDB()
+    	th.DBT().ReleaseDB()
         // Roll back the state of the in memory objects anyway, forcing re-load
         // of objects from database.
         th.Transaction().RollBack()	
@@ -3761,7 +3761,7 @@ func rollbackTransactionCore(th InterpreterThread) string {
     if th.Transaction() == nil {
     	errStr = "Cannot rollback transaction. Goroutine is not participating in an active transaction."
     } else {
-	    err := th.DB().RollbackTransaction()
+	    err := th.DBT().RollbackTransaction()
 		if err != nil {
 			errStr = err.Error()
 		} else {
@@ -4021,7 +4021,7 @@ func builtinAsList2(th InterpreterThread, objects []RObject) []RObject {
 
 	objs := []RObject{} // TODO Use the existing List's RVector somehow
 
-	mayContainProxies, err := th.DB().FetchN(list.ElementType(), query, queryArgs, coll, radius, &objs)		
+	mayContainProxies, err := th.DBT().FetchN(list.ElementType(), query, queryArgs, coll, radius, &objs)		
 	if err != nil {
 	  rterr.Stop(err)
 	}	

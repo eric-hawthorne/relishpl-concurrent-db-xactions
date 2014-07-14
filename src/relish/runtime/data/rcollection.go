@@ -520,7 +520,7 @@ TODO MAPS AND PROXIES ARE NOT HAPPY TOGETHER YET!!!!
 IT WOULD ONLY WORK IF THE ROBJECT IDENTITY IN THE MAP IS BASED ON THE DBID instead of object address.
 TODO
 
-TODO TODO TODO - Uses the wrong db to do Fetch !!! Should be th.DB().
+TODO TODO TODO - Uses the wrong db to do Fetch !!! Should be th.DBT().
 */
 func (c *rset) Iter(th InterpreterThread) <-chan RObject {
 		
@@ -549,11 +549,11 @@ func (c *rset) deproxify(th InterpreterThread) {
 
     if c.MayContainProxies() {
 
-		var db DB
+		var db DBT
 		if th == nil {
-			db = RT.DB()
+			db = RT.DBT()
 		} else {
-			db = th.DB()
+			db = th.DBT()
 		}
 
         mapFetchMutex.Lock()
@@ -771,7 +771,7 @@ func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 	if obj.IsProxy() {
 		var err error
 		proxy := obj.(Proxy)
-		obj, err = th.DB().Fetch(int64(proxy), 0)
+		obj, err = th.DBT().Fetch(int64(proxy), 0)
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching sorted-set element [%v]: %s", i, err))
 		}
@@ -1161,11 +1161,11 @@ func (o *rsortedset) Mark() bool {
 
 func (c *rsortedset) deproxify(th InterpreterThread) {
     if c.MayContainProxies() {
-		var db DB
+		var db DBT
 		if th == nil {
-			db = RT.DB()
+			db = RT.DBT()
 		} else {
-			db = th.DB()
+			db = th.DBT()
 		}	
 		if c.v != nil {
 			for i, obj := range *(c.v) {
@@ -1390,11 +1390,11 @@ func (o *rlist) Mark() bool {
 */
 func (c *rlist) deproxify(th InterpreterThread) {
     if c.MayContainProxies() {
-		var db DB
+		var db DBT
 		if th == nil {
-			db = RT.DB()
+			db = RT.DBT()
 		} else {
-			db = th.DB()
+			db = th.DBT()
 		}
 		if c.v != nil {
 			for i, obj := range *(c.v) {
@@ -1531,7 +1531,7 @@ func (s *rlist) At(th InterpreterThread, i int) RObject {
 	if obj.IsProxy() {
 		var err error
 		proxy := obj.(Proxy)
-		obj, err = th.DB().Fetch(int64(proxy), 0)
+		obj, err = th.DBT().Fetch(int64(proxy), 0)
 		if err != nil {
 			panic(fmt.Sprintf("Error fetching list element [%v]: %s", i, err))
 		}
@@ -2544,8 +2544,8 @@ func (f FakeInterpreterThread) CallingMethod() *RMethod {
 A db connection thread. Used to serialize access to the database in a multi-threaded environment,
 and to manage database transactions.
 */
-func (f FakeInterpreterThread) DB() DB {
-   return RT.DB()	
+func (f FakeInterpreterThread) DBT() DBT {
+   return RT.DBT()	
 }
 
 func (f FakeInterpreterThread) Err() string {

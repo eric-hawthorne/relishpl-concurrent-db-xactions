@@ -59,6 +59,9 @@ type RuntimeEnv struct {
 	objectIds map[RObject]uint64 // non-persistable object to its local numeric id (for debug printing the object)
 	idGen     *IdGenerator
 	db        DB
+
+	dbt       DBT  // A database connection thread. 
+
 	DatabaseURI string  // filepath (or eventually some other kind of db connection uri) of the database for persisting relish objects
 	Loader PackageLoader  // Loads code packages into the runtime.
 
@@ -157,6 +160,11 @@ func (rt *RuntimeEnv) DebugAttributesMemory() {
 func (rt *RuntimeEnv) DB() DB {
 	return rt.db
 }
+
+func (rt *RuntimeEnv) DBT() DBT {
+	return rt.dbt
+}
+
 
 func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
 	if _, found := rt.constants[name]; found {
@@ -280,6 +288,8 @@ func (rt *RuntimeEnv) NextLocalID() uint64 {
 
 func (rt *RuntimeEnv) SetDB(db DB) {
 	rt.db = db
+
+	rt.dbt = db.DefaultDBThread()
 }
 
 
@@ -550,7 +560,9 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
 	//Logln(PERSIST_,"AttrVal ! found in mem and attr.Part.Type.IsPrimitive=",attr.Part.Type.IsPrimitive)
 	if checkPersistence && obj.IsStoredLocally() && (attr.Part.CollectionType != "" || !attr.Part.Type.IsPrimitive) {
 		var err error
-		val, err = rt.db.FetchAttribute(th, obj.DBID(), obj, attr, 0)
+
+		val, err = th.DBT().FetchAttribute(th, obj.DBID(), obj, attr, 0)		
+		// val, err = rt.db.FetchAttribute(th, obj.DBID(), obj, attr, 0)
 		if err != nil {
 			// TODO  - NOT BEING PRINCIPLED ABOUT WHAT TO DO IF NO VALUE! Should sometimes allow, sometimes not!
 			
@@ -733,7 +745,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 
 
 	if obj.IsStoredLocally() {
-		th.DB().PersistSetAttr(th, obj, attr, val, found)
+		th.DBT().PersistSetAttr(th, obj, attr, val, found)
 	}
 
 	if ! isInverse && attr.Inverse != nil {
@@ -809,7 +821,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 			} else {
 				insertIndex = newLen - 1
 			}
-			th.DB().PersistAddToAttr(th, obj, attr, val, insertIndex)
+			th.DBT().PersistAddToAttr(th, obj, attr, val, insertIndex)
 		}
 		if ! isInverse && attr.Inverse != nil {
 			err = rt.SetOrAddToAttr(th, val, attr.Inverse, obj, context, true)
@@ -869,7 +881,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 			} else {
 				insertIndex = newLen - 1
 			}
-			err = context.InterpThread().DB().PersistAddToCollection(context.InterpThread(),coll, val, insertIndex)
+			err = context.InterpThread().DBT().PersistAddToCollection(context.InterpThread(),coll, val, insertIndex)
 		}
 	}
 
@@ -893,7 +905,7 @@ func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection Remo
 	
 	if removed  {
 	   if removePersistent && collection.IsStoredLocally() {
-	    	th.DB().PersistRemoveFromCollection(collection, val, removedIndex)
+	    	th.DBT().PersistRemoveFromCollection(collection, val, removedIndex)
 	   }
 	}
 
@@ -940,7 +952,7 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 	collection.ClearInMemory()	
 	
 	if obj.IsStoredLocally() {
-	   err = th.DB().PersistClearAttr(obj, attr)
+	   err = th.DBT().PersistClearAttr(obj, attr)
     }
 	return
 }
@@ -961,7 +973,7 @@ func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection Removable
 	collection.ClearInMemory()	
 	
 	if collection.IsStoredLocally() {
-	   err = th.DB().PersistClearCollection(collection)
+	   err = th.DBT().PersistClearCollection(collection)
     }
 	return
 }
@@ -1065,7 +1077,7 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
     isNewKey,_ := theMap.Put(key, val, context)
 	
 	if theMap.IsStoredLocally() {
-	   err = context.InterpThread().DB().PersistMapPut(context.InterpThread(), theMap, key, val, isNewKey)  
+	   err = context.InterpThread().DBT().PersistMapPut(context.InterpThread(), theMap, key, val, isNewKey)  
     }
 	return
 }
@@ -1647,7 +1659,7 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 	
 	if removed  {
 	   if removePersistent && obj.IsStoredLocally() {
-	    	th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	    	th.DBT().PersistRemoveFromAttr(obj, attr, val, removedIndex)
 	   }
 	
 	   if ! isInverse && attr.Inverse != nil {
@@ -1708,7 +1720,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
       unit.attrs[i] = nil
 
        if removePersistent && obj.IsStoredLocally() {
-	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
+	          err = th.DBT().PersistRemoveAttr(obj, attr) 	 
        }
        
 

@@ -32,16 +32,16 @@ Adds the table to the database which stores the core of each RObject instance i.
 id (uuid actually) and type. Only creates the table if the table does not yet exist.
 Should be called at first use of the db as part of  initializing it.
 */
-func (db *SqliteDB) EnsureObjectTable() {
+func (db *SqliteDBThread) EnsureObjectTable() {
 	s := `CREATE TABLE IF NOT EXISTS RObject(
            id INTEGER PRIMARY KEY,
            id2 INTEGER NOT NULL, 
            flags TINYINT NOT NULL, -- ??? is BOOLEAN a type in sqlite?
            typeName TEXT NOT NULL  -- Should be typeId because type should be another RObject!!!!
          )`
-	err := db.conn.Exec(s)
+	err := db.ExecStatement(s)
 	if err != nil {
-		panic(fmt.Sprintf("conn.Exec(%s): db error: %s", s, err))
+		panic(fmt.Sprintf("db.ExecStatement(%s): db error: %s", s, err))
 	}
 }
 
@@ -50,8 +50,8 @@ Adds a table to the database for a type, if the table does not yet exist.
 Should be called after the type has been assigned all of its attribute specifications and
 relation specifications.
 */
-func (db *SqliteDB) EnsureTypeTable(typ *RType) (err error) {
-	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(typ.ShortName()) +
+func (db *SqliteDBThread) EnsureTypeTable(typ *RType) (err error) {
+	s := "CREATE TABLE IF NOT EXISTS " + db.db.TableNameIfy(typ.ShortName()) +
 		"(id INTEGER PRIMARY KEY"
 
 	// Loop over primitive-valued attributes - for each, make a column in the table - TBD
@@ -74,9 +74,9 @@ func (db *SqliteDB) EnsureTypeTable(typ *RType) (err error) {
 	*/
 
 	s += ");"
-	err = db.conn.Exec(s)
+	err = db.ExecStatement(s)
 	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+		err = fmt.Errorf("db.ExecStatement(%s): db error: %s", s, err)
 	}
 	return
 }
@@ -92,14 +92,14 @@ Only creates the table if the table does not yet exist.
 Should be called at first use of the db as part of  initializing it.
 
 */
-func (db *SqliteDB) EnsureObjectNameTable() {
+func (db *SqliteDBThread) EnsureObjectNameTable() {
 	s := `CREATE TABLE IF NOT EXISTS RName(
 	       name TEXT PRIMARY KEY,
            id INTEGER UNIQUE NOT NULL
          )`
-	err := db.conn.Exec(s)
+	err := db.ExecStatement(s)
 	if err != nil {
-		panic(fmt.Sprintf("conn.Exec(%s): db error: %s", s, err))
+		panic(fmt.Sprintf("db.ExecStatement(%s): db error: %s", s, err))
 	}
 }
 
@@ -113,14 +113,14 @@ Only creates the table if the table does not yet exist.
 Should be called at first use of the db as part of  initializing it.
 
 */
-func (db *SqliteDB) EnsurePackageTable() {
+func (db *SqliteDBThread) EnsurePackageTable() {
 	s := `CREATE TABLE IF NOT EXISTS RPackage(
 	       name TEXT PRIMARY KEY,
            shortName TEXT UNIQUE NOT NULL
          )`
-	err := db.conn.Exec(s)
+	err := db.ExecStatement(s)
 	if err != nil {
-		panic(fmt.Sprintf("conn.Exec(%s): db error: %s", s, err))
+		panic(fmt.Sprintf("db.ExecStatement(%s): db error: %s", s, err))
 	}
 	
 	err = db.restorePackageNameMappings()
@@ -133,11 +133,11 @@ func (db *SqliteDB) EnsurePackageTable() {
 If packages have been already defined in this database, read the mappings between shortnames
 of packages and full names of packages into the runtime, so they can be re-used during package generation.
 */
-func (db *SqliteDB) restorePackageNameMappings() (err error) {
+func (db *SqliteDBThread) restorePackageNameMappings() (err error) {
 
 	query := "SELECT name,shortName FROM RPackage"
 
-	selectStmt, err := db.conn.Prepare(query)
+	selectStmt, err := db.dbt.conn.Prepare(query)
 	if err != nil {
 		return
 	}
@@ -175,7 +175,7 @@ func (db *SqliteDB) restorePackageNameMappings() (err error) {
 /*
 Record in the db the mapping from the package name to shortName.
 */
-func (db *SqliteDB)	RecordPackageName(name string, shortName string) {
+func (db *SqliteDBThread)	RecordPackageName(name string, shortName string) {
 
 	// TODO create a map of prepared statements and look up the statement to use.
 
@@ -196,7 +196,7 @@ func (db *SqliteDB)	RecordPackageName(name string, shortName string) {
 Ensure that DB tables exist to represent the non-primitive-valued attributes and the relations
 of the type.
 */
-func (db *SqliteDB) EnsureAttributeAndRelationTables(t *RType) (err error) {
+func (db *SqliteDBThread) EnsureAttributeAndRelationTables(t *RType) (err error) {
     // fmt.Println("EnsureAttributeAndRelationTables", t)
 	for _, attr := range t.Attributes {
 		// fmt.Println(attr)
@@ -236,10 +236,10 @@ Name string
   CollectionType string // "list","sortedlist", "set", "sortedset", "map", "stringmap","sortedmap","sortedstringmap",""
   OrderAttrName string   // What is this?
 */
-func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
+func (db *SqliteDBThread) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
 
     //fmt.Println("EnsureNonPrimitiveAttributeTable", attr)
-	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
+	s := "CREATE TABLE IF NOT EXISTS " + db.db.TableNameIfy(attr.ShortName()) + "("
 
 	// Prepare Whole end
 
@@ -259,9 +259,9 @@ func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err e
    }
 
 	s += ");"
-	err = db.conn.Exec(s)
+	err = db.ExecStatement(s)
 	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+		err = fmt.Errorf("db.ExecStatement(%s): db error: %s", s, err)
 	}
 	return
 }
@@ -269,10 +269,10 @@ func (db *SqliteDB) EnsureNonPrimitiveAttributeTable(attr *AttributeSpec) (err e
 
 /*
 */
-func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
+func (db *SqliteDBThread) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec) (err error) {
     //fmt.Println("EnsureMultiValuedPrimitiveAttributeTable", attr)	
 
-	s := "CREATE TABLE IF NOT EXISTS " + db.TableNameIfy(attr.ShortName()) + "("
+	s := "CREATE TABLE IF NOT EXISTS " + db.db.TableNameIfy(attr.ShortName()) + "("
 
 	// Prepare Whole end
 
@@ -293,9 +293,9 @@ func (db *SqliteDB) EnsureMultiValuedPrimitiveAttributeTable(attr *AttributeSpec
 
 	s += ");"
 	
-	err = db.conn.Exec(s)
+	err = db.ExecStatement(s)
 	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+		err = fmt.Errorf("db.ExecStatement(%s): db error: %s", s, err)
 	}
 	return
 }
@@ -330,7 +330,7 @@ func (db *SqliteDB) TypeNameIfy(tableName string) string {
 
 
 
-func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType) (err error) {
+func (db *SqliteDBThread) EnsureNonPrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType) (err error) {
 
 	s := "CREATE TABLE IF NOT EXISTS " + table + "("
 
@@ -349,9 +349,9 @@ func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, 
    }
 
 	s += ");"
-	err = db.conn.Exec(s)
+	err = db.ExecStatement(s)
 	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+		err = fmt.Errorf("db.ExecStatement(%s): db error: %s", s, err)
 	}
 	return
 }
@@ -359,7 +359,7 @@ func (db *SqliteDB) EnsureNonPrimitiveCollectionTable(table string, isMap bool, 
 
 /*
 */
-func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType) (err error) {
+func (db *SqliteDBThread) EnsurePrimitiveCollectionTable(table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType) (err error) {
 
 	s := "CREATE TABLE IF NOT EXISTS " + table + "("
 
@@ -381,9 +381,9 @@ func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isO
 
 	s += ");"
 	
-	err = db.conn.Exec(s)
+	err = db.ExecStatement(s)
 	if err != nil {
-		err = fmt.Errorf("conn.Exec(%s): db error: %s", s, err)
+		err = fmt.Errorf("db.ExecStatement(%s): db error: %s", s, err)
 	}
 	return
 }
@@ -405,9 +405,9 @@ func (db *SqliteDB) EnsurePrimitiveCollectionTable(table string, isMap bool, isO
 
    Return metadata about the collection, including the table name.
 */
-func (db *SqliteDB) EnsureCollectionTable(collection RCollection) (table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType, err error) {
+func (db *SqliteDBThread) EnsureCollectionTable(collection RCollection) (table string, isMap bool, isOrdered bool, keyType *RType, elementType *RType, err error) {
         
-   table, isMap, isOrdered, keyType, elementType = db.TypeDescriptor(collection)
+   table, isMap, isOrdered, keyType, elementType = db.db.TypeDescriptor(collection)
    
    if elementType.IsPrimitive {
       err = db.EnsurePrimitiveCollectionTable(table, isMap, isOrdered, keyType, elementType)      

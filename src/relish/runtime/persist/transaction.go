@@ -17,7 +17,6 @@ package persist
 
 import (
 	"sync"
-	. "relish/dbg"
 )
 
 
@@ -28,7 +27,7 @@ var dbMutex sync.Mutex
 /*
 Begins an immediate-mode database transaction.
 */
-func (db *SqliteDB) BeginTransaction() (err error) {
+func (db *SqliteDBThread) BeginTransaction() (err error) {
    err = db.ExecStatement("BEGIN IMMEDIATE TRANSACTION")
    return
 }
@@ -36,7 +35,7 @@ func (db *SqliteDB) BeginTransaction() (err error) {
 /*
 Commits the in-effect database transaction.
 */
-func (db *SqliteDB) CommitTransaction() (err error) {
+func (db *SqliteDBThread) CommitTransaction() (err error) {
    err = db.ExecStatement("COMMIT TRANSACTION")
    return
 }
@@ -44,33 +43,20 @@ func (db *SqliteDB) CommitTransaction() (err error) {
 /*
 Rolls back the in-effect database transaction.
 */
-func (db *SqliteDB) RollbackTransaction() (err error) {
+func (db *SqliteDBThread) RollbackTransaction() (err error) {
    err = db.ExecStatement("ROLLBACK TRANSACTION")
    return
 }
 
-/*
-Lock the dbMutex.
-Used to ensure exlusive access to db for single db reads / writes 
-for which we don't want to manually start a long-running transaction.
-(Or may also be used in multi-threaded extensions of the Begin,Commit,RollbackTransaction methods.)
 
-This method will block until no other goroutine is using the database.
-*/
-func (db *SqliteDB) UseDB() {	
-   Logln(PERSIST2_,"About to lock the dbMutex") 	
-   dbMutex.Lock()
-   Logln(PERSIST2_,"Locked the dbMutex")
-}
-
-/*
-Unlock the dbMutex.
-*/	
-func (db *SqliteDB) ReleaseDB() bool{
-   dbMutex.Unlock()
-   Logln(PERSIST2_,"Unlocked the dbMutex") 	
-   return true
+func (db *SqliteDBThread) UseDB() { 
+   panic("should not ever be called. Generic DBThread type calls its method instead.")
 }
 
 
+
+func (db *SqliteDBThread) ReleaseDB() bool {
+   panic("should not ever be called. Generic DBThread type calls its method instead.")
+   return false
+}
 

@@ -205,7 +205,7 @@ func (rt *RuntimeEnv) CreatePackage(path string, isStandardLibPackage bool) *RPa
 		}
 		pkg.ShortName = candidateShortName
 	
-	    rt.DB().RecordPackageName(pkg.Name, pkg.ShortName)
+	    rt.DBT().RecordPackageName(pkg.Name, pkg.ShortName)
     	if err != nil {
 		   panic(fmt.Sprintf("Unable to record package name in db: %v", err))
 	    }	
