@@ -243,17 +243,17 @@ best thing to do. Not sure if any exceptions can get up this high.
 */
 func (t *Thread) CommitOrRollback() {
 	if t.err == "" {
-	   err := t.DB().CommitTransaction()
+	   err := t.DBT().CommitTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
 	   }	   
     } else {
-	   err := t.DB().RollbackTransaction()
+	   err := t.DBT().RollbackTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
        }
 	
-	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
+	   for ! t.DBT().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
     }
 }
 
@@ -1534,7 +1534,7 @@ func (i *Interpreter) EvalListConstruction(t *Thread, listConstruction *ast.List
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(list.ElementType(), query, queryArgs, nil, radius, &objs)		
+      mayContainProxies, err := t.DBT().FetchN(list.ElementType(), query, queryArgs, nil, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, listConstruction, err)
       }	
@@ -1640,7 +1640,7 @@ func (i *Interpreter) EvalSetConstruction(t *Thread, setConstruction *ast.SetCon
 
 	
 
-      mayContainProxies, err := t.DB().FetchN(set.ElementType(), query, queryArgs, nil, radius, &objs)		
+      mayContainProxies, err := t.DBT().FetchN(set.ElementType(), query, queryArgs, nil, radius, &objs)		
       if err != nil {
 	      rterr.Stop1(t, setConstruction, err)
       }	
@@ -3048,7 +3048,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						    owner := coll.Owner()                 
 		                    if owner == nil {
 		                        if coll.IsStoredLocally() {
-		                            err := t.DB().PersistSetCollectionElement(t, coll, val, ix)                         		
+		                            err := t.DBT().PersistSetCollectionElement(t, coll, val, ix)                         		
 		                            if err != nil {					
 		   							       rterr.Stop1(t,indexExpr,err)       				                               
 		                            }    
@@ -3056,7 +3056,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 		                    } else {
 		                         if owner.IsStoredLocally() {
 		                            attr := coll.Attribute()
-		                            err := t.DB().PersistSetAttrElement(t, owner, attr , val, ix)  
+		                            err := t.DBT().PersistSetAttrElement(t, owner, attr , val, ix)  
 		                            if err != nil {					
 		         							 rterr.Stop1(t,indexExpr,err)       				                               
 		                            }   

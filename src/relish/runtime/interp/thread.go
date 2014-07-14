@@ -92,7 +92,7 @@ type Thread struct {
 	ExecutingMethod *RMethod       // Shortcut for dispatch efficiency
 	ExecutingPackage *RPackage   // Shortcut for dispatch efficiency
 
-	dbConnectionThread DBThread  // Manages serialized and transactional access to the database in
+	dbConnectionThread DBT  // Manages serialized and transactional access to the database in
 	                              // multi-threaded environment
 
     // This may be temporary - it is used for generators inside collection constructors, but may
@@ -484,7 +484,7 @@ func (t *Thread) Method() *RMethod {
 /*
 The DBThread which can execute db queries in a serialized fashion in a multi-threaded environment.
 */
-func (t *Thread) DB() DB {
+func (t *Thread) DBT() DBT {
    return t.dbConnectionThread
 }
 

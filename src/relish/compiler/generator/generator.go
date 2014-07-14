@@ -633,7 +633,7 @@ Ensure the persistence data model is created for the type.
 func (g *Generator) ensureTypeTables(types map[*data.RType]bool) {
 
     for theNewType := range types {
-		err := data.RT.DB().EnsureTypeTable(theNewType) 
+		err := data.RT.DBT().EnsureTypeTable(theNewType) 
 		if err != nil {
 		      panic(err)
 		}
@@ -716,7 +716,7 @@ func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool)
 	for typ := range types {
 		// ensure the persistence data model is created for  the type's attributes and relations
 
-		err := data.RT.DB().EnsureAttributeAndRelationTables(typ) 
+		err := data.RT.DBT().EnsureAttributeAndRelationTables(typ) 
 		if err != nil {
 		      panic(err)
 		}		
@@ -1067,14 +1067,14 @@ RelEnd
         // Now ensure the persistence data model is created for the type.
 
 
-		err = data.RT.DB().EnsureTypeTable(theNewType) 
+		err = data.RT.DBT().EnsureTypeTable(theNewType) 
 		if err != nil {
 		      panic(err)
 		}
 		
 		// ... and for the type's attributes and relations
 
-		err = data.RT.DB().EnsureAttributeAndRelationTables(theNewType) 
+		err = data.RT.DBT().EnsureAttributeAndRelationTables(theNewType) 
 		if err != nil {
 		      panic(err)
 		}

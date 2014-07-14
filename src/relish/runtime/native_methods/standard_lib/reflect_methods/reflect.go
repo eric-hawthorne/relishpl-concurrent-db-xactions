@@ -1806,14 +1806,14 @@ func reflectIdByName1(th InterpreterThread, objectName string) (reflectId string
 
    relish.EnsureDatabase()
 
-	found, err := th.DB().ObjectNameExists(objectName) 
+	found, err := th.DBT().ObjectNameExists(objectName) 
 	if err != nil {
 		panic(err)
 	}
 	if ! found {
 		return
 	}
-	obj, err := th.DB().FetchByName(objectName, 0)
+	obj, err := th.DBT().FetchByName(objectName, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -1828,7 +1828,7 @@ Sorted, label names and persistent dub names, matching the prefix.
 */
 func objectNames1(th InterpreterThread, prefix string) (names []string) {
 
-    names, err := th.DB().ObjectNames(prefix) 
+    names, err := th.DBT().ObjectNames(prefix) 
     if err != nil {
 	   panic(err)
     }
@@ -1867,7 +1867,7 @@ func selectByTypeAndConditions1(th InterpreterThread, typeName string, queryCond
     queryArgs := []RObject{} 
     radius := 1
     objs := []RObject{} 
-    mayContainProxies, err := th.DB().FetchN(t, queryConditions, queryArgs, nil, radius, &objs)		
+    mayContainProxies, err := th.DBT().FetchN(t, queryConditions, queryArgs, nil, radius, &objs)		
     if err != nil {
 	    dbg.Log(dbg.ALWAYS_,"Error in selectByTypeAndConditions: %s\n",err)
     }	else {

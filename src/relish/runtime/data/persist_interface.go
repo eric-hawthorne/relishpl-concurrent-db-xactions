@@ -10,9 +10,6 @@ package data
    persist_interface.go -  Abstraction of persistence service for relish data.
 */
    
-import (
-	. "relish/dbg"
-)
 
 type StatementGroup struct {
 	Statements []*SqlStatement
@@ -90,11 +87,23 @@ type DB interface {
    /*
    Returns a DBConnectionThread 
    */
-   NewDBThread() DBThread    
+   NewDBThread() DBT  
+
+   /*
+   Returns a DBConnectionThread that is created upon creation of the db proxy. 
+   */
+   DefaultDBThread() DBT    
 }
 
-type DBThread interface {
-	 EnsureTypeTable(typ *RType) (err error)
+type DBT interface {
+
+
+   EnsureObjectTable()
+   EnsureObjectNameTable()
+   EnsurePackageTable()
+
+   EnsureTypeTable(typ *RType) (err error)
+
 	 ExecStatements(statementGroup *StatementGroup) (err error)
 	 ExecStatement(statement string, args ...interface{}) (err error)	
 	 PersistSetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error)
@@ -192,11 +201,6 @@ type DBThread interface {
 	calls to it by this thread-of-connection are appropriate until UseDB() is called again.
 	*/	
 	 ReleaseDB() bool
-
-   /*
-   Returns a DBConnectionThread 
-   */
-   NewDBThread() DBT 
 }
 
 
@@ -217,6 +221,8 @@ type Connection interface {
   Save the prepared statement in the connection.
   */
   CachePreparedStatement(sql string, statement Statement)
+
+  Close() error
 }
 
 /* 
@@ -233,6 +239,11 @@ type Statement interface {
     Next() error      
 
     Reset() 
+
+    // Close releases all resources associated with the prepared statement. This
+    // method can be called at any point in the statement's life cycle.
+    // [http://www.sqlite.org/c3ref/finalize.html]
+   Close() error     
 }
 
 /*
@@ -276,7 +287,7 @@ type InterpreterThread interface {
     the total number of DBThreads, so sometimes operations on the DBThread block until a real DB 
     connection is available for use.
   */
-	DB() DBThread
+	DBT() DBT
 	
 	/*
 	Will be "" unless we are in a stack-unrolling panic, in which case, should be the error message.
@@ -304,355 +315,4 @@ type InterpreterThread interface {
 
 }
 
-// Move this to persist
-func NewDBThread(database DB) *DBThread {
-   return &DBThread{db:database}
-}
 
-
-// TODO: Move this to persistence package and have it get a reference to a SqliteDBThread, which 
-// is most of the methods of SqliteDB
-
-
-
-
-/*
-    Has a reference to the DB. 
-    Executes DB queries in a serialized fashion in a multi-threaded environment.
-    Also manages database transactions.
-*/
-type DBThread struct {
-	db DB  // the database connection-managing object
-
-	acquiringDbLock bool  // This thread is in the process of acquiring and locking the dbMutex 
-	                      // (but may still be blocked waiting for the mutex to be unlocked by another thread)
-	
-	dbLockOwnershipDepth int  // How many nested claims has this thread currently made for ownership of the dbMutex
-                              // If > 0, this thread owns and has locked the dbMutex.
-                              // Note: thread "ownership" of dbMutex is an abstract concept imposed by this DBThread s/w,
-                              // because Go Mutexes are not inherently owned by any particular goroutine.	
-
-  conn Connection // SQL db connection
-}
-
-/*
-Grabs the dbMutex when it can (blocking until then) then executes a BEGIN IMMEDIATE TRANSACTION sql statement.
-Does not unlock the dbMutex or release this thread's ownership of the mutex. 
-Use CommitTransaction or RollbackTransaction to do that.
-*/
-func (dbt * DBThread) BeginTransaction() (err error) {
-   Logln(PERSIST2_,"DBThread.BeginTransaction") 	
-   dbt.UseDB()	
-   err = dbt.db.BeginTransaction() 
-   if err != nil {
-   	   dbt.ReleaseDB()
-   }
-   return
-}
-
-/*
-Executes a COMMIT TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
-of the mutex.
-If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
-
-In the error case, the correct behaviour is to either retry the commit, do a rollback, or just call ReleaseDB to
-unlock the dbMutex and release this thread's ownership of the mutex.
-*/
-func (dbt * DBThread) CommitTransaction() (err error) {
-    Logln(PERSIST2_,"DBThread.CommitTransaction") 		
-	err = dbt.db.CommitTransaction()
-	if err == nil {
-	   dbt.ReleaseDB()
-    }
-   return
-}
-
-/*
-Executes a ROLLBACK TRANSACTION sql statement. If it succeeds, unlocks the dbMutex and releases this thread's ownership
-of the mutex.
-If it fails (returns a non-nil error), does not unlock the dbMutex or release this thread's ownership of the mutex.
-
-In the error case, the correct behaviour is to either retry the rollback, or just call ReleaseDB to
-unlock the dbMutex and release this thread's ownership of the mutex.
-*/
-func (dbt * DBThread) RollbackTransaction() (err error) {
-    Logln(PERSIST2_,"DBThread.RollbackTransaction") 	
-	err = dbt.db.RollbackTransaction()
-	if err == nil {
-		dbt.ReleaseDB()
-	}
-	return
-}
-
-/*
-If the thread does not already own the dbMutex, lock the mutex and
-flag that this thread owns it.
-Used to ensure exlusive access to db for single db reads / writes 
-for which we don't want to manually start a long-running transaction.
-
-This method will block until no other DBThread is using the database.
-*/
-func (dbt * DBThread) UseDB() {
-   Logln(PERSIST2_,"DBThread.UseDB when ownership level is",dbt.dbLockOwnershipDepth) 		
-   if dbt.acquiringDbLock {  // Umm, shouldn't this be impossible? The same thread is blocked further inside this method.
-      return	
-   }	
-   if dbt.dbLockOwnershipDepth == 0 {
-   	   dbt.acquiringDbLock = true
-
-       dbt.conn = dbt.db.GrabConnection()
-
-   	   // dbt.db.UseDB()
-       
-       dbt.acquiringDbLock = false      	
-   }
-   dbt.dbLockOwnershipDepth++
-   Logln(PERSIST2_,"DBThread.UseDB: Set ownership level to",dbt.dbLockOwnershipDepth)    
-}
-
-/*
-
-Remove one level of interest of this thread in the dbMutex.
-If we have lost all interest in it, and
-if the thread owns the dbMutex, unlock the mutex and
-flag that this thread no longer owns it.
-Returns false if this thread still has an interest in and lock on the dbMutex.
-*/	
-func (dbt * DBThread) ReleaseDB() bool {
-    Logln(PERSIST2_,"DBThread.ReleaseDB when ownership level is",dbt.dbLockOwnershipDepth) 		
-    if dbt.dbLockOwnershipDepth > 0 {
-	   dbt.dbLockOwnershipDepth--
-       Logln(PERSIST2_,"DBThread.ReleaseDB: Set ownership level to",dbt.dbLockOwnershipDepth)  	
-	   if dbt.dbLockOwnershipDepth == 0 {
-
-        dbt.db.ReleaseConnection(dbt.conn)
-        dbt.conn = nil
-
-		  // dbt.db.ReleaseDB()	
-	   } else {
-	      return false	
-	   }
-    }	
-    return true
-}
-
-
-
-func (dbt * DBThread) EnsureTypeTable(typ *RType) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.EnsureTypeTable(typ)
-   dbt.ReleaseDB()  
-   return 
-}
-
-func (dbt * DBThread) ExecStatements(statementGroup *StatementGroup) (err error) {
-   dbt.UseDB()
-   err = dbt.db.ExecStatements(statementGroup)
-   dbt.ReleaseDB()
-   return
-}
-
-func (dbt * DBThread) ExecStatement(statement string, args ...interface{}) (err error) {
-   dbt.UseDB()
-   err = dbt.db.ExecStatement(statement, args...)
-   dbt.ReleaseDB()
-   return
-}
-
-func (dbt * DBThread) PersistSetAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, attrHadValue bool) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistSetAttr(th, obj, attr, val, attrHadValue)
-   dbt.ReleaseDB()
-   return
-}
-
-func (dbt * DBThread) PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertedIndex int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistAddToAttr(th, obj, attr, val, insertedIndex)
-   dbt.ReleaseDB()
-   return 
-}
-
-func (dbt * DBThread) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistRemoveFromAttr(obj, attr, val, removedIndex)
-   dbt.ReleaseDB()
-   return   
-}
-
-func (dbt * DBThread) PersistRemoveAttr(obj RObject, attr *AttributeSpec) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistRemoveAttr(obj, attr)
-   dbt.ReleaseDB() 
-   return  
-}
-
-func (dbt * DBThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistClearAttr(obj, attr)
-   dbt.ReleaseDB()
-   return
-}
-
-
-func (dbt * DBThread) PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistSetAttrElement(th, obj, attr, val, index)
-   dbt.ReleaseDB()
-   return   
-}
-
-
-
-      
-func (dbt * DBThread) PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistMapPut(th, theMap, key, val, isNewKey)
-   dbt.ReleaseDB()
-   return   
-}
-      
-      
-func (dbt * DBThread) PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistSetCollectionElement(th, coll, val, index)
-   dbt.ReleaseDB()
-   return   
-}
-  
-func (dbt * DBThread) PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertedIndex int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistAddToCollection(th, coll, val, insertedIndex)
-   dbt.ReleaseDB()
-   return   
-}
-
-func (dbt * DBThread) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistRemoveFromCollection(coll, val, removedIndex)
-   dbt.ReleaseDB()
-   return   
-}
-
-func (dbt * DBThread) PersistClearCollection(coll RemovableCollection) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.PersistClearCollection(coll)
-   dbt.ReleaseDB()
-   return   
-}
-
-
-
-
-
-
-
-
-func (dbt * DBThread) EnsurePersisted(th InterpreterThread, obj RObject) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.EnsurePersisted(th, obj)
-   dbt.ReleaseDB() 
-   return  
-}
-
-func (dbt * DBThread) EnsureAttributeAndRelationTables(t *RType) (err error) {
-   dbt.UseDB()	
-   err = dbt.db.EnsureAttributeAndRelationTables(t)
-   dbt.ReleaseDB()
-   return 
-}
-
-func (dbt * DBThread) ObjectNameExists(name string) (found bool, err error) {
-   dbt.UseDB()
-   found,err = dbt.db.ObjectNameExists(name)
-   dbt.ReleaseDB()
-   return
-}
-
-func (dbt * DBThread) ObjectNames(prefix string) (names []string, err error) {
-   dbt.UseDB()
-   names,err = dbt.db.ObjectNames(prefix)
-   dbt.ReleaseDB()
-   return  
-}
-
-
-func (dbt * DBThread) NameObject(obj RObject, name string) (err error) {
-   dbt.UseDB()
-   err = dbt.db.NameObject(obj, name)
-   dbt.ReleaseDB() 
-   return  
-}
-
-func (dbt * DBThread) RenameObject(oldName string, newName string) (err error) {
-   dbt.UseDB()
-   err = dbt.db.RenameObject(oldName, newName)
-   dbt.ReleaseDB() 
-   return  
-}
-
-
-func (dbt * DBThread)  Delete(obj RObject) (err error) {
-   dbt.UseDB()
-   err = dbt.db.Delete(obj)
-   dbt.ReleaseDB() 
-   return  
-}
-
-
-func (dbt * DBThread) RecordPackageName(name string, shortName string) {
-   dbt.UseDB()
-   dbt.db.RecordPackageName(name, shortName)
-   dbt.ReleaseDB()
-   return   	
-}
-
-func (dbt * DBThread) FetchByName(name string, radius int) (obj RObject, err error) {
-   dbt.UseDB()
-   obj, err = dbt.db.FetchByName(name, radius)   
-   dbt.ReleaseDB() 
-   return  
-}
-
-func (dbt * DBThread) Fetch(id int64, radius int) (obj RObject, err error) {
-   dbt.UseDB()
-   obj, err = dbt.db.Fetch(id, radius)
-   dbt.ReleaseDB()  
-   return 
-}
-
-func (dbt * DBThread) Refresh(obj RObject, radius int) (err error) {
-   dbt.UseDB()
-   err = dbt.db.Refresh(obj, radius)
-   dbt.ReleaseDB()  
-   return 
-}
-
-
-func (dbt * DBThread) FetchAttribute(th InterpreterThread, objId int64, obj RObject, attr *AttributeSpec, radius int) (val RObject, err error) {
-   dbt.UseDB()
-   val, err = dbt.db.FetchAttribute(th, objId, obj, attr, radius)
-   dbt.ReleaseDB()  
-   return 
-}
-
-/*
-Given an object type and an OQL selection criteria clause in a string, set the argument collection to contain 
-the matching objects from the the database.
-
-e.g. of first two arguments: vehicles/Car, "speed > 60 order by speed desc"   
-*/
-	
-func (dbt * DBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
-   dbt.UseDB()
-   mayContainProxies, err = dbt.db.FetchN(typ, oqlSelectionCriteria, queryArgs, coll, radius, objs)
-   dbt.ReleaseDB()	
-   return
-}
-
-/*
-Close the connection to the database.
-*/
-func (dbt * DBThread) Close() {
-	dbt.db.Close()
-}

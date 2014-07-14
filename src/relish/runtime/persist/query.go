@@ -35,7 +35,7 @@ var re2 *regexp.Regexp = regexp.MustCompile(`([a-z][A-Za-z0-9]*)\.([a-z][A-Za-z0
 queryArgs are values to be substituted by the SQL engine into ? parameters in the where clause.
 There may be zero or more of these. The number must match the number of ?s.
 */
-func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
+func (db *SqliteDBThread) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []RObject, coll RCollection, radius int, objs *[]RObject) (mayContainProxies bool, err error) {
 	defer Un(Trace(PERSIST_TR, "FetchN", oqlSelectionCriteria, radius))
 	
 	var sqlQuery string
@@ -47,7 +47,7 @@ func (db *SqliteDB) FetchN(typ *RType, oqlSelectionCriteria string, queryArgs []
 
 	mayContainProxies = idsOnly
 	
-    sqlQuery, numPrimitiveAttrColumns, err = db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, coll, idsOnly) 	
+    sqlQuery, numPrimitiveAttrColumns, err = db.db.oqlWhereToSQLSelect(typ, oqlSelectionCriteria, coll, idsOnly) 	
     if err != nil {
        if strings.HasPrefix(err.Error(), "In asList") {
 	      err = fmt.Errorf("%v\n  (call to asList with selection criteria:\n   \"%s\")",err, oqlSelectionCriteria)

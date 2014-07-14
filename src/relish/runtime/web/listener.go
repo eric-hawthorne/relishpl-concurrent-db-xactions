@@ -419,7 +419,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)   
 
-   t.DB().BeginTransaction()
+   t.DBT().BeginTransaction()
 
    defer t.CommitOrRollback()
 	
@@ -574,7 +574,7 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 
    defer interpreter.DeregisterThread(t)
 
-   t.DB().BeginTransaction()
+   t.DBT().BeginTransaction()
 
    defer t.CommitOrRollback()
 	

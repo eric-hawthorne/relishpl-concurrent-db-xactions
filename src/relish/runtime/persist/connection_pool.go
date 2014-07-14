@@ -18,6 +18,7 @@ package persist
 
 import (
    . "util/thread_safe_stack"
+   . "relish/runtime/data"
    "sync"
    "fmt"
 )

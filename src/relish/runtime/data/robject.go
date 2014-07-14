@@ -662,7 +662,7 @@ func (u *runit) Refresh(th InterpreterThread) (err error) {
 		u.attrs[i] = nil
 	}
 
-    th.DB().Refresh(u,1)   
+    th.DBT().Refresh(u,1)   
 	
 
 	

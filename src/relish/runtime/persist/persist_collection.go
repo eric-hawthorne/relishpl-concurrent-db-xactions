@@ -37,9 +37,9 @@ import (
 
   TODO create a map of prepared statements and look up the statement to use.
 */
-func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertIndex int) (err error) {
+func (db *SqliteDBThread) PersistAddToAttr(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, insertIndex int) (err error) {
 
-	table := db.TableNameIfy(attr.ShortName())
+	table := db.db.TableNameIfy(attr.ShortName())
 
 	if attr.Part.Type.IsPrimitive {
 
@@ -53,7 +53,7 @@ func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *At
       
          stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(%v,%s)", table, valCols, obj.DBID(), valVars))		
 
-         valParts := db.primitiveValSQL(val) 
+         valParts := db.db.primitiveValSQL(val) 
          stmt.Args(valParts)						
 
          err = db.ExecStatements(stmt)      
@@ -65,7 +65,7 @@ func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *At
 
 			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, insertIndex))
 				
-			valParts := db.primitiveValSQL(val) 
+			valParts := db.db.primitiveValSQL(val) 
 			stmt.Args(valParts)
 				
 			err = db.ExecStatements(stmt)
@@ -84,7 +84,7 @@ func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *At
          }
       	stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(%v,%s,%v)", table, valCols, obj.DBID(), valVars, insertIndex))
 		
-      	valParts := db.primitiveValSQL(val) 
+      	valParts := db.db.primitiveValSQL(val) 
       	stmt.Args(valParts)
 		
       	err = db.ExecStatements(stmt)      
@@ -132,9 +132,9 @@ func (db *SqliteDB) PersistAddToAttr(th InterpreterThread, obj RObject, attr *At
 
    TODO create a map of prepared statements and look up the statement to use.
 */
-func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {     
+func (db *SqliteDBThread) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val RObject, removedIndex int) (err error) {     
 
-	table := db.TableNameIfy(attr.ShortName())
+	table := db.db.TableNameIfy(attr.ShortName())
 
 	if attr.Part.Type.IsPrimitive {
 
@@ -145,7 +145,7 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 		   sqlFragment := attr.Part.Type.DbCollectionRemove() 
       	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=? AND %s", table, sqlFragment))
 		   stmt.Arg(obj.DBID()) 
-      	valParts := db.primitiveValSQL(val) 
+      	valParts := db.db.primitiveValSQL(val) 
       	stmt.Args(valParts)
 		
       	err = db.ExecStatements(stmt)			
@@ -183,9 +183,9 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 
    TODO create a map of prepared statements and look up the statement to use.
 */
-func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
+func (db *SqliteDBThread) PersistClearAttr(obj RObject, attr *AttributeSpec) (err error) {
 
-	table := db.TableNameIfy(attr.ShortName())
+	table := db.db.TableNameIfy(attr.ShortName())
 
 	if attr.Part.Type.IsPrimitive {
 
@@ -199,7 +199,7 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
          return
       }
 		if attr.Inverse != nil {
-		   inverseTable := db.TableNameIfy(attr.Inverse.ShortName())		
+		   inverseTable := db.db.TableNameIfy(attr.Inverse.ShortName())		
 		   err = db.ExecStatement(fmt.Sprintf("; DELETE FROM %s WHERE id1=?", inverseTable), obj.DBID())
 		}	
 	}
@@ -213,9 +213,9 @@ func (db *SqliteDB) PersistClearAttr(obj RObject, attr *AttributeSpec) (err erro
 
 
 
-func (db *SqliteDB) PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
+func (db *SqliteDBThread) PersistSetAttrElement(th InterpreterThread, obj RObject, attr *AttributeSpec, val RObject, index int) (err error) {
 
-	table := db.TableNameIfy(attr.ShortName())
+	table := db.db.TableNameIfy(attr.ShortName())
 	
    if attr.Part.Type.IsPrimitive {
 
@@ -223,7 +223,7 @@ func (db *SqliteDB) PersistSetAttrElement(th InterpreterThread, obj RObject, att
     
  		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
 
- 		valParts := db.primitiveValSQL(val) 
+ 		valParts := db.db.primitiveValSQL(val) 
  		stmt.Args(valParts)
  		stmt.Arg(obj.DBID())
  		stmt.Arg(index)
@@ -250,7 +250,7 @@ func (db *SqliteDB) PersistSetAttrElement(th InterpreterThread, obj RObject, att
 }
 
       
-func (db *SqliteDB) PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error) {
+func (db *SqliteDBThread) PersistSetCollectionElement(th InterpreterThread, coll IndexSettable, val RObject, index int) (err error) {
 
    table,_,_,_,elementType,err := db.EnsureCollectionTable(coll.(RCollection))
    if err != nil {
@@ -263,7 +263,7 @@ func (db *SqliteDB) PersistSetCollectionElement(th InterpreterThread, coll Index
 				   
 		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
 
-		valParts := db.primitiveValSQL(val) 
+		valParts := db.db.primitiveValSQL(val) 
 		stmt.Args(valParts)
 		stmt.Arg(coll.(RObject).DBID())
 		stmt.Arg(index)
@@ -294,7 +294,7 @@ func (db *SqliteDB) PersistSetCollectionElement(th InterpreterThread, coll Index
 NOTE NOTE NOTE We don't have persist remove from map yet !!!!! 
 Does it remove by key? It should.
 */
-func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
+func (db *SqliteDBThread) PersistMapPut(th InterpreterThread, theMap Map, key RObject,val RObject, isNewKey bool) (err error) {
 
    table,_,_,keyType,elementType,err := db.EnsureCollectionTable(theMap)
    if err != nil {
@@ -312,7 +312,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
    			
    			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,key1) VALUES(?,%s,?)", table, valCols, valVars)) 
 		      stmt.Arg(theMap.DBID())
-   		   valParts := db.primitiveValSQL(val) 
+   		   valParts := db.db.primitiveValSQL(val) 
    		   stmt.Args(valParts)								
             stmt.Arg(keyStr)
       
@@ -324,7 +324,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
                        
       		stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND key1=?", table, valColSettings))
 
-      		valParts := db.primitiveValSQL(val) 
+      		valParts := db.db.primitiveValSQL(val) 
       		stmt.Args(valParts)
       		stmt.Arg(theMap.DBID())
       		stmt.Arg(keyStr)        	
@@ -341,7 +341,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
 			   
             stmt := Stmt(fmt.Sprintf("INSERT INTO %s(%s,id,ord1) VALUES(%s,?,?)", table, valCols, valVars))
 	
-   		   valParts := db.primitiveValSQL(val) 		   
+   		   valParts := db.db.primitiveValSQL(val) 		   
    		   stmt.Args(valParts)
             stmt.Arg(theMap.DBID())		   
             switch keyType {
@@ -364,7 +364,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
                  
          	stmt := Stmt(fmt.Sprintf("UPDATE %s SET %s WHERE id=? AND ord1=?", table, valColSettings))
 
-            valParts := db.primitiveValSQL(val) 
+            valParts := db.db.primitiveValSQL(val) 
             stmt.Args(valParts)
             
             stmt.Arg(theMap.DBID())
@@ -425,7 +425,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
             stmt.Arg(val.DBID())
             
             
-   		   valParts := db.primitiveValSQL(val) 		   
+   		   valParts := db.db.primitiveValSQL(val) 		   
    		   stmt.Args(valParts)
             stmt.Arg(theMap.DBID())		   
             switch keyType {
@@ -467,7 +467,7 @@ func (db *SqliteDB) PersistMapPut(th InterpreterThread, theMap Map, key RObject,
 }
 
   
-func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertIndex int) (err error) {
+func (db *SqliteDBThread) PersistAddToCollection(th InterpreterThread, coll AddableCollection, val RObject, insertIndex int) (err error) {
 
    table,_,isOrdered,_,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
@@ -481,7 +481,7 @@ func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCol
       if coll.IsSet() && ! isOrdered {      
          stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s) VALUES(?,%s)", table, valCols, valVars))		
          stmt.Arg(coll.DBID())
-         valParts := db.primitiveValSQL(val) 
+         valParts := db.db.primitiveValSQL(val) 
          stmt.Args(valParts)						
 
          err = db.ExecStatements(stmt)      
@@ -490,7 +490,7 @@ func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCol
       
 			stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(?,%s,%v)", table, valCols, valVars))
          stmt.Arg(coll.DBID())				
-			valParts := db.primitiveValSQL(val) 
+			valParts := db.db.primitiveValSQL(val) 
 			stmt.Args(valParts)
 	      stmt.Arg(insertIndex)			
 			err = db.ExecStatements(stmt)
@@ -503,7 +503,7 @@ func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCol
          }      
       	stmt := Stmt(fmt.Sprintf("INSERT INTO %s(id,%s,ord1) VALUES(?,%s,?)", table, valCols, valVars))
          stmt.Arg(coll.DBID())		
-      	valParts := db.primitiveValSQL(val) 
+      	valParts := db.db.primitiveValSQL(val) 
       	stmt.Args(valParts)
          stmt.Arg(insertIndex)   		
       	err = db.ExecStatements(stmt)      	
@@ -542,7 +542,7 @@ func (db *SqliteDB) PersistAddToCollection(th InterpreterThread, coll AddableCol
 
 // TODO StringMaps !!
 //
-func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
+func (db *SqliteDBThread) PersistRemoveFromCollection(coll RemovableCollection, val RObject, removedIndex int) (err error) {
 
    table,isMap,_,keyType,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
@@ -581,7 +581,7 @@ func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RO
 		   sqlFragment := elementType.DbCollectionRemove() 
       	stmt := Stmt(fmt.Sprintf("DELETE FROM %s WHERE id=%v AND %s", table, sqlFragment))
 	      stmt.Arg(coll.DBID())
-      	valParts := db.primitiveValSQL(val) 
+      	valParts := db.db.primitiveValSQL(val) 
       	stmt.Args(valParts)
 	
       	err = db.ExecStatements(stmt)			
@@ -639,7 +639,7 @@ func (db *SqliteDB) PersistRemoveFromCollection(coll RemovableCollection, val RO
 }
 
 
-func (db *SqliteDB) PersistClearCollection(coll RemovableCollection) (err error) {
+func (db *SqliteDBThread) PersistClearCollection(coll RemovableCollection) (err error) {
 	
    table,_,_,_,elementType,err := db.EnsureCollectionTable(coll)
    if err != nil {
@@ -805,7 +805,7 @@ func (db *SqliteDB) fetchPrimitiveAttributeValues(id int64, obj RObject) (err os
 /*
 Fetch attributes which are multi-valued and the collection is of non-primitive objects.
 */
-func (db *SqliteDB) fetchMultiValuedNonPrimitiveAttributeValues(id int64, obj RObject, radius int) (err error) {
+func (db *SqliteDBThread) fetchMultiValuedNonPrimitiveAttributeValues(id int64, obj RObject, radius int) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchMultiValuedNonPrimitiveAttributeValues", id))
 
 	objTyp := obj.Type()
@@ -836,7 +836,7 @@ func (db *SqliteDB) fetchMultiValuedNonPrimitiveAttributeValues(id int64, obj RO
 Fetch from the db the values in a collection of a non-primitive-typed unary attribute of the object.
 Set the attribute to the fetched collection.  
 */
-func (db *SqliteDB) fetchNonPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec, radius int) (err error) {
+func (db *SqliteDBThread) fetchNonPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec, radius int) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchNonPrimitiveAttributeValueCollection", objId, attr.ShortName()))
 
 	// first, determine if the collection exists in memory already as the value of the attribute of the object.
@@ -847,7 +847,7 @@ func (db *SqliteDB) fetchNonPrimitiveAttributeValueCollection(objId int64, obj R
 		return
 	}
 
-	err = db.fetchCollection(collection, objId, db.TableNameIfy(attr.ShortName()), radius)
+	err = db.fetchCollection(collection, objId, db.db.TableNameIfy(attr.ShortName()), radius)
 
 	return
 }
@@ -858,7 +858,7 @@ Fetch attributea which are multi-valued but the values in the collection are pri
 TODO
 
 */
-func (db *SqliteDB) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObject) (err error) {
+func (db *SqliteDBThread) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObject) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchMultiValuedPrimitiveAttributeValues", id))
 
 	objTyp := obj.Type()
@@ -890,7 +890,7 @@ func (db *SqliteDB) fetchMultiValuedPrimitiveAttributeValues(id int64, obj RObje
 Fetch from the db the values in a collection of a non-primitive-typed unary attribute of the object.
 Set the attribute to the fetched collection.  
 */
-func (db *SqliteDB) fetchPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec) (err error) {
+func (db *SqliteDBThread) fetchPrimitiveAttributeValueCollection(objId int64, obj RObject, attr *AttributeSpec) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchPrimitiveAttributeValueCollection", objId, attr.ShortName()))
 
 	// first, determine if the collection exists in memory already as the value of the attribute of the object.
@@ -901,7 +901,7 @@ func (db *SqliteDB) fetchPrimitiveAttributeValueCollection(objId int64, obj RObj
 		return
 	}
 
-	err = db.fetchPrimitiveValueCollection(collection, objId, db.TableNameIfy(attr.ShortName()))
+	err = db.fetchPrimitiveValueCollection(collection, objId, db.db.TableNameIfy(attr.ShortName()))
 
 	return
 }
@@ -922,7 +922,7 @@ func (db *SqliteDB) fetchPrimitiveAttributeValueCollection(objId int64, obj RObj
 
    Usage: db.fetchCollection(collection, collectionOrOwnerId, collectionTableName, radius)
 */
-func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string, radius int) (err error) {
+func (db *SqliteDBThread) fetchCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string, radius int) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchCollection", collectionOrOwnerId, collectionTableName))
 
 	remColl := collection.(RemovableMixin)
@@ -1094,7 +1094,7 @@ func (db *SqliteDB) fetchCollection(collection RCollection, collectionOrOwnerId 
 }
 
 
-func (db *SqliteDB) fetchPrimitiveValueCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string) (err error) {
+func (db *SqliteDBThread) fetchPrimitiveValueCollection(collection RCollection, collectionOrOwnerId int64, collectionTableName string) (err error) {
 	defer Un(Trace(PERSIST_TR2, "fetchPrimitiveValueCollection", collectionOrOwnerId, collectionTableName))
 
 	remColl := collection.(RemovableMixin)
