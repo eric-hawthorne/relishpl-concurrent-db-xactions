@@ -223,6 +223,8 @@ type Connection interface {
   CachePreparedStatement(sql string, statement Statement)
 
   Close() error
+
+  Id() int  // A simple integer that is incremented each time a connection is created.
 }
 
 /* 

@@ -21,6 +21,7 @@ import (
    . "relish/runtime/data"
    "sync"
    "fmt"
+   . "relish/dbg"
 )
 
 
@@ -58,13 +59,17 @@ func (pool *ConnectionPool) GrabConnection() (conn Connection) {
         if conn == nil {
             val = pool.unusedConnections.Pop()  // really have to wait this time
             conn = val.(Connection)
-        }         
-    }
+        } else {
+            Log(PERSIST2_, "Created connection %d\n",conn.Id())
+        }        
+    }    
+    Log(PERSIST2_, "Grabbed connection %d\n",conn.Id())     
     return
 }
 
 
 func (pool *ConnectionPool) ReleaseConnection(conn Connection) {
+    Log(PERSIST2_, "Released connection %d\n",conn.Id())   
     pool.unusedConnections.Push(conn)
 }
 
@@ -73,7 +78,7 @@ func (pool *ConnectionPool) createConnection() (conn Connection, err error) {
     pool.connectionCreationMutex.Lock() 
     defer pool.connectionCreationMutex.Unlock()        
     if pool.numConnections < pool.maxConnections {
-       conn, err = pool.newConn(pool.dbName)
+       conn, err = pool.newConn(pool.dbName, pool.numConnections + 1)
        if err == nil {
           pool.numConnections++
        }

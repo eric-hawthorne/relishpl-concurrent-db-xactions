@@ -11,6 +11,11 @@
 
 package thread_safe_stack
 
+import ( 
+   "runtime"
+)
+
+
 type Stack struct {
   in chan interface{}
   out chan interface{}
@@ -54,6 +59,7 @@ Does not block.
 */
 func (p *Stack) Push(d interface{}) {
   p.in <- d
+  runtime.Gosched()  // EGH hack!
 }
 
 /*
