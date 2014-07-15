@@ -35,7 +35,10 @@ If parent is nil, something else must take care of initializing
 the ExecutingMethod and ExecutingPackage attributes of the new thread.
 */
 func newThread(initialStackDepth int, i *Interpreter, parent *Thread) *Thread {
-	dbt := i.rt.DB().NewDBThread()
+	var dbt DBT 
+	if i.rt.DB() != nil {
+	   dbt = i.rt.DB().NewDBThread()
+    }
 	t := &Thread{Pos: -1, Base: -1, Stack: make([]RObject, initialStackDepth), EvalContext: nil, dbConnectionThread: dbt, GCLockCounter: -1}
 	if parent != nil {
 		t.ExecutingMethod = parent.ExecutingMethod

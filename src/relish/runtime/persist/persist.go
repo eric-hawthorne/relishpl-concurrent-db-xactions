@@ -65,7 +65,7 @@ type DBThread struct {
                               // Note: thread "ownership" of dbMutex is an abstract concept imposed by this DBThread s/w,
                               // because Go Mutexes are not inherently owned by any particular goroutine.	
 
-    conn Connection // SQL db connection
+  conn Connection // SQL db connection
 }
 
 /*
@@ -135,6 +135,8 @@ func (dbt * DBThread) UseDB() {
 
        dbt.conn = dbt.db.GrabConnection()
 
+      
+
    	   // dbt.db.UseDB()
        
        dbt.acquiringDbLock = false      	
@@ -159,6 +161,7 @@ func (dbt * DBThread) ReleaseDB() bool {
 	   if dbt.dbLockOwnershipDepth == 0 {
 
         dbt.db.ReleaseConnection(dbt.conn)
+         
         dbt.conn = nil
 
 		  // dbt.db.ReleaseDB()	
@@ -493,9 +496,11 @@ func (c *Conn) Prepare(cmd string) (*Stmt, error)
 
 
 /*
-Function that creates a sql db connection.
+Function that creates a sql db connection. 
+Accepts the name of the database, and a numeric identifier for the connection
+for debugging purposes.
 */
-type ConnectionFactory func (string) (conn Connection, err error)
+type ConnectionFactory func (string,int) (conn Connection, err error)
 
 
 /*
@@ -504,6 +509,7 @@ A SQLITE3 connection which implements the Connection interface.
 type SqliteConn struct {
 	conn *sqlite.Conn
 	preparedStatements map[string]*sqlite.Stmt
+  id int
 }
 
 /*
@@ -529,13 +535,17 @@ func (conn *SqliteConn) Close() error {
 	return conn.conn.Close()
 }
 
+func (conn *SqliteConn) Id() int {
+  return conn.id
+}
 
-func NewSqliteConn(dbName string) (conn Connection, err error) {
+
+func NewSqliteConn(dbName string, connectionId int) (conn Connection, err error) {
 	s3conn, err := sqlite.Open(dbName)
     if err != nil {
     	return
     }
-    sConn := &SqliteConn{conn: s3conn, preparedStatements: make(map[string]*sqlite.Stmt)}    
+    sConn := &SqliteConn{conn: s3conn, preparedStatements: make(map[string]*sqlite.Stmt), id: connectionId}    
 	conn = sConn
 	return
 }
