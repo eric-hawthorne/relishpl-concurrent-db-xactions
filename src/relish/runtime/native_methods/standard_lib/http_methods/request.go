@@ -965,8 +965,8 @@ func cookieSetHeader2(th InterpreterThread, objects []RObject) []RObject {
 	name := string(objects[0].(String))
 	value := string(objects[1].(String))
 	maxAge := int(int64(objects[2].(Int)))
-	domain := string(objects[3].(String))
-	path := string(objects[4].(String))				
+	path := string(objects[3].(String))		
+	domain := string(objects[4].(String))			
     
 	cookie := &http.Cookie{ Name: name,
 		                    Value: value,
