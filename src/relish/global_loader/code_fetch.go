@@ -184,6 +184,7 @@ func fetchArtifactZipFile(hostUrl string, originAndArtifactPath string, version 
 }
 
 
+
 /*
 Fetches and, if newer, installs metadata.txt file in shared/relish/replicas directory.
 */
@@ -255,3 +256,37 @@ func fetchArtifactMetadata(hostUrl string, originAndArtifactPath string, localMe
      }	
      return
 }	
+
+
+/*
+Fetches the authentic shared.relish.pl2012 origin public key certificate.
+This is currently used to populate a new external relish project directory with
+this key cert.
+May use it for reverifying the cert periodically too.
+*/
+func fetchSharedRelishPublicKeyCert() (cert string, err error) {
+      
+    var resp *http.Response
+    var body []byte
+
+    resp, err = http.Get(SHARED_RELISH_PUBLIC_KEY_URL)    
+    if err != nil {
+      return 
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode == 404 {  // HTTP Page/Resource Not Found 
+       err = fmt.Errorf("shared.relish.pl2012 public key cert not found at http://shared.relish.pl !!!")
+       return
+    } else if resp.StatusCode >= 400 {  // Other HTTP error
+       err = fmt.Errorf("Error %d downloading shared.relish.pl2012 public key cert from http://shared.relish.pl",resp.StatusCode)
+       return
+    }
+
+    body, err = ioutil.ReadAll(resp.Body)
+    if err != nil {
+      return
+    } 
+    cert = string(body)
+    return
+}
