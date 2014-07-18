@@ -214,6 +214,8 @@ func (ldr *Loader) databaseDirPath(originAndArtifact string) string {
 
 
 var parserDebugMode uint = parser.DeclarationErrors
+// Use the following line instead if you want to trace the parser execution:
+// var parserDebugMode uint = parser.DeclarationErrors | parser.Trace
 
 
 

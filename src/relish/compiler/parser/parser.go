@@ -5700,10 +5700,20 @@ func (p *parser) parseFile() *ast.File {
     
     for {
        if ! p.BlankLine() {
-          break	
+          break
        }
        if ! p.BlankLine() {
-         break	
+          st2 := p.State()
+          if p.Below(1) && p.LineComments() { 
+             // fmt.Println("continue 2")                 
+             continue 
+          } else {
+             // fmt.Printf(">%v<\n",p.Ch())                
+             // fmt.Println("break 2")    
+             // p.error(p.Pos(),"break 2")  
+             p.Fail(st2)          
+             break
+          }
        }
        if ! p.BlanksAndBelow(1,false) {
 	      break
