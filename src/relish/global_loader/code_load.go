@@ -30,7 +30,7 @@ import (
 
 const STANDARD_SOURCE_CODE_SHARING_PORT = "8421"  // relish source code may be shared on port 80 or 8421
 
-const SHARED_RELISH_PUBLIC_KEY_URL = "http://shared.relish.pl/origin__shared.relish.pl2012__public_key.pem"
+const SHARED_RELISH_PUBLIC_KEY_URL = "http://shared.relish.pl/relish/origin__shared.relish.pl2012__public_key.pem"
 
 
 type Loader struct {
