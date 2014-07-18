@@ -64,7 +64,7 @@ Cookie
 // domain c Cookie > String
 // expires c Cookie > Time 
 // rawExpires c Cookie > String
-//
+
 // // maxAge=0 means no 'Max-Age' attribute specified.
 // // maxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
 // // maxAge>0 means Max-Age attribute present and given in seconds
@@ -73,6 +73,7 @@ Cookie
 // httpOnly c Cookie > Bool
 // raw c Cookie > String      
 // initString s String c Cookie > String  
+
 
 // setCookie c Cookie > String    
 // """
@@ -124,7 +125,7 @@ Cookie
 //
 // Usage: returned from a relish web dialog handler method as follows:
 //
-//    => header htto_srv.NO_CACHE
+//    => header http_srv.NO_CACHE
 //       "foo.html"
 //       fooDialogArgs
 //
