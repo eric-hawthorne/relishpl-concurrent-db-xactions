@@ -508,8 +508,18 @@ using standard file naming convention.
 */
 func StorePublicKeyCert(entityType string, entityName string, publicKeyCertPEM string) (err error) {
 	fileName := entityType + "__" + entityName + "__public_key.pem"
-	path := relishRuntimeLocation + "/keys/public/" + fileName
-	var perm os.FileMode = 0666
+
+	keyDirPath := relishRuntimeLocation + "/keys/public"
+	path := keyDirPath + "/" + fileName
+
+    var perm os.FileMode = 0777
+
+    err = gos.MkdirAll(keyDirPath, perm)
+    if err != nil {
+       return
+    }
+
+	perm = 0666
     err = gos.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
     return
 }
