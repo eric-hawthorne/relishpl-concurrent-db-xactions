@@ -221,7 +221,6 @@ var parserDebugMode uint = parser.DeclarationErrors
 
 
 
-
 /*
 Functions which load relish abstract syntax trees (intermediate code) into memory.
 

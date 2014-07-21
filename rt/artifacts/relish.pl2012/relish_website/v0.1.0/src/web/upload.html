@@ -74,6 +74,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <p>
 <form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
     <fieldset>
+      <input type="hidden" name="o" id="o" value="{{.}}">    
       <input type="file" name="myfiles" id="myfiles" multiple="multiple">
       <input type="submit"  value="upload artifact files">
   </fieldset>

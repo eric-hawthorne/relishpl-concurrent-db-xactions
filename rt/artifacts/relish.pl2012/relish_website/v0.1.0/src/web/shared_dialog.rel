@@ -256,39 +256,117 @@ confirmReKeyAction originId String password String > String Any
       }String > String
 
 
-loginAction > String String
+login 
+   ...kw {} String > String 
+> 
+   String 
+   Map
 """
- Handles a request for the root (i.e. empty path) url on the server and port.
+ Display a login page. If login is successful, redirect to the next page.
 """
-   => "HTML FILE"
-      "index.html"
+   originId originSpecified = kw["o"]
+   if not originSpecified
+      originId = ""
+
+   bad badSpecified = kw["bad"]
+   if badSpecified
+      msg = "<p><span style='color: red'><b>Origin id or password incorrect. Please re-enter.</b></span></p>"
+   else
+      unverified unverifiedSpecified = kw["unverified"]
+      if unverifiedSpecified
+         msg = """
+<p><span style='color: red'><b>Code origin has not been confirmed by click
+on registration email message link.</b></span></p>
+"""
+      else
+         msg = ""
+
+   next = kw[! "next"]
+
+   => "login.html"
+      {
+         "originId" => originId
+         "next"     => next
+         "msg"      => msg
+      }String > String
 
 
-upload > String String
+loginAction o String pw String next String > String String
+"""
+ Checks login credentials and if successful, redirects to the next URL,
+ sending a cookie in the response to establish a login session.
+"""
+   if not exists o
+      => "REDIRECT"
+         cat "/login?o=" o "&bad=1&next=" next
+
+   o = summon originId
+   if neq (base64Hash pw) o.pwHash
+      => "REDIRECT"
+         cat "/login?o=" o "&bad=1&next=" next
+
+   if not o.isVerified
+      => "REDIRECT"
+         cat "/login?o=" o "&unverified=1&next=" next  
+
+   => "REDIRECT"
+      cat next "?o=" o
+
+
+upload 
+   request http_srv.Request 
+   ...kw {} String > String 
+> 
+   String 
+   String 
+   Any
 """
  Handles a request for the "upload a code artifact" page.
 """
-   => "HTML FILE"
+   originId originSpecified = kw["o"]
+   if not originSpecified
+      => "REDIRECT"
+         "/login?next=/upload"
+         nil
+
+   tok = session request
+   visit = loggedInVisit tok originId
+   if not visit
+      => "REDIRECT"
+         cat "/login?o=" originId "next=/upload"
+         nil
+   => sessionCookieAndNoCache tok 60
       "upload.html"
+      originId
 
 
 REPOSITORY_ROOT = "/opt/devel/relish/rt/shared/relish/replicas/"
 
 
-uploadAction request http_srv.Request > String String
+uploadAction request http_srv.Request o String > String String Any
 """
  Processes an upload of artifact files.
 """
+   tok = session request
+
+   visit = loggedInVisit tok o
+   if not visit
+      => "REDIRECT"
+         cat "/login?o=" o "next=/upload"
+         nil
+
+   extendSession = sessionCookieAndNoCache tok 60
+
    fileList = uploadedFiles request "myfiles"
    for file in fileList
       fileName = name file
       err = open file
       if err
-         => errf "Error opening uploaded file" fileName err
+         => errf3 extendSession "Error opening uploaded file" fileName err
      
       content err = readAllBinary file
       if err
-         => errf "Error reading uploaded file" fileName err
+         => errf3 extendSession "Error reading uploaded file" fileName err
 
       close file
       if eq fileName "metadata.txt"
@@ -296,22 +374,25 @@ uploadAction request http_srv.Request > String String
          print content
          snippet i = between content "origin: " "\n"
          originName = trimSpace snippet
+         if neq originName o
+            => errf3 extendSession "Cannot upload an artifact from an origin other that yours."
+
          snippet i = between content "artifact: " "\n"
          artifactName = trimSpace snippet    
          artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
          err = mkdirAll artifactDirPath
          if err
-            => errf err
+            => errf3 extendSession err
 
          metadataFilePath = cat artifactDirPath "/metadata.txt"    
          metadataFile err = files.File metadataFilePath "w"
          if err
-            => errf err
+            => errf3 extendSession err
 
          write metadataFile content                   
          err = close metadataFile
          if err
-            => errf err
+            => errf3 extendSession err
 
       elif hasSuffix fileName ".zip"
          print fileName
@@ -319,6 +400,9 @@ uploadAction request http_srv.Request > String String
 
          sepPos = index fileName "--"
          originName = first fileName sepPos
+         if neq originName o
+            => errf3 extendSession "Cannot upload an artifact from an origin other that yours."   
+                  
          lastSepPos = lastIndex fileName "---"
          version = slice fileName 
                          plus lastSepPos 3
@@ -332,45 +416,53 @@ uploadAction request http_srv.Request > String String
          artifactVersionDirPath = cat artifactDirPath "/v" version 
          fileInfo versionDirExists err = stat artifactVersionDirPath
          if err
-            => errf "Can't stat directory" artifactVersionDirPath err
+            => errf3 extendSession "Can't stat directory" artifactVersionDirPath err
          elif versionDirExists
-            => errf cat "Error: Version " 
-                        version 
-                        " of " 
-                        originName 
-                        "/" 
-                        artifactName 
-                        " has already been uploaded. Cannot replace it."
+            => errf3 extendSession
+                     cat "Error: Version " 
+                         version 
+                         " of " 
+                         originName 
+                         "/" 
+                         artifactName 
+                         " has already been uploaded. Cannot replace it."
     
          err = mkdirAll artifactVersionDirPath
          if err
-            => errf err
+            => errf3 extendSession err
 
          zipFilePath = cat artifactDirPath "/" fileName
 
          zipFile err = files.File zipFilePath "w"
          if err
-            => errf err
+            => errf3 extendSession err
 
          write zipFile content                   
          err = close zipFile
          if err
-            => errf err
+            => errf3 extendSession err
 
          srcZipContent err = extract1 content "artifactVersionContents.zip" 
          if err
-            => errf err
+            => errf3 extendSession err
 
          // Note: Should really verify the signed code here.   
 
          err = extract srcZipContent artifactVersionDirPath
          if err
-            => errf "Could not extract artifact version contents zip file into" artifactVersionDirPath err              
+            => errf3 extendSession 
+                     "Could not extract artifact version contents zip file into" 
+                     artifactVersionDirPath 
+                     err            
 
       else 
-         => errf cat "Error: Uploaded file " fileName " is not a metadata.txt file or an artifact version .zip file."
+         => errf3 extendSession 
+                  cat "Error: Uploaded file " 
+                      fileName 
+                      " is not a metadata.txt file or an artifact version .zip file."
 
-   => "HTML"
+   => extendSession
+      "HTML"
       """
 <html>
 Uploaded !

@@ -1,0 +1,119 @@
+origin   everybitcounts.net2006
+artifact topical
+package  view
+
+"""
+ view_state.rel
+
+ Objects that keep track of the state of visits and dialogs in user interaction with the system.
+"""
+
+import
+   model
+   strings
+   datetime
+   http_srv
+
+
+Visit
+"""
+ A visit to the website.
+ Used to hold session state. 
+ This version assumes cookie-stored tokens which will stop coming from the client
+ after the session expiry time.
+"""
+   token String
+   ipAddress String
+   startTime Time
+   loggedInTime Time
+   lastRequestTime Time
+   notice String
+   noticeType String  // "error" | "warning" | "info"
+
+
+initVisit v Visit > Visit
+"""
+ Constructor.
+ Create a visit to record a logged-in session by the origin administrator.
+"""
+   v.startTime = now "UTC"
+   v.token = nextToken v.startTime
+   v.lastRequestTime = v.startTime
+   v.loggedInTime = Time  // Zero time means not logged in
+   v.notice = ""
+   v.noticeType = ""
+   => v
+
+
+Visit [<startTime] 0 N -- 0 1 user model.Origin
+
+
+loggedInVisit token String originId String
+> 
+   visit ?Visit 
+"""
+ Returns the logged in visit if the token corresponds to a visit by the administrator 
+ of the specified origin.
+
+ Returns nil if the visit is not found or represents a different origin.
+"""
+   if token
+      if exists token
+         aVisit = summon token
+         if aVisit.user
+            if eq aVisit.user.ident originId
+               visit = aVisit
+
+
+loggedInVisit token String 
+> 
+   visit ?Visit 
+"""
+ Returns the logged in visit if the token corresponds to a visit by the administrator 
+ of any origin.
+
+ Returns nil if the visit is not found.
+"""
+   if token
+      if exists token
+         aVisit = summon token
+         if aVisit.user
+            visit = aVisit
+
+
+getNotice visit Visit > formattedNotice String
+"""
+ Return an html-formatted version of an error, warning, or info notice, and also
+ resets the notice and noticeType to "" 
+"""
+   if visit.notice
+      formattedNotice = 
+         fill "<div class='%sNotice'>%s</div>" visit.noticeType visit.notice
+      visit.notice = ""
+      visit.noticeType = ""
+      
+
+setError visit Visit message String
+"""
+ Set an error notice on the visit.
+"""
+   visit.notice = message
+   visit.noticeType = "error"
+
+
+setWarning visit Visit message String
+"""
+ Set a warning notice on the visit.
+"""
+   visit.notice = message
+   visit.noticeType = "warning"
+
+
+setInfo visit Visit message String
+"""
+ Set an informational notice on the visit.
+"""
+   visit.notice = message
+   visit.noticeType = "info"
+
+

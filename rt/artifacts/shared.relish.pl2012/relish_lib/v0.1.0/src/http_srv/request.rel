@@ -11,6 +11,11 @@ package  http_srv
 """ 
 
 
+import
+   datetime
+   strings
+
+
 Request 
 """
  A Request represents an http request.
@@ -92,6 +97,103 @@ Cookie
 // """
 //  Return a proper header line for setting the cookie in an http response
 // """
+
+
+
+
+
+// Usage of the following high-level web-app session maintenance methods:
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// someWebMethod request http_srv.Request arg1 String arg2 Int > String String Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+
+newSessionToken > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+   t = now "UTC"
+   if contextExists "tokenCounter"
+      c = context "tokenCounter"
+   else
+      c = 1     
+   nc = plus c 1
+   if gt nc 999999999
+      nc = 1
+   contextPut nc "tokenCounter"
+
+   => replace
+         base64Hash cat c "|" (format t "2006-01-02T15:04:05.999999999Z07:00")
+         "="
+         ""
+
+
+sessionCookie sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+   timeoutSeconds = times 60 sessionTimeoutMinutes
+   => header setCookie "SESS" sessionToken timeoutSeconds "/" ""
+
+
+sessionCookieAndNoCache sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+   timeoutSeconds = times 60 sessionTimeoutMinutes
+   => headers setCookie "SESS" sessionToken timeoutSeconds "/" ""
+              NO_CACHE
+
+
+session request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+   sessCookie err = cookie request "SESS"
+   if err
+      token = ""
+   else 
+      token = value sessCookie
+
+
 
 
 

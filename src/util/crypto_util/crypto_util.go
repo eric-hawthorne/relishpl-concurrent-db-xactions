@@ -518,7 +518,7 @@ func StorePublicKeyCert(entityType string, entityName string, publicKeyCertPEM s
     if err != nil {
        return
     }
-
+    
 	perm = 0666
     err = gos.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
     return
