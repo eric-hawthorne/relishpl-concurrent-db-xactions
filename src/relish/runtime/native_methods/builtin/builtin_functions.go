@@ -4285,14 +4285,16 @@ func builtinUrlPathPartEncode(th InterpreterThread, objects []RObject) []RObject
 		   buf.WriteString(fmt.Sprintf("%%%02X",c))
 	   } else if encodeDash {
 		   switch c {
-			  case  '$','&','+',',','/',':',';','=','?','@','"','\'','<','>','#','%','{','}','|','\\','^','[',']','`':
+			  case  '$','&','+',',',':',';','=','?','@','"','\'','<','>','#','%','{','}','|','\\','^','[',']','`':
 		         buf.WriteString(fmt.Sprintf("%%%02X",c))
 		      case '.':
 			    buf.WriteString("_~*")		
 		      case '-':
-			    buf.WriteString("*~*")						
+			    buf.WriteString("*~*")			
+		      case '/':
+			    buf.WriteString("~*~")		
 		      case ' ':
-			    buf.WriteRune('-')	
+			    buf.WriteRune('-')			    
 		      default:
 		         buf.WriteRune(c)
 	       }
@@ -4365,6 +4367,13 @@ func builtinUrlPathPartDecode(th InterpreterThread, objects []RObject) []RObject
 			   } else {
 				  buf.WriteRune('*')
 			   }
+            } else if c == '~' {
+		       if i < n - 2 && s[i+1] == '*' && s[i+2] == '~' {
+	              buf.WriteRune('/')
+	              charsToSkip = 2			      
+			   } else {
+				  buf.WriteRune('~')
+			   }			   
 			} else {	
 	           buf.WriteRune(c)
 	        }								   

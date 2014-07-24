@@ -166,10 +166,13 @@ func (db *SqliteDB) PersistRemoveFromAttr(obj RObject, attr *AttributeSpec, val 
 		if removedIndex == -1 {
 			err = db.ExecStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND id1=?", table), obj.DBID(), val.DBID())
 		} else {
+         // fmt.Printf("DELETE FROM %s WHERE id0=%d AND id1=%d AND ord1=%d\n", table, obj.DBID(), val.DBID(), removedIndex)
+
 			err = db.ExecStatement(fmt.Sprintf("DELETE FROM %s WHERE id0=? AND id1=? AND ord1=?", table), obj.DBID(), val.DBID(), removedIndex)
          if err != nil {
             return
          }			
+         // fmt.Printf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=%d AND ord1 > %d\n",  table, obj.DBID(), removedIndex)       
          err = db.ExecStatement(fmt.Sprintf("UPDATE %s SET ord1 = ord1 - 1 WHERE id0=? AND ord1 > ?",  table), obj.DBID(), removedIndex)
 		}
 	}
