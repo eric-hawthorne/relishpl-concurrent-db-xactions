@@ -786,14 +786,31 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
 	// if val == NIL, reject the addition.	
 
-	objColl, err := rt.EnsureMultiValuedAttributeCollection(obj, attr)
-	if err != nil {
-		return
-	}
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+    // NOTE 2014 07 24 ! This does another ensureMemoryTransactionConsistency1 inside AttrVal! !!!
+    // Two transaction state checks? Why? Inefficient?
+    //
+    objColl, collectionFound := rt.AttrVal(th, obj, attr) 
+    if ! collectionFound {
+    	panic("There was supposed to be a collection value ensured as the value of the multi-valued attribute.")
+    }
+    
+
+
+	// objColl, err := rt.EnsureMultiValuedAttributeCollection(obj, attr)
+	// if err != nil {
+	//	return
+	// }
+	// NOTE THE rt.Ensure... ABOVE CREATES A COLLECTION WHETHER THE ATTRIBUTE WAS collectionType = "" or not
+    // BUT IT DOES NOT RETRIEVE THE ATTRIBUTE FROM PERSISTENCE IF NOT FETCHED YET.!!!!!!
+    // And we need to do that.
+
 
 
 	addColl := objColl.(AddableMixin)     // Will throw an exception if collection type does not implement Add(..)
 	added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
+
+	// fmt.Println("AddToAttr (added, newLen)",added,newLen)
 
 	/* TODO figure out efficient persistence of collection updates
 	 */
@@ -809,6 +826,9 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 			} else {
 				insertIndex = newLen - 1
 			}
+
+			// fmt.Println("th.DB().PersistAddToAttr(th, obj, attr, val,", insertIndex)
+
 			th.DB().PersistAddToAttr(th, obj, attr, val, insertIndex)
 		}
 		if ! isInverse && attr.Inverse != nil {
@@ -1624,6 +1644,8 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 	    // TODO WHOA WHOA WHOA  just because the collection wasn't there in mem doesn't mean the value shouldnt be removed
 	    // from the database representation of the multi-valued attribute association table does it????
 	    // Can this situation arise?
+        // OK OK, it looks like now that rt.AttrVal(...) will pull the collection into memory.
+
 
 		return
 	}
@@ -1643,11 +1665,15 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 
 
 
-   
+    // fmt.Println("collection.Remove(val)", removed, removedIndex)
 	
 	if removed  {
 	   if removePersistent && obj.IsStoredLocally() {
-	    	th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)
+            // fmt.Println("calling th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)")	   	
+	    	err = th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	    	if err != nil {
+	    		return
+	    	}
 	   }
 	
 	   if ! isInverse && attr.Inverse != nil {
@@ -1708,7 +1734,10 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
       unit.attrs[i] = nil
 
        if removePersistent && obj.IsStoredLocally() {
-	          err = th.DB().PersistRemoveAttr(obj, attr) 	 
+	          err = th.DB().PersistRemoveAttr(obj, attr) 	
+	          if err != nil {
+	          	 return
+	          } 
        }
        
 
