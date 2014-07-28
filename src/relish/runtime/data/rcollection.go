@@ -791,7 +791,7 @@ func vectorAtErrHandle(i int, v *RVector) {
           s, isString := r.(string)
           if isString { 
              if strings.HasPrefix(s, "Error fetching") {
-             	panic(fmt.Sprintf("Can't access element [%d] of collection. %s", s))
+             	panic(s)
              }
           }
           panic(fmt.Sprintf("Error: index [%d] is out of range. Collection length is %d.",i,v.Len()))
