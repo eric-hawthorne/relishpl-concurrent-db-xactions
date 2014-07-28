@@ -787,7 +787,7 @@ func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 func vectorAtErrHandle(i int, v *RVector) {
       r := recover()	
       if r != nil {
-          panic(fmt.Sprintf("Error: index [%d] is out of range. Sorted set length is %d.",i,v.Len()))
+          panic(fmt.Sprintf("Error: index [%d] is out of range. Collection length is %d.",i,v.Len()))
       }	
 }	
 
