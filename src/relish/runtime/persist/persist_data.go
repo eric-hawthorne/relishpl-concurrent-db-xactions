@@ -1361,10 +1361,9 @@ func (db *SqliteDB) fetch1(query string, arg interface{}, radius int, errSuffix 
 	err = selectStmt.Query(arg)
     if err != nil {
     	if err == io.EOF {
-		   panic(fmt.Sprintf("No object found in database with %s.", errSuffix)) 		
-        } else {
-           return
+		   err = fmt.Errorf("No object found in database with %s.", errSuffix)		
         }
+        return
     }
 
 	var id int64
