@@ -1150,7 +1150,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
         // fmt.Println(mm.Debug())
 
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
-		defer methodCallErrHandle(t,call)	
+		// defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
