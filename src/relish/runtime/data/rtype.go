@@ -1126,7 +1126,7 @@ RelEnd
    argument-types signature.
 */
 func (rt *RuntimeEnv) getTypeTupleFromTypes(typeNames []string) (*RTypeTuple, error) {
-
+    n := len(typeNames)
 	mTypes := make([]*RType, len(typeNames))
 	for i, typeName := range typeNames {
 		typ, found := rt.Types[typeName]
@@ -1135,7 +1135,13 @@ func (rt *RuntimeEnv) getTypeTupleFromTypes(typeNames []string) (*RTypeTuple, er
 		}
 		mTypes[i] = typ
 	}
-	return rt.TypeTupleTrees[len(mTypes)].GetTypeTupleFromTypes(mTypes), nil
+
+	if rt.TypeTupleTrees[n] == nil {
+	   tttn := &TypeTupleTreeNode{}
+	   tttn.LastTypeTuple = make(map[*RType]*RTypeTuple)
+	   rt.TypeTupleTrees[n] = tttn		
+	}
+	return rt.TypeTupleTrees[n].GetTypeTupleFromTypes(mTypes), nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
