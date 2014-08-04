@@ -247,7 +247,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		PkgShortNameToName: make(map[string]string),   
 		PkgNameToShortName: make(map[string]string),		
 		TypeTupleTree: &TypeTupleTreeNode{},
-		TypeTupleTrees: make([]*TypeTupleTreeNode,20),
+		TypeTupleTrees: make([]*TypeTupleTreeNode,100),
 		objects:       make(map[int64]RObject),
 		objectIds:     make(map[RObject]uint64),
 		idGen:         NewIdGenerator(),
