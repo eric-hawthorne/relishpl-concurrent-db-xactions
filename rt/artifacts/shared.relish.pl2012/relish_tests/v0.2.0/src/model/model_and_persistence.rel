@@ -175,48 +175,64 @@ testModel
    passed = and assertEq 2 (len car2.wheels) "len car2.wheels"
                 passed
 
-   driver1 = people.Person
-   driver1.firstName = "Joe"
-   driver1.lastName = "Armstrong"
-   driver1.dateOfBirth err = Time "1983-09-25T22:13:45.875Z"
-   if err
-      print err
+   if firstPass
+      driver1 = people.Person
+      driver1.firstName = "Joe"
+      driver1.lastName = "Armstrong"
+      driver1.dateOfBirth err = Time "1983-09-25T22:13:45.875Z"
+      if err
+         print err
+   else
+      peeps = []people.Person ["lastName=?" "Armstrong"]
+      driver1 = peeps[0]
 
    passed = and assertEq (String driver1.dateOfBirth) "1983-09-25 22:13:45.875 +0000 UTC" "driver1.dateOfBirth"
                 passed
 
-   passenger1 = people.Person
-   passenger1.firstName = "Alice"
-   passenger1.lastName = "Wong"
-   passenger1.dateOfBirth err = Time "1990-02-13 22:13:45 America/Los_Angeles"   
-   if err
-      print err   
+   if firstPass
+      passenger1 = people.Person
+      passenger1.firstName = "Alice"
+      passenger1.lastName = "Wong"
+      passenger1.dateOfBirth err = Time "1990-02-13 22:13:45 America/Los_Angeles"   
+      if err
+         print err   
 
-   passenger2 = people.Person
-   passenger2.firstName = "Ernie"
-   passenger2.lastName = "Kovacs"
-   passenger2.dateOfBirth err = Time "February 3, 1969 8:08am -0700 PDT" "January 2, 2006 3:04pm -0700 MST"    
-   if err
-      print err   
+      passenger2 = people.Person
+      passenger2.firstName = "Ernie"
+      passenger2.lastName = "Kovacs"
+      passenger2.dateOfBirth err = Time "February 3, 1969 8:08am -0700 PST" "January 2, 2006 3:04pm -0700 MST"    
+      if err
+         print err   
 
-   driver2 = people.Person
-   driver2.firstName = "Jane"
-   driver2.lastName = "Sterrit"
-   driver2.dateOfBirth err = Time 1983 5 27 15 4 0 0 "Local"
-   if err
-      print err   
+      driver2 = people.Person
+      driver2.firstName = "Jane"
+      driver2.lastName = "Sterrit"
+      driver2.dateOfBirth err = Time 1983 5 27 15 4 0 0 "Local"
+      if err
+         print err   
 
-   car2.driver = driver1
-   car2.passengers += passenger1
-   car2.passengers += passenger2
+   else
+      peeps = []people.Person ["lastName=?" "Wong"]
+      passenger1 = peeps[0]
+      peeps = []people.Person ["firstName=?" "Ernie"]
+      passenger2 = peeps[0]
+      peeps = []people.Person ["firstName=?" "Jane"]      
+      // peeps = []people.Person ["dateOfBirth=?" (Time 1983 5 27 15 4 0 0 "Local")]
+      driver2 = peeps[0]
+
+   if firstPass
+      car2.driver = driver1
+      car2.passengers += passenger1
+      car2.passengers += passenger2
 
    for i person in car2.passengers
       if eq i 0
          passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
-                               "Ernie Kovacs 1969-02-03 08:08:00 -0700 PDT"
+                               "Ernie Kovacs 1969-02-03 08:08:00 -0700 PST"
                                "car2.passengers 1"
                       passed
       else
+         print "got here"
          passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
                                "Alice Wong 1990-02-13 22:13:45 -0800 PST"     
                                "car2.passengers 2"                                 
@@ -230,7 +246,8 @@ testModel
    passed = and assertEq car2.passengers[1].firstName "Alice" "passenger firstName"
                 passed
 
-   truck1.driver = driver2
+   if firstPass
+      truck1.driver = driver2
 
    // Clear the passengers
    car2.passengers = nil
