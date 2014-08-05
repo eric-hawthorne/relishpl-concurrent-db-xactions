@@ -514,6 +514,7 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
 	    nilArgAllowed := make([]bool,len(parameterTypes))
+	    isExported := true
 		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -525,7 +526,8 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 						                  returnValNamed, 
 						                  numLocalVars, 
 						                  false,
-						                  allowRedefinition)
+						                  allowRedefinition,
+						                  isExported)
 }
 
 
@@ -541,7 +543,8 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
 	returnValNamed bool, 
 	numLocalVars int, 
 	isTraitAbstractMethod bool,
-	allowRedefinition bool) (*RMethod, error) {
+	allowRedefinition bool,
+	isExported bool) (*RMethod, error) {
 		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -553,7 +556,8 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
 						                  returnValNamed, 
 						                  numLocalVars, 
 						                  isTraitAbstractMethod,
-						                  allowRedefinition)
+						                  allowRedefinition,
+						                  isExported)
 }
 
 /*
@@ -591,9 +595,8 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	                  returnArgsNamed bool,
 	                  numLocalVars int, 
 	                  isTraitAbstractMethod bool, 
-	                  allowRedefinition bool) (*RMethod, error) {
-
-    isExported := true // Temporary: All multimethods are "public" - change this when __private__ is introduced to relish
+	                  allowRedefinition bool,
+	                  isExported bool) (*RMethod, error) {
 
 	if packageName == "" { 
 		packageName = "relish.pl2012/core/inbuilt"
@@ -625,6 +628,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
     var found bool
 
     if isTraitAbstractMethod {
+    	if ! isExported {
+		   return nil, fmt.Errorf("Trait abstract method '%v' cannot be defined in a _private.rel file.", methodName)
+        }
 		multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
 	    pkg.MultiMethods[methodName] = multiMethod	
 
@@ -636,6 +642,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
 			pkg.MultiMethods[methodName] = multiMethod
 		} else {
+			if multiMethod.IsExported != isExported {
+		       return nil, fmt.Errorf("Method '%v' cannot be defined as private in one source code file and as exported in another.", methodName)				
+			}
 			if multiMethod.NumReturnArgs != numReturnArgs {
 			   return nil, fmt.Errorf("Method '%v' is already defined to have %v return arguments and cannot have other than that.", methodName, multiMethod.NumReturnArgs)
 	        }

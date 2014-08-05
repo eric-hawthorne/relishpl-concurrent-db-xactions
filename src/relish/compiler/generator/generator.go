@@ -724,16 +724,23 @@ func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool)
 }
 
 /*
-TODO Need to add the constraint that the method is public here !!!!
+Method is mapped to a url
 */
 func (g *Generator) isWebDialogHandlerMethod(fileNameRoot string) bool {
 	return strings.HasSuffix(fileNameRoot,"dialog") && strings.Contains(g.packagePath,"/pkg/web/")
 }
 
+/*
+The file is defining package-private code (types, methods, or constants)
+*/
+func (g *Generator) isPrivateCodeFile(fileNameRoot string) bool {
+	return strings.HasSuffix(fileNameRoot,"_private")
+}
 
 func (g *Generator) generateMethods() {
 	
 	for file, fileNameRoot := range g.files {	
+		privateCode := g.isPrivateCodeFile(fileNameRoot)
 		for _,methodDeclaration := range file.MethodDecls {
 
 		   methodName := methodDeclaration.Name.Name
@@ -832,7 +839,8 @@ func (g *Generator) generateMethods() {
 				                                   returnArgsAreNamed,
 				                                   methodDeclaration.NumLocalVars,
                                                    isTraitAbstractMethod,
-				                                   allowRedefinition  )
+				                                   allowRedefinition,
+				                                   ! privateCode  )
 		   }
 		
 		   if err != nil {
