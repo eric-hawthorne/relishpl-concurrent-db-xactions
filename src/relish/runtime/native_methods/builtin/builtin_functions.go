@@ -1288,6 +1288,8 @@ func InitBuiltinFunctions(relishRoot string) {
 
 /*
    TODO Replace these with proper variadic function creations.
+   Also, and and or should not evaluate their arguments right away, but should only evaluate each one conditionally
+   based on the truth of the one before, as in Lisp.
 */
 	and2Method, err := RT.CreateMethod("",nil,"and", []string{"p1", "p2"}, []string{"Any", "Any"}, []string{"Any"}, false, 0, false)
 	if err != nil {
@@ -2015,7 +2017,50 @@ urlPathPartDecode s > String
 	}
 	swapMethod.PrimitiveCode = builtinSwap
 	
-	
+	/*
+	   Returns a new set whose element type is the same as c1's.
+	   c2's element type must be same as or a subtype of c1's.
+	   The returned set contains the (unordered) set-union of the elements of c1 and c2.
+	*/
+	unionMethod, err := RT.CreateMethod("",nil,"union", []string{"c1","c2"}, []string{"Collection", "Collection"}, []string{"Set"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	unionMethod.PrimitiveCode = builtinUnion
+
+	/*
+	   Returns a new set whose element type is the same as c1's.
+	   c2's element type can be anything.
+	   The returned set contains the (unordered) set-intersection of the elements of c1 and c2.
+	*/
+	intersectionMethod, err := RT.CreateMethod("",nil,"intersection", []string{"c1","c2"}, []string{"Collection", "Collection"}, []string{"Set"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	intersectionMethod.PrimitiveCode = builtinIntersection	
+
+	/*
+	   Returns a new set whose element type is the same as c1's.
+	   c2's element type can be anything.
+	   The returned set contains the an unordered set of c1's elements, except any which also occur in c2.
+	*/
+	setMinusMethod, err := RT.CreateMethod("",nil,"minus", []string{"c1","c2"}, []string{"Collection", "Collection"}, []string{"Set"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	setMinusMethod.PrimitiveCode = builtinSetMinus		
+
+	/*
+	   Adds the elements from c2 to collection c1, which must be a mutable collection.
+	   c2's element type must be same as or a subtype of c1's.
+	*/
+	extendMethod, err := RT.CreateMethod("",nil,"extend", []string{"c1","c2"}, []string{"Collection", "Collection"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	extendMethod.PrimitiveCode = builtinExtend
+
+
     ///////////////////////////////////////////////////////////////////
     // Concurrency functions	
 
@@ -4062,6 +4107,136 @@ func builtinSwap(th InterpreterThread, objects []RObject) []RObject {
     sortable.Swap(i,j)
 	return []RObject{}	
 }
+
+
+/*
+   Returns a new set whose element type is the same as c1's.
+   c2's element type must be same as or a subtype of c1's.
+   The returned set contains the (unordered) set-union of the elements of c1 and c2.
+*/
+func builtinUnion(th InterpreterThread, objects []RObject) []RObject {
+	c1 := objects[0].(RCollection)
+	c2 := objects[1].(RCollection)
+
+
+    if ! c2.ElementType().LessEq(c1.ElementType()) {
+		  panic("union: Second argument's element type must be same as or a subtype of first argument's element type.")	
+    }
+
+    s, err := RT.Newrset(c1.ElementType(),0,-1,nil,nil)
+	if err != nil {
+		panic(err)
+	}    
+
+    a := s.(AddableCollection)
+
+	for obj := range c1.Iter(th) {
+		a.AddSimple(obj)
+	}
+
+	for obj := range c2.Iter(th) {
+		a.AddSimple(obj)
+	}
+
+	return []RObject{s}
+}
+
+
+
+	/*
+	   Returns a new set whose element type is the same as c1's.
+	   c2's element type can be anything.
+	   The returned set contains the (unordered) set-intersection of the elements of c1 and c2.
+	*/
+func builtinIntersection(th InterpreterThread, objects []RObject) []RObject {
+	c1 := objects[0].(RCollection)
+	c2 := objects[1].(RCollection)
+
+    s, err := RT.Newrset(c1.ElementType(),0,-1,nil,nil)
+	if err != nil {
+		panic(err)
+	}    
+
+    a := s.(AddableCollection)
+
+	for obj := range c1.Iter(th) {
+		if c2.Contains(th, obj) {
+		   a.AddSimple(obj)
+	    }
+	}
+
+	return []RObject{s}
+}
+
+	/*
+	   Returns a new set whose element type is the same as c1's.
+	   c2's element type can be anything.
+	   The returned set contains the an unordered set of c1's elements, except any which also occur in c2.
+	*/
+func builtinSetMinus(th InterpreterThread, objects []RObject) []RObject {
+	c1 := objects[0].(RCollection)
+	c2 := objects[1].(RCollection)
+
+    s, err := RT.Newrset(c1.ElementType(),0,-1,nil,nil)
+	if err != nil {
+		panic(err)
+	}    
+
+    a := s.(AddableCollection)
+	for obj := range c1.Iter(th) {
+		if ! c2.Contains(th, obj) {
+		   a.AddSimple(obj)
+	    }
+	}
+
+	return []RObject{s}
+}
+
+
+	/*
+	   Appends the elements from c2 to collection c1, which must be a mutable (Addable) collection.
+	   c2's element type must be same as or a subtype of c1's.
+	   The elements will be appended in c2's natural iteration order, but of course that ordering
+	   will be lost if c1 is an unordered collection or is a sorting collection.
+	*/
+func builtinExtend(th InterpreterThread, objects []RObject) []RObject {
+	c1, isAddable := objects[0].(AddableCollection)
+	if ! isAddable {
+		  panic("extend: First argument is not a collection that permits element additions.")			
+	}
+	c2 := objects[1].(RCollection)
+
+    if ! c2.ElementType().LessEq(c1.ElementType()) {
+		  panic("extend: Second argument's element type must be same as or a subtype of first argument's element type.")	
+    }
+
+	for obj := range c2.Iter(th) {
+		c1.AddSimple(obj)
+	}
+
+	return []RObject{}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ///////////////////////////////////////////////////////////////////////
