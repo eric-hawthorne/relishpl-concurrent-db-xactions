@@ -119,6 +119,8 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 
 	args := []RObject{}
 	
+	defer methodCallErrHandle(t,nil)	
+
 	// TODO Figure out a way to pass command line args (or maybe just keyword ones) to the main program 
 	
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
@@ -1150,7 +1152,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
         // fmt.Println(mm.Debug())
 
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
-		// defer methodCallErrHandle(t,call)	
+		defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.
@@ -1224,9 +1226,19 @@ func methodCallErrHandle(t *Thread, call *ast.MethodCall) {
       if r != nil {
           if t.CodeFile() == nil {
              if t.ExecutingMethod == nil {
-                rterr.Stopf("%v",r) 
+             	fmt.Println()
+                rterr.Stopf("%v\n",r) 
              } else {
-                rterr.Stopf("%v (%s): %v",t.ExecutingMethod,t.ExecutingPackage.Name,r)                 
+             	fmt.Println()             	
+                rterr.Stopf("%v (%s):\n\n%v\n",t.ExecutingMethod,t.ExecutingPackage.Name,r)                 
+             }                                 
+          } else if call == nil {
+             if t.ExecutingMethod == nil {
+             	fmt.Println()             	
+                rterr.Stopf("%v\n",r) 
+             } else {
+             	fmt.Println()             	
+                rterr.Stopf("%v:\n\n%v\n",t.ExecutingMethod.Name(),r)                 
              }                                 
           } else {
              rterr.Stopf1(t,call,"%v",r)

@@ -521,6 +521,15 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
 	
 
     t := obj.Type()
+
+    if ! attr.PublicReadable {
+    	if t.Package != th.Package() {
+	       panic(fmt.Sprintf("Attribute %s.%s is private; not readable outside of the package in which the attribute is declared.", obj, attr.Part.Name))		    		
+    	}
+    }
+
+
+
     i := attr.Index[t]
     var unit *runit
     var isUnit bool
@@ -542,7 +551,7 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
     }
 
     if (! checkPersistence) && (! allowNoValue) {
-	   panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
+	   panic(fmt.Sprintf("Attribute %s.%s has no value.", obj, attr.Part.Name))			
 	}    	
 
 	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
@@ -701,6 +710,16 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	
 
     t := obj.Type()
+
+    if ! attr.PublicWriteable {
+    	if t.Package != th.Package() {
+    	   fmt.Println(t.Package)
+    	   fmt.Println(th.Package)
+	       panic(fmt.Sprintf("Attribute %s.%s is private; not settable outside of the package in which the attribute is declared.", obj, attr.Part.Name))		    		
+    	}
+    }
+
+
     i := attr.Index[t]
 
     var unit *runit
@@ -1833,7 +1852,6 @@ type RelEnd struct {
 
    OrderMethod *RMultiMethod
 
-   Protection string // "public" "protected" "package" "private"
    DependentPart bool // delete of parent results in delete of attribute value
 }
 */

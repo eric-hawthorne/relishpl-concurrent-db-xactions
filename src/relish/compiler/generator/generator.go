@@ -491,9 +491,12 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
       sourceFilename := typeDeclFile[typeName] + ".rel"
 	  rterr.Stopf("Error creating type %s (%s): %s", typeName, sourceFilename, err.Error())
    }	
+
    if ! theNewType.Less(data.CollectionType) {
    	  theNewType.IsStruct = true
    }   
+
+   theNewType.Package = g.pkg  
 
    types[theNewType] = true	 // record that this is one of the new RTypes we generated !
 
@@ -603,8 +606,7 @@ RelEnd
 
    OrderMethod *RMultiMethod
 */
-
-         
+       
 
 	      _,err := data.RT.CreateAttribute(typeName,
 									 	 attributeTypeName,
@@ -618,7 +620,16 @@ RelEnd
 										 false,
 										 false,
 										 orderings,
-										 attrDecl.IsPrivate)
+										 attrDecl.PublicReadable,
+										 attrDecl.PackageReadable,
+										 attrDecl.SubtypeReadable,
+										 attrDecl.PublicWriteable,
+										 attrDecl.PackageWriteable,
+										 attrDecl.SubtypeWriteable,
+										 attrDecl.Reassignable,
+										 attrDecl.CollectionMutable,
+										 attrDecl.Mutable,
+										 attrDecl.DeeplyMutable)
 		   if err != nil {
 		      rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, err.Error())
 		   }
@@ -735,7 +746,7 @@ func (g *Generator) isWebDialogHandlerMethod(fileNameRoot string) bool {
 The file is defining package-private code (types, methods, or constants)
 */
 func (g *Generator) isPrivateCodeFile(fileNameRoot string) bool {
-	return strings.HasSuffix(fileNameRoot,"_private") || fileNameRoot == "private"
+	return strings.HasSuffix(fileNameRoot,"private")
 }
 
 func (g *Generator) generateMethods() {
@@ -1018,8 +1029,26 @@ func (g *Generator) generateRelations(types map[*data.RType]bool, orderings map[
 											isAscending2,	
 											false,
 											orderings,
-											relationDeclaration.IsPrivate) 
-
+										    end1.PublicReadable,
+										    end1.PackageReadable,
+										    end1.SubtypeReadable,
+										    end1.PublicWriteable,
+										    end1.PackageWriteable,
+										    end1.SubtypeWriteable,
+										    end1.Reassignable,
+										    end1.CollectionMutable,
+										    end1.Mutable,
+										    end1.DeeplyMutable,
+										    end2.PublicReadable,
+										    end2.PackageReadable,
+										    end2.SubtypeReadable,
+										    end2.PublicWriteable,
+										    end2.PackageWriteable,
+										    end2.SubtypeWriteable,
+										    end2.Reassignable,
+										    end2.CollectionMutable,
+										    end2.Mutable,
+										    end2.DeeplyMutable)
 
 
 	       if err != nil {
