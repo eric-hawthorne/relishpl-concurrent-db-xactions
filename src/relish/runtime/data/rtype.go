@@ -640,6 +640,7 @@ type AttributeSpec struct {
 
     Index map[*RType]int  // The index in an object of each type where the value of this attribute is found.
 
+    IsPrivate bool
 }
 
 func (attr *AttributeSpec) IsRelation() bool {
@@ -988,7 +989,8 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 	orderFuncOrAttrName2 string,
 	isAscending2 bool,	
 	isTransient bool,
-	orderings map[string]*AttributeSpec) (type1 *RType, type2 *RType,err error) {
+	orderings map[string]*AttributeSpec,
+	isPrivate bool) (type1 *RType, type2 *RType,err error) {
 				
 
 
@@ -1003,7 +1005,8 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 										 isTransient,
 										 true,
 										 false,
-										 orderings)
+										 orderings,
+										 isPrivate)
 
    if err != nil {
        return
@@ -1020,7 +1023,8 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 									 isTransient,
 									 false,
 									 true,
-									 orderings)
+									 orderings,
+									 isPrivate)
 
 
    if err != nil {
@@ -1058,7 +1062,8 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 	isTransient bool,
 	isForwardRelation bool,
 	isReverseRelation bool,
-	orderings map[string]*AttributeSpec) (attr *AttributeSpec, err error) {
+	orderings map[string]*AttributeSpec,
+	isPrivate bool) (attr *AttributeSpec, err error) {
 
 	typ1, found := rt.Types[typeName1]
 	if !found {
@@ -1091,6 +1096,7 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		isReverseRelation,
 		nil,
 		make(map[*RType]int),
+		isPrivate
 	}
 
     if orderFuncOrAttrName != "" {

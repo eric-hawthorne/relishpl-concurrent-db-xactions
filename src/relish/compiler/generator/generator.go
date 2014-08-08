@@ -617,7 +617,8 @@ RelEnd
 										 false,
 										 false,
 										 false,
-										 orderings)
+										 orderings,
+										 attrDecl.IsPrivate)
 		   if err != nil {
 		      rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, err.Error())
 		   }
@@ -734,7 +735,7 @@ func (g *Generator) isWebDialogHandlerMethod(fileNameRoot string) bool {
 The file is defining package-private code (types, methods, or constants)
 */
 func (g *Generator) isPrivateCodeFile(fileNameRoot string) bool {
-	return strings.HasSuffix(fileNameRoot,"_private")
+	return strings.HasSuffix(fileNameRoot,"_private") || fileNameRoot == "private"
 }
 
 func (g *Generator) generateMethods() {
@@ -1016,7 +1017,8 @@ func (g *Generator) generateRelations(types map[*data.RType]bool, orderings map[
 											orderFuncOrAttrName2,
 											isAscending2,	
 											false,
-											orderings) 
+											orderings,
+											relationDeclaration.IsPrivate) 
 
 
 
