@@ -1,0 +1,590 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  collections 
+
+""" 
+ lists_sets_maps.rel
+
+ Test collection and map construction, manipulation, and accessing, including db-query collection constructors.
+ Note. This test first executes the model test, to create objects that can be put in collections.
+"""
+
+import
+   model
+   model/machines/vehicles
+   model/machines/engines
+   shared.relish.pl2012/relish_test_support/things/pkg/physical_objects as phys
+   model/people
+   strings
+   test as t
+
+
+listTest
+   a vehicles.Wheel
+   b vehicles.Wheel
+   c vehicles.Wheel
+>
+   [] vehicles.Wheel
+"""
+ Puts some items in a list and returns the list.
+"""   
+   theList = [a b c]vehicles.Wheel
+   => theList
+
+
+Aa
+"""
+ A type used to test list of list of ... as an attribute type.
+"""
+   b [] [] Bb
+
+
+Bb
+"""
+ Dummy type used in list of lists tests.
+"""
+   name String
+
+
+garb bbs [] [] Bb > String
+"""
+ Testing lists of lists as a method input parameter specification.
+"""
+   names = ""
+   sep = ""
+   for aa in bbs
+      for bb in aa
+         names = cat names sep bb.name
+         sep = ","
+   => names
+
+
+main
+"""
+ Main program.
+"""
+   testCollections
+
+
+testCollections
+"""
+ Test lists, maps, sets.
+"""
+
+   model.testModel  // Create some objects 
+
+   passed = true
+
+   print "===== Collections"
+
+
+   allWheels = []vehicles.Wheel "num > 0 order by num"
+
+   // print "All wheels:"
+   i = 1
+   for aWheel in allWheels
+      passed = assertEq aWheel.num i "allWheels"
+      i = plus i 1
+
+   bigWheels = []vehicles.Wheel "num > 2 order by num desc"
+
+   for i wheel in bigWheels
+      // print "bigWheels[" i "] =" wheel.num
+      passed = and assertEq (minus 4 i) wheel.num "bigWheels"
+                   passed
+      if eq i 0
+         theWheel = wheel
+
+   passed = and assert (contains bigWheels theWheel) "contains bigWheels theWheel"  
+                passed
+
+   smallWheels = []vehicles.Wheel  // An empty list of Wheels
+
+   passed = and assertNot (contains smallWheels theWheel) "not contains smallWheels theWheel"  
+                passed
+
+   passed = and assertEq (len bigWheels) 2 "len bigWheels"
+                passed
+
+   passed = and assertEq (len smallWheels) 0 "len smallWheels"
+                passed
+
+   spares = [allWheels[0] allWheels[1] allWheels[2]]vehicles.Wheel
+
+   passed = and assertEq spares[1].num 2 "spares 1"
+                passed
+
+   vcls = []vehicles.Vehicle "lat > 48 order by lat" 
+   i = 0
+   for vhcl in vcls 
+      if eq i 0
+         passed = and assertEq vhcl.lat 49.243 "lat 1"
+                      passed
+         passed = and assertEq vhcl.long 123.761 "long 1"
+                      passed
+      else
+         passed = and assertEq vhcl.lat 49.265 "lat 2"
+                      passed
+         passed = and assertEq vhcl.long 123.778 "long 2"
+                      passed   
+      i = plus i 1
+
+   map1 = {"One"=>allWheels[0] "Two"=>allWheels[1] "Three"=>allWheels[2]}String > vehicles.Wheel
+
+   map2 = {}String > vehicles.Wheel
+
+   wheelFourFound = map1[? "Four"]
+
+   passed = and assertNot wheelFourFound "map1[? \"Four\"]"
+                passed
+
+   passed = and assertEq map1[! "Three"].num 3 "map1[? \"Three\"]"
+                passed
+
+
+
+   car = summon "JSS 994" 
+
+   lowWheels = asList car.wheels "num < 2"
+   passed = and assertEq (len lowWheels) 1 "len lowWheels is 1"
+                passed   
+
+   whMin = 1
+   highWheels = asList car.wheels 
+                       ["num > ?" whMin]IntOrString                  
+   passed = and assertEq (len highWheels) 1 "len highWheels is 1"
+                passed
+
+   lowWheels = asList car.wheels "num < 5 order by num"
+   passed = and assertEq (len lowWheels) 2 "len lowWheels is 2"
+                passed  
+   passed = and assertEq lowWheels[1].num 4 "lowWheels[1].num is 4"
+                passed  
+
+   whMin = 4
+   highWheels = asList car.wheels 
+                       ["num > ?" whMin]IntOrString                  
+   passed = and assertEq (len highWheels) 0 "len highWheels is 0"
+                passed
+
+
+   bigVehicles = []vehicles.Automobile "engine.horsepower > 120 order by engine.horsepower desc"
+   i = 0
+   for bv in bigVehicles
+      if eq i 0
+         passed = and assertEq bv.vin "W1E26S7244QD7139B" "vin of truck1"
+                      passed
+      else
+         passed = and assertEq bv.vin "X8W74F8831TF8932C" "vin of truck2"
+                      passed      
+      i = plus i 1
+
+   drivenVehicles = []vehicles.Automobile "driver.firstName = 'Jane' order by engine.horsepower desc"
+   for dv in drivenVehicles
+      passed = and assertEq dv.driver.firstName "Jane" "driven by Jane"
+                   passed
+    
+   drivenVehicles = []vehicles.Automobile "driver.dateOfBirth > '1983-06-01' order by engine.horsepower desc"
+   for dv in drivenVehicles
+      passed = and assertEq dv.driver.firstName "Joe" "driven by Joe"
+                   passed  
+
+   keys = "-"
+   for key in map1
+      keys = cat keys key "-"
+
+   passed = and assertNeq (index keys "-One-") -1 "keys 1a"
+                passed
+
+   passed = and assertNeq (index keys "-Two-") -1 "keys 1b"
+                passed
+
+   passed = and assertNeq (index keys "-Three-") -1 "keys 1c"
+                passed
+
+   keys = "-"
+   for key val in map1
+      keys = cat keys key "-" val.num "-"
+
+   passed = and assertNeq (index keys "-One-") -1 "keys 2a"
+                passed
+
+   passed = and assertNeq (index keys "-Two-") -1 "keys 2b"
+                passed
+
+   passed = and assertNeq (index keys "-Three-") -1 "keys 2c"
+                passed
+
+   passed = and assertNeq (index keys "-1-") -1 "keys 2d"
+                passed
+
+   passed = and assertNeq (index keys "-2-") -1 "keys 2e"
+                passed
+
+   passed = and assertNeq (index keys "-3-") -1 "keys 2f"
+                passed
+
+
+   wh2 found = map1["Two"]
+
+   passed = and assertEq wh2.num 2 "map1[Two]"
+                passed   
+
+   passed = and assert found "map1[Two]"
+                passed
+
+
+   wh2 found = map1["two"]
+ 
+   passed = and assertNot wh2 "map1[two]"
+                passed   
+
+   passed = and assertNot found "map1[two]"
+                passed
+
+
+   map1["Four"] = allWheels[3]
+
+   passed = and assertEq map1[! "Four"].num 4 "map1[Four]"
+                passed
+
+
+   solarSystem = {
+                    1 => "Mercury"
+                    2 => "Venus"
+                    3 => "Earth"
+                    4 => "Mars"
+                 }Int 
+                  > 
+                     String
+
+   passed = and assertEq solarSystem[! 1] "Mercury" "Mercury"
+                passed
+
+   outerSolarSystem = {
+                         "Jupiter" => 5
+                         "Saturn"  => 6
+                         "Uranus"  => 7
+                         "Neptune" => 8
+                      }String > Int 
+
+   keyVals = "-"
+   for k v in outerSolarSystem  
+      keyVals = cat keyVals k v "-"
+
+   passed = and assertNeq (index keyVals "-Jupiter5-") -1 "outerSolarSystem 1"
+                passed
+
+   passed = and assertNeq (index keyVals "-Saturn6-") -1 "outerSolarSystem 2"
+                passed
+
+   passed = and assertNeq (index keyVals "-Uranus7-") -1 "outerSolarSystem 3"
+                passed
+
+   passed = and assertNeq (index keyVals "-Neptune8-") -1 "outerSolarSystem 4"
+                passed   
+
+   sales = [1.29 4.25 0.33 5.981]
+
+   passed = and assertEq (sum sales) 11.850999999999999 "sales 1"
+                passed
+
+   sales1 = sales[:neg 2]
+
+   passed = and assertEq (String sales1) "[1.29   4.25]" "sales 2"
+                passed
+   sales1 = sales[1:neg 2]
+   passed = and assertEq (String sales1) "[4.25]" "sales 3"
+                passed
+   sales1 = sales[2:neg 2]
+   passed = and assertEq (String sales1) "[]" "sales 4"
+                passed
+   sales1 = sales[:]
+   passed = and assertEq (String sales1) "[1.29   4.25   0.33   5.981]" "sales 5"
+                passed
+   sales1 = sales[2:]
+   passed = and assertEq (String sales1) "[0.33   5.981]" "sales 6"
+                passed
+   sales1 = sales[:3]
+   passed = and assertEq (String sales1) "[1.29   4.25   0.33]" "sales 7"
+                passed
+   sales1 = sales[2:3]
+   passed = and assertEq (String sales1) "[0.33]" "sales 8"
+                passed
+   sales1 = sales[
+                    2
+                    :
+                    plus 1
+                         2
+                 ]
+   passed = and assertEq (String sales1) "[0.33]" "sales 9"
+                passed
+
+   scores = [22 9 0 13]
+
+   passed = and assertEq (sum scores) 44 "sum scores"
+                passed
+   passed = and assert (contains scores 22) "contains scores 22"
+                passed
+
+   taxedSales = [
+                   for sale in sales
+                      times sale 1.10
+                ]Float
+
+   passed = and assertEq (sum taxedSales) 13.036100000000001 "sum taxedSales"
+                passed
+
+   taxedBigSales = [
+                      for sale in sales
+                         if gt sale 1.0
+                            times sale 1.10
+                   ]Float
+
+   passed = and assertEq (sum taxedBigSales) 12.673100000000002 "sum taxedBigSales"
+                passed
+
+   opps = {
+             for ky vl 
+                in 
+                   ["left" "up" "inside"]
+                   ["right" "down" "outside"]
+                ky vl
+          }String > String
+   
+   keyVals = "-"
+   for key9 val9 in opps
+      keyVals = cat keyVals key9 val9 "-"
+
+   passed = and assertNeq (index keyVals "-leftright-") -1 "opps 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-updown-") -1 "opps 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-insideoutside-") -1 "opps 1c"
+                passed
+
+
+   val found = opps["left"] 
+
+   passed = and assertEq val "right" "opps 2"
+                passed
+
+   passed = and assert found "opps 3"
+                passed
+
+   val found = opps["up"]
+
+   passed = and assertEq val "down" "opps 4"
+                passed
+
+   passed = and assert found "opps 3"
+                passed
+
+
+   opps2 = {
+              for val3 in ["left" "up" "inside"]
+                 val3
+                 cat "[" val3 "]"
+           }String > String
+   
+   keyVals = "-"
+   for key8 val8 in opps2
+      keyVals = cat keyVals key8 val8 "-"
+
+   passed = and assertNeq (index keyVals "-left[left]-") -1 "opps2 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-up[up]-") -1 "opps2 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-inside[inside]-") -1 "opps2 1c"
+                passed
+
+
+   val found = opps2["left"]
+   passed = and assertEq val "[left]" "opps2 2"
+                passed
+
+   passed = and assert found "opps2 3"
+                passed
+
+   val found = opps2["up"]
+   passed = and assertEq val "[up]" "opps2 4"
+                passed
+
+   passed = and assert found "opps2 5"
+                passed
+
+   places = ["left" "inside" "up"]    
+
+   opps3 = {
+              for val4 in places
+                 val4
+                 cat "[" val4 "]"
+           }String > String
+   
+   keyVals = "-"   
+   for key7 val7 in opps3
+      keyVals = cat keyVals key7 val7 "-"
+
+   passed = and assertNeq (index keyVals "-left[left]-") -1 "opps3 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-up[up]-") -1 "opps3 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-inside[inside]-") -1 "opps3 1c"
+                passed
+
+
+   val found = opps3["left"] 
+
+   passed = and assertEq val "[left]" "opps3 2"
+                passed
+
+   passed = and assert found "opps3 3"
+                passed
+
+   val found = opps3["up"]
+
+   passed = and assertEq val "[up]" "opps3 4"
+                passed
+
+   passed = and assert found "opps3 5"
+                passed
+
+
+   opps4 = {
+              for key6 val6 in opps
+                 if lt (len key6) 5
+                    if lt (len val6) 5
+                       key6 val6
+                    else
+                       key6
+                       first val6 3
+                 else
+                    if lt (len val6) 5
+                       first key6 3
+                       val6
+                    else
+                       first key6 3
+                       first val6 3
+           }String > String
+   
+   keyVals = "-"      
+   for key5 val5 in opps4
+      keyVals = cat keyVals key5 val5 "-"
+
+   passed = and assertNeq (index keyVals "-leftrig-") -1 "opps4 1a"
+                passed
+
+   passed = and assertNeq (index keyVals "-updown-") -1 "opps4 1b"
+                passed
+
+   passed = and assertNeq (index keyVals "-insout-") -1 "opps4 1c"
+                passed
+
+
+   vals = ""
+   for whNum in [
+                   for whel1
+                      in 
+                         listTest
+                            allWheels[2]
+                            allWheels[1]
+                            allWheels[1]
+                      whel1.num
+                ]Int
+      vals = cat vals (String whNum)
+
+   passed = and assertEq vals "322" "whNum"
+                passed
+                 
+   youngsters = []people.Person "dateOfBirth > '1982-09-23'"
+
+
+   youngUns = {}String
+
+   for person in youngsters
+      youngUns += person.firstName
+
+   youngUnList = []String
+   for name in youngUns
+      youngUnList += name
+
+   sort youngUnList
+
+   vals = ""
+   for yu in youngUnList     
+      vals = cat vals yu
+
+   passed = and assertEq vals "AliceJaneJoe" "youngsters"
+                passed
+
+   clear allWheels
+
+   passed = and assertEq (len allWheels) 0 "len allWheels"
+                passed
+
+   clear opps4
+
+   passed = and assertEq (len opps4) 0 "len opps4"
+                passed
+
+   records = [
+                ["First name" "Last name"]
+                ["Joe" "DiMaggio"]
+             ][] String   
+
+   passed = and assertEq (String records) "[[First name   Last name]   [Joe   DiMaggio]]" "records"
+                passed
+
+   passed = and foo places
+                passed
+
+   places += "right"
+
+   passed = and assertEq (String places) "[left   inside   up   right]" "places"
+                passed
+
+   fakeCollection = nil
+   for i val in fakeCollection
+      passed = and assert false "fakeCollection"
+                   passed
+      
+
+   b1 = Bb
+   b1.name = "Bob"
+   b2 = Bb
+   b2.name = "Charles"
+   bs = [b1 b2]Bb
+
+   bbs = [bs][] Bb
+
+   a1 = Aa
+   a1.b = bbs
+
+   passed = and assertEq (garb a1.b) "Bob,Charles" "list of lists 1"
+                passed
+
+   bbs2 = a1.b
+
+   passed = and assertEq (garb bbs2) "Bob,Charles" "list of lists 2"
+                passed
+
+   if passed
+      print "PASSED"
+
+
+foo a [] String > Bool
+"""
+ Tests argument type compatibility of collection-type args.
+ This was failing to be dispatched to when called on a [] String argument.
+"""
+   => assertEq (String a) "[left   inside   up]" "foo places"
+
+
+
+        

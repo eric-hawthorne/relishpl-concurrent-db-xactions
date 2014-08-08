@@ -1,0 +1,17 @@
+origin   relish.pl2012
+artifact relish_website
+package  main
+
+"""
+ main.rel
+
+ So far, not sure what we're going to be doing in this main program.
+ Some kind of resource initialization I imagine.
+"""
+
+
+main
+"""
+ Doesn't do much of anything yet.
+"""
+   print "Starting relish.pl website web application."

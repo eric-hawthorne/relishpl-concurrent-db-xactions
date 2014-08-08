@@ -1,0 +1,250 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  reflect
+
+""" 
+ reflect.rel
+
+ Types and methods for reflection on the relish language structure (metadata) of data in relish programs. 
+
+ Note. This is pretty conservative right now. There are no data modification or method execution provisions
+ in the reflection library yet. Just interrogating the structure.
+
+ Note 2: Once public/private attribute and method classification comes into the language,
+ protection will need to be imlpemented in this reflection library to ensure it is not a way around
+ privacy protections.
+"""
+
+
+import 
+   strings
+   
+   
+DataType
+"""
+ Represents a relish datatype.
+ Can list the attributes specified by the type, or all attributes specified in the closure of the type and 
+ all of its direct and indirect supertypes.
+"""
+   name String
+
+
+Attribute
+"""
+ Represents an attribute descriptor of a datatype, or one direction of a bi-directional type-relation descriptor.
+"""
+   name String
+   type DataType
+   minArity Int 
+   maxArity Int
+   inverse ?Attribute
+
+
+SimpleAttrDescriptor
+"""
+ A descriptor of a unary primitive attribute and its value for some object instance.
+ The value has been converted to type String.
+"""
+   attrName String
+   typeName String
+   val String
+
+
+ComplexAttrDescriptor
+"""
+ A descriptor of an attribute and its value for some object instance,
+ where the attribute is not a unary attribute or does not have a atomic primitive as value type.
+ The values have been converted to type String.
+ If valIsObject is true, the values are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes.
+"""
+   attrName String
+   typeName String
+   minArity Int
+   maxArity Int
+   valIsObject Bool
+   valIsCollection Bool  // valIsObject will also be true - this is used with single-val attr w. collection type
+   inverseAttrName String  // "" if there is no inverse
+   inverseMinArity Int
+   inverseMaxArity Int    
+   vals 0 N [] String
+
+
+
+
+
+ObjectTree
+"""
+ Represents a whole tree of associated objects, out to the specified depth.
+ depth 1 is a single object with simple attributes only.
+ depth 2 includes directly associated objects
+ depth 3 includes associates of those.
+"""
+   depth Int
+   rootReflectId String
+   // objects {} String > ObjectDescriptor
+   objects Map  // Map from reflectId to ObjectDescriptor
+
+
+ObjectDescriptor
+"""
+ A descriptor a relish structured object.
+ May include only the type and ids of the object,
+ or also the simple attributes (unary, atomic-primitive-valued attributes)
+ and/or also the complex attributes (multi-valued and/or object-valued attributes)
+"""
+   typeName String  // The full name of the type of the object, although in backwards (human readable) format.
+   reflectId String  // The id for the object that is used by the reflection api.
+   dbid String  // String representation of the dbid of the object, or "" if the object is not locally persistent.
+   uuid String  // The uuidStr() value of the object, or "" if the object is not persistent somewhere.
+   includesSimpleAttrs Bool
+   includesComplexAttrs Bool
+   isCollection Bool
+   includesCollectionMembers Bool
+   simpleAttrs 0 N [] SimpleAttrDescriptor
+   complexAttrs 0 N [] ComplexAttrDescriptor 
+
+
+CollectionDescriptor <: ObjectDescriptor
+"""
+ A descriptor of a Map, List, or Set.
+ The keys and values have been converted to type String.
+ If keyIsObject is true, the map keyd are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes. 
+ If valIsObject is true, the values are reflectIds of objects, from which other reflection libary methods
+ are able to fetch the object and its attributes.
+"""
+   collectionKind String  // "Map" "List" "Set"
+   minArity Int
+   maxArity Int
+   keyIsObject Bool
+   valIsObject Bool
+   keyType String
+   valType String
+   keys 0 N [] String  // Will be empty if not a map  
+   vals 0 N [] String   
+
+
+
+
+getObjectTree reflectId String depth Int > tree ObjectTree
+"""
+ Returns an object tree to the specified depth.
+ See definition of ObjectTree.
+"""
+   tree = ObjectTree
+   tree.rootReflectId = reflectId
+   tree.depth = depth
+   tree.objects = {}String > ObjectDescriptor
+
+
+   populateObjectTree tree reflectId depth       
+
+
+populateObjectTree tree ObjectTree reflectId String depth Int
+"""
+ Helper function.
+ Add object descriptors to the tree up to the needed depth.
+ Recursive.
+"""
+   objectMap = tree.objects
+   if not objectMap[? reflectId]
+      obj = objectByReflectId reflectId 
+      if eq obj nil
+         =>
+      objDesc = makeDescriptor obj reflectId depth 
+      objectMap[reflectId] = objDesc 
+      if gt depth 1
+         depth = minus depth 1
+         for complexAttrDesc in objDesc.complexAttrs
+            if complexAttrDesc.valIsObject
+               if complexAttrDesc.vals
+                  for associatedReflectId in complexAttrDesc.vals
+                     populateObjectTree tree associatedReflectId depth
+         if objDesc.isCollection
+            // Should do a typecast here
+            collDesc = objDesc
+            if collDesc.keyIsObject
+               if collDesc.keys
+                  for key in collDesc.keys
+                     populateObjectTree tree key depth
+            if collDesc.valIsObject
+               if collDesc.vals
+                  for val in collDesc.vals
+                     populateObjectTree tree val depth
+
+
+makeDescriptor 
+   obj Any 
+   reflectId String 
+   remainingDepth Int 
+> 
+   objDesc ObjectDescriptor      
+"""
+ If remainingDepth is 0, does not even include simple attributes.
+ If remainingDepth is 1, includes only simple attributes
+ If remainingDepth is 2 or more, includes also complex attributes
+"""
+   objType = typeOf obj
+
+   if hasPrefix objType.name "List_of_"
+      objDesc = CollectionDescriptor
+      objDesc.keyIsObject = false
+      objDesc.isCollection = true
+   elif hasPrefix objType.name "Set_of_"   
+      objDesc = CollectionDescriptor  
+      objDesc.keyIsObject = false
+      objDesc.isCollection = true             
+   elif hasPrefix objType.name "Map_of_" 
+      objDesc = CollectionDescriptor      
+      objDesc.isCollection = true      
+   else 
+      objDesc = ObjectDescriptor
+      objDesc.isCollection = false
+
+   objDesc.typeName = backwardsTypeName objType.name
+   objDesc.reflectId = reflectId
+   if hasUuid obj
+      objDesc.dbid = String dbid obj
+      objDesc.uuid = uuidStr obj
+   else
+      objDesc.dbid = ""
+      objDesc.uuid = ""
+   if gt remainingDepth 0
+      objDesc.simpleAttrs = getSimpleAttributes reflectId
+      objDesc.includesSimpleAttrs = true
+
+      if objDesc.isCollection
+
+         collType minArity maxArity keyIsObject valIsObject keyType valType keys vals =
+            getCollectionInfo reflectId
+
+         objDesc.collectionKind = collType
+         objDesc.minArity = minArity
+         objDesc.maxArity = maxArity
+         objDesc.keyIsObject = keyIsObject 
+         objDesc.valIsObject = valIsObject
+         objDesc.keyType = keyType
+         objDesc.valType = valType
+         objDesc.keys = keys
+         objDesc.vals = vals
+         objDesc.includesCollectionMembers = true
+
+   if gt remainingDepth 1
+      objDesc.complexAttrs = getComplexAttributes reflectId    
+      objDesc.includesComplexAttrs = true  
+
+
+
+
+explore obj ?Any
+"""
+ Set an object of focus for the data explorer, then pause the relish runtime 
+ pending a resume call.
+ Should really be accepting an arg of type StructOrCollection, not Any.
+ Can call explore nil to not focus on an object, just pause.
+"""   
+   if obj
+      label obj "**Object in Focus**"
+
+   pause

@@ -1,0 +1,239 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  http_srv
+
+""" 
+ request.rel
+
+ Represents an http request as received by the http server.
+ This package includes Go native methods, defined in 
+ relish/runtime/native_methods/standard_lib/http_methods/files.go
+""" 
+
+
+import
+   datetime
+   strings
+
+
+Request 
+"""
+ A Request represents an http request.
+ Has cookie methods and uploaded file methods.
+"""
+
+
+// NATIVE METHODS
+//
+// uploadedFiles r Request key String > fs [] UploadedFile
+//
+// uploadedFile r Request key String > f UploadedFile err String
+//
+// cookies r Request > c [] Cookie
+//  
+// cookie r Request key String > c Cookie err String
+// 
+//
+// requestUri r Request > String 
+//
+// referer r Request > String 
+//
+// method r Request > String 
+// """
+//  GET POST PUT
+// """
+//
+// host r Request > String 
+// """
+//  host or host:port
+// """
+//
+// remoteAddr r Request > String 
+// """
+//  The client address
+//  IP:port
+// """
+
+
+Cookie
+"""
+ An http cookie. 
+ Native methods TBD
+"""
+
+
+// NATIVE METHODS - See golang.org/pkg/net/http/#Cookie for attribute meanings
+// name c Cookie > String
+// value c Cookie > String
+// path c Cookie > String
+// domain c Cookie > String
+// expires c Cookie > Time 
+// rawExpires c Cookie > String
+
+// // maxAge=0 means no 'Max-Age' attribute specified.
+// // maxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
+// // maxAge>0 means Max-Age attribute present and given in seconds
+// maxAge c Cookie > Int
+// secure c Cookie > Bool
+// httpOnly c Cookie > Bool
+// raw c Cookie > String      
+// initString s String c Cookie > String  
+
+
+// setCookie c Cookie > String    
+// """
+//  Return a proper header line for setting the cookie in an http response.
+//
+//  Note: currently there is no way to construct a valid cookie except the
+//  method variant below.
+//  So this variant of the setCookie method is currently 
+//  only for passing to the http response
+//  a cookie received in the http request, unmodified.
+//  TODO: Add Cookie constructor methods or attribute setter methods.
+// """
+
+
+// setCookie name String value String maxAge Int path String domain String > String
+// """
+//  Return a proper header line for setting the cookie in an http response
+// """
+
+
+
+
+
+// Usage of the following high-level web-app session maintenance methods:
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// someWebMethod request http_srv.Request arg1 String arg2 Int > String String Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+
+newSessionToken > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+   t = now "UTC"
+   if contextExists "tokenCounter"
+      c = context "tokenCounter"
+   else
+      c = 1     
+   nc = plus c 1
+   if gt nc 999999999
+      nc = 1
+   contextPut nc "tokenCounter"
+
+   => replace
+         base64Hash cat c "|" (format t "2006-01-02T15:04:05.999999999Z07:00")
+         "="
+         ""
+
+
+sessionCookie sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+   timeoutSeconds = times 60 sessionTimeoutMinutes
+   => header setCookie "SESS" sessionToken timeoutSeconds "/" ""
+
+
+sessionCookieAndNoCache sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+   timeoutSeconds = times 60 sessionTimeoutMinutes
+   => headers setCookie "SESS" sessionToken timeoutSeconds "/" ""
+              NO_CACHE
+
+
+session request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+   sessCookie err = cookie request "SESS"
+   if err
+      token = ""
+   else 
+      token = value sessCookie
+
+
+
+
+
+// headers 
+//    h1 String 
+//    h2 String
+//    h3 String
+//    hN String
+// > 
+//    String
+// """
+//  Return a HEADERS argument with the specified header lines
+//  The result of this call can be returned as the first return-value of a relish web dialog method
+//  to set the headers in the http response.
+// """
+
+
+// header h1 String > String
+// """
+//  Return a HEADERS argument with the specified single http header line
+//  The result of this call can be returned as the first return-value of a relish web dialog method
+//  to set the header in the http response.
+// """
+
+
+
+
+
+// Returns http header lines which together should cause the http client (browser)
+// to not cache the http response.
+//
+// Usage: returned from a relish web dialog handler method as follows:
+//
+//    => header http_srv.NO_CACHE
+//       "foo.html"
+//       fooDialogArgs
+//
+
+
+NO_CACHE = ```
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0```

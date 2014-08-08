@@ -1,0 +1,523 @@
+origin   relish.pl2012
+artifact relish_website
+package  web 
+
+""" 
+ shared_dialog.rel
+
+ Web dialog handling methods for the shared.relish.pl sitelet.
+"""
+
+
+import
+   http_srv
+   strings
+   files
+   model
+   crypto
+   datetime
+
+
+register > String String
+"""
+ Handles a request for the "register a code origin" page.
+"""
+   => "HTML FILE"
+      "register.html"
+
+
+registerAction 
+   givenName String
+   familyName String
+   organization String
+   dept String
+   email String
+   email2 String
+   password String
+   password2 String
+   originId String
+> 
+   String 
+   String
+"""
+ Processes a "register a code origin" request.
+ Validates registration form info. Makes sure origin is not already registered.
+ Sends an email message to have the registrant confirm the registration.
+"""
+   givenName = trimSpace givenName
+   familyName = trimSpace familyName
+   organization = trimSpace organization
+   dept = trimSpace dept
+   email = trimSpace email
+   email2 = trimSpace email2
+   password = trimSpace password
+   password2 = trimSpace password2
+   originId = trimSpace originId
+   print givenName familyName
+   print organization dept
+   print email email2
+   print password password2
+   print originId
+
+   if not givenName
+      => errf "Please enter the given name (first name in western tradition) of a contact person for the code origin."
+   if not familyName
+      => errf "Please enter the family name (last name in western tradition) of a contact person for the code origin."
+
+   if not email
+      => errf "Please enter a contact email address for the code origin."
+   if lt (index email "@") 1
+      => errf "Please enter a valid contact email address for the code origin."
+   if lt lastIndex email "." 
+         plus 2 (index email "@")
+      => errf "Please enter a valid contact email address for the code origin."
+   if neq email email2
+      => errf "Emails don't match. Please re-enter."
+
+   if neq password password2
+      => errf "Passwords don't match. Please re-enter."
+
+   err = originIdError originId
+   if err
+      => errf err
+ 
+   pwHash = base64Hash password
+   emailVerificationToken = base64Hash cat pwHash email originId
+
+   smtpServer = ""
+
+   requestToConfirmRegistration = 
+      fill """
+If you are registering the relish code origin %s please confirm this
+and complete the origin registration by clicking the following link:
+http://shared.relish.pl/verifyRegistration/%s/%s
+
+If you do not know what this email message is about, please delete it.
+It means someone else has inadvertently or deliberately used your 
+email address as the contact address for creating a relish code origin.
+See http://relish.pl if you have more questions.
+"""
+           originId
+           originId
+           emailVerificationToken
+
+   err = sendEmail 
+            smtpServer
+            "relishpl@gmail.com"  
+            email
+            "Confirm registration of relish code origin"
+            requestToConfirmRegistration
+     
+   if err
+      print "Sending email to" email
+      print "Subject: Confirm registration of relish code origin"
+      print requestToConfirmRegistration
+      print err
+      print "ignoring email error during testing"
+      // => errf err
+         
+   o = model.Origin
+   o.ident = originId
+   o.contactGivenName = givenName
+   o.contactFamilyName = familyName
+   o.organization = organization
+   o.department = dept
+   o.email = email
+   o.pwHash = pwHash
+   o.isPublic = false
+   o.isVerified = false
+   o.emailVerificationToken = emailVerificationToken
+   o.publicKeyCert = ""
+   o.registered = now "UTC"
+
+   dub o originId
+
+   => "REDIRECT"
+      cat "registerContinue?originId=" originId
+
+
+registerContinue originId String > String Any 
+"""
+ Simply advise the user to look for their verification email.
+"""
+   if not exists originId
+      => errf "invalid origin id"
+   o = summon originId
+   => "register_continue.html"
+      {
+         "originId" => originId
+         "email"    => o.email
+      }String > Any
+
+
+
+verifyRegistration originId String token String > String String 
+"""
+ Processes a confirmation of registration.
+ An email message has been sent to the origin contact email address and the confirmation link has been clicked.
+"""
+   if not exists originId
+      => errf cat originId " is not a newly registered relish code origin."
+   
+   o = summon originId
+   if o.isVerified
+      => errf cat originId " is already verified."
+
+   o.isVerified = true
+
+   => "REDIRECT"
+      cat "/registrationConfirmed?originId=" originId
+
+
+registrationConfirmed originId String > String Any
+"""
+ Confirms that registration has been verified via response to confirmation email.
+ Allows continuing on to generate private and public keys for the origin.
+ Requires password to be entered to generate keys, as extra security measure.
+"""
+   => "registration_confirmed.html"
+      {"originId"=>originId}String > String 
+
+
+generateKeysAction originId String password String > String Any
+"""
+ Generates a private-key public-key pair for an origin.
+ If a key pair has already been generated, asks for confirmation before re-keying the origin.
+"""
+   if not exists originId
+      => errf cat originId " is not a registered relish code origin."
+
+   o = summon originId
+   if neq (base64Hash password) o.pwHash
+      => errf "Incorrect passord for origin administration."    
+
+   if not o.isVerified
+      => errf cat originId " has not been confirmed by click on email message link."
+
+   if o.publicKeyCert  // cert already exists - re-keying  
+      => "confirm_rekey.html"
+         {"originId"=>originId}String > String 
+
+   privateKeyPem publicKeyPem err = 
+      generateCertifiedKeyPair crypto.DEFAULT_RSA_KEY_LEN_BITS 
+                               ""  // "origin"
+                               ""  // "shared.relish.pl2012"
+                               ""  // sharedRelishPlPrivateKeyPem
+                               ""  // sharedRelishPlPrivateKeyPassword
+                               "origin" 
+                               originId 
+                               password
+   if err
+      => errf err
+
+   o.publicKeyCert = publicKeyPem
+  
+   => "keys.html"
+      {
+         "privateKey" => privateKeyPem
+         "publicKey"  => publicKeyPem
+         "originId"   => originId
+      }String > String
+   
+
+confirmReKeyAction originId String password String > String Any
+"""
+ Generates a private-key public-key pair for an origin.
+"""
+   if not exists originId
+      => errf cat originId " is not a registered relish code origin."
+
+   o = summon originId
+   if neq (base64Hash password) o.pwHash
+      => errf "Incorrect passord for origin administration."    
+
+   if not o.isVerified
+      => errf cat originId " has not been confirmed by click on email message link."      
+
+   privateKeyPem publicKeyPem err = 
+      generateCertifiedKeyPair crypto.DEFAULT_RSA_KEY_LEN_BITS 
+                               ""  // "origin"
+                               ""  // "shared.relish.pl2012"
+                               ""  // sharedRelishPlPrivateKeyPem
+                               ""  // sharedRelishPlPrivateKeyPassword
+                               "origin" 
+                               originId 
+                               password
+   if err
+      => errf err
+
+   o.publicKeyCert = publicKeyPem
+
+   => "keys.html"
+      {
+         "privateKey" => privateKeyPem
+         "publicKey"  => publicKeyPem
+         "originId"   => originId
+      }String > String
+
+
+login 
+   ...kw {} String > String 
+> 
+   String 
+   Map
+"""
+ Display a login page. If login is successful, redirect to the next page.
+"""
+   originId originSpecified = kw["o"]
+   if not originSpecified
+      originId = ""
+
+   bad badSpecified = kw["bad"]
+   if badSpecified
+      msg = "<p><span style='color: red'><b>Origin id or password incorrect. Please re-enter.</b></span></p>"
+   else
+      unverified unverifiedSpecified = kw["unverified"]
+      if unverifiedSpecified
+         msg = """
+<p><span style='color: red'><b>Code origin has not been confirmed by click
+on registration email message link.</b></span></p>
+"""
+      else
+         msg = ""
+
+   next = kw[! "next"]
+
+   => "login.html"
+      {
+         "originId" => originId
+         "next"     => next
+         "msg"      => msg
+      }String > String
+
+
+loginAction o String pw String next String > String String
+"""
+ Checks login credentials and if successful, redirects to the next URL,
+ sending a cookie in the response to establish a login session.
+"""
+   if not exists o
+      => "REDIRECT"
+         cat "/login?o=" o "&bad=1&next=" next
+
+   o = summon originId
+   if neq (base64Hash pw) o.pwHash
+      => "REDIRECT"
+         cat "/login?o=" o "&bad=1&next=" next
+
+   if not o.isVerified
+      => "REDIRECT"
+         cat "/login?o=" o "&unverified=1&next=" next  
+
+   => "REDIRECT"
+      cat next "?o=" o
+
+
+upload 
+   request http_srv.Request 
+   ...kw {} String > String 
+> 
+   String 
+   String 
+   Any
+"""
+ Handles a request for the "upload a code artifact" page.
+"""
+   originId originSpecified = kw["o"]
+   if not originSpecified
+      => "REDIRECT"
+         "/login?next=/upload"
+         nil
+
+   tok = session request
+   visit = loggedInVisit tok originId
+   if not visit
+      => "REDIRECT"
+         cat "/login?o=" originId "next=/upload"
+         nil
+   => sessionCookieAndNoCache tok 60
+      "upload.html"
+      originId
+
+
+REPOSITORY_ROOT = "/opt/devel/relish/rt/shared/relish/replicas/"
+
+
+uploadAction request http_srv.Request o String > String String Any
+"""
+ Processes an upload of artifact files.
+"""
+   tok = session request
+
+   visit = loggedInVisit tok o
+   if not visit
+      => "REDIRECT"
+         cat "/login?o=" o "next=/upload"
+         nil
+
+   extendSession = sessionCookieAndNoCache tok 60
+
+   fileList = uploadedFiles request "myfiles"
+   for file in fileList
+      fileName = name file
+      err = open file
+      if err
+         => errf3 extendSession "Error opening uploaded file" fileName err
+     
+      content err = readAllBinary file
+      if err
+         => errf3 extendSession "Error reading uploaded file" fileName err
+
+      close file
+      if eq fileName "metadata.txt"
+         print fileName
+         print content
+         snippet i = between content "origin: " "\n"
+         originName = trimSpace snippet
+         if neq originName o
+            => errf3 extendSession "Cannot upload an artifact from an origin other that yours."
+
+         snippet i = between content "artifact: " "\n"
+         artifactName = trimSpace snippet    
+         artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
+         err = mkdirAll artifactDirPath
+         if err
+            => errf3 extendSession err
+
+         metadataFilePath = cat artifactDirPath "/metadata.txt"    
+         metadataFile err = files.File metadataFilePath "w"
+         if err
+            => errf3 extendSession err
+
+         write metadataFile content                   
+         err = close metadataFile
+         if err
+            => errf3 extendSession err
+
+      elif hasSuffix fileName ".zip"
+         print fileName
+         print len content
+
+         sepPos = index fileName "--"
+         originName = first fileName sepPos
+         if neq originName o
+            => errf3 extendSession "Cannot upload an artifact from an origin other that yours."   
+                  
+         lastSepPos = lastIndex fileName "---"
+         version = slice fileName 
+                         plus lastSepPos 3
+                         minus (len fileName) 4
+         artifactName = slice fileName
+                              plus sepPos 2
+                              lastSepPos
+         artifactName = replace artifactName "--" "/"   
+
+         artifactDirPath = cat REPOSITORY_ROOT originName "/" artifactName 
+         artifactVersionDirPath = cat artifactDirPath "/v" version 
+         fileInfo versionDirExists err = stat artifactVersionDirPath
+         if err
+            => errf3 extendSession "Can't stat directory" artifactVersionDirPath err
+         elif versionDirExists
+            => errf3 extendSession
+                     cat "Error: Version " 
+                         version 
+                         " of " 
+                         originName 
+                         "/" 
+                         artifactName 
+                         " has already been uploaded. Cannot replace it."
+    
+         err = mkdirAll artifactVersionDirPath
+         if err
+            => errf3 extendSession err
+
+         zipFilePath = cat artifactDirPath "/" fileName
+
+         zipFile err = files.File zipFilePath "w"
+         if err
+            => errf3 extendSession err
+
+         write zipFile content                   
+         err = close zipFile
+         if err
+            => errf3 extendSession err
+
+         srcZipContent err = extract1 content "artifactVersionContents.zip" 
+         if err
+            => errf3 extendSession err
+
+         // Note: Should really verify the signed code here.   
+
+         err = extract srcZipContent artifactVersionDirPath
+         if err
+            => errf3 extendSession 
+                     "Could not extract artifact version contents zip file into" 
+                     artifactVersionDirPath 
+                     err            
+
+      else 
+         => errf3 extendSession 
+                  cat "Error: Uploaded file " 
+                      fileName 
+                      " is not a metadata.txt file or an artifact version .zip file."
+
+   => extendSession
+      "HTML"
+      """
+<html>
+Uploaded !
+</html>
+"""
+
+
+directory > String String
+"""
+ Directory of artifacts uploaded to shared.relish.pl
+
+ This needs to become a search tool for this repository.
+ Right now it's just a simple listing.
+"""
+   => "HTML FILE"
+      "shared_artifacts_directory.html"
+
+
+featured > String String
+"""
+ Directory of featured artifacts uploaded to shared.relish.pl
+"""
+   => "HTML FILE"
+      "featured_artifacts_directory.html"
+
+
+
+
+
+
+
+setHostname > String String
+"""
+ Sets the hostname for the web app.
+"""
+   => "HTML"
+      """
+<html>
+<form action="setHostnameAction" method="POST">
+<p>
+Hostname: <input type="text" size="20" name="hostName"><input type="submit" value="submit"/>
+</p>
+</form>
+</html>
+"""
+
+
+setHostnameAction hostName String > String String
+"""
+ Sets the host name.
+"""
+   setToken hostName
+   => "HTML"
+      """
+<html>
+Done. Set hostname for webapp.
+</html>
+"""

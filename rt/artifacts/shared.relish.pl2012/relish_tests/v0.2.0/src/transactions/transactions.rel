@@ -1,0 +1,180 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  transactions 
+
+""" 
+ transactions.rel
+
+ Test transactions, rollback of transactions and their effect on the state of in-memory objects 
+ in concurrent go-routines and after rollback of transaction.
+"""
+
+import
+   strings
+   test as t
+   reflect
+   datetime
+
+
+Aa 
+"""
+ A type.
+"""
+   aVal Int
+
+
+Bb
+"""
+ B type.
+"""
+   bVal String
+
+
+Cc
+"""
+ C type.
+"""
+   a Aa
+   b Bb
+   cVal Bool
+
+
+Aa 0 N -- 0 N Bb
+
+
+main
+"""
+ Main program.
+"""
+   testTransactions
+
+
+testTransactions
+"""
+ Test transaction rollback and in-memory object state.
+"""   
+   passed = true
+
+   print "===== Transactions and Rollback"
+
+   a1 = Aa
+   a1.aVal = 1
+
+   dub a1 "a1"
+
+   a1.aVal = 2
+
+   err = begin
+   passed = and assertNot err "transaction begun"
+                passed
+
+   a1.aVal = 3
+
+   err = rollback
+   passed = and assertNot err "transaction rolled back"
+                passed
+
+   passed = and assertEq a1.aVal 2 "a1.aVal is 2"
+                passed
+
+   if not passed
+      print a1.aVal
+
+   // exit 1
+
+   err = begin
+   passed = and assertNot err "transaction begun"
+                passed
+
+   a1.aVal = 4
+
+   a1.aVal = 5
+
+   err = commit
+   passed = and assertNot err "transaction committed"
+                passed
+
+   passed = and assertEq a1.aVal 5 "a1.aVal is 5"
+                passed
+
+   delete a1
+
+
+
+   a2 = Aa
+   a2.aVal = 1
+
+   err = begin
+   passed = and assertNot err "transaction begun"
+                passed
+
+   a2.aVal = 2
+   dub a2 "a2"
+
+   a2.aVal = 3
+
+   err = rollback
+   passed = and assertNot err "transaction rolled back"
+                passed
+
+   passed = and assertEq a2.aVal 3 "a2.aVal is 3"
+                passed
+
+   err = begin
+   passed = and assertNot err "transaction begun"
+                passed
+
+   a2.aVal = 4
+   dub a2 "a2"
+
+   a2.aVal = 5
+
+   err = commit
+   passed = and assertNot err "transaction committed"
+                passed
+
+   passed = and assertEq a2.aVal 5 "a2.aVal is 5"
+                passed
+
+   go doStuff a2
+
+   err = begin
+   passed = and assertNot err "transaction begun"
+                passed
+
+   // print "about to set a2.aVal = 6 inside transaction"    
+   a2.aVal = 6
+   // print "set a2.aVal = 6 inside transaction"        
+   sleep seconds 5
+   // print "finished sleep 5 inside transaction"
+   passed = and assertEq a2.aVal 6 "a2.aVal is 6"
+                passed   
+   // print "about to commit"                  
+   err = commit
+   // print "committed"
+   passed = and assertNot err "transaction committed"
+                passed
+
+   sleep seconds 4
+
+   delete a2    
+
+   passed = and assertEq a2.aVal 7 "a2.aVal is 7"
+                passed   
+
+   if passed
+      print "PASSED"
+
+
+doStuff a Aa
+"""
+ Do stuff.
+"""
+   // print "doStuff"
+   sleep seconds 2
+   // print "finished sleeping 2 so doStuff about to set a2.aVal = 7"   
+   a.aVal = 7
+   // print "doStuff set a2.aVal = 7"   
+
+
+

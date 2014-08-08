@@ -1,0 +1,650 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web/playground 
+
+""" 
+ init.rel
+
+ Ensures that simple program examples are defined so they can be tried in the playground.
+"""
+
+
+import
+   strings
+
+
+ensureExampleSimplePrograms
+"""
+ Ensures that simple program examples are defined so they can be tried in the playground.
+ These examples should correspond to the simple programs defined in the 
+ shared.relish.pl2012/simple_programs artifact.
+ 
+ 
+"""
+   if not exists "example1_output"
+      p = Artifact
+      p.name = "example1_output"
+      p.description = "Demonstrates the print statement."
+      p.importsFileContent = "" 
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+print "Hello, 世界"      
+"""
+      p.consoleOutput = ""    
+      dub p "example1_output"
+
+
+   if not exists "example2_loops"
+      p = Artifact
+      p.name = "example2_loops"
+      p.description = "Demonstrates loop and enumeration of collection elements."
+      p.importsFileContent = """ 
+strings      
+"""
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+friends = ["john" "pat" "gary" "michael"]
+for i name in friends
+   print fill "iteration %s is %s" i name    
+"""
+      p.consoleOutput = ""    
+      dub p "example2_loops"
+
+
+   if not exists "example3_fibonacci"
+      p = Artifact
+      p.name = "example3_fibonacci"
+      p.description = "Demonstrates while loop and multiple-assignment statement."
+      p.importsFileContent = """ 
+strings      
+"""
+      p.constantsFileContent = "" 
+      p.typesFileContent = "" 
+      p.methodsFileContent = "" 
+      p.mainFileContent = """
+parents babies = 1 1 
+while lt babies 100
+   print fill "This generation has %s babies" babies
+   parents babies = babies 
+                    plus parents babies  
+"""
+      p.consoleOutput = ""    
+      dub p "example3_fibonacci"
+
+
+   if not exists "example4_methods"
+      p = Artifact
+      p.name = "example4_methods"
+      p.description = "Demonstrates method declaration and method call."
+      p.importsFileContent = "" 
+      p.constantsFileContent = "" 
+      p.typesFileContent = ""
+      p.methodsFileContent = fill """
+greet name String 
+%s
+ Issue a greeting to the named person.
+%s
+   print "Hello" name  
+""" 
+                                  "\"\"\"" 
+                                  "\"\"\""
+      p.mainFileContent = """
+greet "Jack"
+greet "Jill"
+"""
+      p.consoleOutput = ""    
+      dub p "example4_methods"
+
+
+   if not exists "example5_maps"
+      p = Artifact
+      p.name = "example5_maps"
+      p.description = "Demonstrates maps and map literals with a 'for' generator inside."
+      p.importsFileContent = """ 
+strings      
+""" 
+      p.constantsFileContent = "" 
+      p.typesFileContent = ""
+      p.methodsFileContent = ""      
+      p.mainFileContent = """
+prices = {"apple"=>0.40 "banana"=>0.50 "orange"=>0.45}
+myPurchase = {
+                "apple"  => 1
+                "banana" => 6
+             }
+groceryBill = sum [
+                     for fruit in myPurchase
+                        times prices[! fruit] myPurchase[! fruit]
+                  ]Float
+
+print fill "I owe the grocer $%s" groceryBill
+
+roundFruitPrices = {
+                      for fruit price in prices
+                         if not eq fruit "banana"
+                            fruit 
+                            price
+                   }String > Float
+
+print len roundFruitPrices
+"""
+      p.consoleOutput = ""    
+      dub p "example5_maps"
+
+
+   if not exists "example6_constants_strings"
+      p = Artifact
+      p.name = "example6_constants_strings"
+      p.description = "Demonstrates constants, multi-line strings, and while loops."
+      p.importsFileContent = """ 
+strings      
+"""
+      consts = fill """
+REFRAIN = %s
+%s bottles of beer on the wall,
+%s bottles of beer,
+take one down, pass it around,
+%s bottles of beer on the wall!
+%s   
+"""    
+                    "\"\"\"" 
+                    "%s"
+                    "%s"             
+                    "%s"
+                    "\"\"\""
+      // print consts
+      p.constantsFileContent = consts                                    
+      p.typesFileContent = ""
+      p.methodsFileContent = ""      
+      p.mainFileContent = """
+bottlesOfBeer = 99
+while gt bottlesOfBeer 1
+   print fill REFRAIN 
+              bottlesOfBeer 
+              bottlesOfBeer 
+              minus bottlesOfBeer 1
+   bottlesOfBeer = minus bottlesOfBeer 1
+"""
+      p.consoleOutput = ""    
+      dub p "example6_constants_strings"
+
+
+   if not exists "example7_datatypes"
+      p = Artifact
+      p.name = "example7_datatypes"
+      p.description = "Demonstrates programmer-defined data types, and constructor functions."
+      p.importsFileContent = "" 
+      p.constantsFileContent = ""
+      p.typesFileContent = fill """
+BankAccount
+%s
+ A simple bank account data-type.
+ Has one attribute; its balance.
+%s
+   balance Float
+"""   
+                                "\"\"\"" 
+                                "\"\"\""  
+      p.methodsFileContent = fill """
+initBankAccount acc BankAccount initialBalance Float 
+> BankAccount
+%s
+ Constructor method for a bank account. Gives it an initial balance.
+%s
+   acc.balance = initialBalance
+   => acc
+
+
+deposit acc BankAccount amount Float
+%s
+ Deposit an amount of money in the bank account.
+%s
+   acc.balance = plus acc.balance amount
+
+
+withdraw acc BankAccount amount Float
+%s
+ Withdraw an amount of money from the bank account.
+%s
+   acc.balance = minus acc.balance amount
+
+
+overdrawn acc BankAccount > Bool
+%s
+ Return true if the bank account has a negative balance.
+ Return false otherwise.
+%s
+   => lt acc.balance 0.0      
+"""      
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""  
+                                  "\"\"\"" 
+                                  "\"\"\""   
+      p.mainFileContent = """
+myAccount = BankAccount 15.0
+withdraw myAccount 5.0
+print myAccount.balance      
+"""
+      p.consoleOutput = ""    
+      dub p "example7_datatypes"   
+   
+
+   if not exists "example8_multimethods"
+      p = Artifact
+      p.name = "example8_multimethods"
+      p.description = "Demonstrates multiple-dispatch polymorphism and other advanced relish features."
+      p.importsFileContent = """ 
+strings      
+"""
+      p.constantsFileContent = ""
+      p.typesFileContent = ```
+Skeleton
+"""
+ A skeleton, at least most of one, according to the song "Dem Bones".
+ Has a list of the bones ordered from top down.
+"""
+   bones 0 12 [>height] Bone
+
+
+Bone
+"""
+ A part of a skeleton.
+"""
+   name String
+   isLeft Bool
+   isRight Bool
+   height Int  // Position in body from ground up
+
+
+Bone 0 1 connectedUpTo -- connectedDownTo 0 2 Bone
+
+
+initBone bone Bone side String name String height Int > Bone
+"""
+ Create a left or right bone.
+"""
+   initBone bone name height
+   if eq side "left"
+      bone.isLeft = true
+   else
+      bone.isRight = true
+   => bone
+
+
+initBone bone Bone name String height Int > Bone
+"""
+ Create a bone that is neither left or right.
+"""
+   bone.name = name
+   bone.height = height
+   bone.isLeft = false
+   bone.isRight = false
+   => bone
+
+
+initString s String bone Bone > String
+"""
+ Return the full name of the bone.
+"""
+   if bone.isLeft
+      fullName = "left "
+   elif bone.isRight
+      fullName = "right "
+   else
+      fullName = ""
+   fullName = cat fullName bone.name " bone"
+   => fullName
+
+
+
+DownConnected <: Bone
+"""
+ A bone which only connects down to one other bone.
+"""
+
+
+UpConnected <: Bone
+"""
+ A bone which only connects up to one other bone.
+"""
+
+
+UpDownConnected <: Bone
+"""
+ A bone which connects up to a bone and down to a bone.
+"""
+
+
+UpDoubleDownConnected <: Bone
+"""
+ A bone which connects down to two bones of opposite sides.
+"""
+
+
+HeadBone <: DownConnected
+"""
+ Skull.
+"""
+
+
+initHeadBone head HeadBone > HeadBone
+"""
+ Create a head.
+"""
+   initBone head "head" 8
+   => head
+
+
+
+NeckBone <: UpDownConnected
+"""
+ Neck.
+"""
+
+
+initNeckBone neck NeckBone > NeckBone
+"""
+ Create a neck.
+"""
+   initBone neck "neck" 7
+   => neck
+
+
+
+BackBone <: UpDownConnected
+"""
+ Backbone.
+"""
+
+
+initBackBone back BackBone > BackBone
+"""
+ Create a neck.
+"""
+   initBone back "back" 6
+   => back
+
+
+
+HipBone <: UpDoubleDownConnected
+"""
+ Hip bone.
+"""
+
+
+initHipBone hip HipBone > HipBone
+"""
+ Create a hip bone.
+"""
+   initBone hip "hip" 5
+   => hip
+
+
+
+ThighBone <: UpDownConnected
+"""
+ Thigh bone.
+"""
+
+
+initThighBone thigh ThighBone side String > ThighBone
+"""
+ Create a thigh bone.
+"""
+   initBone thigh side "thigh" 4
+   => thigh
+
+
+
+KneeBone <: UpDownConnected
+"""
+ Knee bone.
+"""
+
+
+initKneeBone knee KneeBone side String > KneeBone
+"""
+ Create a knee bone.
+"""
+   initBone knee side "knee" 3
+   => knee
+
+
+
+LegBone <: UpDownConnected
+"""
+ Leg bone.
+"""
+
+
+initLegBone leg LegBone side String > LegBone
+"""
+ Create a (lower) leg bone.
+"""
+   initBone leg side "leg" 2
+   => leg
+
+
+
+FootBone <: UpConnected
+"""
+ Foot bone.
+"""
+
+
+initFootBone foot FootBone side String > FootBone
+"""
+ Create a foot bone.
+"""
+   initBone foot side "foot" 1
+   => foot
+```
+
+
+
+      p.methodsFileContent = ```
+makeBodyParts > {} Bone
+"""
+ Make a pile of bones from which to assemble a skeleton.
+ The order of the bones in the pile is indeterminate.
+"""
+   bones = {}Bone
+   bones += HipBone   
+   bones += NeckBone   
+   bones += FootBone "right"   
+   bones += FootBone "left"
+   bones += HeadBone 
+   bones += LegBone "left"     
+   bones += ThighBone "left"
+   bones += LegBone "right"   
+   bones += ThighBone "right"
+   bones += KneeBone "left"
+   bones += BackBone  
+   bones += KneeBone "right"
+   => bones
+
+
+
+connect neck NeckBone head HeadBone > Bool
+"""
+ Connect neck to head. 
+"""
+   neck.connectedUpTo = head
+   => true
+
+
+connect back BackBone neck NeckBone > Bool
+"""
+ Connect back to neck.
+"""
+   back.connectedUpTo = neck
+   => true
+
+
+connect hip HipBone back BackBone > Bool
+"""
+ Connect hip to back.
+"""
+   hip.connectedUpTo = back
+   => true
+
+
+connect thigh ThighBone hip HipBone > Bool
+"""
+ Connect thigh to hip. Left or right doesn't matter.
+"""
+   thigh.connectedUpTo = hip
+   => true
+
+
+connect knee KneeBone thigh ThighBone > Bool
+"""
+ Connect knee to thigh. Only the correct side bones can connect.
+"""
+   if eq knee.isLeft thigh.isLeft 
+      knee.connectedUpTo = thigh
+      => true 
+   => false  
+
+
+connect leg LegBone knee KneeBone > Bool
+"""
+ Connect leg to knee. Only the correct side bones can connect.
+"""
+   if eq leg.isLeft knee.isLeft
+      leg.connectedUpTo = knee
+      => true
+   => false
+
+
+connect foot FootBone leg LegBone > Bool
+"""
+ Connect foot to leg. Only the correct side bones can connect.
+"""
+   if eq foot.isLeft leg.isLeft
+      foot.connectedUpTo = leg
+      => true
+   => false
+
+
+connect bone1 Bone bone2 Bone > Bool
+"""
+ Unconnectable.
+"""
+   => false
+
+
+connectEitherWay bone1 Bone bone2 Bone > Bool
+"""
+ Try connecting both ways around.
+"""
+   if connect bone1 bone2
+      => true
+   => connect bone2 bone1
+
+
+reciteStructure skeleton Skeleton
+"""
+ Tell the story of the skeleton.
+"""
+   print "Dem bones, dem bones, dem dancing bones."
+   print "Doin' the skeleton dance."
+   head = skeleton.bones[0]
+   reciteStructure head
+   print "Dem bones, dem bones, dem dancing bones."   
+   print "Doin' the skeleton dance."
+
+
+reciteStructure bone Bone
+"""
+ Tell the story of the local connections of the bone.
+"""   
+   for otherBone in bone.connectedDownTo
+      reciteStructure otherBone
+      print cat "The " (String otherBone) "'s connected to the " (String bone) "."
+
+
+isFullyConnected bone Bone > Bool
+"""
+ Returns true if the bone is fully connected to other bones.
+"""
+
+
+isFullyConnected bone DownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => eq 1 (len bone.connectedDownTo) 
+
+
+isFullyConnected bone UpConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => neq nil bone.connectedUpTo
+
+
+isFullyConnected bone UpDownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => and bone.connectedUpTo
+          eq 1 (len bone.connectedDownTo) 
+
+
+isFullyConnected bone UpDoubleDownConnected > Bool
+"""
+ Is the bone fully connected to others?
+"""
+   => and bone.connectedUpTo
+          eq 2 (len bone.connectedDownTo)
+
+```
+
+      p.mainFileContent = ```
+// Connect up a skeleton, out of a pile of bones.
+//
+// A demonstration of relish's multiple-dispatch 
+// polymorphism.
+// relish selects a method for execution, from amongst 
+// a multimethod (group of methods of the same name)
+// by matching, at runtime, the method parameter-type 
+// signature against the types of all of the arguments 
+// to the method, and choosing the most specific 
+// type-compatible method.
+
+bonePile = makeBodyParts
+
+skeleton = Skeleton
+
+while bonePile
+   bonePile2 = asList bonePile
+   fullyConnectedPile = {}Bone   
+   firstBone = bonePile2[0]  
+   bonePile2 = bonePile2[1:]
+   for otherBone in bonePile2
+      if connectEitherWay firstBone otherBone
+         if isFullyConnected otherBone
+            fullyConnectedPile += otherBone 
+         if isFullyConnected firstBone
+            fullyConnectedPile += firstBone
+            break 
+   for bone in fullyConnectedPile
+      bonePile -= bone
+      skeleton.bones += bone
+
+reciteStructure skeleton
+```
+
+
+
+      p.consoleOutput = ""    
+      dub p "example8_multimethods"  

@@ -1,0 +1,17 @@
+origin   relish.pl2012
+artifact relish_website
+package  web/references
+
+""" 
+ dialog.rel
+
+ Web dialog handling methods.
+"""
+
+
+index > String String
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+   => "HTML FILE"
+      "index.html"
