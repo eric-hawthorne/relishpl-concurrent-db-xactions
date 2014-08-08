@@ -715,7 +715,8 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
     	if t.Package != th.Package() {
     	   fmt.Println(t.Package)
     	   fmt.Println(th.Package)
-	       panic(fmt.Sprintf("Attribute %s.%s is private; not settable outside of the package in which the attribute is declared.", obj, attr.Part.Name))		    		
+	       err = fmt.Errorf("Attribute %s.%s is private; not settable outside of the package in which the attribute is declared.", obj, attr.Part.Name)
+	       return	    		
     	}
     }
 
