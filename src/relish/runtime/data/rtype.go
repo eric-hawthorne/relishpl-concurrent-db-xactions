@@ -640,7 +640,8 @@ type AttributeSpec struct {
 
     Index map[*RType]int  // The index in an object of each type where the value of this attribute is found.
 
-    IsPrivate bool
+	PublicReadable, PackageReadable, SubtypeReadable, PublicWriteable, PackageWriteable, SubtypeWriteable bool
+	Reassignable, CollectionMutable, Mutable, DeeplyMutable                                               bool
 }
 
 func (attr *AttributeSpec) IsRelation() bool {
@@ -675,6 +676,69 @@ func (attr *AttributeSpec) IsIndependentCollection() bool {
 	return attr.Part.CollectionType != "" && attr.Part.ArityHigh == 1
 }
 
+
+
+
+
+
+func (a *AttributeSpec) IsReassignable() bool {
+	return a.Reassignable
+}
+
+/*
+If this is a multivalued attribute, it means the collection is immutable.
+Or is this intended to apply only to a collection-valued attribute? or both?
+*/
+func (a *AttributeSpec) IsCollectionMutable() bool {
+	return a.CollectionMutable
+}
+
+/*
+Is the attibute-value object itself mutable (or the objects in the collection if this is multivalued attribute.)
+*/
+func (a *AttributeSpec) IsMutable() bool {
+	return a.CollectionMutable
+}
+
+/*
+Whether the tree of objects referred to by the attribute-value object is mutable.
+Presumeably, this just means "is mutable through this reference"
+*/
+func (a *AttributeSpec) IsDeeplyMutable() bool {
+	return a.DeeplyMutable
+}
+
+func (a *AttributeSpec) IsPublicReadable() bool {
+	return a.PublicReadable
+}
+
+/*
+Currently always true. If it was false, I guess we would mean an attribute that can
+be read in a getter method of the type, but nowhere else. e.g. a hidden bookkeeping attribute.
+That concept is not implemented yet. May or may not ever be.
+*/
+func (a *AttributeSpec) IsPackageReadable() bool {
+	return a.PackageReadable
+}
+
+func (a *AttributeSpec) IsSubtypeReadable() bool {  // Not implemented yet. May not make sense.
+	return a.SubtypeReadable
+}
+
+func (a *AttributeSpec) IsPublicWriteable() bool {
+	return a.PublicWriteable
+}
+
+func (a *AttributeSpec) IsPackageWriteable() bool {
+	return a.PackageWriteable
+}
+
+func (a *AttributeSpec) IsSubtypeWriteable() bool {   // Not implemented yet. May not make sense.
+	return a.SubtypeWriteable
+}
+
+
+
 /*
 One end of a relation - specifies arity and type constraints and a few other details.
 */
@@ -690,7 +754,7 @@ type RelEnd struct {
 	OrderMethodArity int32 // 1 or 2 if applicable
 	IsAscending      bool  // ascending order if ordered collection? or descending order
 
-	Protection    string // "public" "protected" "package" "private"
+	// Protection    string // "public" "protected" "package" "private"
 	DependentPart bool   // delete of parent results in delete of attribute value
 }
 
@@ -990,7 +1054,26 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 	isAscending2 bool,	
 	isTransient bool,
 	orderings map[string]*AttributeSpec,
-	isPrivate bool) (type1 *RType, type2 *RType,err error) {
+    end1PublicReadable,
+    end1PackageReadable,
+    end1SubtypeReadable,
+    end1PublicWriteable,
+    end1PackageWriteable,
+    end1SubtypeWriteable,
+    end1Reassignable,
+    end1CollectionMutable,
+    end1Mutable,
+    end1DeeplyMutable,
+    end2PublicReadable,
+    end2PackageReadable,
+    end2SubtypeReadable,
+    end2PublicWriteable,
+    end2PackageWriteable,
+    end2SubtypeWriteable,
+    end2Reassignable,
+    end2CollectionMutable,
+    end2Mutable,
+    end2DeeplyMutable bool) (type1 *RType, type2 *RType,err error) {
 				
 
 
@@ -1006,7 +1089,16 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 										 true,
 										 false,
 										 orderings,
-										 isPrivate)
+										 end2PublicReadable,
+									     end2PackageReadable,
+									     end2SubtypeReadable,
+									     end2PublicWriteable,
+									     end2PackageWriteable,
+									     end2SubtypeWriteable,
+									     end2Reassignable,
+									     end2CollectionMutable,
+									     end2Mutable,
+									     end2DeeplyMutable)
 
    if err != nil {
        return
@@ -1024,7 +1116,16 @@ func (rt *RuntimeEnv) CreateRelation(typeName1 string,
 									 false,
 									 true,
 									 orderings,
-									 isPrivate)
+									 end1PublicReadable,
+								     end1PackageReadable,
+								     end1SubtypeReadable,
+								     end1PublicWriteable,
+								     end1PackageWriteable,
+								     end1SubtypeWriteable,
+								     end1Reassignable,
+								     end1CollectionMutable,
+								     end1Mutable,
+								     end1DeeplyMutable)
 
 
    if err != nil {
@@ -1063,7 +1164,16 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 	isForwardRelation bool,
 	isReverseRelation bool,
 	orderings map[string]*AttributeSpec,
-	isPrivate bool) (attr *AttributeSpec, err error) {
+	publicReadable,
+    packageReadable,
+    subtypeReadable,
+    publicWriteable,
+    packageWriteable,
+    subtypeWriteable,
+    reassignable,
+    collectionMutable,
+    mutable,
+    deeplyMutable bool) (attr *AttributeSpec, err error) {
 
 	typ1, found := rt.Types[typeName1]
 	if !found {
@@ -1096,7 +1206,16 @@ func (rt *RuntimeEnv) CreateAttribute(typeName1 string,
 		isReverseRelation,
 		nil,
 		make(map[*RType]int),
-		isPrivate
+		publicReadable,
+	    packageReadable,
+	    subtypeReadable,
+	    publicWriteable,
+	    packageWriteable,
+	    subtypeWriteable,
+	    reassignable,
+	    collectionMutable,
+	    mutable,
+	    deeplyMutable,
 	}
 
     if orderFuncOrAttrName != "" {

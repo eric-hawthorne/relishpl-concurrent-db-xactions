@@ -295,6 +295,7 @@ func (f *File) Line(p Pos) int {
 func (f *File) Position(p Pos) (pos Position) {
 	if p != NoPos {
 		if int(p) < f.base || int(p) > f.base+f.size {
+			fmt.Println(f.name, int(p),f.base,f.size)
 			panic("illegal Pos value")
 		}
 		pos = f.position(p)

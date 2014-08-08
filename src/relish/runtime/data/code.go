@@ -341,6 +341,10 @@ func (p *RMethod) IsZero() bool {
 	return false
 }
 
+func (m RMethod) Name() string {
+	return m.multiMethod.Name
+}
+
 func (m RMethod) String() string {
 	return fmt.Sprintf("%s %v %v", m.multiMethod.Name, m.ParameterNames, m.Signature)
 }
