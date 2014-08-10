@@ -85,6 +85,10 @@ type RuntimeEnv struct {
 	// from fully qualified constant name to value.
 	constants map[string]RObject
 
+    // From name of private constant to package in which it is defined.
+    // TODO this should be removed and replaced with compile-time constant accessibility checking
+    privateConstantPackage map[string]*RPackage
+
     // The following is to make sure that objects in-transit in a channel
     // can be marked by the relish garbage collector.
     // The map contains objects which have been sent into a channel and not yet received.
@@ -158,17 +162,32 @@ func (rt *RuntimeEnv) DB() DB {
 	return rt.db
 }
 
-func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
+/*
+Creates a new constant.
+If 
+*/
+func (rt *RuntimeEnv) CreateConstant(name string, value RObject, privateConstPackage *RPackage) (err error) {
 	if _, found := rt.constants[name]; found {
 		err = fmt.Errorf("Redefining constant '%s'", name)
 		return 
 	}
 	rt.constants[name] = value
+
+    if privateConstPackage != nil {
+    	rt.privateConstantPackage[name] = privateConstPackage
+    }
+
 	return
 }
 
-func (rt *RuntimeEnv) GetConstant(name string) (val RObject, found bool) {
+func (rt *RuntimeEnv) GetConstant(name string, fromPackage *RPackage) (val RObject, found bool, hidden bool) {
 	val, found = rt.constants[name]
+	// TODO The following should have been checked at compile time.
+	constPackage, constantIsPrivate := rt.privateConstantPackage[name]
+	if constantIsPrivate {
+       hidden = (constPackage != fromPackage)
+	}
+
 	return
 }
 
@@ -254,6 +273,7 @@ func NewRuntimeEnv() *RuntimeEnv {
 		// attributes:    make(map[*AttributeSpec]map[RObject]RObject),
 		context:       make(map[string]RObject),
 		constants:     make(map[string]RObject),
+		privateConstantPackage:     make(map[string]*RPackage),		
 		inTransit:     make(map[RObject]uint32),
 	    ReflectedDataTypes: make(map[string]RObject),
 	    ReflectedAttributes: make(map[string]RObject),
@@ -1312,14 +1332,12 @@ func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj ROb
          orderAttr,  
          nil, // keyType *RType, 
          attr.Part.Type.ElementType())  
+    if err != nil {
+    	return
+    }
 	
 
     err = RT.SetAttr(th, obj, attr, collection, true, th.EvaluationContext(), false)
-    if err != nil {
-	   if ! ( strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") ) {
-	       panic(err)
-	   }
-    }
 
     return
 }

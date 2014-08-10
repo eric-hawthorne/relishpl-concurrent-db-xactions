@@ -4538,6 +4538,10 @@ func (p *parser) parseAttributeDecl(attrs *[]*ast.AttributeDecl, read, write boo
   // change it after that?
 
   attr.PackageReadable = true
+  attr.Reassignable = true
+  attr.CollectionMutable = true
+  attr.Mutable = true
+  attr.DeeplyMutable = true
   
   switch visibilityLevel {
   case "public":
@@ -5448,11 +5452,31 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
   // To decide this, we have to review how relations were to be represented in the DB.
   //
 
-
-
     end1Decl := &ast.AttributeDecl{Name:rel1EndName, Arity:arity1Spec, Type:type1Spec}
 
     end2Decl := &ast.AttributeDecl{Name:rel2EndName, Arity:arity2Spec, Type:type2Spec}
+
+    end1Decl.PackageReadable = true
+    end1Decl.PackageWriteable = true
+    end1Decl.Reassignable = true
+    end1Decl.CollectionMutable = true
+    end1Decl.Mutable = true
+    end1Decl.DeeplyMutable = true
+
+    end2Decl.PackageReadable = true
+    end2Decl.PackageWriteable = true
+    end2Decl.Reassignable = true
+    end2Decl.CollectionMutable = true
+    end2Decl.Mutable = true
+    end2Decl.DeeplyMutable = true    
+
+    if ! p.isPrivateCode {
+       end1Decl.PublicReadable = true
+       end1Decl.PublicWriteable = true
+
+       end2Decl.PublicReadable = true
+       end2Decl.PublicWriteable = true  
+    } 
 
     relDecl := &ast.RelationDecl{end1Decl, end2Decl}
 

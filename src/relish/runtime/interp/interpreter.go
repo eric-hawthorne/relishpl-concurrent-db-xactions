@@ -919,10 +919,12 @@ TODO handle fully qualified constant names properly.
 */
 func (i *Interpreter) EvalConst(t *Thread, id *ast.Ident) {
 	// defer UnM(t,TraceM(t,INTERP_TR, "EvalConst", id.Name))
-	val, found := i.rt.GetConstant(id.Name)
+	val, found, hidden := i.rt.GetConstant(id.Name, t.ExecutingPackage)
 	if ! found {
 		rterr.Stopf1(t,id,"Constant %s used before it has been assigned a value.",id.Name)
-	}
+	} else if hidden {
+		rterr.Stopf1(t,id,"Constant %s is private to its package and is not visible in %s.",id.Name, t.ExecutingPackage.Name)
+	}	
 	t.Push(val)	
 }
 
@@ -1869,6 +1871,9 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 			obj, err = i.rt.NewObject(id.Name)
 			if err != nil {
 				rterr.Stop1(t, fun, err)
+			}
+			if obj.Type().IsPrivate && obj.Type().Package != t.ExecutingPackage {
+				rterr.Stopf1(t, fun, "'%s' is a package-private Type not visible from within package %s", id.Name, t.ExecutingPackage.Name)				
 			}
 			t.Push(obj)
 			
@@ -2901,17 +2906,14 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			                for v := range coll.Iter(t) {
 								err := RT.AddToAttr(t, assignee, attr, v, true, t.EvalContext, false)
 								if err != nil {
-									if strings.Contains(err.Error()," a value of type ") {
-										rterr.Stop1(t, selector, err)
-									} 					
-									panic(err)
+								    rterr.Stop1(t, selector, err)									
 								}				               
 			                }
 		                } else if val == NIL {
 			                err := i.rt.ClearAttr(t, assignee, attr)
 			                if err != nil {
-							       panic(err)	
-							    }	
+							    rterr.Stop1(t, selector, err)	
+							}	
 					       } else {
 			                rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
 						    }
@@ -2919,10 +2921,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 						   err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 						   if err != nil {
-							   if strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") {
-								   rterr.Stop1(t,selector, err)
-							   } 
-							   panic(err)
+							   rterr.Stop1(t,selector, err)						   	
 						   }
 				    }
 				    		    
@@ -2931,10 +2930,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					    // A multi-valued attribute
 	   					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 	   					if err != nil {
-	   						if strings.Contains(err.Error()," a value of type ") {
-	   							rterr.Stop1(t,selector,err)
-	   						} 					
-	   						panic(err)
+	   					    rterr.Stop1(t,selector,err)	   						
 	   					}
 				   } else {
 				      // A single-valued attribute whose value is a collection
@@ -2978,7 +2974,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						// TODO TODO	
 						err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
 						if err != nil {
-							panic(err)
+                           rterr.Stop1(t,selector,err)
 						}
 				    } else {
 				   	   // A single-valued attribute whose value is a collection
