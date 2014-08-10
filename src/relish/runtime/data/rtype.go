@@ -60,6 +60,7 @@ type RType struct {
 	ParameterTypeVarNames  []string   // Type variable names - the use is to identify which parameter types must be the same
 	ActualParameters       []*RType   // An instantiated parameterized type lists its actual types of its parameters
 	                                  //   Perhaps some of these can be nil if mixed constraints and actuals in type Spec.
+	IsPrivate              bool   // Is private - visible only in package which defines it.
 }
 
 
