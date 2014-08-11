@@ -55,6 +55,20 @@ func InitBuiltinFunctions(relishRoot string) {
 	}
 	debugMethod.PrimitiveCode = builtinDebug
 
+    /*
+    Returns "" if the object has all its mandatory attributes initialized to non-nil, and
+    also is fully connected according to relation declarations.
+    Returns an appropriate error message if there is a missing mandatory attribute or a
+    relationship cardinality violation.
+    */
+	incompleteMethod, err := RT.CreateMethod("",nil,"incomplete", []string{"p"}, []string{"Any"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	incompleteMethod.PrimitiveCode = builtinIncomplete
+
+
+
 	printMethod, err := RT.CreateMethod("",nil,"print", []string{"p"}, []string{"Any"}, nil, false, 0, false)
 	if err != nil {
 		panic(err)
@@ -97,6 +111,17 @@ func InitBuiltinFunctions(relishRoot string) {
 	}
 	print7Method.PrimitiveCode = builtinPrint
 
+	print8Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7","p8"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any","Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	print8Method.PrimitiveCode = builtinPrint
+
+	print9Method, err := RT.CreateMethod("",nil,"print", []string{"p1", "p2", "p3", "p4", "p5", "p6", "p7","p8","p9"}, []string{"Any", "Any", "Any", "Any", "Any", "Any", "Any","Any"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	print9Method.PrimitiveCode = builtinPrint	
 
 
 	inputMethod, err := RT.CreateMethod("",nil,"input", []string{"message"}, []string{"String"}, []string{"String"}, false, 0, false)
@@ -4220,15 +4245,84 @@ func builtinExtend(th InterpreterThread, objects []RObject) []RObject {
 
 
 
+    /*
+    Returns "" if the object has all its mandatory attributes initialized to non-nil, and
+    also is fully connected (and within arity constraints) according to relation declarations.
+    Returns an appropriate error message if there is a missing mandatory attribute or a
+    relationship cardinality violation.
+    */
+func builtinIncomplete(th InterpreterThread, objects []RObject) []RObject {
+	obj := objects[0]	
+	typ := obj.Type()
+
+    msg := ""
+    sep := ""
+    link := ""
+    valType := ""
+    for _,attr := range typ.Attributes {
+    	if attr.Part.ArityLow > 0 {
+            if attr.IsRelation() {
+            	link = "relation"
+            	valType = "associated object"
+            } else {
+            	link = "attribute"
+            	valType = "value"
+            }
+			val, found := RT.AttrVal(th, obj, attr)
+			if ! found {
+				msg += sep + fmt.Sprintf("Object %v has no %s for %s %s", obj, valType, link, attr.Part.Name)
+                sep = "\n"
+			} else if attr.Part.ArityHigh != 1 { // A multi-valued attribute.
+                coll := val.(RCollection)
+                n := int32(coll.Length())
+                if n == 0 {                	
+				   msg += sep + fmt.Sprintf("Object %v has no %s for %s %s", obj, valType, link, attr.Part.Name)
+                   sep = "\n"
+                } else if n < attr.Part.ArityLow {
+				   msg += sep + fmt.Sprintf("Object %v has fewer than the allowed minimum %d %ss for %s %s", obj, attr.Part.ArityLow, valType, link, attr.Part.Name)
+                   sep = "\n"
+        		} else if attr.Part.ArityHigh != -1 && n > attr.Part.ArityHigh {
+				   msg += sep + fmt.Sprintf("Object %v has more than the allowed maximum %d %ss for %s %s", obj, attr.Part.ArityHigh, valType, link, attr.Part.Name)
+                   sep = "\n"	        			
+        		}
+			}
+    	}
+    }
 
 
-
-
-
-
-
-
-
+    for _,typ := range typ.Up {
+        for _,attr := range typ.Attributes {
+        	if attr.Part.ArityLow > 0 {
+                if attr.IsRelation() {
+                	link = "relation"
+                	valType = "associated object"
+                } else {
+                	link = "attribute"
+                	valType = "value"
+                }
+				val, found := RT.AttrVal(th, obj, attr)
+				if ! found {
+					msg += sep + fmt.Sprintf("Object %v has no %s for %s %s", obj, valType, link, attr.Part.Name)
+                    sep = "\n"
+				} else if attr.Part.ArityHigh != 1 { // A multi-valued attribute.
+	                coll := val.(RCollection)
+	                n := int32(coll.Length())
+	                if n == 0 {                	
+					   msg += sep + fmt.Sprintf("Object %v has no %s for %s %s", obj, valType, link, attr.Part.Name)
+                       sep = "\n"
+                    } else if n < attr.Part.ArityLow {
+					   msg += sep + fmt.Sprintf("Object %v has fewer than the allowed minimum %d %ss for %s %s", obj, attr.Part.ArityLow, valType, link, attr.Part.Name)
+                       sep = "\n"
+	        		} else if attr.Part.ArityHigh != -1 && n > attr.Part.ArityHigh {
+					   msg += sep + fmt.Sprintf("Object %v has more than the allowed maximum %d %ss for %s %s", obj, attr.Part.ArityHigh, valType, link, attr.Part.Name)
+                       sep = "\n"	        			
+	        		}
+				}
+        	}
+        }
+    }
+	return []RObject{String(msg)}
+}
 
 
 
