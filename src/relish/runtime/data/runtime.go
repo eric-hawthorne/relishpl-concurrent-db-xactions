@@ -122,7 +122,7 @@ type RuntimeEnv struct {
     // This keeps track of all multimethods which include the abstract method and implementing
     // methods of a trait method. The multimethods in this map are the same ones that are
     // owned by packages. 
-    // Whenever a new non-trait package is loaded, its non trait-abstract methods need to be checked
+    // Whenever a new non-trait package is loaded, its (public) non trait-abstract methods need to be checked
     // against these traitMultimethods, and if name and type-compatible, added to the trait-multimethod
     // here. A multi-method here needs to be cache-cleared if it is added to.
     //
