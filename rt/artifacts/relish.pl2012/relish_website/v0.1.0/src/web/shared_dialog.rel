@@ -198,6 +198,11 @@ generateKeysAction originId String password String > String Any
       => "confirm_rekey.html"
          {"originId"=>originId}String > String 
 
+   // Commit the automatically started transaction, because next operation takes time.
+   err = commit
+   if err 
+      => errf err
+
    privateKeyPem publicKeyPem err = 
       generateCertifiedKeyPair crypto.DEFAULT_RSA_KEY_LEN_BITS 
                                ""  // "origin"
@@ -208,6 +213,11 @@ generateKeysAction originId String password String > String Any
                                originId 
                                password
    if err
+      => errf err
+
+   // Start a new transaction, because one is expected to be committed.
+   err = begin
+   if err 
       => errf err
 
    o.publicKeyCert = publicKeyPem
