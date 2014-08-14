@@ -464,29 +464,68 @@ stupid does.
 Strings in relish (currently) exhibit and behave much as string values do in Go, because their underlying implementation is a Go string. 
 </p>
 <p>
-A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and multi-line raw String literals.
+A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and (typically multi-line) raw String literals.
 </p>
 <p>
 Interpreted String literals are character sequences between double quotes "". The text between the quotes, which may not contain newlines, forms the value of the literal, with backslash escapes interpreted as they are in rune literals (except that \' is illegal and \" is legal), with the same restrictions. The three-digit octal (\nnn) and two-digit hexadecimal (\xnn) escapes represent individual bytes of the resulting string; all other escapes represent the (possibly multi-byte) UTF-8 encoding of individual characters. Thus inside a string literal \377 and \xFF represent a single byte of value 0xFF=255, while ÿ, \u00FF, \U000000FF and \xc3\xbf represent the two bytes 0xc3 0xbf of the UTF-8 encoding of character U+00FF.
 </p>
 <p>
-Multi-line raw String literals are character sequences between triple-doublequote delimiters. 
+Raw String literals are character sequences between triple-doublequote delimiters """, or between triple-backquote delimeters ```. 
 Within the delimiters, any character is legal. The value of a raw string literal is the string composed of the uninterpreted (implicitly UTF-8-encoded) characters between the delimiters; in particular, backslashes have no special meaning and the string may contain newlines. Carriage returns inside raw string literals are discarded from the raw string value.
 </p>
 <p>
 Because of the heavily indentation-dependent nature of relish source code, multi-line raw string literals are first introduced
-in their proper indented location, by a single """. 
-The actual raw string value begins at the beginning (file column 0) of the next line. 
-The raw string continues until the next (third) """, which must again occur at the beginning of a line of the source code file.
-So raw strings are always multi-line. Raw string literal values do not include the initial newline character, but do include the last newline character.
-The shortest possible multi-line raw string is 
+in their proper indented location, by a single """ or ``` opening string-delimiter.
+</p>
+<p>
+Here there is a subtle difference between """-delimited raw strings and ```-delimited raw strings:<br/>
+For a """ raw string, 
+the actual raw string value begins at the beginning (file column 1) of the next line. 
+The raw string continues until the next """, which must again occur at the beginning of a line of the source code file.
+So """-delimited raw strings are always multi-line. """ raw string literal values do not include the initial newline character, but do include the last newline character.
+An example raw string with """ delimiters is 
+<pre>
+   s = """
+Here is my raw string content
+which as you can see 
+can be multi-line.
+The string includes 
+the final newline after this line but not the first newline after the opening delimiter.
+"""
+</pre>
+
+The shortest possible raw string with """ delimiters is 
 <pre>
    s = """
 """
-</pre>
 Which is equivalent to the interpreted string literal "\n". 
 </p>
+<p>
+A ``` raw string obeys the following rules:<br/>
+1) The terminating ``` delimiter need not occur at the beginning of a line of the source code file.
+2) The string MAY start right after the ``` and need not include any newlines.
+<pre>
+   s = ```say "Woohoo"```
+</pre>
+If however the very first character after the opening ``` is a newline, then that newline is discarded from the raw string
+value, and the raw string starts at the beginning of the next line of the source code file. This form can be used
+if you need to represent relish code, with """ comments, as a raw string value. e.g.
+<pre>
+   exampleRawString = ```
+s = """
+Here is the inner string. 
+Maybe I am generating relish code as a string for some reason.
+"""
+```
+</pre>
+You can make a multi-line raw string with ``` delimiters that includes neither an initial nor a final newline character in the actual string value:
+<pre>
+   exampleRawString = ```
+I am multi-line content but I have no
+terminating newline included in my string value.```
+</pre>
 </p>
+
 <p>
 One peculiarity of Go strings is that their index operator returns a byte at the ith byte position, whereas the string is fundamentally supposed to be a 
 sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can occupy multiple bytes of the string. Also, disturbingly, the len function of a Go string returns the number of bytes, not the number of unicode codepoints in the string. I don't really like these split-personality
