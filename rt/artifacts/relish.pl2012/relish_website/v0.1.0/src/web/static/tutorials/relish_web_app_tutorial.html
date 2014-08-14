@@ -71,10 +71,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#Uploading" class="alt">File Uploading</a><br/>   
   <a href="#RequestObj">Request Headers</a><br/>     
   <a href="#VarArgs" class="alt">Variable # of Args</a><br/>     
+  <a href="#SettingCookies">Setting Cookies</a><br/>   
 </div>  
 <div id="content_manual">
 	<a name="BackgroundNeeded"><h3>Background Knowledge Needed to Use This Document</h3></a>
-	This is not a tutorial intended to teach beginning programmers how to create their first web application. This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Ruby on Rails, PHP, or ASP.NET. 
+	This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Ruby on Rails, PHP, or ASP.NET. 
 
 
 
@@ -874,16 +875,44 @@ uploadedFile r Request key String > f UploadedFile err String
 
 cookies r Request > c [] Cookie
 """
- NOT IMPLEMENTED YET
+ Returns a list of the cookies present in the http request.
 """
 
 
 cookie r Request key String > c Cookie err String
 """
- NOT IMPLEMENTED YET
+ Returns the cookie in the http request that has the particular cookie name.
+ The err return value is set to a message if no valid, unexpired 
+ cookie of that name is present in the request.
  """
  
  
+Cookie
+"""
+ An http cookie. Attributes accessible only through methods below.
+ See golang.org/pkg/net/http/#Cookie for cookie attribute meanings 
+"""
+
+name c Cookie > String
+value c Cookie > String
+path c Cookie > String
+domain c Cookie > String
+expires c Cookie > Time 
+rawExpires c Cookie > String
+
+// maxAge=0 means no 'Max-Age' attribute specified.
+// maxAge&lt;0 means delete cookie now, equivalently 'Max-Age: 0'
+// maxAge>0 means Max-Age attribute present and given in seconds
+maxAge c Cookie > Int
+secure c Cookie > Bool
+httpOnly c Cookie > Bool
+raw c Cookie > String      
+initString s String c Cookie > String
+"""
+ Return a string representation of the cookie's attributes.
+""" 
+
+
 requestUri r Request > String 
 """
  The entire request URL including arguments, unmodified i.e.
@@ -915,6 +944,10 @@ remoteAddr r Request > String
  The client address
  IP:port
 """
+
+
+ 
+
 
 </pre></code>
 </p>   
@@ -985,6 +1018,108 @@ args List. That is, args gets any arguments which are not matched to other metho
 <br/>
 <br/>
 
+
+
+
+<a name="SettingCookies"><h3>Setting Cookies in an http Response</h3></a>   
+<p>
+<code><pre> 
+
+setCookie c Cookie > String    
+"""
+ Return a proper header line for setting the cookie in an http response.
+ Note: currently there is no way to construct a valid cookie except the
+ method variant below.
+ So this variant of the setCookie method is currently 
+ only for passing to the http response
+ a cookie received in the http request, unmodified.
+ TODO: Add Cookie constructor methods or attribute setter methods.
+"""
+
+
+setCookie name String value String maxAge Int path String domain String > String
+"""
+ Return a proper header line for setting the cookie in an http response.
+ See also the high-level methods below for shortcuts for session maintenance with 
+ a session cookie.
+"""
+
+
+
+
+
+// Usage of the following high-level web-app session maintenance methods:
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// someWebMethod request http_srv.Request arg1 String arg2 Int > String String Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+
+newSessionToken > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+
+
+sessionCookie sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+
+
+sessionCookieAndNoCache sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+
+
+session request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+</pre></code> 
+</p>
+<br/>
+<br/>
 
 </div>
 
