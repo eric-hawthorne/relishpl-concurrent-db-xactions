@@ -80,6 +80,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#Relations">Relations</a><br/> 
   <a href="#Concurrency">Concurrency</a><br/> 
   <a href="#Packages">Packages</a><br/> 
+  <a href="#TraitPackages">Trait Packages</a><br/>   
   <a href="#SoftwareArtifacts">Software Artifacts</a><br/> 
 </div>  
 <div id="content_manual">
@@ -3432,6 +3433,99 @@ import
 	in this source code file. As in gravity.G 
 	</p>
 <br/>
+
+
+
+  <a name="TraitPackages"><h3>Trait Packages</h3></a>
+<code><pre>
+origin   elvisoft.com2012
+artifact general_utility_lib  
+package  debuggable_trait
+  
+
+debug obj Any > String
+"""
+ Return a representation of the state of the object, suitable for helping with debugging.
+"""
+
+</pre></code>
+<p>
+  <b>Syntax:</b>
+</p>
+<p>
+Any package which is named <em>somename</em>_trait can contain trait abstract methods, such as the debug
+method shown above.
+</p>
+<p>
+  <b>Semantics:</b>
+</p>
+<p>
+Traits are an advanced topic. You may wish to read about traits in the Scala programming language,
+or interfaces in Java or Go, if you are not familiar with language contructs for declaring
+abstract methods and invoking implementations of those abstract methods.
+</p>
+<p>
+Trait abstract methods, which have no method-body statements defined, have the following special property:<br/>
+The best-matching method implementation in the entire program will be run if a trait package is imported
+and the trait abstract method is invoked. The implementing method's package need not be imported.
+Once again with a few more details: 
+Any method with the same name (e.g. "debug") that is defined anywhere in any package of any 
+artifact in the running relish program, and whose parameter signature is compatible with 
+(same types as or subtypes of) the parameter types of the trait abstract method is implicitly
+an implementor of the trait abstract method EVEN IF THE PACKAGE of the implementing method
+is NOT IMPORTED into the package that wants to use the debug method.
+</p>
+<p>
+As long as the debug-using package imports the debuggable_trait package, then it can
+call a debug method, and the multi-method dispatch mechanism of relish will select the
+most appropriate implementing method, based on the types of the argument(s) to the trait
+method.
+</p>
+<p>
+Trait packages, with trait abstract methods, are essentially the equivalent of interfaces in 
+other programming languages such as Java or Go, or are like traits in languages like Scala.
+The difference is that the trait being added is the whole trait package worth of abstract methods,
+and a trait is added (to an importing package) by importing the ..._trait package. 
+A trait could but does not necessarily define a new type, but can just add new abstract behaviours 
+to existing types or tuples of types.
+</p>
+<p>
+In relish, trait methods are used to allow co-dependency among two or more other packages, 
+by going through a common interface package which is imported by both (all) of the inter-dependent packages.
+Since the implementor methods of trait methods need not be imported by the trait method user,
+dependency loops are avoided. This is the same as the programming pattern in Java or Go of importing and using interfaces
+to avoid package dependency loops.
+</p>
+<p>
+_trait packages (as with Scala traits but not Java/Go interfaces) can also contain non-abstract methods (which can of course call the trait abstract methods). So snippets of concrete behaviour can be mixed in by importing a trait packace, as well as abstract behaviour method-interfaces.<br/>
+When defining a _trait package, you SHOULD avoid importing other non-trait packages and using their methods
+and types in the trait package. This will ensure that your trait remains very general (and importable by any package without
+causing package reference loops.) This guideline is not enforced. You could create a ridiculously specific
+and dependent _trait package if you wished.
+</p>
+<p>
+A security mechanism is being considered but not yet implemented for traits. It would have it that
+by default only methods defined in the same artifact as the _trait package can be an implementor of
+a trait abstract method. A program-global security configuration file could then allow other
+artifacts and packages (or patterns thereof) to add implementing methods to the trait abstract method.
+CAUTION: Right now, any artifact you import can behind the scenes add implementor methods to any
+trait abstract method in your program. Watch out. Make sure you trust the code of the artifacts you
+import.
+</p>
+<br/>
+
+
+
+
+
+
+
+
+
+
+
+
+
   <a name="SoftwareArtifacts"><h3>Software Artifacts</h3></a>
 <p>
 relish code must be organized into coherent units called relish software artifacts. The software artifact, consisting of its metadata file and one or more packages, is the unit of code that
