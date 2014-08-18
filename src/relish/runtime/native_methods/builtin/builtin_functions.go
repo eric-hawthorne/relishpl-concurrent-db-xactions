@@ -2472,6 +2472,10 @@ func builtinEq(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj2.(Float)) == float64(obj1.(Int)))			
 		case String:
 			val = Bool(string(obj2.(String)) == strconv.FormatInt(int64(obj1.(Int)), 10))
+		case Uint:
+			val = Bool(int64(obj1.(Int)) == int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int)) == int64(obj2.(Uint32)))			
 		default:
 			val = Bool(false)
 		}
@@ -2484,7 +2488,11 @@ func builtinEq(th InterpreterThread, objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) == float64(obj1.(Int32)))			
 		case String:
-			val = Bool(string(obj2.(String)) == strconv.Itoa(int(obj1.(Int32))))
+			val = Bool(string(obj2.(String)) == strconv.FormatInt(int64(obj1.(Int32)), 10))
+		case Uint:
+			val = Bool(int64(obj1.(Int32)) == int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int32)) == int64(obj2.(Uint32)))				
 		default:
 			val = Bool(false)
 		}
@@ -2498,6 +2506,10 @@ func builtinEq(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj2.(Float)) == float64(obj1.(Float)))			
 		case String:
 			val = Bool(string(obj2.(String)) == strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64)) 
+		case Uint32:
+			val = Bool(float64(obj1.(Float)) == float64(obj2.(Uint32)))		
+		case Uint:
+			val = Bool(float64(obj1.(Float)) == float64(obj2.(Uint)))					
 		default:
 			val = Bool(false)	
 		}	
@@ -2508,12 +2520,50 @@ func builtinEq(th InterpreterThread, objects []RObject) []RObject {
 		case Int:
 			val = Bool(string(obj1.(String)) == strconv.FormatInt(int64(obj2.(Int)), 10))
 		case Int32:
-			val = Bool(string(obj1.(String)) == strconv.Itoa(int(obj2.(Int32))))
+			val = Bool(string(obj1.(String)) == strconv.FormatInt(int64(obj2.(Int32)), 10))
 		case Float:
-			val = Bool(string(obj1.(String)) == strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 		
+			val = Bool(string(obj1.(String)) == strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 
+		case Uint:
+			val = Bool(string(obj1.(String)) == strconv.FormatUint(uint64(obj2.(Uint)), 10))
+		case Uint32:
+			val = Bool(string(obj1.(String)) == strconv.FormatUint(uint64(obj2.(Uint32)),10))					
 		default:
 			val = Bool(false)
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Bool(obj1.(Uint) == obj2.(Uint))
+		case Uint32:
+			val = Bool(uint64(obj1.(Uint)) == uint64(obj2.(Uint32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint)) == int64(obj2.(Int)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint)) == int64(obj2.(Int32)))			
+		case Float:
+			val = Bool(float64(obj2.(Float)) == float64(obj1.(Uint)))			
+		case String:
+			val = Bool(string(obj2.(String)) == strconv.FormatUint(uint64(obj1.(Uint)), 10))
+		default:
+			val = Bool(false)
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Bool(obj1.(Uint32) == obj2.(Uint32))
+		case Uint:
+			val = Bool(uint64(obj1.(Uint32)) == uint64(obj2.(Uint)))			
+		case Int32:
+			val = Bool(int64(obj1.(Uint32)) == int64(obj2.(Int32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint32)) == int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) == float64(obj1.(Uint32)))			
+		case String:
+			val = Bool(string(obj2.(String)) == strconv.FormatUint(uint64(obj1.(Uint32)), 10))
+		default:
+			val = Bool(false)
+		}		
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
@@ -2554,6 +2604,9 @@ Inequality operator.
 TODO !!!
 Really have to study which kinds of equality we want to support and with which function names,
 by studying other languages. LISP, Java, Go, Python etc.
+
+Note: I guess the only reason we're not just throwing ! on eq is one less function call and one less
+slice allocation.
 */
 func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
 	obj1 := objects[0]
@@ -2577,6 +2630,10 @@ func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj2.(Float)) != float64(obj1.(Int)))			
 		case String:
 			val = Bool(string(obj2.(String)) != strconv.FormatInt(int64(obj1.(Int)), 10))
+		case Uint:
+			val = Bool(int64(obj1.(Int)) != int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int)) != int64(obj2.(Uint32)))		
 		default:
 			val = Bool(true)
 		}
@@ -2589,12 +2646,16 @@ func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
 		case Float:
 			val = Bool(float64(obj2.(Float)) != float64(obj1.(Int32)))			
 		case String:
-			val = Bool(string(obj2.(String)) != strconv.Itoa(int(obj1.(Int32))))
+			val = Bool(string(obj2.(String)) != strconv.FormatInt(int64(obj1.(Int32)), 10))
+		case Uint:
+			val = Bool(int64(obj1.(Int32)) != int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int32)) != int64(obj2.(Uint32)))		
 		default:
 			val = Bool(true)
 		}
 	case Float:
-		switch obj2.(type) {
+		switch obj2.(type) {		
 		case Int32:
 			val = Bool(float64(obj1.(Float)) != float64(obj2.(Int32)))		
 		case Int:
@@ -2603,6 +2664,10 @@ func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj2.(Float)) != float64(obj1.(Float)))			
 		case String:
 			val = Bool(string(obj2.(String)) != strconv.FormatFloat(float64(obj1.(Float)), 'G', -1, 64)) 
+		case Uint32:
+			val = Bool(float64(obj1.(Float)) != float64(obj2.(Uint32)))		
+		case Uint:
+			val = Bool(float64(obj1.(Float)) != float64(obj2.(Uint)))	
 		default:
 			val = Bool(true)	
 		}	
@@ -2615,10 +2680,48 @@ func builtinNeq(th InterpreterThread, objects []RObject) []RObject {
 		case Int32:
 			val = Bool(string(obj1.(String)) != strconv.Itoa(int(obj2.(Int32))))
 		case Float:
-			val = Bool(string(obj1.(String)) != strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 		
+			val = Bool(string(obj1.(String)) != strconv.FormatFloat(float64(obj2.(Float)), 'G', -1, 64)) 	
+		case Uint:
+			val = Bool(string(obj1.(String)) != strconv.FormatUint(uint64(obj2.(Uint)), 10))
+		case Uint32:
+			val = Bool(string(obj1.(String)) != strconv.FormatUint(uint64(obj2.(Uint32)),10))						
 		default:
 			val = Bool(true)
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Bool(obj1.(Uint) != obj2.(Uint))
+		case Uint32:
+			val = Bool(uint64(obj1.(Uint)) != uint64(obj2.(Uint32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint)) != int64(obj2.(Int)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint)) != int64(obj2.(Int32)))			
+		case Float:
+			val = Bool(float64(obj2.(Float)) != float64(obj1.(Uint)))			
+		case String:
+			val = Bool(string(obj2.(String)) != strconv.FormatUint(uint64(obj1.(Uint)), 10))
+		default:
+			val = Bool(false)
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Bool(obj1.(Uint32) != obj2.(Uint32))
+		case Uint:
+			val = Bool(uint64(obj1.(Uint32)) != uint64(obj2.(Uint)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint32)) != int64(obj2.(Int32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint32)) != int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) != float64(obj1.(Uint32)))			
+		case String:
+			val = Bool(string(obj2.(String)) != strconv.FormatUint(uint64(obj1.(Uint32)), 10))
+		default:
+			val = Bool(false)
+		}			
 	case RTime:
 		switch obj2.(type) {
 		case RTime:
@@ -2674,6 +2777,10 @@ func builtinLtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(int64(obj1.(Int)) < int64(obj2.(Int32)))
 		case Float:
 			val = Bool(float64(obj1.(Int)) < float64(obj2.(Float)))
+		case Uint:
+			val = Bool(int64(obj1.(Int)) < int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int)) < int64(obj2.(Uint32)))			
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
@@ -2685,6 +2792,10 @@ func builtinLtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(int64(obj1.(Int32)) < int64(obj2.(Int)))
 		case Float:
 			val = Bool(float64(obj1.(Int32)) < float64(obj2.(Float)))
+		case Uint:
+			val = Bool(int64(obj1.(Int32)) < int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int32)) < int64(obj2.(Uint32)))				
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
@@ -2696,9 +2807,47 @@ func builtinLtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj1.(Float)) < float64(obj2.(Int)))
 		case Int32:
 			val = Bool(float64(obj1.(Float)) < float64(obj2.(Int32)))
+		case Uint32:
+			val = Bool(float64(obj1.(Float)) < float64(obj2.(Uint32)))		
+		case Uint:
+			val = Bool(float64(obj1.(Float)) < float64(obj2.(Uint)))			
 		default:
 			rterr.Stop("lt is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Bool(obj1.(Uint) < obj2.(Uint))
+		case Uint32:
+			val = Bool(uint64(obj1.(Uint)) < uint64(obj2.(Uint32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint)) < int64(obj2.(Int)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint)) < int64(obj2.(Int32)))			
+		case Float:
+			val = Bool(float64(obj2.(Float)) > float64(obj1.(Uint)))			
+		case String:
+			val = Bool(string(obj2.(String)) > strconv.FormatUint(uint64(obj1.(Uint)), 10))
+		default:
+			rterr.Stop("lt is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Bool(obj1.(Uint32) < obj2.(Uint32))
+		case Uint:
+			val = Bool(uint64(obj1.(Uint32)) < uint64(obj2.(Uint)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint32)) < int64(obj2.(Int32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint32)) < int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) > float64(obj1.(Uint32)))			
+		case String:
+			val = Bool(string(obj2.(String)) > strconv.FormatUint(uint64(obj1.(Uint32)), 10))
+		default:
+			rterr.Stop("lt is not defined for argument types")
+		}			
 	default: rterr.Stop("lt is not defined for argument types")
 	}
 	return []RObject{val}
@@ -2787,8 +2936,12 @@ func builtinGtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(int64(obj1.(Int)) > int64(obj2.(Int32)))
 		case Float:
 			val = Bool(float64(obj1.(Int)) > float64(obj2.(Float)))
+		case Uint:
+			val = Bool(int64(obj1.(Int)) > int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int)) > int64(obj2.(Uint32)))			
 		default:
-		rterr.Stop("gt is not defined for argument types")
+		   rterr.Stop("gt is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
@@ -2798,8 +2951,12 @@ func builtinGtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(int64(obj1.(Int32)) > int64(obj2.(Int)))
 		case Float:
 			val = Bool(float64(obj1.(Int32)) > float64(obj2.(Float)))
+		case Uint:
+			val = Bool(int64(obj1.(Int32)) > int64(obj2.(Uint)))
+		case Uint32:
+			val = Bool(int64(obj1.(Int32)) > int64(obj2.(Uint32)))				
 		default:
-		rterr.Stop("gt is not defined for argument types")
+		   rterr.Stop("gt is not defined for argument types")
 		}
 	case Float:
 		switch obj2.(type) {
@@ -2809,10 +2966,52 @@ func builtinGtNum(th InterpreterThread, objects []RObject) []RObject {
 			val = Bool(float64(obj1.(Float)) > float64(obj2.(Int)))
 		case Int32:
 			val = Bool(float64(obj1.(Float)) > float64(obj2.(Int32)))
+		case Uint32:
+			val = Bool(float64(obj1.(Float)) > float64(obj2.(Uint32)))		
+		case Uint:
+			val = Bool(float64(obj1.(Float)) > float64(obj2.(Uint)))					
 		default:
-		rterr.Stop("gt is not defined for argument types")
+		   rterr.Stop("gt is not defined for argument types")
 		}
-		default: rterr.Stop("gt is not defined for argument types")	
+
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Bool(obj1.(Uint) > obj2.(Uint))
+		case Uint32:
+			val = Bool(uint64(obj1.(Uint)) > uint64(obj2.(Uint32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint)) > int64(obj2.(Int)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint)) > int64(obj2.(Int32)))			
+		case Float:
+			val = Bool(float64(obj2.(Float)) < float64(obj1.(Uint)))			
+		case String:
+			val = Bool(string(obj2.(String)) < strconv.FormatUint(uint64(obj1.(Uint)), 10))
+		default:
+		   rterr.Stop("gt is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Bool(obj1.(Uint32) > obj2.(Uint32))
+		case Uint:
+			val = Bool(uint64(obj1.(Uint32)) > uint64(obj2.(Uint)))
+		case Int32:
+			val = Bool(int64(obj1.(Uint32)) > int64(obj2.(Int32)))
+		case Int:
+			val = Bool(int64(obj1.(Uint32)) > int64(obj2.(Int)))
+		case Float:
+			val = Bool(float64(obj2.(Float)) < float64(obj1.(Uint32)))			
+		case String:
+			val = Bool(string(obj2.(String)) < strconv.FormatUint(uint64(obj1.(Uint32)), 10))
+		default:
+		   rterr.Stop("gt is not defined for argument types")
+		}	
+
+
+
+	default: rterr.Stop("gt is not defined for argument types")	
 	}
 	return []RObject{val}
 }
@@ -2898,6 +3097,10 @@ func builtinTimes(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int)) * int64(obj2.(Int32)))
 		case Float:
 			val = Float(float64(obj2.(Float)) * float64(obj1.(Int)))
+		case Uint:
+			val = Int(int64(obj1.(Int)) * int64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Int(int64(obj1.(Int)) * int64(uint32(obj2.(Uint32))))				
 		default:
 		    rterr.Stop("times is not defined for argument types")
 		}
@@ -2909,6 +3112,10 @@ func builtinTimes(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int32)) * int64(obj2.(Int)))
 		case Float:
 			val = Float(float64(obj2.(Float)) * float64(obj1.(Int32)))
+		case Uint32:
+			val = Int(int64(obj1.(Int32)) * int64(uint32(obj2.(Uint32))))
+		case Uint:
+			val = Int(int64(obj1.(Int32)) * int64(uint64(obj2.(Uint))))				
 		default:
 		    rterr.Stop("times is not defined for argument types")
 		}
@@ -2920,9 +3127,44 @@ func builtinTimes(th InterpreterThread, objects []RObject) []RObject {
 			val = Float(float64(obj1.(Float)) * float64(obj2.(Int)))
 		case Int32:
 			val = Float(float64(obj1.(Float)) * float64(obj2.(Int32)))
+		case Uint:
+			val = Float(float64(obj1.(Float)) * float64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Float(float64(obj1.(Float)) * float64(uint32(obj2.(Uint32))))				
 		default:
 		    rterr.Stop("times is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Uint(uint64(obj1.(Uint)) * uint64(obj2.(Uint)))
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint)) * uint64(obj2.(Uint32)))		
+		case Float:
+			val = Float(float64(obj2.(Float)) * float64(obj1.(Uint)))				
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint))) * int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(uint64(obj1.(Uint))) * int64(obj2.(Int32)))
+		default:
+		    rterr.Stop("times is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint32)) * uint64(obj2.(Uint32)))					
+		case Uint:
+			val = Uint(uint64(obj1.(Uint32)) * uint64(obj2.(Uint)))
+		case Float:
+			val = Float(float64(obj2.(Float)) * float64(obj1.(Uint32)))			
+		case Int32:
+			val = Int(int64(uint32(obj1.(Uint32))) * int64(obj2.(Int32)))
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint32))) * int64(obj2.(Int)))	
+		default:
+		    rterr.Stop("times is not defined for argument types")
+		}
+
 	default:
 		rterr.Stop("times is not defined for argument types")
 	}
@@ -2955,6 +3197,11 @@ func plus(obj1, obj2 RObject) RObject {
 			val = Int(int64(obj1.(Int)) + int64(obj2.(Int32)))
 		case Float:
 			val = Float(float64(obj2.(Float)) + float64(obj1.(Int)))
+		case Uint:
+			val = Int(int64(obj1.(Int)) + int64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Int(int64(obj1.(Int)) + int64(uint32(obj2.(Uint32))))	
+
 		default:
 		    rterr.Stop("plus is not defined for argument types")
 		}
@@ -2966,6 +3213,10 @@ func plus(obj1, obj2 RObject) RObject {
 			val = Int(int64(obj1.(Int32)) + int64(obj2.(Int)))
 		case Float:
 			val = Float(float64(obj2.(Float)) + float64(obj1.(Int32)))
+		case Uint32:
+			val = Int(int64(obj1.(Int32)) + int64(uint32(obj2.(Uint32))))
+		case Uint:
+			val = Int(int64(obj1.(Int32)) + int64(uint64(obj2.(Uint))))					
 		default:
 		    rterr.Stop("plus is not defined for argument types")
 		}
@@ -2977,9 +3228,44 @@ func plus(obj1, obj2 RObject) RObject {
 			val = Float(float64(obj1.(Float)) + float64(obj2.(Int)))
 		case Int32:
 			val = Float(float64(obj1.(Float)) + float64(obj2.(Int32)))
+		case Uint:
+			val = Float(float64(obj1.(Float)) + float64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Float(float64(obj1.(Float)) + float64(uint32(obj2.(Uint32))))				
 		default:
 		    rterr.Stop("plus is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Uint(uint64(obj1.(Uint)) + uint64(obj2.(Uint)))
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint)) + uint64(obj2.(Uint32)))		
+		case Float:
+			val = Float(float64(obj2.(Float)) + float64(obj1.(Uint)))					
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint))) + int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(uint64(obj1.(Uint))) + int64(obj2.(Int32)))
+		default:
+		    rterr.Stop("plus is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint32)) + uint64(obj2.(Uint32)))					
+		case Uint:
+			val = Uint(uint64(obj1.(Uint32)) + uint64(obj2.(Uint)))
+		case Float:
+			val = Float(float64(obj2.(Float)) + float64(obj1.(Uint32)))				
+		case Int32:
+			val = Int(int64(uint32(obj1.(Uint32))) + int64(obj2.(Int32)))
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint32))) + int64(obj2.(Int)))	
+		default:
+		    rterr.Stop("plus is not defined for argument types")
+		}
+
 	default:
 		rterr.Stop("plus is not defined for argument types")
 	}
@@ -3055,8 +3341,10 @@ func builtinMinus(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int)) - int64(obj2.(Int32)))
 		case Float:
 			val = Float(float64(obj1.(Int)) - float64(obj2.(Float)))
-
-
+		case Uint:
+			val = Int(int64(obj1.(Int)) - int64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Int(int64(obj1.(Int)) - int64(uint32(obj2.(Uint32))))	
 		default:
 		    rterr.Stop("minus is not defined for argument types")
 		}
@@ -3068,6 +3356,10 @@ func builtinMinus(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int32)) - int64(obj2.(Int)))
 		case Float:
 			val = Float(float64(obj1.(Int32)) - float64(obj2.(Float)))
+		case Uint32:
+			val = Int32(int32(obj1.(Int32)) - int32(uint32(obj2.(Uint32))))
+		case Uint:
+			val = Int(int64(obj1.(Int32)) - int64(uint64(obj2.(Uint))))				
 		default:
 		    rterr.Stop("minus is not defined for argument types")
 		}
@@ -3079,9 +3371,45 @@ func builtinMinus(th InterpreterThread, objects []RObject) []RObject {
 			val = Float(float64(obj1.(Float)) - float64(obj2.(Int)))
 		case Int32:
 			val = Float(float64(obj1.(Float)) - float64(obj2.(Int32)))
+		case Uint:
+			val = Float(float64(obj1.(Float)) - float64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Float(float64(obj1.(Float)) - float64(uint32(obj2.(Uint32))))	
+
 		default:
 		    rterr.Stop("minus is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Uint(uint64(obj1.(Uint)) - uint64(obj2.(Uint)))
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint)) - uint64(obj2.(Uint32)))	
+		case Float:
+			val = Float(float64(obj1.(Uint)) - float64(obj2.(Float)))						
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint))) - int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(uint64(obj1.(Uint))) - int64(obj2.(Int32)))
+		default:
+		    rterr.Stop("minus is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Uint32(uint32(obj1.(Uint32)) - uint32(obj2.(Uint32)))					
+		case Uint:
+			val = Uint(uint64(obj1.(Uint32)) - uint64(obj2.(Uint)))
+		case Float:
+			val = Float(float64(obj1.(Uint32)) - float64(obj2.(Float)))				
+		case Int32:
+			val = Int32(int32(uint32(obj1.(Uint32))) - int32(obj2.(Int32)))
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint32))) - int64(obj2.(Int)))	
+		default:
+		    rterr.Stop("minus is not defined for argument types")
+		}
+
 	default:
 		rterr.Stop("minus is not defined for argument types")
 	}
@@ -3105,17 +3433,26 @@ func builtinDiv(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int)) / int64(obj2.(Int32)))
 		case Float:
 			val = Float(float64(obj1.(Int)) / float64(obj2.(Float)))
+		case Uint:
+			val = Int(int64(obj1.(Int)) / int64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Int(int64(obj1.(Int)) / int64(uint32(obj2.(Uint32))))	
+
 		default:
 		    rterr.Stop("div is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
 		case Int32:
-			val = Int(int32(obj1.(Int32)) / int32(obj2.(Int32)))
+			val = Int32(int32(obj1.(Int32)) / int32(obj2.(Int32)))
 		case Int:
 			val = Int(int64(obj1.(Int32)) / int64(obj2.(Int)))
 		case Float:
 			val = Float(float64(obj1.(Int32)) / float64(obj2.(Float)))
+		case Uint32:
+			val = Int32(int32(obj1.(Int32)) / int32(uint32(obj2.(Uint32))))
+		case Uint:
+			val = Int(int64(obj1.(Int32)) / int64(uint64(obj2.(Uint))))				
 		default:
 		    rterr.Stop("div is not defined for argument types")
 		}
@@ -3127,9 +3464,44 @@ func builtinDiv(th InterpreterThread, objects []RObject) []RObject {
 			val = Float(float64(obj1.(Float)) / float64(obj2.(Int)))
 		case Int32:
 			val = Float(float64(obj1.(Float)) / float64(obj2.(Int32)))
+		case Uint:
+			val = Float(float64(obj1.(Float)) / float64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Float(float64(obj1.(Float)) / float64(uint32(obj2.(Uint32))))	
 		default:
 		    rterr.Stop("div is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Uint(uint64(obj1.(Uint)) / uint64(obj2.(Uint)))
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint)) / uint64(obj2.(Uint32)))		
+		case Float:
+			val = Float(float64(obj1.(Uint)) / float64(obj2.(Float)))					
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint))) / int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(uint64(obj1.(Uint))) / int64(obj2.(Int32)))
+		default:
+		    rterr.Stop("div is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Uint32(uint32(obj1.(Uint32)) / uint32(obj2.(Uint32)))					
+		case Uint:
+			val = Uint(uint64(obj1.(Uint32)) / uint64(obj2.(Uint)))
+		case Float:
+			val = Float(float64(obj1.(Uint32)) / float64(obj2.(Float)))				
+		case Int32:
+			val = Int32(int32(uint32(obj1.(Uint32))) / int32(obj2.(Int32)))
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint32))) / int64(obj2.(Int)))	
+		default:
+		    rterr.Stop("div is not defined for argument types")
+		}
+
 	default:
 		rterr.Stop("div is not defined for argument types")
 	}
@@ -3151,18 +3523,55 @@ func builtinMod(th InterpreterThread, objects []RObject) []RObject {
 			val = Int(int64(obj1.(Int)) % int64(obj2.(Int)))
 		case Int32:
 			val = Int(int64(obj1.(Int)) % int64(obj2.(Int32)))
+		case Uint:
+			val = Int(int64(obj1.(Int)) % int64(uint64(obj2.(Uint))))
+		case Uint32:
+			val = Int(int64(obj1.(Int)) % int64(uint32(obj2.(Uint32))))	
 		default:
 		    rterr.Stop("mod is not defined for argument types")
 		}
 	case Int32:
 		switch obj2.(type) {
 		case Int32:
-			val = Int(int32(obj1.(Int32)) % int32(obj2.(Int32)))
+			val = Int32(int32(obj1.(Int32)) % int32(obj2.(Int32)))
 		case Int:
 			val = Int(int64(obj1.(Int32)) % int64(obj2.(Int)))
+		case Uint32:
+			val = Int32(int32(obj1.(Int32)) % int32(uint32(obj2.(Uint32))))
+		case Uint:
+			val = Int(int64(obj1.(Int32)) % int64(uint64(obj2.(Uint))))			
+
 		default:
 		    rterr.Stop("mod is not defined for argument types")
 		}
+	case Uint:
+		switch obj2.(type) {
+		case Uint:
+			val = Uint(uint64(obj1.(Uint)) % uint64(obj2.(Uint)))
+		case Uint32:
+			val = Uint(uint64(obj1.(Uint)) % uint64(obj2.(Uint32)))			
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint))) % int64(obj2.(Int)))
+		case Int32:
+			val = Int(int64(uint64(obj1.(Uint))) % int64(obj2.(Int32)))
+		default:
+		    rterr.Stop("mod is not defined for argument types")
+		}
+	case Uint32:
+		switch obj2.(type) {
+		case Uint32:
+			val = Uint32(uint32(obj1.(Uint32)) % uint32(obj2.(Uint32)))					
+		case Uint:
+			val = Uint(uint64(obj1.(Uint32)) % uint64(obj2.(Uint)))
+		case Int32:
+			val = Int32(int32(uint32(obj1.(Uint32))) % int32(obj2.(Int32)))
+		case Int:
+			val = Int(int64(uint64(obj1.(Uint32))) % int64(obj2.(Int)))	
+		default:
+		    rterr.Stop("mod is not defined for argument types")
+		}
+
+
 	default:
 		rterr.Stop("mod is not defined for argument types")
 	}
