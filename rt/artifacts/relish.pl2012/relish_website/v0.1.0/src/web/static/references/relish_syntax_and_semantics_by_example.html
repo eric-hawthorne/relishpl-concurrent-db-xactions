@@ -160,6 +160,19 @@ The reserved words may not be used as variable names, method names, or package n
     <code>
     PI = 3.1415926535<br/>
     DEFAULT_GREETING = "Hello, World!"
+
+    ... assuming PI was declared in an artifact called usefulstuff.com2014/general_utility_lib
+    in a package called math then, in some other package in a different artifact:
+
+    import
+       usefulstuff.com2014/general_utility_lib/pkg/math
+
+
+    circleArea r Float > float
+    """
+     Returns the area of a circle of the given radius r.
+    """
+       => times 2 (times math.PI r)
     </code><br/>
     <p>
     	<b>Syntax:</b>
@@ -173,7 +186,8 @@ Note: All single latin-1 capital letters except T denote constants. T,T1,... den
     Constants must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
     Constants are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
     the constant-defining package, and if the constant name has been package-qualified in that use, the constant is visible
-    in the package that imports the constant-defining package. <span class="future">However, if a constant is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    in the package that imports the constant-defining package. However, if a constant is defined in a source code file whose name 
+    follows the pattern  ..._private.rel, the constant is not visible outside the defining package.
     </p>
         <p>
     	<b>Semantics:</b>
@@ -208,7 +222,8 @@ Note that underscores are not permitted (since they are an alternative to camel-
     Data types must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
     Type names are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
     the type-defining package, and if the type name has been package-qualified in that use, the type is visible
-    in the package that imports the type-defining package. <span class="future">However, if a data type is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    in the package that imports the type-defining package. However, if a data type is defined within a source code file whose name 
+    follows the pattern  ..._private.rel, the type is not visible outside the defining package.
     </p>
         <p>
     	<b>Semantics:</b>
@@ -299,12 +314,12 @@ Callable &lt;: RelishPrimitive      Abstract supertype of all function types
 MultiMethod &lt;: Callable          A set of methods in a namespace that share the same name
 Method &lt;: Callable               An executable function implementation
 
-NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive             
+NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive</span>              
 Struct &lt;: Any                    Abstract supertype of programmer-defined structured object types
-Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map</span>
+Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map
 List of T &lt;: Collection of T     Collection which maintains elements in a sequence
-<span class="future">Set of T &lt;: Collection of T      Collection which holds at most one of each value
-Map of T1 T2 &lt;: Collection of T1 Map from one data type to another</span> 
+Set of T &lt;: Collection of T      Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 Map from one data type to another
 
 InChannel &lt;: Any                 A channel which can be read from
 OutChannel &lt;: Any                A channel which can be written to
@@ -499,11 +514,12 @@ The shortest possible raw string with """ delimiters is
 <pre>
    s = """
 """
+</pre>
 Which is equivalent to the interpreted string literal "\n". 
 </p>
 <p>
 A ``` raw string obeys the following rules:<br/>
-1) The terminating ``` delimiter need not occur at the beginning of a line of the source code file.
+1) The terminating ``` delimiter need not occur at the beginning of a line of the source code file.<br/>
 2) The string MAY start right after the ``` and need not include any newlines.
 <pre>
    s = ```say "Woohoo"```
@@ -1164,7 +1180,8 @@ A constant declaration can only appear at the top-level lexical scope in a sourc
 </p>
 <p>
 A constant can only be assigned a value once, at its declaration. The name then represents that value and can be used as the value in an expression.
-Constant names are exported from the package in which they occur <span class="future">unless they are declared within the __private__ section of a source code file, in which case they are only visible within the package.</span>
+Constant names are exported from the package in which they occur unless they are declared within a source code file whose name 
+    follows the pattern ..._private.rel, in which case they are only visible within the declaring package.
 </p>
 
 
@@ -2861,9 +2878,13 @@ Car
 
    wheels 3 4 Wheel  // A set of 3 or 4 Wheels
 
-   bucketSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 bucket seats
+   cupHolders 0 N CupHolder  // A set of 0 to any number of cup-holders
 
-   cupHolders {} CupHolder  // A set of an undetermined nuber of cup-holders
+   frontSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 seats
+
+   bumperStickers {} BumperSticker  // A set of bumper stickers 
+                                    // - the Set-collection is independent of the car object
+
   
 </pre></code><br/>
 
@@ -2919,9 +2940,15 @@ Both the data type name and the header comment must begin at column 1 of the sou
 <p>
 	  A multi-valued attribute may be declared by specifying:  
 	<ul>
-		<li>a cardinality specification ( e.g. <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated onjects/values,</li>
-		<li>a List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
-		<li>or both. If the List/Set specifier is omitted, it defaults to Set. If [] or {} is present but cardinality constraints are missing, cardinality can be zero or more.</li>
+		<li>a cardinality specification ( e.g. <b>0 N</b> or <b>0 1</b> or <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>1</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated onjects/values,</li>
+		<li>an optional List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
+		 If the List/Set specifier is omitted, it defaults to Set.</li>
+  </ul>
+</p>
+<p>
+A single-valued attribute whose type is a collection:
+<ul>
+    <li> If [] or {} is present but cardinality constraints are missing, as in the bumperStickers attribute example above, it is NOT CONSIDERED to be a multi-valued attribute, but rather a single-valued attribute whose type is a collection. This distinction matters in a number of subtle ways.<br/> Firstly, if you assign a Set of BumperStickers to be the value of this attribute of the car, then the self-same set-collection is just referred to by the car object attribute. So if you had another reference to the set and added a member to it, the car.bumperStickers would refer to the enlarged set of bumperstickers. On the other hand, a multi-valued attribute, like the frontSeats or cupHolders examples above, is implemented by a hidden collection that is owned by and managed by the car object. If you WERE to take an independent set of CupHolders, and assign it to the car.cupHolders attribute, your original collection would not be used as the car's attribute. Rather, all its members would be added into the car's managed collection of cupholders.<br/>Another distinction is that the persistence representation is different. A multi-valued attribute has no independent persistent object to represent the collection. Rather, a relation table is set up where id0 is the owning object (the car) and id1 is the part. Multiple rows of this table represent the multi-valued attribute in the database. A single-valued attribute, whose type is a collection, will be represented in persistent store as a relation-table entry with id0 = the car and id1 = the Set object. Another relation table will have id0 = the Set object, and id1 each member of the set. So you can see that single valued, collection-typed attributes refer to an independent collection, that can be referred to by other objects as well. Multi-valued attributes are owned exclusively by the "whole" object, and the managed-collection cannot be referred to by other persistent objects. <span class="future">In future, the distinction may matter even more, as persistent-deep-deletion semantics may be different for multi-part attribute values (when persistence-deleting the "whole" object), compared to the semantics for collection-typed single-value attributes.</span> </li>
    </ul>		
 </p>
 
@@ -2952,22 +2979,14 @@ The relationship between a data type and its supertypes is an is-a relationship.
 	</dd>
 <dt>A data type's structure of attributes</dt> 
 	<dd>Some  but not all datatypes are defined to have a structure, comprising a list of attributes. Each attribute is either a primitive-type value (such as a Numeric, String, or Bool), a collection of primitive-type values, a reference to a structured object, or a collection of references to structured objects. The attributes can be viewed as the components/parts of the structured object being defined by the data type.<br/>
-<span class="future">Attributes which refer to a structured object can be defined to be optional or required. An optional attribute is allowed to be a nil reference. A required attribute (the default) is not.</span><br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+  Attributes which refer to a structured object can be defined to be optional or required. An optional attribute e.g. <code>hat ?Hat</code> is allowed to be a nil reference. A required attribute (the default e.g. <code>hat Hat</code> ) is not.<br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+<!--
 <dt><span class="future">A data type's type-invariant predicate</span></dt>
-	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd>
-<dt><span class="future">The "valid" test</span></dt>
-	<dd><span class="future">
-		relish has a built-in method called "valid" which accepts any object/value as its argument, and returns a boolean status and a String error message. The "valid" function returns true, and an empty error String if the object/value it is passed is currently a valid, fully constructed, and fully-connected instance of its data type. If the object is not currently valid, the valid function returns false and an error message stipulating the general type of invalidity. The valid method checks validity of the object with respect to its datatype and all supertypes of that type. The valid method invokes the type-invariant predicate of all types in the object's type lattice which define an <b>invariant</b> method.
-		<br/>
-		<br/>
-		When an object is invalid, the valid method will return false and one of the following error messages: 
-		<br/>
-		<br/>
-		"MISSING REQUIRED RELATION - relationName - TYPE full/type/Name"<br/>
-		"RELATION CARDINALITY VIOLATION - relationName - TYPE full/type/Name "<br/>
-		"MISSING REQUIRED ATTRIBUTE - attributeName - TYPE full/type/Name"<br/>
-		"TYPE INVARIANT CONDITION VIOLATED - TYPE full/type/Name"<br/>
-	</span></dd>
+	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd> -->
+<dt>The "incomplete" test</dt>
+	<dd>
+		relish has a built-in method called "incomplete" which accepts any object/value as its argument, and returns a String error message. The "incomplete" function returns an empty error String if the object/value it is passed is currently a fully constructed, and fully-connected instance of its data type. If the object is not fully initialized, or is not fully connected, according to its type's (and supertypes') declared relation cardinality constraints, the "incomplete" function returns an error message stipulating which required attribute is missing or which relationship is missing or not related with cardinality as specified in the relation declarations. The "incomplete" method checks validity of the object with respect to its datatype and all supertypes of that type. 
+</dd>
 	
 </dl>
 
@@ -2976,7 +2995,7 @@ The relationship between a data type and its supertypes is an is-a relationship.
 
 
 <p>
-  NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
+  <em>NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.</em>
 </p>
 
 <br/>
@@ -3180,11 +3199,15 @@ A set of relation declarations in relish is equivalent to an Entity-Relation-Dia
 	Two data types can be related in several different ways to each other. So the same pair of data types can appear together in multiple relation declarations, so long as the relation-end names are different in the different relation declarations. 
 </p>
 <p>
-As explained in the "Semantics of Data Types" section of this manual, relish can check objects with a "valid" method which among other things, checks that the object is currently related to the right number of other objects of the right type via the right relations.
+As explained in the "Semantics of Data Types" section of this manual, a relish programmer can check objects with a built-in "incomplete" method  checks that the object is currently related to the right number of other objects of the right type via all declared relations involving the object's type and supertypes.
 </p>
 <p>
 	The other benefit that relish relations convey is that they ensure that if a relation with an object b is established from the point of view of one object a, that the inverse relation is simultaneously established. The a object will be able to access the b object via the A type's implicit attribute name for the relation. But the b object will also be able to access the a object via the B type's implicit attribute name for the relation. Relish relations are always bi-directionally accessible in this manner. 
 </p>
+<p>
+The attribute names (relation-end names) which are declared implicitly or explicitly in a relation declaration are exported from the package in which they occur unless the relation is declared within a source code file whose name 
+    follows the pattern ..._private.rel, in which case they are only visible within the declaring package.
+  </p>
 <p>
 	<b>Etymology:</b> Language and runtime-environment support for relations as first-class, primitive concepts is what gives "relish" its name. That and that it is hoped that after the initial learning curve, programmers will "enjoy greatly" how quickly they can get down to focussing on their domain problems and solutions (and not focussing on low-level data-structure and persistence mechanics) when programming in this language.
 </p>
@@ -3432,6 +3455,34 @@ import
 	The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to
 	in this source code file. As in gravity.G 
 	</p>
+<p>
+  <b>Semantics:</b>
+</p>  
+<p>
+  Packages support organization of large bodies of code into modules. Code in one package (module) cannot use code defined
+  in another package without importing the other package using an import statement at the top of the using code's source file.
+  </p>
+
+  <p>
+    <em><b>Package-private</b></em>: By default, all symbols (data types and their attributes, constants, relations, and methods) declared in a package are visible
+    in another package that imports the first package. However, some symbols (data types, or selected attributes of datatypes, constants, relations, and methods) in the first package can be restricted in visibility so they are only visible within their own package. This is called package-private code.
+    There are two ways of declaring symbols to be package-private. The first way is that any symbols defined (declared) in a source code file whose name is <em>somename</em>_private.rel are package-private and not visible outside the package. Secondly, some of the attributes of a publicly exported data type can be declared to be package-private. This is done as shown in the following example:
+  <code><pre>
+  Sleeve
+  """
+   A sleeve of a garment.
+  """
+    colour Colour
+    arm Arm
+    __private__
+    card PlayingCard
+    length Int  
+  </pre></code>  
+  </p>  
+  <p>
+    A data type can only have one __private__ section which applies to all attributes declared below the __private__ header.
+  </p>
+
 <br/>
 
 
@@ -3497,7 +3548,7 @@ dependency loops are avoided. This is the same as the programming pattern in Jav
 to avoid package dependency loops.
 </p>
 <p>
-_trait packages (as with Scala traits but not Java/Go interfaces) can also contain non-abstract methods (which can of course call the trait abstract methods). So snippets of concrete behaviour can be mixed in by importing a trait packace, as well as abstract behaviour method-interfaces.<br/>
+_trait packages (as with Scala traits but not Java/Go interfaces) can also contain non-abstract methods (which can of course call the trait abstract methods). So snippets of concrete behaviour can be mixed in by importing a trait package, as well as abstract behaviour method-interfaces.<br/>
 When defining a _trait package, you SHOULD avoid importing other non-trait packages and using their methods
 and types in the trait package. This will ensure that your trait remains very general (and importable by any package without
 causing package reference loops.) This guideline is not enforced. You could create a ridiculously specific
