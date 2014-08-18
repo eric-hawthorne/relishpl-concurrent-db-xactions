@@ -1,0 +1,107 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>The relish Programming Language Shared Code Repository</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="artifacts_button" class="menubutton" href="/directory">
+	Artifacts
+  </a>
+  <a id="featured_button" class="menubutton" href="/featured">
+	Featured
+  </a>
+  <a id="register_button" class="menubutton" href="/register">
+	Register
+  </a>
+  <a id="upload_button" class="menubutton" href="/upload">
+	Upload Code
+  </a>	
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<h3>Upload the source-code for your relish software artifact</h3>	
+	<p>Upload a metadata.txt file and/or one or more artifact version zip files for a software artifact</p>
+	<ul>
+		<li>If uploading files for an artifact that is new to shared.relish.pl, you must upload a metadata.txt file and at least one artifact-version zip file (zipped source code).
+		</li>  
+		<li>If updating an already uploaded artifact, you can upload a newer, revised metadata.txt file, and/or you can upload one or more higher-version artifact-version zip files.
+			</li>
+		<li>To make an artifact-version zip file suitable for publishing on your own host server and/or here, 
+			<br/>use <b>relish&nbsp;-publish&nbsp;yourorigin.net2013/your_artifact&nbsp;0.9.0</b> to copy the artifact source code (version 0.9.0) from your artifacts directory to your shared/relish/artifacts directory in your local relish installation directory trees.<br/><b>relish -publish</b> will create a file called yourorigin.net2013--your_artifact---0.9.0.zip
+			</li>			
+			</ul>		
+<p>
+<form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
+    <fieldset>
+      <input type="hidden" name="o" id="o" value="{{.}}">    
+      <input type="file" name="myfiles" id="myfiles" multiple="multiple">
+      <input type="submit"  value="upload artifact files">
+  </fieldset>
+</form>
+</p>
+	<ul>
+		<li>If you upload your relish software artifact here, it will be published on this site, and become part of a searchable and browsable directory of relish software artifacts. As well, relish programs which import your artifact by name will be able to find, download, and link with your software artifact automatically.</li>
+		<li>If you publish your software artifact here, you, or the rightsholder if not you, retain copyright and all other rights to the software artifact, except the right to keep the artifact a trade secret. 
+		</li>  
+		<br/>
+		<li>BY THE ACT OF UPLOADING THE SOFTWARE ARTIFACT HERE, YOU ASSERT THAT YOU PERSONALLY (AND THE ORGANIZATION LISTED AS CODE ORIGINATOR, IF ANY) HAVE THE RIGHT TO PUBLISH THE SOFTWARE, OR ARE PROPERLY AUTHORIZED TO DO SO BY THE RIGHTSHOLDER. 
+		</li>  		
+					
+			</ul>
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+	<h2>More info</h2>
+	<p>
+		Goes here.
+	</p>
+	
+</div>
+</td>
+</tr>
+</table>	
+</div>
+</body>
+</html>

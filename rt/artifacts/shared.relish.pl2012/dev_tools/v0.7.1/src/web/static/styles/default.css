@@ -1,0 +1,328 @@
+/* Main Styles for HTML Elements */
+html, body
+{
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Verdana, Geneva, "Bitstream Vera Sans", Helvetica, sans-serif;
+  font-size: 103%;
+  /* possibly both of these should be removed */
+  color: #000;
+  background-color: #FFF;
+}
+
+h1
+{
+  font-size: 200%;
+/*  color: #234764; from python */
+ /*  color: #006549; dark green blue */
+  /* color: #436784;  medium blue */
+/* color: #3F6622;   olive green      my color */
+color: #4E6500; /* dark green */
+/* color: #59913F; med green */
+  margin: 0.7em 0 0.7em 0;
+  text-decoration: none;
+}
+
+h1 a 
+{
+  text-decoration: none;
+  color: inherit;
+}
+
+.trademark 
+{
+   font-size: 40%;
+   vertical-align: top;
+}
+
+#header 
+{
+	padding-top: 0.5em;
+	padding-bottom: 0.5em;	
+	padding-left: 1em;
+	padding-right: 1em;	
+
+/*	background-color: #E3FB71; # light greenish yellow 
+	background-color: #DEFF71; # better light yellow
+*/	
+    background-color: #F9FFE6; 	
+/*  background-color: #E6FFF8; really washed out light blue */	
+/*	background-color: #DDFFDD;	
+*/	
+}
+
+#header h2
+{
+  font-size: 160%;
+  font-style: italic;
+  font-weight: normal;
+  /* color: #006549; dark green blue */
+  color: #436784; /* medium blue */
+
+ /* color: #3F6622; olive green - maybe ok */
+
+  margin: 0.7em 0 0.7em 0;
+  text-decoration: none;
+}
+
+.h2small 
+{
+   font-size: 80%;	
+}
+
+.menubutton 
+{
+   width: 8em;
+   height: 1.5em;
+   /* background-color: #E6FFF8;  light blue */
+   background-color: #3F917A; /* green blue */
+   text-align: center;
+   padding-top:0.6em;
+   color: #EEFFE6;
+   border:1px solid #006549;
+   border-radius:0.5em;
+   text-decoration: none;
+}
+
+
+
+#tutorials_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 10em;
+}
+
+
+#references_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 19em;
+}
+
+#packages_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 28em;
+}
+
+#download_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 37em;
+}
+
+
+#artifacts_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 10em;
+}
+
+
+#featured_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 19em;
+}
+
+#register_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 28em;
+}
+
+#upload_button 
+{
+	position: absolute;
+	top: 5em;
+	left: 37em;
+}
+
+
+.contentside 
+{
+   vertical-align: top; 
+}
+
+#content 
+{
+   padding-top: 3em;    
+   padding-left: 2em;
+   padding-right: 2em;
+   padding-bottom: 1em;
+   vertical-align: top;
+}
+
+#index 
+{
+   position: fixed;
+   top: 10em;
+   background-color:#CCCCE2; /* medium blue */
+   color: #436784;
+   font-size: 70%;
+   min-height:40em;
+   width: 12em;  
+   padding-top: 1em;  
+   padding-left: 1em;
+   padding-right: 0.2em;
+   padding-bottom: 1em;
+   vertical-align: top;  
+}
+
+#index a
+{
+   color: #436784;
+   text-decoration: none;
+}
+
+#index a.alt
+{
+   color: #678443;
+   text-decoration: none;
+}
+
+#content_left
+{       
+   vertical-align: top;
+   padding-right: 2em;
+}
+
+#content_right
+{
+   vertical-align: top; 
+   padding-left: 2em;
+   font-size: 90%;
+}
+
+
+div.separatorBlock 
+{
+	background-Color: #666666;
+	height: 3em;
+}
+
+
+#content_manual
+{	
+   position: relative;
+   left: 9em;
+   max-width: 50em;  
+   padding-top: 3em;  
+   padding-left: 2em;
+   padding-right: 2em;
+   padding-bottom: 1em;
+   vertical-align: top;  
+}
+
+#content_manual h3 
+{
+	color: #5A8D3F;
+}
+
+.subtle
+{
+  color: #999999;
+}
+
+#content_manual h4
+{
+  font-size: 120%;  
+  color: #436784;
+}
+
+#content_manual dt 
+{
+	padding-top: 0.4em;	
+	line-height: 150%;
+	color: #436784;
+}
+
+#content_manual dd
+{
+	font-size: 90%;
+}
+
+#content_manual blockquote
+{
+  color: #333333;
+  font-size: 90%;
+}
+
+#content h3 
+{
+	color: #5A8D3F;
+}
+
+
+
+#content dt 
+{
+	padding-top: 0.4em;	
+	line-height: 150%;
+	color: #436784;
+}
+
+#content dd
+{
+	font-size: 90%;
+}
+
+span.future   /* Used to indicate a future language feature not implemented or enforced by the language environment yet */ 
+{
+   color: #996666;
+}
+
+td.fieldLabel 
+{
+  font-size: 120%;
+  font-weight: bold;
+  text-align: right;
+  padding-right: 0.7em;
+  padding-top: 0.7em;
+  padding-bottom: 0.7em;
+}
+
+td.fieldLabelTop 
+{
+  font-size: 120%;
+  font-weight: bold;
+  text-align: right;
+  padding-right: 0.7em;
+  padding-top: 0.7em;
+  padding-bottom: 0.1em;
+}
+
+td.fieldLabelBottom 
+{
+  font-size: 120%;
+  font-weight: bold;
+  text-align: right;
+  padding-right: 0.7em;
+  padding-top: 0.1em;
+  padding-bottom: 0.7em;
+}
+
+td.field 
+{
+  font-size: 120%;
+}
+
+input.field 
+{
+  font-size: 100%;
+}
+
+span.star {
+	font-size: 120%;
+    font-weight: bold;
+    color: red;
+  padding-right: 0.3em;
+}
+

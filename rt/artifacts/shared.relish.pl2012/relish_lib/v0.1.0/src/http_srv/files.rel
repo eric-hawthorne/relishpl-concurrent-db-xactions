@@ -1,0 +1,65 @@
+origin   shared.relish.pl2012
+artifact relish_lib
+package  http_srv
+
+""" 
+ files.rel
+
+ File i/o for files which have been uploaded to an http server as part of a multipart form request.
+ This package includes Go native methods, defined in 
+ relish/runtime/native_methods/standard_lib/http_methods/files.go
+"""
+
+
+import 
+   io
+
+
+UploadedFile <: io.Reader io.Closer
+"""
+ An UploadedFile represents a mime/multipart/FileHeader and its mime/multipart/File.
+ Includes a name method which returns the filename that the file had on the client computer.
+ The open method must be called before read methods are called.
+"""
+
+
+// NATIVE METHODS
+//
+// name f UploadedFile > String
+//
+// open f UploadedFile > err String
+//
+// read f UploadedFile buf Bytes > n Int err String
+//
+// close f UploadedFile > err String
+//
+// readAllText 
+//    f UploadedFile 
+//    addMissingLinefeed Bool = false
+// > 
+//    fileContent String err String
+// """
+//  Reads all text lines in the file, concatenating them into a single string in which each line
+// is terminated by a "\n". 
+//  If the last line of the file had no line-ending character(s) at its end, the behaviour depends
+//  on the "addMissingLinefeed" argument. If false (the default) , the last line in the result string
+//  also has no linefeed "\n" at its end.
+//  If addMissingLinefeed is true, the last line in the result string gets 
+//  a "\n" appended, so that lines can be processed in a uniform manner.
+// 
+//  Note that if the file has MSWindows-style line end markers (CRLF i.e. "\r\n") these are replaced
+//  in the output string by a single "\n" at end of each line.
+// 
+//  An empty file causes the fileContent result to be the empty string.
+// """
+//
+// readAllBinary f UploadedFile > fileContent String err String
+// """
+//  Reads the entire file contents into the fileContent String.
+//  All bytes in the file are put in the String as-is, with no line-end processing.
+//  You can use this method on text files too, if you like, but you won't get any
+//  normalizing of line-ending characters. You get the exact file bytes as returned by
+//  low-level file read functions.
+// """
+//
+//

@@ -1,0 +1,154 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish known limitations
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Known Limitations <span class="h2small">- a high-level summary</span></h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Introduction">Introduction</a><br/>	
+	<a href="#MajorLimitations" class="alt">Major Limitations</a><br/>
+	<a href="#Annoyances">Annoyances / Usability Problems</a><br/>
+</div>  
+<div id="content_manual">
+	<a name="Introduction"><h3>Introduction</h3></a>
+
+			<p>
+			Here is a high-level summary of known limitations of this early relish programming language version.
+			</p>
+			<p>
+			See also <a href="https://code.google.com/p/relish/issues/list" target="_blank">https://code.google.com/p/relish/issues/list</a>
+ 			</p>
+<br/>
+<a name="MajorLimitations"><h3>Major Limitations</h3></a>
+<dl>
+	<dt>Lack of concurrent DB transactions - particular effect on web listener - http requests are serialized.</dt> 
+	<dd>relish currently serializes access to the SQLITE3 database that it uses as its local persistence 
+	store. It does this at the transaction level, or if a long-running transaction is not in effect, at 
+	the individual db statement/query level.<br/>
+	This has particular effect on the built-in http listener and web-app method execution environment.
+	Every URL-mapped web dialog method (handler method) runs in the context of an automatically created db transaction,
+	so every web-app request to a relish web-app is serialized with every other web-app request by any
+	web client.<br/>A workaround, if your web-app dialog handler method will do a long-running operation, is
+	to start your dialog handler method with "commit" and end it with "begin" just before it
+	returns values for the http response. This immediately ends the auto-created transaction, allows your
+	long-running method logic to run outside of a db transaction (not blocking other db transactions/web app requests),
+	then begins a final short db transaction that will be auto committed after response-value processing. <br/>
+	A concurrent db transactions branch of relish is being worked on. Stay tuned.
+</dd>
+
+
+
+
+<dt>Security</dt>
+<dd>It is possible to write malicious relish artifacts (which can access the file system with no permission restriction) so be careful to inspect source code of artifacts that you import and run or incorporate into your relish programs. It is probable that a security capabilities system will be implemented in the future.<br/><br/>
+relish features persistent data, and uses a relational database to store it. Care has been taken to use
+SQL variables in prepared statements in the language's automatic queries and statements involved in the basic object persistence mechanism. However the OQL-query List-constructor language-construct permits an arbitrary, programmer-supplied String to be supplied as an OQL WHERE clause that will be converted to a SQL WHERE clause. It is therefore vulnerable to SQL injection attacks. If the OQL WHERE clause is being constructed out of data values that come from user input (e.g. from a web form) then the programmer must be careful always to use the variant of the List-constructor that accepts an OQL WHERE clause with ? variables in it and also accepts a list of values to be substituted at the SQL-processing level for the ? variables. This should prevent most types of SQL injection attack. The multi-argument asList function also accepts a String WHERE clause, so the same caution applies to its use. If passing user input to the OQL/SQL layer through the asList function, use the version of the asList function which accepts a list containing both a WHERE clause string, and a list of argument values to be substituted into ? variables.
+</dd>
+
+
+
+
+<a name="Annoyances"><h3>Annoyances / Usability Problems</h3></a>
+
+<dt>Confusing/unclear compiler error messages</dt>
+<dd>relish has an unorthodox syntax, and consequently a somewhat tricky compiler. Sometimes this early compiler version generates obscure / confusing / spurious / confusing compiler error messages. The compiler does not yet guess well what you were trying to code (but made a small syntax mistake in). Best workaround advice is to just look in your source code file near the reported error position and find what is wrong yourself, using the language reference manual, or tutorial example code, as a guide.
+</dd>
+<dt>Type checking is rudimentary</dt>
+<dd>
+More should be done and more moved to compile time by type inference - right now it's duck typing but not sure if it will continue as such. For sure untyped local variable assignment/declarations will remain as in scripting languages as opposed to traditional strict typing languages, but the variable assignments may get type inference eventually.<br/>
+This limitation comment does not apply to the multi-argument multi-method polymorphic dispatch mechanism, which is mature and already somewhat optimized, and will likely remain substantially as-is.
+</dd>
+<dt>Lack of database schema migration tools</dt>
+<dd>
+relish is a language with local object persistence built in at the programming language level, so database schema migration
+is an essential feature for long-term maintenance / iterative development of applications. The database migration scheme has to be tied intimately to datatype declaration change. Right now, you will need to roll your own data backup and reloading methods if you make schema changes in data types with important existing persisted instances. One suggestion is to use the relish standard library's json marshalling and unmarshalling methods for this purpose.
+</dd> 
+<dt>relish goroutines are not ultra-lightweight</dt>
+<dd>
+Concurrency (goroutines) are not ultra-lightweight as in the Go language. So creating thousands of them will likely be an issue whereas Go might do that happily. relish goroutines use Go goroutines as a basis, but they also have GC accounting, thread object creation, and stack allocation for each goroutine creation. relish goroutines also have to lock each other (serialize) around db access currently, and db access may be rather frequent, given auto-persisted objects and auto-persisted object state-changes.
+</dd>
+<dt>No timeout in httpPost, httpGet calls</dt>
+<dd>So if httpGet or httpPost are used in a mutex-locked context these could lock up the whole application if servers requested from  are non-responsive in just the right way.
+</dd>
+<dt>Ambiguities around treatment of nil/uninitialized data</dt>
+<dd>
+A programming language can have different philosophies around uninitialized data fields (attributes) of objects.
+Also, the nil value can be interpreted in different ways. Also, databases typically treat their NULL value differently
+than programming languages treat the nil value.<br/>
+relish must eventually come to terms with this in a methodical way, and in a single way that makes sense for both persistent
+and in-memory data fields and values, because of relish's transparent persistence.<br/>
+relish's philosophy for these issues is still under consideration and will almost certainly change a bit from the current implementation.
+<br/><br/>
+Some of the issues are:
+<br/>
+A nil value could mean variously: <br/>
+Unassigned i.e. uninitialized attribute/return-value.<br/>
+Unknown value. Deliberate assertion that the attribute has unknown value.<br/>
+No value. Deliberate assertion that the object has no value for this attribute.<br/>
+A language could leave unitialized values/attributes as nil (meaning uninitialized object-reference or uninitialized primitive-type value),
+or for primitive value datatypes, could automatically return the zero-value of the type, as Go does.
+<br/>
+relish may end up with multiple special token values, with "uninitialized","unknown", and "no value" separated out, and some fields/attributes may default to a particular one of these, while other fields default to another one of these. Still other fields may default to returning the zero-value of the type. This complexity needs serious pondering however.
+<br/>
+Another related issue is whether an "unknown value but known to be at least this type" value can exist. i.e. typed nils.
+<br/>
+Stay tuned.
+</dd>
+
+
+</dl>	
+</div>
+
+</body>
+</html>

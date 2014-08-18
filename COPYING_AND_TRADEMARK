@@ -1,0 +1,28 @@
+Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
+
+The relish(TM) compiler-interpreter and other relish language tools are free software; you can redistribute this software and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+The relish(TM) standard libraries and runtime-library of built-in functions are free software; you can redistribute them and/or modify them under the terms of the GNU Lesser General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
+
+The relish(TM) compiler-interpreter includes some software written by and copyrighted by the Go authors.
+(See golang.org).
+These portions of the relish compiler and interpreter are covered by the BSD-style license which can 
+be found in the file LICENSE_GO in the relish software distribution directory. Individual source code files
+in the relish source distribution are commented as to whether they contain Go-licensed source code.
+
+relish(TM) software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+A copy of the GNU Lesser General Public License is included in the relish software distribution in the file LICENSE_GPL3. If you did not receive this copy, write to the Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+
+TRADEMARK RESTRICTION
+You may not distribute forked or modified or derivative or extended versions of any of the relish(TM) software under the name or using the name relish (nor a name confusable with relish, nor a name including relish). "relish" is a trademark (and service mark) of EveryBitCounts Software Services Inc. The purpose of this clause is to give users of the relish programming language and libraries a single stable and predictable language and language evolution that they can rely on, refer to accurately, and collectively improve.
+You may not market, offer, or distribute other software or software-or-programming-related materials or services, such as but not limited to manuals, tutorials, books, videos, or instruction courses, using the name relish (nor names confusable with relish, nor a name including relish), without written permission from EveryBitCounts Software Services Inc. Such permission may be obtainable if requested and will be considered on a case-by-case basis.
+The same trademark and service mark restrictions also apply to the use of the relish ("linked green blocks") logo.
+
+--
+
+The copyright and trademark holder for relish(TM) can be contacted at relishpl___(AT)__gmail.com .
+
+The source code of relish(TM) can be obtained via the website http://relish.pl .
+The source code repository and binary distributions are currently hosted at https://code.google.com/p/relish .
+

@@ -1,0 +1,104 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>The relish Programming Language Shared Code Repository</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<h3>Origin Registration Confirmed</h3>
+	<p>
+		IMPORTANT: If you want to share relish software artifacts internally among different relish installations, or to openly publish relish software artifacts on the Internet, you should now obtain a code-signing encryption-key pair. You will get a private key and a public key. The public key will be certified that it belongs to your code origin, so that code that you publish can be verified using that public key to prove that it came from you and has not been altered.
+	</p>
+	<p>
+		You will receive the encryption keys in the form of base-64-encoded text blocks (in PEM format).
+	</p>
+<p>
+		Press the button below when you are ready to copy the base-64-encoded key text into
+		the appropriate files in your relish installation directory tree.
+	</p>
+	<p>
+		Copy the private-key base-64-encoded text block into the file
+		RELISH_RUNTIME_DIR/keys/private/origin__{{.originId}}__private_key.pem
+		where RELISH_RUNTIME_DIR is your relish installation's root directory (i.e. the .../relish directory) if you have a binary distribution of relish, or is the .../relish/rt directory if you have a relish source distribution.
+	</p>
+	<p>
+		Copy the public-key base-64-encoded text block into the file
+		RELISH_RUNTIME_DIR/keys/public/origin__{{.originId}}__public_key.pem	
+</p>
+<p>
+	If you are viewing this page on a smartphone and cannot update your relish installation directories currently, then you should log in to shared.relish.pl again once you get to a computer from which you can add files into your relish installation. When you log in again, you will be given the option to generate your code-signing keys.
+</p>
+<form method="post" action="/generateKeysAction">
+	<input type="hidden" name="originId" value="{{.originId}}" />
+<table>		
+	<tr>	
+	    <td class="fieldLabelTop"><span class="star">*</span>Enter Origin Password: </td><td  class="field"><input name="password"  class="field" type="password" size="30" /></td><td></td>	
+	</tr>
+	<tr>	
+	    <td class="fieldLabel"></td>
+	   <td style="text-align: right" class="field"> 
+		   <input class="field" type="submit" value=" Generate Code-Signing Key-Pair "/> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;  </td><td></td>									
+	</tr>	
+</table>
+</form>
+
+	<h3>XYZ</h3>
+	<p>
+Lorum ipsum.	
+</p>
+
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+	<h2>Yada yada</b>?</h2>
+	<p>
+		Every day.
+	</p>
+</div>
+</td>
+</tr>
+</table>	
+</div>
+</body>
+</html>

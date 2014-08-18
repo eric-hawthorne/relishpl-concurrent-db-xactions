@@ -1,0 +1,169 @@
+#header 
+{
+  padding-top: 0.1em;
+  padding-bottom: 0.1em;  
+  padding-left: 1em;
+  padding-right: 1em; 
+
+/*  background-color: #E3FB71; # light greenish yellow 
+  background-color: #DEFF71; # better light yellow
+*/  
+    background-color: #F9FFE6;  
+/*  background-color: #E6FFF8; really washed out light blue */  
+/*  background-color: #DDFFDD;  
+*/  
+}
+
+#header h2
+{
+  font-size: 160%;
+  font-style: italic;
+  font-weight: normal;
+  /* color: #006549; dark green blue */
+  color: #436784; /* medium blue */
+
+ /* color: #3F6622; olive green - maybe ok */
+
+  margin: 0.2em 0 0.2em 0;
+  text-decoration: none;
+}
+
+#header h3 
+{
+  padding-top: 1px;
+  margin-top: 0px;
+  color: #5A8D3F;
+  font-size: 90%;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+
+#content 
+{
+   padding-top: 0.3em;    
+   padding-left: 2em;
+   padding-right: 2em;
+   padding-bottom: 1em;
+   vertical-align: top;
+}
+
+#content h3 
+{
+  padding-top: 1px;
+  margin-top: 0px;
+	color: #5A8D3F;
+  font-size: 90%;
+  padding-bottom: 0px;
+  margin-bottom: 0px;
+}
+  input.helpbutton 
+  { 
+      vertical-align: top;
+      padding-top: 0px;
+      margin-top: 0px;
+      font-size: 60%;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+  }
+    input.thinbutton 
+  { 
+      vertical-align: middle;
+      padding-top: 0px;
+      margin-top: 0px;
+      font-size: 60%;
+      padding-bottom: 0px;
+      margin-bottom: 0px;
+  }
+  p#copydb
+  {
+    font-size: 90%;
+  }
+
+@media screen and (max-device-height: 768px) and (orientation: landscape) {
+	textarea.code 
+	{
+		width: 450px;
+		background-color: #FFFF99;
+		font-family: "Monaco", "Lucida Console", monospace;
+	}
+
+	textarea.codewide 
+	{
+	  width: 910px;
+	  background-color: #FFFF99;
+	}
+
+	textarea#imports 
+	{
+		height: 5em;
+	}
+
+	textarea#constants 
+	{
+		height: 5em;
+	}
+
+	textarea#types 
+	{
+			height: 45em;
+	}
+
+	textarea#methods
+	{
+			height: 45em;
+	}
+
+	textarea#main 
+	{
+			height: 42em;	
+	}
+
+	textarea#console
+	{
+		height: 60em;
+	}
+}
+@media only screen and (min-device-height: 769px) and (orientation: landscape) {
+	textarea.code 
+	{
+		width: 450px;
+		background-color: #FFFF99;
+		font-family: "Monaco", "Lucida Console", monospace;			
+	}
+
+	textarea.codewide 
+	{
+	  width: 910px;
+	  background-color: #FFFF99;
+	}
+
+	textarea#imports 
+	{
+		height: 5em;
+	}
+
+	textarea#constants 
+	{
+		height: 5em;
+	}
+
+	textarea#types 
+	{
+			height: 50em;
+	}
+
+	textarea#methods
+	{
+			height: 50em;
+	}
+
+	textarea#main 
+	{
+			height: 47em;	
+	}
+
+	textarea#console
+	{
+		height: 60em;
+	}
+}
