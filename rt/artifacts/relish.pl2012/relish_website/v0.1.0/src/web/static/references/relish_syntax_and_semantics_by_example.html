@@ -2303,6 +2303,17 @@ dbg val Any
 """
 
 
+incomplete val Any > err String
+"""
+ Returns an empty String "" if the object is fully initialized (all its required attributes have
+ been assigned a value), and the object is fully connected (it is related to other objects within
+ the bounds of the cardinality constraints of all relations declared between the object's 
+ type and supertypes and other types.)
+ Returns an appropriate error message otherwise, detailing which attribute(s) or relation(s)
+ of the object are unsatisfied.
+"""
+
+
 sendEmail 
    smtpServerAddr String 
    from String 
@@ -3455,11 +3466,15 @@ import
 	The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to
 	in this source code file. As in gravity.G 
 	</p>
+  <p>
+  When referring to a package from a different artifact in an import line, "/pkg/" is used to separate the name of the 
+  foreign artifact from the pathname of the package within that artifact.
+  </p>
 <p>
   <b>Semantics:</b>
 </p>  
 <p>
-  Packages support organization of large bodies of code into modules. Code in one package (module) cannot use code defined
+  Packages support organization of large bodies of code into modules. They force the module-coupling structure of the program to be declared explicitly in the form of package-import statements. Code in one package (module) cannot use code defined
   in another package without importing the other package using an import statement at the top of the using code's source file.
   </p>
 
