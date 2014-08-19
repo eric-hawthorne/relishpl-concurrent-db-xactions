@@ -3526,12 +3526,15 @@ method shown above.
   <b>Semantics:</b>
 </p>
 <p>
-Traits are an advanced topic. You may wish to read about traits in the Scala programming language,
-or interfaces in Java or Go, if you are not familiar with language contructs for declaring
-abstract methods and invoking implementations of those abstract methods.
+Traits are a programming language construct which allow the specification of abstract behaviour
+(via specifying abstract method signatures), and allow the mixing of that behavour into the capabilities
+of data objects. 
+
+If you are unfamiliar with traits as a programming language concept, you may wish to read about traits 
+in the Scala programming language, or refresh your knowledge of interfaces in Java or Go, 
 </p>
 <p>
-Trait abstract methods, which have no method-body statements defined, have the following special property:<br/>
+Trait abstract methods, which have no method-body statements defined, have the following special property in relish:<br/>
 The best-matching method implementation in the entire program will be run if a trait package is imported
 and the trait abstract method is invoked. The implementing method's package need not be imported.
 Once again with a few more details: 
@@ -3552,8 +3555,11 @@ Trait packages, with trait abstract methods, are essentially the equivalent of i
 other programming languages such as Java or Go, or are like traits in languages like Scala.
 The difference is that the trait being added is the whole trait package worth of abstract methods,
 and a trait is added (to an importing package) by importing the ..._trait package. 
-A trait could but does not necessarily define a new type, but can just add new abstract behaviours 
-to existing types or tuples of types.
+Unlike in Scala, Java, or Go, a trait in relish need not define a data type; it can just specify a set of
+methods that can be expected to be available. That is, the trait can just add new abstract behaviours 
+to existing types or tuples of types. A trait in relish IS a whole package, however, so optionally,
+you can define a data type or data types within the trait package, use those general types in the signatures of your trait methods,
+and have your other more concrete data types in other packages inherit from the type you defined in a trait package.
 </p>
 <p>
 In relish, trait methods are used to allow co-dependency among two or more other packages, 
@@ -3574,9 +3580,9 @@ A security mechanism is being considered but not yet implemented for traits. It 
 by default only methods defined in the same artifact as the _trait package can be an implementor of
 a trait abstract method. A program-global security configuration file could then allow other
 artifacts and packages (or patterns thereof) to add implementing methods to the trait abstract method.
-CAUTION: Right now, any artifact you import can behind the scenes add implementor methods to any
-trait abstract method in your program. Watch out. Make sure you trust the code of the artifacts you
-import.
+<b>CAUTION</b>: Right now, any artifact you import can behind the scenes add implementor methods to any
+trait abstract method in your program, and change the behaviour of your existing packages that call the trait method. 
+Watch out. Make sure you know and trust the code of the artifacts you import.
 </p>
 <br/>
 
