@@ -1,0 +1,510 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+http_srv - the relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Package http_srv</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Summary">Summary</a><br/>	
+	<a href="#Request">Request</a><br/>	
+	&nbsp; &nbsp; <a href="#requestUri" class="alt">requestUri</a><br/>
+  &nbsp; &nbsp; <a href="#referer">referer</a><br/> 
+  &nbsp; &nbsp; <a href="#method" class="alt">method</a><br/>
+  &nbsp; &nbsp; <a href="#host">host</a><br/> 
+  &nbsp; &nbsp; <a href="#remoteAddr" class="alt">remoteAddr</a><br/>
+  &nbsp; &nbsp; <a href="#uploadedFiles">uploadedFiles</a><br/> 
+  &nbsp; &nbsp; <a href="#uploadedFile" class="alt">uploadedFile</a><br/>
+  &nbsp; &nbsp; <a href="#cookies">cookies</a><br/> 
+  &nbsp; &nbsp; <a href="#cookie" class="alt">cookie</a><br/>
+  <a href="#UploadedFile">UploadedFile</a><br/> 
+  &nbsp; &nbsp; <a href="#name" class="alt">name</a><br/>
+  &nbsp; &nbsp; <a href="#open">open</a><br/> 
+  &nbsp; &nbsp; <a href="#read" class="alt">read</a><br/>
+  &nbsp; &nbsp; <a href="#close">close</a><br/> 
+  &nbsp; &nbsp; <a href="#readAllText" class="alt">readAllText</a><br/>
+  &nbsp; &nbsp; <a href="#readAllBinary">readAllBinary</a><br/> 
+  <a href="#Cookie" class="alt">Cookie</a><br/>
+  &nbsp; &nbsp; <a href="#cookieName">name</a><br/> 
+  &nbsp; &nbsp; <a href="#value" class="alt">value</a><br/>
+  &nbsp; &nbsp; <a href="#path">path</a><br/> 
+  &nbsp; &nbsp; <a href="#domain" class="alt">domain</a><br/>
+  &nbsp; &nbsp; <a href="#expires">expires</a><br/> 
+  &nbsp; &nbsp; <a href="#rawExpires" class="alt">rawExpires</a><br/>
+  &nbsp; &nbsp; <a href="#maxAge">maxAge</a><br/> 
+  &nbsp; &nbsp; <a href="#secure" class="alt">secure</a><br/>
+  &nbsp; &nbsp; <a href="#httpOnly">httpOnly</a><br/> 
+  &nbsp; &nbsp; <a href="#raw" class="alt">raw</a><br/>
+  &nbsp; &nbsp; <a href="#initString">initString</a><br/> 
+  <a href="#setCookie" class="alt">setCookie</a><br/>
+  <a href="#setCookie2">setCookie2</a><br/> 
+  <a href="#newSessionToken" class="alt">newSessionToken</a><br/> 
+  <a href="#sessionCookie">sessionCookie</a><br/> 
+  <a href="#sessionCookieAndNoCache" class="alt">sessionCookieAnd<br/>&nbsp;NoCache</a><br/>
+  <a href="#session">session</a><br/>                                                    
+</div>  
+<div id="content_manual">
+<a name="Summary"><h3>Summary</h3></a>
+<p>
+Data Types and Methods for use within web-app dialog handler methods on the http-server side.
+The data types represent http request metadata (headers), files uploaded from html forms to the server,
+and cookies included in the request, or to be sent in an http response to establish a login session.
+the methods allow querying the http request metadata, reading uploaded file content, reading cookies
+sent in requests, and constructing Set-Cookie headers to send in http responses back to the client.
+</p>
+<p>See the <a href="/tutorials/relish_web_app_tutorial.html">relish web app tutorial</a> for more
+discussion about how to incorporate these types and methods in your http request-processing relish code.
+</p>
+<p>See the <a href="http://golang.org/pkg/net/http/">Go Package http</a> documentation for more details about
+the data types and methods. The relish data types and methods in this http_srv package are mostly
+thin wrappers around Go package http types and methods.
+</p>	
+	<center>
+<table>
+<tr>  
+  <td><a href="#Request">Request</a></td><td> - http request metadata</td></tr>    
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#requestUri" class="alt">requestUri</a></td><td> - the requested URI</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#referer">referer</a></td><td> - http referer URL</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#method" class="alt">method</a></td><td> - POST GET PUT</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#host">host</a></td><td> - host component of the request URI</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#remoteAddr" class="alt">remoteAddr</a></td><td> - network address that sent the request</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#uploadedFiles">uploadedFiles</a></td><td> - list of files uploaded to server via an html form</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#uploadedFile" class="alt">uploadedFile</a></td><td> - uploaded file of a given input-name</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#cookies">cookies</a></td><td> - cookies sent with the request</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#cookie" class="alt">cookie</a></td><td> - cookie of a particular name sent with the request, if present</td></tr>
+<tr>  
+  <td><a href="#UploadedFile">UploadedFile</a></td><td> - has methods to yield filename and content of an uploaded file</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#name" class="alt">name</a></td><td> - filename of the uploaded file</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#open">open</a></td><td> - open the uploaded file for reading</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#read" class="alt">read</a></td><td> - read uploaded file content into a bytes buffer</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#close">close</a></td><td> - close the file after reading from it</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#readAllText" class="alt">readAllText</a></td><td> - read the uploaded file as a text file into a String</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#readAllBinary">readAllBinary</a></td><td> - read the uploaded file as a binary file into a String</td></tr> 
+<tr>  
+  <td><a href="#Cookie" class="alt">Cookie</a></td><td> - An http cookie as included in a request or to be sent in a response</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#cookieName">name</a></td><td> - name of the cookie</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#value" class="alt">value</a></td><td> - value (payload) of the cookie</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#path">path</a></td><td> - path (on website) to which the cookie applies</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#domain" class="alt">domain</a></td><td> - internet domain to which the cookie applies</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#expires">expires</a></td><td> - expiry time of the cookie</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#rawExpires" class="alt">rawExpires</a></td><td> - raw-format text form of cookie expiry time</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#maxAge">maxAge</a></td><td> - maximum age of cookie in seconds</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#secure" class="alt">secure</a></td><td> - secure - cookie is only (to be) passed if connection has TLS</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#httpOnly">httpOnly</a></td><td> - cookie only (to be) passed if connection protocol is http</td></tr> 
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#raw" class="alt">raw</a></td><td> - raw string of cookie as received in request header</td></tr>
+<tr>  
+  <td>&nbsp; &nbsp; <a href="#initString">initString</a></td><td> - string form of entire cookie, encoded ready for passing to client</td></tr> 
+<tr>  
+  <td><a href="#setCookie" class="alt">setCookie</a></td><td> - Constructs a Set-Cookie header from an existing cookie</td></tr>
+<tr>  
+  <td><a href="#setCookie2">setCookie2</a></td><td> - Constructs a Set-Cookie header from a name, value, and maxAge </td></tr> 
+<tr>  
+  <td><a href="#newSessionToken" class="alt">newSessionToken</a></td><td> - Returns a random string token for use as a sesssion cookie value</td></tr> 
+<tr>  
+  <td><a href="#sessionCookie">sessionCookie</a></td><td> - Constructs a Set-Cookie header from a session token</td></tr> 
+<tr>  
+  <td><a href="#sessionCookieAndNoCache" class="alt">sessionCookieAndNoCache</a></td><td> - Constructs a session cookie header and no-cache headers</td></tr>
+<tr>  
+  <td><a href="#session">session</a></td><td> - return the session token string from the http request</td></tr>    
+</table>	
+</center>
+
+	
+	
+	
+<br/>
+<h3>Data-Types and Methods</h3>
+<code><pre>
+
+
+<a name="Request">Request</a>
+"""
+ Represents the http request that was made to the web-app server.
+ Has methods that allow reading of HTTP headers, including cookies, that came with the request.
+ Also has methods that allow opening and reading uploaded files that were uploaded
+ via a mime-multipart <code><em>input type="file"</em></code> form element in a web page.
+"""
+
+
+<a name="requestUri">requestUri r Request > String 
+"""
+ The entire request URL including arguments, unmodified i.e.
+ raw as it appeared in the http request data stream.
+"""
+
+
+<a name="referer">referer r Request > String 
+"""
+ URL of page from which the present URL link was clicked on.
+ Note: Misspelling of "referrer" is carried over from http specification.
+"""
+
+
+<a name="method">method r Request > String 
+"""
+ "GET" "POST" "PUT"
+"""
+
+
+<a name="host">host r Request > String 
+"""
+ host or host:port
+"""
+
+
+<a name="remoteAddr">remoteAddr r Request > String 
+"""
+ The client address
+ IP:port
+"""
+
+
+<a name="uploadedFiles">uploadedFiles</a> r Request key String > fs [] UploadedFile
+"""
+Return a list of uploaded files or an empty list if no file upload input of the
+given name (the key) was found in this http request.
+
+An http_srv.UploadedFile object can be used in the same way as
+a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+<a name="uploadedFile">uploadedFile</a> r Request key String > f UploadedFile err String
+"""
+ Return a single uploaded file or an error if no file upload input of the
+ given name (the key) was found in this http request.
+ 
+ An http_srv.UploadedFile object can be used in the same way as
+ a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+<a name="cookies">cookies r Request > c [] Cookie
+"""
+ Returns a list of the cookies present in the http request.
+"""
+
+
+<a name="cookie">cookie r Request key String > c Cookie err String
+"""
+ Returns the cookie in the http request that has the particular cookie name.
+ The err return value is set to a message if no valid, unexpired 
+ cookie of that name is present in the request.
+ """
+
+
+<a name="UploadedFile">UploadedFile</a> <: io.Reader io.Closer
+"""
+ File i/o for files which have been uploaded to an http server as part of a multipart form request.
+ An UploadedFile object represents a mime/multipart/FileHeader and its mime/multipart/File.
+ Includes a name method which returns the filename that the file had on the client computer.
+ The open method must be called before read methods are called.
+"""
+
+
+<a name="name">name</a> f UploadedFile > String
+"""
+ filename of the uploaded file
+"""
+
+
+<a name="open">open</a> f UploadedFile > err String
+"""
+ open the uploaded file for reading
+"""
+
+
+<a name="read">read</a> f UploadedFile buf Bytes > n Int err String
+"""
+ read uploaded file content into a bytes buffer
+"""
+
+
+<a name="close">close</a> f UploadedFile > err String
+"""
+ close the file after reading from it
+"""
+
+
+<a name="readAllText">readAllText</a> 
+   f UploadedFile 
+   addMissingLinefeed Bool = false
+> 
+   fileContent String err String
+"""
+ Reads all text lines in the file, concatenating them into a single string in which each line
+ is terminated by a "\n". 
+ If the last line of the file had no line-ending character(s) at its end, the behaviour depends
+ on the "addMissingLinefeed" argument. If false (the default) , the last line in the result string
+ also has no linefeed "\n" at its end.
+ If addMissingLinefeed is true, the last line in the result string gets 
+ a "\n" appended, so that lines can be processed in a uniform manner.
+
+ Note that if the file has MSWindows-style line end markers (CRLF i.e. "\r\n") these are replaced
+ in the output string by a single "\n" at end of each line.
+
+ An empty file causes the fileContent result to be the empty string.
+"""
+
+<a name="readAllBinary">readAllBinary</a> f UploadedFile > fileContent String err String
+"""
+ Reads the entire file contents into the fileContent String.
+ All bytes in the file are put in the String as-is, with no line-end processing.
+ You can use this method on text files too, if you like, but you won't get any
+ normalizing of line-ending characters. You get the exact file bytes as returned by
+ low-level file read functions.
+"""
+
+<a name="Cookie">Cookie</a>
+"""
+ An http cookie. Attributes accessible only through methods below.
+ See golang.org/pkg/net/http/#Cookie for cookie attribute meanings 
+"""
+
+<a name="cookieName">name</a> c Cookie > String
+"""
+ name of the cookie
+"""
+
+
+<a name="value">value</a> c Cookie > String
+"""
+ value (payload) of the cookie
+"""
+
+
+<a name="path">path</a> c Cookie > String
+"""
+ path (on website) to which the cookie applies
+"""
+
+
+<a name="domain">domain</a> c Cookie > String
+"""
+ internet domain to which the cookie applies
+"""
+
+
+<a name="expires">expires</a> c Cookie > Time 
+"""
+ expiry time of the cookie
+"""
+
+
+<a name="rawExpires">rawExpires</a> c Cookie > String
+"""
+ raw-format text form of cookie expiry time
+"""
+
+ 
+
+<a name="maxAge">maxAge</a> c Cookie > Int
+"""
+ maximum age of cookie in seconds
+ maxAge=0 means no 'Max-Age' attribute specified.
+ maxAge&lt;0 means delete cookie now, equivalently 'Max-Age: 0'
+ maxAge>0 means Max-Age attribute present and given in seconds
+"""
+
+ 
+<a name="secure">secure</a> c Cookie > Bool
+"""
+ cookie is only (to be) acted on and passed back to client, if connection has TLS
+"""
+
+
+<a name="httpOnly">httpOnly</a> c Cookie > Bool
+"""
+ cookie only (to be) acted on and passed back to client, if connection protocol is http
+"""
+
+
+<a name="raw">raw</a> c Cookie > String      
+"""
+ raw string of cookie as received in request header
+"""
+
+
+<a name="initString">initString</a> s String c Cookie > String
+"""
+ Return a string representation of the cookie's attributes, 
+ encoded ready for passing to client as value of a Set-Cookie: http header row
+""" 
+
+
+
+<a name="setCookie">setCookie</a> c Cookie > String    
+"""
+ Return a proper header line for setting the cookie in an http response.
+ Note: currently there is no way to construct a valid cookie except the
+ method variant below.
+ So this variant of the setCookie method is currently 
+ only for passing to the http response
+ a cookie received in the http request, unmodified.
+ TODO: Add Cookie constructor methods or attribute setter methods.
+"""
+
+
+<a name="setCookie2">setCookie</a> name String value String maxAge Int path String domain String > String
+"""
+ Return a proper header line for setting the cookie in an http response.
+ See also the high-level methods below for shortcuts for session maintenance with 
+ a session cookie.
+"""
+
+
+
+
+// Usage of the following high-level web-app session maintenance methods:
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// someWebMethod request http_srv.Request arg1 String arg2 Int > String String Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+
+<a name="newSessionToken">newSessionToken</a> > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+
+
+<a name="sessionCookie">sessionCookie</a> sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+
+
+<a name="sessionCookieAndNoCache">sessionCookieAndNoCache</a> sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+
+
+<a name="session">session</a> request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+
+
+</pre></code>
+
+
+</div>
+
+</body>
+</html>
+
