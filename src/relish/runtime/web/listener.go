@@ -1300,6 +1300,17 @@ func ListenAndServe(portNumber int, sourceCodeShareDir string) {
 }
 
 /*
+  Starts up relish web app serving via TLS on the specified port.
+  If sourceCodeShareDir is not "" it should be the "relish/shared" 
+  or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory. 
+  In that case, also serves source code from the shared directory tree.
+*/
+func ListenAndServeTLS(portNumber int, certFilePath string, keyFilePath string) {
+    http.HandleFunc("/", handler)
+    http.ListenAndServeTLS(fmt.Sprintf(":%d",portNumber), certFilePath, keyFilePath, nil)
+}
+
+/*
   Starts up relish shared source code serving on the specified port.
   sourceCodeShareDir should be the "relish/shared" 
   or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory. 
