@@ -513,22 +513,6 @@ func GetTLSwebServerCertAndKeyFilePaths() (certPath string, keyPath string, err 
 }
 
 
-/*
-Get a public key certificate in PEM format from the standard directory in the relish installation, 
-using standard file naming convention. 
-*/
-func GetPublicKeyCert(entityType string, entityName string) (publicKeyCertPEM string, err error) {
-	fileName := entityType + "__" + entityName + "__public_key.pem"
-	path := relishRuntimeLocation + "/keys/public/" + fileName
-	
-	bts, err := gos.ReadFile(path) 
-	if err != nil {
-		return
-	}
-	publicKeyCertPEM = string(bts)
-	return
-}
-
 
 /*
 Store a private key in PEM format into a file in the standard directory in the relish installation, 

@@ -81,5 +81,5 @@ func ReadFile(filename string) ([]byte, error) {
 }
 
 func ToOsSpecificPath(filePath string) string {
-   return filepath.FromSlash(filePath))
+   return filepath.FromSlash(filePath)
 }

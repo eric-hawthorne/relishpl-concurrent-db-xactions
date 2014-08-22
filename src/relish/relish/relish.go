@@ -100,6 +100,7 @@ var reVersion *regexp.Regexp = regexp.MustCompile("([0-9]+\\.[0-9]+\\.[0-9]+)")
 func main() {
     var loggingLevel int
     var webListeningPort int
+    var tlsWebListeningPort int    
     var shareListeningPort int  // port on which source code will be shared by http    
     var sharedCodeOnly bool  // do not use local artifacts - only those in shared directory.
     var explorerListeningPort int // port on which data explorer_api web service will be served.   
@@ -114,6 +115,8 @@ func main() {
     //var fset = token.NewFileSet()
 	  flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
 	  flag.IntVar(&webListeningPort, "web", 0, "The http listening port - if not supplied, does not listen for http requests")
+    flag.IntVar(&webListeningPort, "tls", 0, "The https listening port - if not supplied, does not listen for https requests")
+
 	  flag.IntVar(&explorerListeningPort, "explore", 0, "The explorer_api web service listening port - if supplied, the data explorer tool can connect to this program on this port")		
 	  flag.StringVar(&dbName, "db", "db1", "The database name. A SQLITE database file called <name>.db will be created/used in artifact data directory")			
 
@@ -517,6 +520,7 @@ func main() {
          go web.ListenAndServeTLS(tlsWebListeningPort, tlsCertPath, tlsKeyPath)         
       }
    }
+ }
 
 
 
