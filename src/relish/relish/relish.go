@@ -115,7 +115,7 @@ func main() {
     //var fset = token.NewFileSet()
 	  flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
 	  flag.IntVar(&webListeningPort, "web", 0, "The http listening port - if not supplied, does not listen for http requests")
-    flag.IntVar(&webListeningPort, "tls", 0, "The https listening port - if not supplied, does not listen for https requests")
+    flag.IntVar(&tlsWebListeningPort, "tls", 0, "The https listening port - if not supplied, does not listen for https requests")
 
 	  flag.IntVar(&explorerListeningPort, "explore", 0, "The explorer_api web service listening port - if supplied, the data explorer tool can connect to this program on this port")		
 	  flag.StringVar(&dbName, "db", "db1", "The database name. A SQLITE database file called <name>.db will be created/used in artifact data directory")			

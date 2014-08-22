@@ -494,7 +494,7 @@ Get a private key in PEM format from the standard directory in the relish instal
 using standard file naming convention. 
 */
 func GetTLSwebServerCertAndKeyFilePaths() (certPath string, keyPath string, err error) {
-	certPath = relishRuntimeLocation + "/keys/private/tls_web_server_cert.pem"
+	certPath = relishRuntimeLocation + "/keys/public/tls_web_server_cert.pem"
 	keyPath = relishRuntimeLocation + "/keys/private/tls_web_server_key.pem"
 
    _,err = gos.Stat(certPath)	
