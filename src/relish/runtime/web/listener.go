@@ -420,8 +420,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)   
 
    t.DB().BeginTransaction()
+   t.SetTransaction(NewTransaction())   
 
+   defer t.SetTransaction(nil)
    defer t.CommitOrRollback()
+
 	
    resultObjects,err := interpreter.RunServiceMethod(t, 
 	                                                 handlerMethod, 
