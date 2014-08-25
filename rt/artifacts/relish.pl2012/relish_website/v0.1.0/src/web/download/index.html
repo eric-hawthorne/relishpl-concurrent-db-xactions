@@ -108,27 +108,31 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<h3>Source Code Distribution</h3>
 	<p>
 		The relish software project is hosted at
-	 <a href="http://code.google.com/p/relish/">https://code.google.com/p/relish/</a>
+	 <a href="http://code.google.com/p/relish/">https://code.google.com/p/relish/</a><br/>
+   You will need to install the mercurial version-control-system (similar to git) on your platform in order to get the relish source code.<br/>
+   On Ubuntu linux: sudo apt-get install mercurial
 	</p>
 	<p>
-		To compile the relish programming language, you will first have to install the Go programming language version 1.1 or 1.2  (http://golang.org).<br/>
-		If on linux, you also need sqlite3 (3.5+) and libsqlite3-dev  (sqlite3 C header files) installed.<br/>
-		On MACOSX, sqlite3 is already installed but you need the libsqlite3-dev library, which should be obtainable 
-		by downloading and installing Apple's full <b>Xcode</b> toolkit, or by downloading and installing
+		To compile the relish programming language, you will first have to install the Go programming language version 1.2 or greater (http://golang.org).<br/>
+		You also need to be able to compile the go-sqlite package, which has native C code, and requires the gcc C compiler.<br/>
+    On MACOSX, you can obtain the C compiler by downloading and installing Apple's full <b>Xcode</b> toolkit, or by downloading and installing
 		the <b>Command Line Developer Tools</b> subset of Xcode, which is currently described and available at 
-		developer.apple.com/technologies/tools/features. Note you need an AppleID to download these.
+		developer.apple.com/technologies/tools/features. Note you need an AppleID to download these.<br/>
+    On Ubuntu linux, <code>sudo apt-get install build-essential</code> will install gcc if "which gcc" reveals it does not exist on your
+    platform.
 	</p>	
 	<pre>	
    sudo mkdir -p /opt/devel
    sudo chmod go+wx /opt/devel
    cd /opt/devel
    hg clone https://code.google.com/p/relish/ 
-   export GOPATH=/opt/devel/relish              # You should add this export statement to your ~/.bashrc file 
-                                                # in linux, or create a ~/.bash_profile file in MACOSX and edit
-                                                # it to contain the export statement
+   export GOPATH=/opt/devel/relish              # You should add this export statement to your ~/.bashrc file or
+                                                # ~/.profile file in linux, or create a ~/.bash_profile file in MACOSX 
+                                                # and edit it to contain the export statement
                                                 
-   # Make sure sqlite3 and libsqlite3-dev are installed before next step.                                             
-   go get code.google.com/p/gosqlite/sqlite  
+   # Make sure gcc is installed before the next step 
+                                              
+   go get code.google.com/p/go-sqlite/go1/sqlite3  
    cd relish
    go install relish/relish
    sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables 
