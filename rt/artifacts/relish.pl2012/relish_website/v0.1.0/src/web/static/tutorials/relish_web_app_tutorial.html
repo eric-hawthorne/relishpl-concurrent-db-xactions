@@ -128,9 +128,24 @@ This runs the relish web app program. First, the "main" method in the main.rel f
 relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop
 </pre></code>	  
       instead. 
+<br/><br/>
+  <b><em>Note on running on the production web server port: 80 (or 443)</em></b><br/><br/>
+   For linux:<br/>
+  If you wish to run relish as a standalone web server on port 80 (or with the -tls 443 option to run a https web server) then
+  ordinarily you must run relish as the root user because listening on ports &lt; 1024 is a privileged operation. 
+  <b>However</b>, running a server as root is a bad idea, security-wise! <br/>
+  One workaround is the following:<br/>
+  <code>sudo setcap 'cap_net_bind_service=+ep' /opt/devel/relish/bin/relish</code><br/>
+  which will give the relish executable the capability to listen on ports &lt; 1024 even when relish
+  is run from a regular (non-root) user account.<br/>
+  There are other options, such as using an iptables prerouting rule to map a high port to port 80,
+  or, to run the relish web server behind an apache or nginx proxy.<br/> 
+  Not sure the best plan for MACOSX. You could just try<br/>
+  <code>sudo relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop</code> but the security risk then exists.
    </p>
 <p>
    To test your web app, point your web browser at localhost:8080, or simply localhost, if you did -web 80.
+ 
 </p>   
 
  <a name="DynamicPages"><h3>Making Web Pages Dynamic - Filling Page Content from the Program</h3></a>
