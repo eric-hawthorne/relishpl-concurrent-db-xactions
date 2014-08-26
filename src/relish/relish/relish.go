@@ -314,6 +314,15 @@ func main() {
       }  		
 
       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
+
+      // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+      // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+      // have permission to listen on a < 1024 port like port 80.
+      fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                 "Did you setup to give relish permission to bind to privileged ports?\n" +
+                 "or is another process already listening on this port?\n",shareListeningPort)
+      return                
     }
 
 
@@ -488,6 +497,14 @@ func main() {
             numListening += 1
             if numListening == numListeners {
   	           web.ListenAndServe(webListeningPort, sourceCodeShareDir)
+               // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+               // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+               // have permission to listen on a < 1024 port like port 80.
+               fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                          "Did you setup to give relish permission to bind to privileged ports?\n" +
+                          "or is another process already listening on this port?\n",webListeningPort)
+               return                              
   	        } else {
   	           go web.ListenAndServe(webListeningPort, sourceCodeShareDir)	      	
   	        }
@@ -500,6 +517,14 @@ func main() {
     	      numListening += 1
     	      if numListening == numListeners {	
     	         web.ListenAndServe(webListeningPort, "")	
+               // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+               // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+               // have permission to listen on a < 1024 port like port 80.
+               fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                          "Did you setup to give relish permission to bind to privileged ports?\n" +
+                          "or is another process already listening on this port?\n",webListeningPort)
+               return                 
     	      } else {
     	         go web.ListenAndServe(webListeningPort, "")	      	
     	      }
@@ -516,6 +541,14 @@ func main() {
       numListening += 1
       if numListening == numListeners {
          web.ListenAndServeTLS(tlsWebListeningPort, tlsCertPath, tlsKeyPath) 
+         // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+         // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+         // have permission to listen on a < 1024 port like port 80.
+         fmt.Printf("Error: Could not bind to port %d to listen for https connections.\n" +
+                    "Did you setup to give relish permission to bind to privileged ports?\n" +
+                    "or is another process already listening on this port?\n",tlsWebListeningPort)
+         return           
       } else {
          go web.ListenAndServeTLS(tlsWebListeningPort, tlsCertPath, tlsKeyPath)         
       }
@@ -526,7 +559,15 @@ func main() {
 
 
 	if explorerListeningPort != 0 {         
-      web.ListenAndServeExplorerApi(explorerListeningPort)	          
+      web.ListenAndServeExplorerApi(explorerListeningPort)	
+      // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+      // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+      // have permission to listen on a < 1024 port like port 80.
+      fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                "Did you setup to give relish permission to bind to privileged ports?\n" +
+                "or is another process already listening on this port?\n",explorerListeningPort)
+      return                  
    }
    
    // This will only be reached if numListeners == 0 or there is an error starting listeners.
