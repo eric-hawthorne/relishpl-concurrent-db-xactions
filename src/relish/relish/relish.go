@@ -304,12 +304,12 @@ func main() {
       // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
       sourceCodeShareDir = relishRoot + "/shared"
     }
-    onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0)
+    onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0 && tlsWebListeningPort == 0)
 
     if onlyCodeSharing {
 
-      if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
-         fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+      if shareListeningPort < 1024 && shareListeningPort != 80 {
+         fmt.Println("Error: The source-code sharing port must be 80 or > 1023 (8421 is the standard if using a high port)")
          return		
       }  		
 
@@ -340,7 +340,7 @@ func main() {
              packagePath = packagePathOrVersion
 
           } 
-  	   } else if shareListeningPort == 0 || webListeningPort != 0 {
+  	   } else if shareListeningPort == 0 || webListeningPort != 0  || tlsWebListeningPort != 0 {
          if len(pathParts) != 1 {
   	       fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]\n# package path defaults to main")            
   	       return
@@ -471,7 +471,7 @@ func main() {
 		              err)		
    		   return	
        }	     
-    }
+  }
 
 	   
 	if numListeners > 0 {  // If we'll be listening for http requests, run main in a background goroutine.
