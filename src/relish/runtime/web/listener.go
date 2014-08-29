@@ -1288,6 +1288,9 @@ func underscoresToCamelCase(s string) string {
 	return cs
 }
 
+var handlerAdded = false; // Whether the relish webapp method-mapping handler has been added to DefaultServeMux yet
+var listenerConfigMutex sync.Mutex
+
 /*
   Starts up relish web app serving on the specified port.
   If sourceCodeShareDir is not "" it should be the "relish/shared" 
@@ -1298,7 +1301,12 @@ func ListenAndServe(portNumber int, sourceCodeShareDir string) {
 	if sourceCodeShareDir != "" {
 		http.Handle("/relish/", http.FileServer(http.Dir(sourceCodeShareDir)))
 	}
-    http.HandleFunc("/", handler)
+    listenerConfigMutex.Lock()
+    if ! handlerAdded { 
+       http.HandleFunc("/", handler)
+       handlerAdded = true
+    }
+    listenerConfigMutex.Unlock()
     http.ListenAndServe(fmt.Sprintf(":%d",portNumber), nil)
 }
 
@@ -1309,7 +1317,12 @@ func ListenAndServe(portNumber int, sourceCodeShareDir string) {
   In that case, also serves source code from the shared directory tree.
 */
 func ListenAndServeTLS(portNumber int, certFilePath string, keyFilePath string) {
-    http.HandleFunc("/", handler)
+    listenerConfigMutex.Lock()  
+    if ! handlerAdded { 
+       http.HandleFunc("/", handler)
+       handlerAdded = true       
+    }
+    listenerConfigMutex.Unlock()    
     http.ListenAndServeTLS(fmt.Sprintf(":%d",portNumber), certFilePath, keyFilePath, nil)
 }
 
