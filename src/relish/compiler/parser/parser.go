@@ -5254,7 +5254,7 @@ func (p *parser) parseOneLineReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) boo
 
     var typeSpec *ast.TypeSpec
     // Should I allow maybe? Yes probably.
-    if ! p.parseTypeSpec(false, false,true, true, false, false, &typeSpec) {
+    if ! p.parseTypeSpec(false, true, true, true, false, false, &typeSpec) {
 	    return p.Fail(st)
     }
 
