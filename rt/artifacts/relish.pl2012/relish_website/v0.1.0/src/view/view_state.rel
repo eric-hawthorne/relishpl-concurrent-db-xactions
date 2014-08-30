@@ -37,8 +37,7 @@ initVisit v Visit > Visit
  Create a visit to record a logged-in session by the origin administrator.
 """
    v.startTime = now "UTC"
-   v.token = nextToken v.startTime
-   v.lastRequestTime = v.startTime
+   v.token = http_srv.newSessionToken
    v.loggedInTime = Time  // Zero time means not logged in
    v.notice = ""
    v.noticeType = ""
