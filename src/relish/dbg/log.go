@@ -134,7 +134,7 @@ const (
 
 // const SOME_DEBUG_FLAGS =  WEB2__ | ALWAYS_
 
-const SOME_DEBUG_FLAGS =  AST__ | ALWAYS_
+const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  GENERATE2__ | ALWAYS_
 
