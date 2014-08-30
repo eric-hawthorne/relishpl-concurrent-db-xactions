@@ -1,5 +1,5 @@
-origin   everybitcounts.net2006
-artifact topical
+origin   relish.pl2012
+artifact relish_website 
 package  view
 
 """
@@ -44,7 +44,7 @@ initVisit v Visit > Visit
    => v
 
 
-Visit [<startTime] 0 N -- 0 1 user model.Origin
+Visit [<startTime] 0 N -- user 0 1 model.Origin
 
 
 loggedInVisit token String originId String
