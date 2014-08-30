@@ -343,7 +343,7 @@ upload
    visit = loggedInVisit tok originId
    if not visit
       => "REDIRECT"
-         cat "/login?o=" originId "next=/upload"
+         cat "/login?o=" originId "&next=/upload"
          nil
    => sessionCookieAndNoCache tok 60
       "upload.html"
@@ -362,7 +362,7 @@ uploadAction request http_srv.Request o String > String String Any
    visit = loggedInVisit tok o
    if not visit
       => "REDIRECT"
-         cat "/login?o=" o "next=/upload"
+         cat "/login?o=" o "&next=/upload"
          nil
 
    extendSession = sessionCookieAndNoCache tok 60
