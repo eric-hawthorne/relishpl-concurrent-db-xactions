@@ -16,6 +16,7 @@ import
    model
    crypto
    datetime
+   view
 
 
 register > String String
@@ -310,12 +311,12 @@ loginAction o String pw String next String > String String
       => "REDIRECT"
          cat "/login?o=" o "&bad=1&next=" next
 
-   o = summon originId
-   if neq (base64Hash pw) o.pwHash
+   orign = summon o
+   if neq (base64Hash pw) orign.pwHash
       => "REDIRECT"
          cat "/login?o=" o "&bad=1&next=" next
 
-   if not o.isVerified
+   if not orign.isVerified
       => "REDIRECT"
          cat "/login?o=" o "&unverified=1&next=" next  
 
@@ -531,3 +532,4 @@ setHostnameAction hostName String > String String
 Done. Set hostname for webapp.
 </html>
 """
+
