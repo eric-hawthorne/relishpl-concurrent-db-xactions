@@ -302,7 +302,7 @@ on registration email message link.</b></span></p>
       }String > String
 
 
-loginAction o String pw String next String > String String
+loginAction request http_srv.Request o String pw String next String > String String String
 """
  Checks login credentials and if successful, redirects to the next URL,
  sending a cookie in the response to establish a login session.
@@ -320,7 +320,17 @@ loginAction o String pw String next String > String String
       => "REDIRECT"
          cat "/login?o=" o "&unverified=1&next=" next  
 
-   => "REDIRECT"
+   // Creating and storing new Visit record
+   visit = view.Visit
+   visit.ipAddress = remoteAddr request
+   visit.user = orign
+   dub visit visit.token
+
+   // TODO Need to return a session token to the client.
+
+
+   => sessionCookieAndNoCache visit.token 60
+      "REDIRECT"
       cat next "?o=" o
 
 
