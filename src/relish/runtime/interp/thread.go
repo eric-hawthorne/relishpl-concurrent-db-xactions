@@ -492,6 +492,10 @@ func (t *Thread) Err() string {
 	return t.err
 }
 
+func (t *Thread) SetErr(msg string) {
+	t.err = msg
+}
+
 func (t *Thread) EvaluationContext() MethodEvaluationContext {
 	return t.EvalContext
 }

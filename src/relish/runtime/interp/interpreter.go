@@ -228,6 +228,8 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 }
 
 /*
+TODO: Why is  this not in thread.go ???
+
 In future, a thread panic would cause t.err to be an error message.
 
 TODO: Make some way of setting t.err when relish-panicking.
@@ -248,11 +250,27 @@ func (t *Thread) CommitOrRollback() {
 	   err := t.DB().CommitTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
-	   }	   
+
+	      err := t.DB().RollbackTransaction()
+	      if err != nil {
+	         Logln(ALWAYS_,err.Error())
+          }
+	      if t.transaction != nil {
+	          t.transaction.RollBack()
+	      }  	      
+       } else {  // successful commit
+	      if t.transaction != nil {
+	         t.transaction.Commit()
+	      }     	
+       }   
     } else {
 	   err := t.DB().RollbackTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
+       }
+
+       if t.transaction != nil {
+          t.transaction.RollBack()
        }
 	
 	   for ! t.DB().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
