@@ -453,6 +453,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
       t.SetErr(err.Error())      
       return	
    }	
+
+   t.SetErr("")  // Yay! We did not panic
    fmt.Println("finished processing response of " + handlerMethod.Name)	
 }
 
