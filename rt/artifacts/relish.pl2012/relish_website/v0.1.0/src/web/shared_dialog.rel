@@ -349,9 +349,11 @@ upload
       => "REDIRECT"
          "/login?next=/upload"
          nil
-
+   print "before session request"
    tok = session request
+   print "after session request, tok=" tok
    visit = loggedInVisit tok originId
+   print "after loggedInVisit, visit=" visit 
    if not visit
       => "REDIRECT"
          cat "/login?o=" originId "&next=/upload"
