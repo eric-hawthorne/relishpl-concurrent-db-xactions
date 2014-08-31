@@ -421,7 +421,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    t.DB().BeginTransaction()
    t.SetTransaction(NewTransaction())   
-
+   t.SetErr("Uncaught panic while running web app method.")
    defer t.SetTransaction(nil)
    defer t.CommitOrRollback()
 
@@ -442,6 +442,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    if err != nil {
       fmt.Println(err)  
       fmt.Fprintln(w, err)
+      t.SetErr(err.Error())
       return  
    }   
 
@@ -449,6 +450,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
+      t.SetErr(err.Error())      
       return	
    }	
    fmt.Println("finished processing response of " + handlerMethod.Name)	
