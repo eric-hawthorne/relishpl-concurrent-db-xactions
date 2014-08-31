@@ -329,7 +329,9 @@ that the object state is first restored from database before getting the attribu
 func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency1"))
 	th.AllowGC()
+	fmt.Println("txOpsMutex.Lock() ing etc1")
     txOpsMutex.Lock()
+	fmt.Println("txOpsMutex.Lock() ed etc1")    
     th.DisallowGC()
     defer txOpsMutex.Unlock()
 
@@ -352,12 +354,19 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
     	if th != nil && th.Transaction() != unit.transaction {
            tx := unit.transaction	
            txOpsMutex.Unlock()
+	       fmt.Println("txOpsMutex.Unlock() etc1 diff xactions")
+
            th.AllowGC()
+	       fmt.Println("tx.mutex.RLock() ing etc1")           
            tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+	       fmt.Println("tx.mutex.Lock() ed etc1")            
            th.DisallowGC()
            tx.mutex.RUnlock()
+	       fmt.Println("tx.mutex.Unlock() etc1")            
            th.AllowGC()
+	       fmt.Println("txOpsMutex.Lock() ing etc1 #2")           
            txOpsMutex.Lock()
+	       fmt.Println("txOpsMutex.Lock() ed etc1 #2")            
            th.DisallowGC()
         }
         if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
@@ -372,9 +381,12 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	       }
         }
     } 
+
+	fmt.Println("txOpsMutex.Unlock() etc1 end")    
 }
 
 func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err error) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency2"))	
     th.AllowGC()	
     txOpsMutex.Lock()
     th.DisallowGC()    
@@ -436,6 +448,7 @@ Also makes sure that if the object state is invalid, due to a rolled back transa
 that the object state is first restored from database before getting the attribute value.
 */
 func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency3"))		
     th.AllowGC()   	
     txOpsMutex.Lock()
     th.DisallowGC()    
@@ -481,6 +494,7 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
 }
 
 func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection) (err error) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency4"))		
     th.AllowGC()  	
     txOpsMutex.Lock()
     th.DisallowGC()        
