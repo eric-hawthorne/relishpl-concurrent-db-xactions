@@ -26,8 +26,12 @@ package data
 
 import (
    "sync"
+   "fmt"
+   . "relish/dbg"
  )
 
+
+var transactionIdCounter uint64  // Ops on this assume that they are mutex locked.
 
 /*
 Represents (complements) a database transaction.
@@ -38,12 +42,28 @@ type RTransaction struct {
                                   // within the scope of this transaction
    mutex sync.RWMutex
    IsRolledBack bool
+   Id uint64
+   IsInProgress bool
 }
 
 func NewTransaction() (tx *RTransaction) {
-	tx = &RTransaction{DirtyObjects: make(map[Persistable]bool)}
+  transactionIdCounter++  
+	tx = &RTransaction{DirtyObjects: make(map[Persistable]bool), Id: transactionIdCounter, IsInProgress: true}
+  Log(PERSIST_TR2,"%s.Begin()",tx)     
   tx.mutex.Lock()
   return tx
+}
+
+func (tx *RTransaction) String() string {
+   status := "in progress"
+   if ! tx.IsInProgress {
+       if tx.IsRolledBack {
+           status = "rolled back"
+       } else {
+           status = "committed"
+       }
+   }
+   return fmt.Sprintf("tx%d(%s)",tx.Id, status)
 }
 
 /*
@@ -52,7 +72,7 @@ func NewTransaction() (tx *RTransaction) {
 // that was subsequently rolled back get their transaction reference set to this 
 // transaction, which indicates that their attributes need to be refreshed from DB.
 */ 
-var RolledBackTransaction *RTransaction = &RTransaction{}
+var RolledBackTransaction *RTransaction = &RTransaction{IsInProgress: false, IsRolledBack: true, Id: 0}
 
 /*
 Call this after the database rollback occurs.
@@ -61,20 +81,25 @@ is called.
 
 */
 func (tx *RTransaction) RollBack() {
+  Log(PERSIST_TR2,"%s.RollBack()",tx)   
 	for object := range tx.DirtyObjects {
 //       fmt.Println("Rolling back",object)
 
        object.RollBack()
 	}
   tx.IsRolledBack = true
+  tx.IsInProgress = false
   tx.mutex.Unlock()
 }
 
 func (tx *RTransaction) RLock() {
+  Log(PERSIST_TR2,"%s.RLock() ing",tx) 
   tx.mutex.RLock()
+  Log(PERSIST_TR2,"RLock() ed")   
 }
 
 func (tx *RTransaction) RUnlock() {
+  Log(PERSIST_TR2,"%s.RUnlock()",tx)   
   tx.mutex.RUnlock()
 }
 
@@ -83,9 +108,11 @@ func (tx *RTransaction) RUnlock() {
 Call this after the database commit occurs.
 */
 func (tx *RTransaction) Commit() {
+  Log(PERSIST_TR2,"%s.Commit()",tx)     
 	for object := range tx.DirtyObjects {
        object.This().SetStoredLocally()
        object.SetTransaction(nil)
 	}
+  tx.IsInProgress = false  
   tx.mutex.Unlock()
 }

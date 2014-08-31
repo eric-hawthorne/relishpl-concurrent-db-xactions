@@ -357,12 +357,12 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	       fmt.Println("txOpsMutex.Unlock() etc1 diff xactions")
 
            th.AllowGC()
-	       fmt.Println("tx.mutex.RLock() ing etc1")           
-           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
-	       fmt.Println("tx.mutex.Lock() ed etc1")            
+	       fmt.Println("tx.RLock() ing etc1")           
+           tx.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+	       fmt.Println("tx.Lock() ed etc1")            
            th.DisallowGC()
-           tx.mutex.RUnlock()
-	       fmt.Println("tx.mutex.Unlock() etc1")            
+           tx.RUnlock()
+	       fmt.Println("tx.Unlock() etc1")            
            th.AllowGC()
 	       fmt.Println("txOpsMutex.Lock() ing etc1 #2")           
            txOpsMutex.Lock()
@@ -419,9 +419,9 @@ func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err
         tx := unit.transaction
         txOpsMutex.Unlock() 
         th.AllowGC()               
-        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.RLock()   // Wait for the transaction to commit or rollback.
         th.DisallowGC()
-        tx.mutex.RUnlock()
+        tx.RUnlock()
         th.AllowGC()         
         txOpsMutex.Lock()
         th.DisallowGC()        
@@ -472,9 +472,9 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
            tx := coll.Transaction()	
            txOpsMutex.Unlock()
            th.AllowGC()            
-           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           tx.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
            th.DisallowGC()            
-           tx.mutex.RUnlock()
+           tx.RUnlock()
            th.AllowGC()             
            txOpsMutex.Lock()
            th.DisallowGC()             
@@ -516,9 +516,9 @@ func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection)
         tx := coll.Transaction()
         txOpsMutex.Unlock()  
         th.AllowGC()              
-        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.RLock()   // Wait for the transaction to commit or rollback.
         th.DisallowGC()         
-        tx.mutex.RUnlock()
+        tx.RUnlock()
         th.AllowGC()           
         txOpsMutex.Lock()
         th.DisallowGC()          
