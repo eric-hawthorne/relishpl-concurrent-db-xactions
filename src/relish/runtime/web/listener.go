@@ -426,12 +426,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
    defer t.CommitOrRollback()
 
 	
+   fmt.Printf("Began transaction now running dialog handler method: %s\n",handlerMethod.Name)   
+
    resultObjects,err := interpreter.RunServiceMethod(t, 
 	                                                 handlerMethod, 
 	                                                 positionalArgStringValues, 
 	                                                 keywordArgStringValues,
 	                                                 r)   
 
+   fmt.Printf("Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_,"Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)      
@@ -448,6 +451,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
       fmt.Fprintln(w, err)
       return	
    }	
+   fmt.Println("finished processing response of " + handlerMethod.Name)	
 }
 
 
@@ -997,7 +1001,8 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
         } else {
               err = fmt.Errorf("%s redirect has too many return values. Should be URL or e.g. 307 URL", methodName) 
               return               
-        } 
+        }
+	fmt.Println("Just before Redirect")
         http.Redirect(w,r,urlStr,code)
 
 

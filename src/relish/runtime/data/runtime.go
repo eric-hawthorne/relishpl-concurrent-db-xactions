@@ -560,7 +560,9 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
     }
 
     if obj.IsBeingStored() {
+       fmt.Println("AttrValue - ensureMemoryTransactionConsistency1") 
        ensureMemoryTransactionConsistency1(th, unit)
+       fmt.Println("done AttrValue - ensureMemoryTransactionConsistency1") 
     }
 
     val = unit.attrs[i]

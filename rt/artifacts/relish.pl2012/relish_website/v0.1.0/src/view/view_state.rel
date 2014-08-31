@@ -57,11 +57,19 @@ loggedInVisit token String originId String
  Returns nil if the visit is not found or represents a different origin.
 """
    if token
+      print "before exists" token
       if exists token
+         print "yup exists" token
          aVisit = summon token
+         print "after summon" 
+         print aVisit
          if aVisit.user
+            print "there was aVisit.user"
+            print aVisit.user.ident " =? " originId
             if eq aVisit.user.ident originId
                visit = aVisit
+               print "assigned return val visit =" visit
+         print "done with loggedInVisit" 
 
 
 loggedInVisit token String 
