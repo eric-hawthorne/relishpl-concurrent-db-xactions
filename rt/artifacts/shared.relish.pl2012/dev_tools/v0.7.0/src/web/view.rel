@@ -1,0 +1,23 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web
+
+"""
+ view.rel
+
+ Keeps track of the desired state of the development tools displays.
+ For example, remembers which app the user wanted to see if they
+ just browse to the root (hostname) of the web app URL.
+"""
+
+
+DevToolsViewState
+"""
+ Keeps track of view state attributes. Could be expanded
+ to keep track of more history, such as last explored program (target url)
+ and last simple program artifact name in the simple program trial environment.
+"""
+   appToLaunch String  // Either "playground" or "explorer"
+
+
+

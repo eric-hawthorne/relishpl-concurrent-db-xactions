@@ -1,0 +1,39 @@
+syntax: regexp
+
+# The relish compiler-interpreter executable
+^bin/relish
+
+# compiled code directories 
+/pkg/
+
+# Playground relish simple programs
+^rt/artifacts/local.relish.pl2012/
+
+syntax: glob
+# This line is a comment, and will be skipped.
+# Empty lines are skipped too.
+
+# Go code libraries
+*.a
+
+# go profiler output files
+*.prof
+
+# mercurial safety-save files
+*.orig
+
+# Editor temp files
+*~
+
+# SQLITE database files
+*.db
+
+# relish compiled (intermediate-code) files
+*.rlc
+
+# Temporary files used by the vim editor.
+.*.swp
+
+# A hidden file created by the Mac OS X Finder.
+.DS_Store
+

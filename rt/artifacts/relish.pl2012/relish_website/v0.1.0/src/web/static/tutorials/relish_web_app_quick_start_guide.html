@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish web application quick start guide
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Web Application Quick-Start Guide</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Purpose">Purpose</a><br/>	
+	<a href="#GetStarted" class="alt">Get Started</a><br/>
+	<a href="#Advanced">Advanced Note</a><br/>		
+</div>  
+<div id="content_manual">
+	<a name="Purpose"><h3>Purpose of this Guide</h3></a>
+	<p>
+	This guide will get you started rapidly with your first web application written in relish&#8482;. relish includes a full-stack web application development framework, meaning that it includes a database,  an html templating language, and a mapping of web requests to method calls in the programming language. It also has json encoding and decoding built-in.
+</p>
+<p>
+   This guide will not teach you basic concepts of web application programming. It is not even a full tutorial on web application programming in relish&#8482;. For that, you need to read the 
+   <a href="relish_web_app_tutorial.html">Writing Web Applications in relish</a> tutorial. Even that one requires some familiarity with web application programming, and focusses on explaining how you do it in the relish language and environment. 
+</p>
+<p>
+   No, this guide just gets the skeleton of your relish web application up and running quickly, showing you how to create a new barebones template web app project. You will need to read the relish language reference manual and/or the simple programs examples to learn how to create the "business logic" in your web application, and you will need to read the web app tutorial to get techniques for mixing logic, and database access, with web page presentation and web-form processing or AJAX request processing.
+</p>
+
+
+
+	<a name="GetStarted"><h3>So let's get started</h3></a>
+	<p>
+	   Your first step is actually to decide the official name of your web application software artifact. The name of a relish program must follow a specific naming convention, as shown by example here:<br/> some-origin.com2014/some_artifact_name
+   </p>
+   <p>
+	   Make sure you understand what a relish code origin is and what a relish software artifact is.
+	   Here's the <a href="/references/relish_syntax_and_semantics_by_example.html#SoftwareArtifacts">relevant section of the reference manual</a>. If you don't know what your code origin name should be yet, you might try a temporary one just to get started. One example might be yourfirstname-yourlastname.commons.relish.pl2012 so your web app artifact might be, for example
+	   willy-wonka.commons.relish.pl2012/online_chocolate_shop
+   </p>
+	<p>
+		Once you've decided on a code origin id and an artifact name, open a terminal window.
+	</p>
+	<p>
+	   <code><pre>
+cd ~/relish     # Assuming that is your relish installation directory.
+
+relish -init willy-wonka.commons.relish.pl2012/online_chocolate_shop webapp
+</pre></code>
+</p>
+<p>
+You will then see as a response the following confirmation and instructions:
+</p>
+<p>
+   <code><pre>
+Created relish web-app project template 
+/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop
+
+To run the web-app, relish -web 8080 willy-wonka.commons.relish.pl2012/online_chocolate_shop
+Then enter localhost:8080 into your browser's address bar to view the web app.
+</pre></code>
+</p>
+<p>
+All of the web-application source material (request handler methods, html templates, resources such as images and css files) can be found in or under the directory
+<code><pre> 
+/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop/v0.1.0/src/web/
+</pre></code>
+</p>
+<p>
+The request handler methods are in dialog.rel, the html template is index.html. Note the index.html file's {{.time}} variable which gets replaced by the value of the time calculated and formatted by the index method in dialog.rel.
+   </p>
+   <p>
+      To go further in understanding how to modify the dummy web application into your real one, you should read the 
+         <a href="relish_web_app_tutorial.html">Writing Web Applications in relish</a> tutorial.
+   </p>
+	<a name="Advanced"><h3>Advanced Note</h3></a>   
+	<p>
+	   Should you wish to develop each of your relish applications in a completely separate location on disk, separate from the location of your relish installation directory tree, you can do so, and here's how:
+   </p>
+   <p>
+      First, create a directory for your application project. e.g.
+<code><pre>
+cd /opt/devel
+mkdir chocolate
+cd chocolate   
+</pre></code>
+</p>
+<p>
+Now, run the project init command from within /opt/devel/chocolate
+<code><pre>   
+relish -init willy-wonka.commons.relish.pl2012/online_chocolate_shop webapp
+</pre></code>
+This will create an /opt/devel/chocolate/relish directory, with your new project in the artifacts directory under that.
+You could now choose, for example, to create a git or hg repository for the whole chocolate directory tree, so that
+you can include development notes or whatever else in the project repository. This also allows you to manage several chocolate-related artifacts in a single git/hg repository, should you so choose.
+</p>
+<p>
+Make sure you issue further relish commands, to run your project artifact, from within the /opt/devel/chocolate/relish directory tree.
+</p>
+<p>
+If you create your project the originally suggested way, under the relish installation itself, then you would probably create your git or hg repository for each artifact directory separately.
+</p>
+<br/>
+<br/>
+</div>
+
+</body>
+</html>

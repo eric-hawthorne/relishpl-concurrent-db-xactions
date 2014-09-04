@@ -1,0 +1,50 @@
+   <html>
+<head>
+  <title>Log in to Administer Your relish Code Origin</title>
+	
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />	
+</head>
+<body>
+{{with .msg}}{{htm .}}{{end}}	
+<h1>Log in to Administer Your relish Code Origin</h1>
+<form action="loginAction" method="post">
+<input type="hidden" name="next" value="{{.next}}" />
+<table>	    
+	<tr>
+		<td>
+		Origin id:	
+		</td>
+		<td>
+		<input name="o" type="text" size="30" value="{{.originId}}" />
+		</td>		
+	</tr>
+	<tr>
+		<td>
+		Password:	
+		</td>
+		<td>
+		<input name="pw" type="password" size="20" />
+		</td>		
+	</tr>	
+	<tr>
+		<td colspan="2">
+	         &nbsp;
+		</td>		
+	</tr>	
+	<tr>
+		<td>
+	    &nbsp;
+		</td>
+		<td>
+	    <input type="submit" value="Log in" />		
+		</td>		
+	</tr>	
+</table>
+<p>
+	If you have not yet registered with shared.relish.pl the origin id for your relish code origin, please use the Register page to register your code origin. Then you can login to perform actions such as uploading relish code artifacts.
+</p>
+
+</body>
+</form>
+</html>

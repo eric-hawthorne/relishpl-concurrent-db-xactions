@@ -1,0 +1,68 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+</head>
+<body>	
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>  
+	  <td>	
+        <h2>Constant declarations</h2>	
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+<p>
+You can assign names to unchanging values, using <b>constant declaration</b> statements. Place your constant statements one after the other, each starting on a separate line, with either no blank lines separating them, or at least two blank lines separating them to mark logically related groups of constants. Of course, constant declarations are optional. If you have some to declare in your trial program, declare them in the text box labelled "Constants".
+</p>
+<p>Names whose letters are all uppercase, including those names with underscores between words, are automatically considered to be constants, in a relish program.
+</p>
+<h3>Example</h3>
+<code><pre>
+N = 2
+MAX_WIDTH = 25
+
+
+MOTTO = "E Pluribus Unum"
+ADVICE = "Trust no one!"
+</pre></code>
+<h3>Reference</h3>
+<p><a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#Constants">constants syntax and semantics by example</a>
+</p>
+<p>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#ConstantDeclarations">constant declarations syntax and semantics by example</a>
+</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,256 @@
+origin   shared.relish.pl2012
+artifact dev_tools
+package  web/playground 
+
+""" 
+ dialog.rel
+
+ Web dialog handling methods for the playground (simple program trial environment) web app.
+"""
+
+import
+   strings
+   files
+   datetime
+
+
+
+index 
+   ...kw {} String > String
+> 
+   String 
+   Any
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+
+ Note: Should use artifact instead of package? and standard "test_program" package.
+"""
+   ensureExampleSimplePrograms     
+   
+   artifactName artifactNameFound = kw["artfct"]
+   if artifactNameFound 
+      if not exists artifactName
+         => "HTML"
+            "<html>An artifact of that name does not exist.</html>"
+
+      artfct = summon artifactName
+
+   else
+      artfct = Artifact
+      artfct.name = ""
+      artfct.description = ""
+      artfct.importsFileContent = ""
+      artfct.constantsFileContent = ""
+      artfct.typesFileContent = ""
+      artfct.methodsFileContent = ""
+      artfct.mainFileContent = ""
+      artfct.consoleOutput = ""
+
+   artifacts = []Artifact fill "name <> '%s' order by name" artifactName
+   programs = [
+                 for a in artifacts
+                    a.name
+              ]String
+
+   args = {
+             "name"                 => artfct.name
+             "description"          => artfct.description
+             "importsFileContent"   => artfct.importsFileContent
+             "constantsFileContent" => artfct.constantsFileContent                          
+             "typesFileContent"     => artfct.typesFileContent
+             "methodsFileContent"   => artfct.methodsFileContent
+             "mainFileContent"      => artfct.mainFileContent
+             "consoleOutput"        => artfct.consoleOutput       
+             "programs"             => programs
+          }String > Any
+
+   => "index.html"
+      args
+
+
+playAction 
+   artfctName String 
+   dbArtifact String  // Usually empty string, or else other artifact to copy db from.
+   description String
+   imports String
+   constants String
+   types String 
+   methods String
+   main String
+   console String
+   action String 
+> 
+   String 
+   String
+"""
+ Process a Run button press or a Clear DB button or a Copy DB button press.
+"""
+   if not artfctName
+      => errf "Must specify name of your program."
+   if exists artfctName
+      artfct = summon artfctName
+   else
+      artfct = Artifact
+      dub artfct artfctName
+
+   artfctName = trimSpace artfctName
+   description = trimSpace description
+   imports = trimSpace imports
+   constants = trimSpace constants
+   types = trimSpace types
+   methods = trimSpace methods
+   main = trimSpace main
+
+   if not description 
+      description = "A trial program - replace this text with your description of program."
+
+   metaContent = metadataFile artfctName description
+
+
+
+
+   if eq action " explore program data "  // make sure program has a reflect.pause in it
+      imports = ensureReflectImport imports
+      main = ensureReflectPause main
+
+   artfct.name = artfctName
+   artfct.description = description
+   artfct.importsFileContent = imports
+   artfct.constantsFileContent = constants
+   artfct.typesFileContent = types
+   artfct.methodsFileContent = methods
+   artfct.mainFileContent = main
+   artfct.consoleOutput = console
+
+   // Write fixed up content to relish source code files.
+
+   root = playgroundSrcPath artfctName
+
+   err = mkdirAll root
+   if err
+      => errf err
+
+
+   path = cat (playgroundArtifactPath artfctName) "/metadata.txt"  
+   file err = files.File path "w"
+   if err
+      => errf err
+   write file metaContent
+   close file
+
+   path = cat root "/imports.rel"  
+   if imports
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixImports imports artfctName)
+      close file
+   else
+      remove path
+
+   path = cat root "/constants.rel"  
+   if constants
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixConstants constants artfctName)
+      close file
+   else
+      remove path
+
+   path = cat root "/types.rel"  
+   if types
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixTypes types artfctName)
+      close file
+   else
+      remove path
+
+   path = cat root "/methods.rel"  
+   if methods
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixMethods methods artfctName)
+      close file
+   else
+      remove path
+
+   path = cat root "/main.rel"  
+   if main
+      file err = files.File path "w"
+      if err
+         => errf err
+      write file (fixMain main artfctName)
+      close file
+   else
+      remove path
+
+   // Now perform the action. Either clear the db or run the program code.
+
+   if eq action "Clear DB" 
+      dbPath = cat (playgroundDataPath artfctName) "/db1.db"  
+      remove dbPath
+      print "Removed database" dbPath     
+   elif eq action "Copy DB" 
+      sourceDbPath = cat (localDataPath dbArtifact) "/db1.db"
+      dbPath = cat (playgroundDataPath artfctName) "/db1.db"  
+      err = copy sourceDbPath dbPath
+      if err
+         => errf err
+      print "Debugging a copy of database from" dbArtifact 
+
+
+   elif eq action " explore program data "
+
+      originAndArtifact = cat "local.relish.pl2012/" artfctName
+      err = execNoWait "relish" "-quiet" "-explore" 8089 originAndArtifact "playground"
+
+
+      if err
+         artfct.consoleOutput = fill """
+Error when invoking relish program %s in -explore mode:
+%s
+"""
+                                     artfctName
+                                     err
+         => "REDIRECT"
+            cat "/playground?artfct=" artfctName
+            
+      sleep seconds 5
+                  
+      // Load the data explorer web application, with an argument that causes it to load the program,port 8089     
+      => "REDIRECT"
+         cat "/explorer?url=http%3A%2F%2Flocalhost%3A8089&artfct=" artfctName
+   else  // " Run "
+      if main
+         originAndArtifact = cat "local.relish.pl2012/" artfctName
+         outputBytes err = exec "relish" "-quiet" originAndArtifact "playground"
+
+         artfct.consoleOutput = fixErrorLocation String outputBytes
+
+         if and err (neq err "exit status 1")
+            artfct.consoleOutput = cat artfct.consoleOutput "\n" err
+      else
+         artfct.consoleOutput = "No main program statements to run."
+
+   => "REDIRECT"
+      cat "/playground?artfct=" artfctName    
+
+
+icon > String String
+"""
+ Serves the favicon.ico request.
+"""
+   => "IMAGE FILE"
+      "relish_logo4_icon.png"
+
+
+default > String String
+"""
+ Handles all url paths on this server and port which are not otherwise handled.
+"""
+   => "HTML"
+      "<html><body><center><br/><br/><h3>Oops. Nothing here.</h3></center></body></html>"     

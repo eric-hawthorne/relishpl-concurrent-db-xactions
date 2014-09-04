@@ -1,0 +1,74 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+</head>
+<body>	
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>  
+	  <td>	
+        <h2>Trial-Program Name</h2>	
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+<p>
+Identify your simple trial relish program by giving it a program name. You can also type in a brief description of your program.
+</p>
+<p>
+	Program names must conform to the following syntax rules: lowercase alphanumeric name with first character a letter, and only underscores '_' permitted between words in the name.
+</p>
+<h3>Examples</h3>
+<code><pre>
+	mathfun
+	program1
+	my_simple_trial_program
+	test_for_loops
+</pre></code>
+<p>
+Each differently named program in the trial environment gets its own database, in which its persistent data is stored. 
+</p>
+<h3>Advanced Feature:</h3>
+<p>
+If you ran the relish simple program trial environment with a relish command like:<br/><br/>
+<code>
+relish -web 8080 relish.pl2012/playground web
+</code><br/><br/>
+and you typed in a trial program that you named <b>mathfun</b>,
+then browsing to http://localhost:8080/?artfct=mathfun will start up the trial environment with the mathfun program loaded, and your new run of the program  will still have access to whatever persistent data was created by that previous run of the mathfun program.<br/>
+<a href="http://relish.pl/references/relish_syntax_and_semantics_by_example.html#DataPersistence">Data Persistence Reference Manual section</a>.
+</p>
+</div>
+</body>
+</html>
