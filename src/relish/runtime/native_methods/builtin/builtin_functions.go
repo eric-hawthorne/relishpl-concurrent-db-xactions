@@ -24,6 +24,7 @@ import (
 	"os"
 	"bufio"
 	"net/smtp"
+	"util/smtp_util"
 	"net/http"
 	"net/url"	
 	"io/ioutil"
@@ -5653,7 +5654,9 @@ func builtinSendEmail(th InterpreterThread, objects []RObject) []RObject {
    }
    headers := "Subject: " + subject + "\r\n" + fromHeader + "\r\n" + toHeader +  "\r\n\r\n"
 
-   err := smtp.SendMail(serverAddr, 
+   smtp_util.AllowMailingToInsecureTlsSmtpServers()
+   
+   err := smtp_util.SendMail(serverAddr, 
 	                    auth,
                         from,
                         recipients,
