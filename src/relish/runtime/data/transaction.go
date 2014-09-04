@@ -93,13 +93,13 @@ func (tx *RTransaction) RollBack() {
 }
 
 func (tx *RTransaction) RLock() {
-  Log(PERSIST_TR2,"%s.RLock() ing",tx) 
+  // Log(PERSIST_TR2,"%s.RLock() ing",tx) 
   tx.mutex.RLock()
-  Log(PERSIST_TR2,"RLock() ed")   
+  // Log(PERSIST_TR2,"RLock() ed")   
 }
 
 func (tx *RTransaction) RUnlock() {
-  Log(PERSIST_TR2,"%s.RUnlock()",tx)   
+  // Log(PERSIST_TR2,"%s.RUnlock()",tx)   
   tx.mutex.RUnlock()
 }
 

@@ -426,7 +426,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    defer t.CommitOrRollback()
 
 	
-   fmt.Printf("Began transaction now running dialog handler method: %s\n",handlerMethod.Name)   
+   // fmt.Printf("Began transaction now running dialog handler method: %s\n",handlerMethod.Name)   
 
    resultObjects,err := interpreter.RunServiceMethod(t, 
 	                                                 handlerMethod, 
@@ -434,7 +434,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	                                                 keywordArgStringValues,
 	                                                 r)   
 
-   fmt.Printf("Finished running dialog handler method: %s\n",handlerMethod.Name)   
+   // fmt.Printf("Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_,"Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)      
@@ -455,7 +455,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    }	
 
    t.SetErr("")  // Yay! We did not panic
-   fmt.Println("finished processing response of " + handlerMethod.Name)	
+   // fmt.Println("finished processing response of " + handlerMethod.Name)	
 }
 
 

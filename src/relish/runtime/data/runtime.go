@@ -329,9 +329,9 @@ that the object state is first restored from database before getting the attribu
 func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency1"))
 	th.AllowGC()
-	fmt.Println("txOpsMutex.Lock() ing etc1")
+	// fmt.Println("txOpsMutex.Lock() ing etc1")
     txOpsMutex.Lock()
-	fmt.Println("txOpsMutex.Lock() ed etc1")    
+	// fmt.Println("txOpsMutex.Lock() ed etc1")    
     th.DisallowGC()
     defer txOpsMutex.Unlock()
 
@@ -354,19 +354,19 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
     	if th != nil && th.Transaction() != unit.transaction {
            tx := unit.transaction	
            txOpsMutex.Unlock()
-	       fmt.Println("txOpsMutex.Unlock() etc1 diff xactions")
+	       // fmt.Println("txOpsMutex.Unlock() etc1 diff xactions")
 
            th.AllowGC()
-	       fmt.Println("tx.RLock() ing etc1")           
+	       // fmt.Println("tx.RLock() ing etc1")           
            tx.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
-	       fmt.Println("tx.Lock() ed etc1")            
+	       // fmt.Println("tx.Lock() ed etc1")            
            th.DisallowGC()
            tx.RUnlock()
-	       fmt.Println("tx.Unlock() etc1")            
+	       // fmt.Println("tx.Unlock() etc1")            
            th.AllowGC()
-	       fmt.Println("txOpsMutex.Lock() ing etc1 #2")           
+	       // fmt.Println("txOpsMutex.Lock() ing etc1 #2")           
            txOpsMutex.Lock()
-	       fmt.Println("txOpsMutex.Lock() ed etc1 #2")            
+	       // fmt.Println("txOpsMutex.Lock() ed etc1 #2")            
            th.DisallowGC()
         }
         if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
@@ -382,7 +382,7 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
         }
     } 
 
-	fmt.Println("txOpsMutex.Unlock() etc1 end")    
+	// fmt.Println("txOpsMutex.Unlock() etc1 end")    
 }
 
 func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err error) {
@@ -574,9 +574,9 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
     }
 
     if obj.IsBeingStored() {
-       fmt.Println("AttrValue - ensureMemoryTransactionConsistency1") 
+       // fmt.Println("AttrValue - ensureMemoryTransactionConsistency1") 
        ensureMemoryTransactionConsistency1(th, unit)
-       fmt.Println("done AttrValue - ensureMemoryTransactionConsistency1") 
+       // fmt.Println("done AttrValue - ensureMemoryTransactionConsistency1") 
     }
 
     val = unit.attrs[i]
