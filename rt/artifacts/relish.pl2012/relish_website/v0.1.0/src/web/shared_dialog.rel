@@ -91,7 +91,7 @@ registerAction
       fill """
 If you are registering the relish code origin %s please confirm this
 and complete the origin registration by clicking the following link:
-http://shared.relish.pl/verifyRegistration/%s/%s
+https://shared.relish.pl/verifyRegistration/%s/%s
 
 If you do not know what this email message is about, please delete it.
 It means someone else has inadvertently or deliberately used your 
@@ -488,7 +488,26 @@ uploadAction request http_srv.Request o String > String String Any
       "HTML"
       """
 <html>
-Uploaded !
+<center>
+<b>Software Artifact Files Uploaded !</b>
+
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+<button onclick="href.location='http://shared/relish.pl/relish/replicas/'">Browse Shared Software Artifacts</button>
+<br/>
+<br/>
+or
+<br/>
+<br/>
+<button onclick="goBack()">Upload Another Artifact</button>
+<br/>
+</center>
 </html>
 """
 
