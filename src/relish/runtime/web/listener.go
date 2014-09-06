@@ -1006,7 +1006,6 @@ func processResponse(w http.ResponseWriter, r *http.Request, pkg *RPackage, meth
               err = fmt.Errorf("%s redirect has too many return values. Should be URL or e.g. 307 URL", methodName) 
               return               
         }
-	fmt.Println("Just before Redirect")
         http.Redirect(w,r,urlStr,code)
 
 
