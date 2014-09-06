@@ -104,7 +104,7 @@ See http://relish.pl if you have more questions.
 
    err = sendEmail 
             smtpServer
-            "relishpl@gmail.com"  
+            "donotreply@relish.pl"  
             email
             "Confirm registration of relish code origin"
             requestToConfirmRegistration
