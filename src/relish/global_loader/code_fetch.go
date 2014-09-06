@@ -264,7 +264,7 @@ This is currently used to populate a new external relish project directory with
 this key cert.
 May use it for reverifying the cert periodically too.
 */
-func fetchSharedRelishPublicKeyCert() (cert string, err error) {
+func FetchSharedRelishPublicKeyCert() (cert string, err error) {
       
     var resp *http.Response
     var body []byte

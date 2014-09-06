@@ -679,7 +679,7 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
           // Could not find shared relish pl public key cert in keys/public directory of this relish project directory.
           // Try downloading the public key from http://shared.relish.pl and installing it in the project directory.
           var cert string
-          cert, err = fetchSharedRelishPublicKeyCert()
+          cert, err = FetchSharedRelishPublicKeyCert()
           if err != nil {
              return
           }           
