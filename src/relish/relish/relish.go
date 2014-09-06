@@ -290,6 +290,10 @@ func main() {
 	    originAndArtifact = pathParts[0]
 	    version = pathParts[1]
 
+      if strings.HasSuffix(originAndArtifact,"/") {  // Strip trailing / if present
+         originAndArtifact = originAndArtifact[:len(originAndArtifact)-1] 
+      }      
+
       err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
 	    if err != nil {
 		    fmt.Println(err)
