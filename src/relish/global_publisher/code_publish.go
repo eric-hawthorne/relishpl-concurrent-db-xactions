@@ -18,6 +18,7 @@ import (
     "util/crypto_util"  
     "errors"
     "path/filepath"
+    "relish/global_loader"
 )
 
 /*
@@ -97,7 +98,14 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
    sharedRelishPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")  
    if err != nil {
-      return
+      sharedRelishPublicKeyCertificate, err = global_loader.FetchSharedRelishPublicKeyCert()
+      if err != nil {
+          return
+       }
+       err = crypto_util.StorePublicKeyCert("origin", "shared.relish.pl2012",sharedRelishPublicKeyCertificate)
+       if err != nil {
+           return
+       }       
    }
 
    // Validate that it is signed properly, obtaining the shared.relish.pl2012 publicKeyPEM.
