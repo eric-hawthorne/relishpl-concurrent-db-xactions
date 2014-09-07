@@ -499,7 +499,8 @@ function goBack() {
 }
 </script>
 
-<button onclick="window.location.href='http://shared/relish.pl/relish/replicas/'">Browse Shared Software Artifacts</button>
+<button onclick="window.location.href='http://shared/relish.pl/relish/replicas/'">
+Browse Shared Software Artifacts</button>
 <br/>
 <br/>
 or
