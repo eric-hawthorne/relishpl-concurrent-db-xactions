@@ -4411,7 +4411,7 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
 
     if p.BlanksAndIndent(col,true) {
 
-       fmt.Printf("printBlanksAndIndent(%d)\n",col)
+       // fmt.Printf("printBlanksAndIndent(%d)\n",col)
        if p.parsePrivateSectionHeader() {
           if visibilityLevel == "private" {
              p.stop("__private__ declaration cannot occur in a source file or attributes-section that is already private.")    
@@ -4425,7 +4425,7 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
            p.required(p.parseReadWriteAttributeDecl(&attrs,visibilityLevel),requiredThing)
         }
     } else if p.BlanksAndMiniIndent(col, true) {
-       fmt.Printf("printBlanksAndMiniIndent(%d)\n",col)      
+       // fmt.Printf("printBlanksAndMiniIndent(%d)\n",col)      
        requiredThing := "an attribute declaration or __private__ section declaration"
        if visibilityLevel == "private" {
            requiredThing = "an attribute declaration"
@@ -4433,7 +4433,7 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
        p.required (p.parseReadOnlyAttributeDecl(&attrs,visibilityLevel) || p.parseWriteOnlyAttributeDecl(&attrs,visibilityLevel),
                    requiredThing)	
     } else {
-      fmt.Printf("parseTypeBody returning false : col=%d\n",col)       
+      // fmt.Printf("parseTypeBody returning false : col=%d\n",col)       
 	    return false
     }
 
