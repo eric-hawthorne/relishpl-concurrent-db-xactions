@@ -200,7 +200,7 @@ testModel
       passenger2 = people.Person
       passenger2.firstName = "Ernie"
       passenger2.lastName = "Kovacs"
-      passenger2.dateOfBirth err = Time "February 3, 1969 8:08am -0700 PST" "January 2, 2006 3:04pm -0700 MST"    
+      passenger2.dateOfBirth err = Time "February 3, 1969 8:08am -0800 PST" "January 2, 2006 3:04pm -0700 MST"    
       if err
          print err   
 
@@ -228,11 +228,12 @@ testModel
    for i person in car2.passengers
       if eq i 0
          passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
-                               "Ernie Kovacs 1969-02-03 08:08:00 -0700 PST"
+                               "Ernie Kovacs 1969-02-03 08:08:00 -0800 PST"
                                "car2.passengers 1"
                       passed
+         if not passed
+            print person.dateOfBirth             
       else
-         print "got here"
          passed = and assertEq cat person.firstName " " person.lastName " " person.dateOfBirth
                                "Alice Wong 1990-02-13 22:13:45 -0800 PST"     
                                "car2.passengers 2"                                 
