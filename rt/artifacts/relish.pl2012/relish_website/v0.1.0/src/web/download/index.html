@@ -63,17 +63,37 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<p>
 		Click one of the links below to download a relish binary distribution for your computing platform. <br/>
     See "further installation notes" below for how to determine whether you have 64-bit or 32-bit linux.<br/>
-    Note that the linux binary distributions require separate installation of sqlite3 (version 3.5 or greater) if sqlite3 is not already present on the computer. Apple computers already have sqlite3 installed.
 	</p>
+  <p>
+       <a href="binary?file=relish_0.1.2.darwin_amd64.pkg">relish_0.1.2.darwin_amd64.pkg</a> (MAC OSX package installer)
+  </p>  
 	<p>
-       <a href="binary?file=relish_0.1.0.darwin_amd64.tar.gz">relish_0.1.0.darwin_amd64.tar.gz</a> (MAC OSX)
+       <a href="binary?file=relish_0.1.2.darwin_amd64.tar.gz">relish_0.1.2.darwin_amd64.tar.gz</a> (MAC OSX tarball)
 	</p>  
 	<p>	 
-       <a href="binary?file=relish_0.1.0.linux_amd64.tar.gz">relish_0.1.0.linux_amd64.tar.gz</a> (64-bit linux)
+       <a href="binary?file=relish_0.1.2.linux_amd64.tar.gz">relish_0.1.2.linux_amd64.tar.gz</a> (64-bit linux)
 	</p>
 	<p>	
-       <a href="binary?file=relish_0.1.0.linux_i386.tar.gz">relish_0.1.0.linux_i386.tar.gz</a> (32-bit linux)
+       <a href="binary?file=relish_0.1.2.linux_386.tar.gz">relish_0.1.2.linux_386.tar.gz</a> (32-bit linux)
 	</p>
+    <p> 
+       <a href="binary?file=relish_0.1.2.windows_amd64.msi">relish_0.1.2.windows_amd64.msi</a> (Windows installer)
+  </p>
+  <p>
+  <b>MAC OSX package installer instructions:</b><br/>
+  Double click the .pkg file after downloading it, if it does not open automatically.<br/>
+  You will need the root (administrator) password on your Mac to complete the installation.<br/>
+  The installer will install relish in /opt/relish and will place a symbolic link to the relish interpreter
+  executable in /usr/local/bin along with links to a few other tool script executables.<br/>
+  Finally, the installer will launch a relish program in a new terminal (shell) window. It launches the shared.relish.pl2012/dev_tools playground web app, which allows you to browse in a web browser to <b>localhost:8080</b> and try out simple relish programs right away.
+  </p>
+    <p>
+  <b>Windows MSI installer instructions:</b><br/>
+  Double click the .msi file after downloading it, if it does not open automatically.<br/>
+  The installer will install relish in C:\relish<br/>
+  Finally, the installer will launch a relish program in a new command shell window. It launches the shared.relish.pl2012/dev_tools playground web app, which allows you to browse in a web browser to <b>localhost:8080</b> and try out simple relish programs right away.
+  </p>
+<p><b>Tarball installation instructions:</b></p>
 	<p>You can install relish under your home directory, or, perhaps better, especially for production servers, you can install it in /opt/relish .
    </p>
    <p>Home directory installation:<br/><pre>
@@ -102,7 +122,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 
 		
 	<p>
-		<a href="README_INSTALL_BINARY_DISTRIBUTION.txt">Further installation notes</a> for relish binary installation.
+		<a href="README_INSTALL_BINARY_DISTRIBUTION.txt">Further installation notes</a> for relish binary tarball installation.
 	</p>	
 	<br/>
 	<h3>Source Code Distribution</h3>
@@ -131,7 +151,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
                                                 # and edit it to contain the export statement
                                                 
    # Make sure gcc is installed before the next step 
-                                              
+
    go get code.google.com/p/go-sqlite/go1/sqlite3  
    cd relish
    go install relish/relish
