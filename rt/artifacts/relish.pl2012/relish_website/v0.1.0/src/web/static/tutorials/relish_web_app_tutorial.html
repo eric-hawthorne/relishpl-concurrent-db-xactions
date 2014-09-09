@@ -629,15 +629,6 @@ image id String > String String String
 => "XML FILE" "mime/type" "some/file/path.xml"  // Note: file paths are relative to the dialog.rel's directory
 
 
-=> "MEDIA" "mime/type" dataAsStringType
-
-=> "MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
-
-// If the mime/type argument is missing, no Content-type: header is explicitly
-// set, and we are relying on the server and/or client to recognize the type of data
-// by applying data-stream type-guessing "magic".
-
-
 => "HTML" 
    """
 &lt;html>literal html text here&lt;/html>
@@ -657,9 +648,13 @@ image id String > String String String
 => "VIDEO FILE" ["mp4"] "some/file/path.mp4"
 
 
-=> "MEDIA" "mime/type" ObjectPossiblyToBeConverted
+=> "MEDIA" "mime/type" dataAsStringType
 
 => "MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
+
+// If the mime/type argument is missing, no Content-type: header is explicitly
+// set, and we are relying on the server and/or client to recognize the type of data
+// by applying data-stream type-guessing "magic".
 
 
 => "REDIRECT"  [code] urlString  // code is 301,302,303,or 307, default 303
@@ -714,7 +709,9 @@ Content-Disposition: attachment; filename="fname.png"
 		<em>Hint: If you make a change to an html template, to a css file, or to a dialog.rel file and you don't see a change when you reload the dynamic web page in your browser, the page may have been cached in the browser. The HEADERS Cache-control... technique eliminates that issue, or, if you want a real refresh while testing but caching in production, just use whatever means your browser has to clear the cache each time while testing.</em>
 	</p>	
 	<p>
-	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop
+	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should<br/><code>rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop</code><br/>
+     (when the web-app relish program is not running.)<br/><br/>
+     <em>rmdb is a shell script which your relish installation installed. It deletes the database of the specified relish artifact. Careful!</em>
    </p>
    
    
@@ -726,7 +723,7 @@ Imagine you write a web page to allow the web app user to upload a file to the s
 <code><pre>
 &lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
     &lt;fieldset>
-      &lt;input type="file" name="myfiles" id="myfile">
+      &lt;input type="file" name="myfile" id="myfile">
       &lt;input type="submit"  value="upload file">
   &lt;/fieldset>
 &lt;/form>
@@ -859,11 +856,11 @@ import
    http_srv
       
       
-myHandlerMethod request http_srv.Request otherFormInput1 String otherFormInput2 String > String String
+myHandlerMethod request http_srv.Request formInput1 String formInput2 String > String String
 </pre></code>
 Instead, it gives you an object representing the http request. You can apply methods to this object
 to obtain the http request headers that were set with the request. Here's the current list
-of header accessor methods available for http_src.Request objects:
+of header accessor methods available for http_srv.Request objects:
 <code><pre>
 // These methods are defined in the relish standard-library http_srv package:
    
@@ -1038,12 +1035,9 @@ args List. That is, args gets any arguments which are not matched to other metho
 
 <a name="SettingCookies"><h3>Setting Cookies in an http Response</h3></a>   
 <p>
+The following cookie-setting methods are included in the http_srv package:
 <code><pre> 
 
-import
-   http_srv
-
-   
 setCookie c Cookie > String    
 """
  Return a proper header line for setting the cookie in an http response.
@@ -1064,35 +1058,7 @@ setCookie name String value String maxAge Int path String domain String > String
 """
 
 
-
-
-
-// Usage of the following high-level web-app session maintenance methods:
-//
-// For action method that processes a successful user login:
-// 
-//    tok = http_srv.newSessionToken
-//
-//    newSessionHeaders = sessionCookieAndNoCache tok 60
-//
-// 
-// For a dialog method which must have a valid existing session:
-//
-// someWebMethod request http_srv.Request arg1 String arg2 Int > String String Any
-// """
-//  Processes an in-session http request.
-// """
-//    tok = session request
-//    // TODO verify token is a valid logged-in visit identifier
-//
-//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
-//
-//    => extendSessionHeaders
-//       "somePage.html"
-//       {
-//          "title" => arg1 
-//          "arg2"  => arg2
-//       }String > Any
+// now some higher-level methods, specifically for login-session maintenance
 
 
 newSessionToken > String
@@ -1135,6 +1101,50 @@ session request Request > token String
  or the empty string "" if no session cookie was found.
  Does not validate that it is a valid current session token.
 """
+
+
+// Usage of the preceding high-level web-app session-maintenance methods:
+//
+// import
+//    http_srv
+//
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+//    => newSessionHeaders
+//       "REDIRECT"
+//       cat "somePageYouMustBeLoggedInToView/" arg1 "/" arg2
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// somePageYouMustBeLoggedInToView 
+//    request http_srv.Request 
+//    arg1 String 
+//    arg2 Int 
+// > 
+//    String 
+//    String 
+//    Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
 </pre></code> 
 </p>
 <br/>
