@@ -97,19 +97,24 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<dd>Currently, type checking is limited and dynamic (checked at program runtime). Collections have element-type specifications and potential elements are checked for type-compatibility as they are inserted into the collection. Also, methods are dispatched based on the runtime (dynamic) type of each argument to the method call. If there is no method that can handle the type tuple of the arguments, that is a type compatibility error. The language however has been designed to accommodate stricter type checking, including some static type checking and type inference. Some of this may eventually be implemented.</dd>	
 	
 	<dt>Variadic functions</dt> 
-	<dd>A method will be able to be declared with an extra parameter e.g. <code>...a SomeType</code> whose type will be a list of SomeType. This argument will hold any number of additional arguments supplied to the method after required positional parameter slots have
+	<dd>A method will be able to be declared with an extra parameter e.g. <code>...args [] SomeType</code>. This argument will hold any number of additional arguments supplied to the method after required positional parameter slots have
 	 been filled by arguments. An accompanying expression <code>someList...</code> or equivalent may also be introduced, which allows a collection to be used to supply arguments to the variadic parameter of a method.</dd>	
 
+<dt>Directory of registered relish code origins</dt> 
+<dd>THE FOLLOWING IS WELL ON ITS WAY TO DONE. The plan is to allow relish code authors/authoring organizations to register their relish code origin in an official directory of origins. Also to allow code authors who don't have a domain name to obtain a subdomain of relish.pl to use as their code origin. The registry would establish the connection of the relish origin-id with a person or legal entity. It would ensure uniqueness of (at least registered) relish origin-ids. It would allow relish artifact originators to advertise their artifacts in the directory, using standard code-topic tags as well as their own tags and metadata to assist others to search for their code. It is possible that the directory could also be used for metadata about the renaming of code origins and/or artifacts. It is possible that the directory could be used as metadata listing official authorized mirror sites at which relish-runtimes can obtain an origin's artifacts.</dd>	 
+<!--
 	<dt>Feature N</dt> 
-	<dd>Description.</dd>		
+	<dd>Description.</dd>	
+-->	
 </dl>
 <h4>Definitely Planned Minor Features</h4>
 <dl>
 	<dt>Channel select</dt> 
 	<dd>Implementation of Go's <b>select</b> control construct allowing proceeding with a random ready-to-execute channel communication and abandonment of alternate channel communications/waits.</dd>	
-
+<!--
 	<dt>Feature N</dt> 
 	<dd>Description.</dd>		
+-->
 </dl>
 
 
@@ -119,8 +124,6 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <a name="PossibleFeatures"><h3>Possible Features</h3></a>
 
 <dl>
-	<dt>One-step Installer of binary relish-language distributions</dt> 
-	<dd>relish is supposed to make programming of high-level applications easy and hassle-free. This is somewhat defeated by the need to go through a many-step installation process of relish itself, including the need to install the appropriate version of sqlite3 if it is not already on your computer. We need pre-built relish executables that statically link in sqlite3, and can be installed in one or two instruction steps at least on common platforms.</dd>	
 	<dt>Immutable types, attributes, methods, values, and references</dt> 
 	<dd>Different forms of immutability are hoped for:
 		<ul>
@@ -133,16 +136,15 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 			<li>a method input parameter may be declarable to: have a read-only reference; have a deeply read-only reference; to the object argument that is passed in to the method.</li>
 			<li>an attribute may be declared to be: assign-once; have a shallow read-only reference; have a deeply read-only reference; have a deeply immutable (infectious freezing) reference. Is infected freezing permanent? Or only true while the objects are attached to the freezing attribute?</li>	
 			<li>Explore different levels and types of immutability of collections/multi-valued attributes too.</li>	
+			<li>None of this will happen before there is a clean design for extending declaration syntax that doesn't ruin the "domain-meaningful words only" syntax philosophy of the language. relish code should read like a story (or a story in prefix notation anyway.)</li>
 																								
 		</ul></dd>
 
 <dt>Cloud-storage persistence and/or cloud-computing</dt> 
-<dd>Using some kind of nosql / network cloud database infrastructure. Not sure whether to support several of these; have a standard cloud storage abstraction layer mappable to several different cloudy infrastructures. There is probably a distinction between relish software libraries/frameworks/language support for independent peer-to-peer cloud storage vs support for various existing commercial cloud storage/computing infrastructures such as Google, Amazon etc.</dd>
+<dd>Using some kind of nosql/network-db/tuple-store cloud database infrastructure. Not sure whether to support several of these; have a standard cloud storage abstraction layer mappable to several different cloudy infrastructures. There is probably a distinction between relish software libraries/frameworks/language support for in-house cloud storage vs. support for various existing commercial cloud storage &amp; computing infrastructures such as Google, Amazon etc.</dd>
 <dt>Local persistence on postgresql, mysql</dt> 
-<dd>"Upgraded" local persistence options. Need to figure out how to not make it complicated for the programmer.</dd>
+<dd>"Upgraded" local persistence options. Need to figure out how to not make it complicated for the programmer to configure these options.</dd>
 
-<dt>Directory of registered relish code origins</dt> 
-<dd>THE FOLLOWING IS WELL ON ITS WAY TO DONE. The plan is to allow relish code authors/authoring organizations to register their relish code origin in an official directory of origins. Also to allow code authors who don't have a domain name to obtain a subdomain of relish.pl to use as their code origin. The registry would establish the connection of the relish origin-id with a person or legal entity. It would ensure uniqueness of (at least registered) relish origin-ids. It would allow relish artifact originators to advertise their artifacts in the directory, using standard code-topic tags as well as their own tags and metadata to assist others to search for their code. It is possible that the directory could also be used for metadata about the renaming of code origins and/or artifacts. It is possible that the directory could be used as metadata listing official authorized mirror sites at which relish-runtimes can obtain an origin's artifacts.</dd>
 
 <dt>Code quality "inner circle" </dt> 
 <dd>The plan is to have vetted and peer-reviewed relish software artifacts (applications, libraries, frameworks) promoted into concentric circles of code quality, reliability, and usefulness, with such artifacts tagged according to standard tags.</dd>
@@ -152,8 +154,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	parameters are not allowed to be supplied with that style, but rather, take only an expression in the call.</dd>	
    <dt>Use Google search to find artifacts</dt>
    <dd>The relish runtime, having failed to find an imported artifact in the standard places on the internet, would automatically launch a google search for the artifact metadata file it needs. It would search with the origin and artifact path as the search key. Since relish artifacts are signed, it doesn't matter where they are downloaded from. Note that the metadata.txt file should be signed too, for this to be trustworthy.</dd>
+<!--
 	<dt>Feature N</dt> 
 	<dd>Description.</dd>		
+-->
 </dl>	
 </div>
 <script>
