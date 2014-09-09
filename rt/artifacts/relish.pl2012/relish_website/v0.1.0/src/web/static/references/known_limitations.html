@@ -102,7 +102,7 @@ SQL variables in prepared statements in the language's automatic queries and sta
 <a name="Annoyances"><h3>Annoyances / Usability Problems</h3></a>
 
 <dt>Confusing/unclear compiler error messages</dt>
-<dd>relish has an unorthodox syntax, and consequently a somewhat tricky compiler. Sometimes this early compiler version generates obscure / confusing / spurious / confusing compiler error messages. The compiler does not yet guess well what you were trying to code (but made a small syntax mistake in). Best workaround advice is to just look in your source code file near the reported error position and find what is wrong yourself, using the language reference manual, or tutorial example code, as a guide.
+<dd>relish has an unorthodox syntax, and consequently a somewhat tricky compiler. Sometimes this early compiler version generates obscure / confusing / spurious compiler error messages. The compiler does not yet guess well what you were trying to code (but made a small syntax mistake in). Best workaround advice is to just look in your source code file near the reported error position and find what is wrong yourself, using the language reference manual, or tutorial example code, as a guide.
 </dd>
 <dt>Type checking is rudimentary</dt>
 <dd>
@@ -116,7 +116,7 @@ is an essential feature for long-term maintenance / iterative development of app
 </dd> 
 <dt>relish goroutines are not ultra-lightweight</dt>
 <dd>
-Concurrency (goroutines) are not ultra-lightweight as in the Go language. So creating thousands of them will likely be an issue whereas Go might do that happily. relish goroutines use Go goroutines as a basis, but they also have GC accounting, thread object creation, and stack allocation for each goroutine creation. relish goroutines also have to lock each other (serialize) around db access currently, and db access may be rather frequent, given auto-persisted objects and auto-persisted object state-changes.
+Concurrency (goroutines) are not ultra-lightweight as they are in the Go language. So creating thousands of them will likely be an issue whereas Go might do that happily. relish goroutines use Go goroutines as a basis, but they also have GC accounting, thread object creation, and stack allocation for each goroutine creation. relish goroutines also have to lock each other (serialize) around db access currently, and db access may be rather frequent, given auto-persisted objects and auto-persisted object state-changes.
 </dd>
 <dt>No timeout in httpPost, httpGet calls</dt>
 <dd>So if httpGet or httpPost are used in a mutex-locked context these could lock up the whole application if servers requested from  are non-responsive in just the right way.
