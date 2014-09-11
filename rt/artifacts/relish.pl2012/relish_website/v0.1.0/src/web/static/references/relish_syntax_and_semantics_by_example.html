@@ -1025,9 +1025,16 @@ opposites = {
 
 <h4>Map element selector expression</h4>
 <code><pre>
-a = aMap["Earth"] 
+a = aMap[! "Earth"]  // The ! is used if we know the key is in the map. 
+                     // There is only one return value: the value that the key maps to. 
 
-a = aMap[
+planet planetFound = aMap["Pluto"]  // In this case, two values are returned.
+                                    // The mapped value, if the key is found,
+                                    // and a Bool indicating whether the key was found.
+
+planetFound = aMap[? "Pluto"]  // Returns whether the key is in the map.                                    
+
+a = aMap[!
            expr
               like 
               this
@@ -1096,7 +1103,7 @@ a b c =
 
 obj1.obj2.obj3.a = 143.65
 
-myList[3].myMap["Joe Bloggs"].a[i] = "3155 Kent Street"
+myList[3].myMap[! "Joe Bloggs"].a[i] = "3155 Kent Street"
 
 coord[0].lat = 49.5
 
