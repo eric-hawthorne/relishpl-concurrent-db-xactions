@@ -415,12 +415,13 @@ So values that test false or act as false in boolean operator functions are:
 <pre>
 0
 0.
+0.0
 false
-[]T   // empty list of T
-<span class="future">{}T   // empty set of T
-{}T=>T1 // empty map</span>
-""   // empty string
-<span class="future">nil</span>
+[]T      // empty list of T
+{}T      // empty set of T
+{}T > T1 // empty map
+""       // empty string
+nil
 </pre>
 All other values of any data type test non-false, and act non-false in boolean operator functions.
 </p>
@@ -455,6 +456,19 @@ and turgidly melodramatic story,
 but I couldn't help myself. "Damn!", I said to myself,
 this is the end.
 """
+
+More raw strings:
+
+```I am an explanation\nof formatting. Backslashes are not escapes in a raw string.```
+
+   
+      ```
+"""
+Wow! an example of a relish multi-line raw string where the example itself
+is expressed as a multi-line raw string.
+"""```
+
+
 </pre></code>
     Usage in context:<br/>
 <code><pre>
