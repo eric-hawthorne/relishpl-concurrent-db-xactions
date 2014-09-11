@@ -116,7 +116,7 @@ is an essential feature for long-term maintenance / iterative development of app
 </dd> 
 <dt>relish goroutines are not ultra-lightweight</dt>
 <dd>
-Concurrency (goroutines) are not ultra-lightweight as they are in the Go language. So creating thousands of them will likely be an issue whereas Go might do that happily. relish goroutines use Go goroutines as a basis, but they also have GC accounting, thread object creation, and stack allocation for each goroutine creation. relish goroutines also have to lock each other (serialize) around db access currently, and db access may be rather frequent, given auto-persisted objects and auto-persisted object state-changes.
+Concurrency (goroutines) are not ultra-lightweight as they are in the Go language. So creating thousands of them will likely be an issue whereas Go might do that happily. relish goroutines use Go goroutines as a basis, but they also have GC accounting, an object allocation, and stack allocation for each goroutine creation. relish goroutines also have to lock each other (serialize) around db access currently, and db access may be rather frequent, given auto-persisted objects and auto-persisted object state-changes.
 </dd>
 <dt>No timeout in httpPost, httpGet calls</dt>
 <dd>So if httpGet or httpPost are used in a mutex-locked context these could lock up the whole application if servers requested from  are non-responsive in just the right way.
