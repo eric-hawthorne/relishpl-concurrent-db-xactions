@@ -1757,24 +1757,16 @@ with a type only), then the following form of return statement must be used:
   </pre></code>
 A method which specifies names for its return arguments cannot use the form of return statement that has arguments.
 Instead, if a return value is to be set, the return argument must be assigned to within the 
-subroutine body. Named return values which are not assigned to default to the nil/zero-value of the data type. 
+subroutine body. Named return values which are not assigned-to default to the nil/zero-value of the data type. 
 Note that this zero-value defaulting ONLY works for named return args.
 
-  <span class="future">If you want to specify an early return from a subroutine with named return args or no return args, 
-you should use the =&gt; statement with no arguments. In this case only, the =&gt; statement may
-appear on the same line as the end of the previous statement, separated from it by 3 spaces.</span>
+If you want to specify an early return from a subroutine with named return args or no return args, 
+you should use the =&gt; statement with no arguments.
     <code><pre>
-<span class="future">
-   if weNeedToGetOutOfThisMethod
-      doSomeFinalCleanup arg   =>  // ...and exit
-   moreMethodStuff here
-
-   // or...
-
    if weReallyNeedToGetOutOfThisMethod
       doSomeFinalCleanup arg  
       =>  // ...and exit
-   moreMethodStuff here</span> 
+   moreMethodStuff here
  </pre></code>
 <br/>
 
