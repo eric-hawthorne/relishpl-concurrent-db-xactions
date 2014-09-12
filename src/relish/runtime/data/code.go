@@ -51,6 +51,9 @@ type RMultiMethod struct {
 	                          // Note that a method may be referenced by multiple packages' multimethods
 	                          // the method itself points to one of these (does not matter which - it just gets its name from the mm)	
     IsExported    bool  // If true, this is a public method exported to packages that import this package.
+    DefinesNewMethod bool  // If true, this multimethod defines at least one new method (i.e. the pkg that owns mm defines a method)
+                           // Distinguishes the mm from one that has been created solely to merge exported methods from 2 or more
+                           // dependency packages.    
     TraitAbstractMethod *RMethod  // If non-nil, this multimethod is the implementation map for a trait abstract method.
 }
 
@@ -647,7 +650,15 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			pkg.MultiMethods[methodName] = multiMethod
 		} else {
 			if multiMethod.IsExported != isExported {
-		       return nil, fmt.Errorf("Method '%v' cannot be defined as private in one source code file and as exported in another.", methodName)				
+
+               if (! multiMethod.IsExported) && (multiMethod.Pkg == pkg) && (! multiMethod.DefinesNewMethod) {
+               	  // This is just a merge mm, but we are now adding a new exported method to it.
+               	  multiMethod.IsExported = true
+               } else {
+   			      fmt.Println(multiMethod.Debug())
+			      fmt.Println(isExported)
+		          return nil, fmt.Errorf("Method '%v' cannot be defined as private in one source code file and as exported in another.", methodName)				
+			   }
 			}
 			if multiMethod.NumReturnArgs != numReturnArgs {
 			   return nil, fmt.Errorf("Method '%v' is already defined to have %v return arguments and cannot have other than that.", methodName, multiMethod.NumReturnArgs)
@@ -763,6 +774,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			multiMethod.Methods[arity] = []*RMethod{method}
 		}
 	}
+
+
+	multiMethod.DefinesNewMethod = true  // This multi-method defines at least one method that has not been defined in merged-in mms.
 
 
 
