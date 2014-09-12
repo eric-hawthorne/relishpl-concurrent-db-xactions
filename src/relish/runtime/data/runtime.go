@@ -1818,7 +1818,10 @@ func (rt *RuntimeEnv) RemoveAttrGeneral(th InterpreterThread, obj RObject, attr 
    return
 }
 
-
+/*
+Returns the object that has been given the specified name in the global context map.
+Returns *nil* if no object found in the global context map under the name.
+*/
 func (rt *RuntimeEnv) ContextGet(name string) RObject {
 	rt.contextMutex.RLock()
 	defer rt.contextMutex.RUnlock()
