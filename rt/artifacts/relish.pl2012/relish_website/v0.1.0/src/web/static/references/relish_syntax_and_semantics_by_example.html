@@ -1607,28 +1607,29 @@ foo a Int b Int > Int
    => add a b
 
 
-divide a Int b Int > dividend Float err er.Error
+divide a Int b Int > dividend Float err String
 """
  Divides a by b. Returns an exception if b is zero.
  If one return argument is named, all must be named for consistency.
- <span class="future">If return arguments have been named, the return statement can
+ If return arguments have been named, the return statement can
  occur without any expressions after it, and will cause execution to
  return from the function immediately. return arguments should already
  have been assigned to by this time, or they default to the zero/nil value 
- of their type.</span>
+ of their type.
 """
    if eq b 0
-      err = Error "Divide by zero!"   <span class="future">=>  // Three spaces precede in-line return statement</span>
+      err = "Divide by zero!"  
+      => 
    dividend = div a b
 
 
 foo a Vehicle b Vehicle 
-> Bool er.Error
+> Bool String
 """
  This is a declaration of a method's interface, with no implementation.
- <span class="future">This is allowed, and results in a requirement that there exist 
+This is allowed, and results in a requirement that there exist 
  a method with an implementation to handle each possible subtype combination of the 
- input argument types.</span>
+ input argument types.
  This example was put here to show the variation in layout of the return values specification.
 """
 
@@ -1636,7 +1637,7 @@ foo a Vehicle b Vehicle
 divide a Int b Int 
 > 
    dividend Float 
-   err er.Error
+   err String
 """
  Divides a by b. Returns an exception if b is zero.
  Again, just an interface declaration with no method body statements, put here
@@ -1649,7 +1650,7 @@ divide
    b Int 
 > 
    dividend Float 
-   err er.Error
+   err String
 """
  Divides a by b. Returns an exception if b is zero.
  This example shows vertically indented input argument specifications.
@@ -1662,6 +1663,7 @@ divide
    => dividend
       nil
 
+
 stamp p Passport
 """
  Stamps the passport with an entry stamp.
@@ -1671,6 +1673,7 @@ stamp p Passport
    position p
    open p
    bangStamp p
+
 
 doTheHokeyPokey
 """
