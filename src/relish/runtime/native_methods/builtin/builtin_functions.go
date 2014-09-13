@@ -6067,7 +6067,7 @@ dbid obj Any > Int
 */
 func builtinDBID(th InterpreterThread, objects []RObject) []RObject {
    obj := objects[0]
-   if ! (obj.HasUUID() && obj.IsStoredLocally()) {
+   if ! (obj.HasUUID() && obj.IsBeingStored()) {
 	   rterr.Stop("Requested DBID of a non-persistent object.")
    }
    id := obj.DBID()
@@ -6111,6 +6111,9 @@ func builtinUUIDstr(th InterpreterThread, objects []RObject) []RObject {
 /*
 
 isPersistedLocally obj Any > Bool
+
+Object storage transaction must have committed for this to be true.
+Not true inside the first transaction that is persisting the object.
 
 */
 func builtinIsPersistedLocally(th InterpreterThread, objects []RObject) []RObject {

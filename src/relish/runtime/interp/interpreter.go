@@ -95,7 +95,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 	if ! quiet {
 	   Logln(ANY_, " ")
 	   Logln(ANY_, "==============================")
-	   Logln(ANY_, "== RELISH Interpreter 0.1.2 ==")
+	   Logln(ANY_, "== RELISH Interpreter 0.1.3 ==")
 	   Logln(ANY_, "==============================")
     }
 	Logln(GENERATE2_, " ")
@@ -3073,14 +3073,14 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 							}
 						    owner := coll.Owner()                 
 		                    if owner == nil {
-		                        if coll.IsStoredLocally() {
+		                        if coll.IsBeingStored() {
 		                            err := t.DB().PersistSetCollectionElement(t, coll, val, ix)                         		
 		                            if err != nil {					
 		   							       rterr.Stop1(t,indexExpr,err)       				                               
 		                            }    
 		                         }                     
 		                    } else {
-		                         if owner.IsStoredLocally() {
+		                         if owner.IsBeingStored() {
 		                            attr := coll.Attribute()
 		                            err := t.DB().PersistSetAttrElement(t, owner, attr , val, ix)  
 		                            if err != nil {					
