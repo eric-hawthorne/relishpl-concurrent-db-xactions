@@ -277,14 +277,14 @@ func (db *SqliteDB) oqlWhereToSQLSelect(objType *RType, oqlWhereCriteria string,
        var collectionId int64
        var collectionTableName string	
        if coll.Owner() == nil { // Independent persistent collection
-       	  if ! coll.IsStoredLocally() {
+       	  if ! coll.IsBeingStored() {
        	  	 err = errors.New("In asList with OQL query, the collection must be persistent!")
        	  	 return
        	  }
           collectionId = coll.DBID()
           collectionTableName,_,_,_,_  = db.TypeDescriptor(coll)          
        } else {
-       	  if ! coll.Owner().IsStoredLocally() {
+       	  if ! coll.Owner().IsBeingStored() {
        	  	 err = errors.New("In asList with OQL query, the object with multi-valued attribute must be persistent!")
        	  	 return
        	  }       	

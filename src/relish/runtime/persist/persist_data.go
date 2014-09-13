@@ -1103,7 +1103,7 @@ TODO Better error reporting
 */
 func (db *SqliteDB)  Delete(obj RObject) (err error) {
 
-    if ! obj.IsStoredLocally() {
+    if ! obj.IsBeingStored() {
     	return
     }
 

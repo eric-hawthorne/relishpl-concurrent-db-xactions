@@ -85,6 +85,7 @@ playAction
 """
  Process a Run button press or a Clear DB button or a Copy DB button press.
 """
+   artfctName = trimSpace artfctName
    if not artfctName
       => errf "Must specify name of your program."
    if exists artfctName
@@ -93,7 +94,6 @@ playAction
       artfct = Artifact
       dub artfct artfctName
 
-   artfctName = trimSpace artfctName
    description = trimSpace description
    imports = trimSpace imports
    constants = trimSpace constants
@@ -105,9 +105,6 @@ playAction
       description = "A trial program - replace this text with your description of program."
 
    metaContent = metadataFile artfctName description
-
-
-
 
    if eq action " explore program data "  // make sure program has a reflect.pause in it
       imports = ensureReflectImport imports

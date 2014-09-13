@@ -788,7 +788,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
    unit.attrs[i] = val
 
 
-	if obj.IsStoredLocally() {
+	if obj.IsBeingStored() {
 		th.DB().PersistSetAttr(th, obj, attr, val, found)
 	}
 
@@ -874,7 +874,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
 	if added {
-	    if obj.IsStoredLocally() {
+	    if obj.IsBeingStored() {
 			var insertIndex int
 			if objColl.(RCollection).IsSorting() {
 				orderedColl := objColl.(OrderedCollection)
@@ -922,7 +922,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if coll.IsStoredLocally() {
+    if coll.IsBeingStored() {
        ensureMemoryTransactionConsistency4(context.InterpThread(), coll)    	
     }	
 
@@ -937,7 +937,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
 	if added {
-	    if coll.IsStoredLocally() {
+	    if coll.IsBeingStored() {
 			var insertIndex int
 			if coll.IsSorting() {
 				orderedColl := coll.(OrderedCollection)
@@ -961,14 +961,14 @@ func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection Remo
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if collection.IsStoredLocally() {  	
+    if collection.IsBeingStored() {  	
        ensureMemoryTransactionConsistency4(th, collection)    	
     }	
 
 	removed, removedIndex := collection.Remove(val)
 	
 	if removed  {
-	   if removePersistent && collection.IsStoredLocally() {
+	   if removePersistent && collection.IsBeingStored() {
 	    	th.DB().PersistRemoveFromCollection(collection, val, removedIndex)
 	   }
 	}
@@ -1015,7 +1015,7 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement ClearInMemory()
 	collection.ClearInMemory()	
 	
-	if obj.IsStoredLocally() {
+	if obj.IsBeingStored() {
 	   err = th.DB().PersistClearAttr(obj, attr)
     }
 	return
@@ -1036,7 +1036,7 @@ func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection Removable
 
 	collection.ClearInMemory()	
 	
-	if collection.IsStoredLocally() {
+	if collection.IsBeingStored() {
 	   err = th.DB().PersistClearCollection(collection)
     }
 	return
@@ -1134,13 +1134,13 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if theMap.IsStoredLocally() {   	
+    if theMap.IsBeingStored() {   	
        ensureMemoryTransactionConsistency4(context.InterpThread(), theMap)    	
     }	
 
     isNewKey,_ := theMap.Put(key, val, context)
 	
-	if theMap.IsStoredLocally() {
+	if theMap.IsBeingStored() {
 	   err = context.InterpThread().DB().PersistMapPut(context.InterpThread(), theMap, key, val, isNewKey)  
     }
 	return
@@ -1722,7 +1722,7 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
     // fmt.Println("collection.Remove(val)", removed, removedIndex)
 	
 	if removed  {
-	   if removePersistent && obj.IsStoredLocally() {
+	   if removePersistent && obj.IsBeingStored() {
             // fmt.Println("calling th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)")	   	
 	    	err = th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)
 	    	if err != nil {
@@ -1787,7 +1787,7 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
 
       unit.attrs[i] = nil
 
-       if removePersistent && obj.IsStoredLocally() {
+       if removePersistent && obj.IsBeingStored() {
 	          err = th.DB().PersistRemoveAttr(obj, attr) 	
 	          if err != nil {
 	          	 return
