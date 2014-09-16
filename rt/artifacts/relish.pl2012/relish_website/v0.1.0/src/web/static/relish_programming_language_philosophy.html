@@ -1,0 +1,188 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish application quick start guide
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Programming Language Philosophy</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Overview">Overview</a><br/>	
+	<a href="#Principles" class="alt">Principles</a><br/>
+	<a href="#Discussion">Further Discussion</a><br/>	
+</div>  
+<div id="content_manual">
+    <a name="Overview"><h3>Overview</h3></a>
+  <p>
+  relish&#8482; is an opinionated programming language - it has / reflects / enforces a rather strong opinion on various programming stylistic and organizational issues, with the premise that having such a stance will simplify things - will eliminate a number of the complexities and  sources of error endemic in programming - and will reduce common causes of unproductive effort in application programming.  
+</p>
+<p>
+  In this sense, relish is a rather take-it-or-leave it proposition. It will not please all application programmers, particularly those who have arrived at strong alternative opinions on stylistic or language-feature issues. It is not flexible. Its philosophy is that rigidity and minimalism in the programming language syntax and code organization conventions, after a short learning and acclimatization period, will lead to better (well-factored, readable, maintainable, extensible) application code in less time.
+</p>
+<p>
+  relish takes the "convention over configuration" philosophy to the extreme.</br>
+  relish's opinion on program expression style is that if something is important enough to be a best-practices convention in the programming community, then it is important enough to be enforced by the language. Benefits will ensue, both in code clarity, 
+  and, because the language compiler can make more assumptions about what something is based on the element's syntax convention and its position in the code file, the compiler needs many fewer secondary hints such as complex punctuation and keywords.
+</p>
+<p>
+  While minimalist and rigid in the area of programming language syntax and code location conventions, the relish language runtime environment and standard libraries are on the other hand extended out considerably in a few selected areas of concern. The purpose is at allow the software developer to spend more effort spent on application-domain modelling and perfecting business logic and user interaction, and less time on housekeeping concerns.
+</p>
+<p>
+  The runtime environment and standard libraries are designed to substantially reduce effort on:
+    <ul>
+      <li>Specification and configuration and management of (local) data persistence</li>
+      <li>Configuration of the relationship of web application user interface (view) layer to business-logic and domain-model</li>
+      <li>Creation of simple form-based webapp dialogs</li>
+      <li>Creation and configuration of restful web service interfaces</li>
+      <li>Search, download, authentication, installation, configuration, and version management 
+          of 3rd-party software libraries and frameworks</li>  
+    </ul>
+  </p>
+	<a name="Principles"><h3>Principles</h3></a>
+	<p>
+	This guide will get you started rapidly with your first software application written in relish&#8482;. 
+</p>
+<p>
+   This guide will not teach you how to program, nor even how to program in relish. To learn how to program in relish, you will need to read the relish language reference manual and/or the simple programs examples.
+</p>
+<p>
+   This guide just gets the skeleton of your relish application up and running quickly, showing you how to create a new barebones template software-application project. It gives you a hello world program, with proper relish artifact directory structure set up around it. Once you've learned relish programming, you can modify your hello world program to do whatever you want it to do. 
+</p>
+<p>
+   One last thing. If you want your software application to be a web application; that is, a program which uses web pages as its user interface, you should read the <a href="relish_web_app_quick_start_guide.html">Quick-Starting a web application project</a> guide instead of this guide.
+</p>
+
+
+
+	<a name="Discussion"><h3>Further Discussion and Examples</h3></a>
+	<p>
+	   Your first step is actually to decide the official name of your software artifact. The name of a relish program must follow a specific naming convention, as shown by example here: some-origin.com2014/some_artifact_name
+   </p>
+   <p>
+	   Make sure you understand what a relish code origin is and what a relish software artifact is.
+	   Here's the <a href="/references/relish_syntax_and_semantics_by_example.html#SoftwareArtifacts">relevant section of the reference manual</a>. If you don't know what your code origin name should be yet, you might try a temporary one just to get started. One example might be yourfirstname-yourlastname.commons.relish.pl2012 so your software application artifact might be, for example
+	   willy-wonka.commons.relish.pl2012/chocolate_factory_controller
+   </p>
+	<p>
+		Once you've decided on a code origin id and an artifact name, open a terminal window.
+	</p>
+	<p>
+	   <code><pre>
+cd ~/relish     # Assuming that is your relish installation directory.
+
+relish -init willy-wonka.commons.relish.pl2012/chocolate_factory_controller
+</pre></code>
+</p>
+<p>
+You will then see as a response the following confirmation and instructions:
+</p>
+<p>
+   <code><pre>
+Created relish project template 
+/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/chocolate_factory_controller
+
+To run your project template's dummy main program, relish willy-wonka.commons.relish.pl2012/chocolate_factory_controller
+</pre></code>
+</p>
+<p>
+You will find the main package of your software application in the main/ directory under
+<code><pre> 
+/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/chocolate_factory_controller/v0.1.0/src/
+</pre></code>
+</p>
+<p>
+The main program is in the file main.rel in the main/ package directory. Learn to program in relish, then modify the main program to do something other than printing hello.
+   </p>
+   <p>
+      If your software application is non-trivial, organize it into more package directories. In that case, probably your main.rel file in the main/ package will do nothing more than create some objects defined in other packages then call a method on one of those objects to start the real work.
+   </p>
+   	<a name="Advanced"><h3>Advanced Note</h3></a>   
+   	<p>
+   	   Should you wish to develop each of your relish applications in a completely separate location on disk, separate from the location of your relish installation directory tree, you can do so, and here's how:
+      </p>
+      <p>
+         First, create a directory for your application project. e.g.
+   <code><pre>
+   cd /opt/devel
+   mkdir chocolate
+   cd chocolate   
+   </pre></code>
+   </p>
+   <p>
+   Now, run the project init command from within /opt/devel/chocolate
+   <code><pre>   
+   relish -init willy-wonka.commons.relish.pl2012/chocolate_factory_controller
+   </pre></code>
+   This will create an /opt/devel/chocolate/relish directory, with your new project in the artifacts directory under that.
+   You could now choose, for example, to create a git or hg repository for the whole chocolate directory tree, so that
+   you can include development notes or whatever else in the project repository. This also allows you to manage several chocolate-related artifacts in a single git/hg repository, should you so choose.
+   </p>
+   <p>
+   Make sure you issue further relish commands, to run your project artifact, from within the /opt/devel/chocolate/relish directory tree.
+   </p>
+   <p>
+   If you create your project the originally suggested way, under the relish installation itself, then you would probably create your git or hg repository for each artifact directory separately.
+   </p>   
+<br/>
+<br/>
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
