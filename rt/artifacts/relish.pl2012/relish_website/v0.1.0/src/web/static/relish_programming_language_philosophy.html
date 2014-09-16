@@ -65,15 +65,23 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   relish&#8482; is an opinionated programming language - it has / reflects / enforces a rather strong opinion on various programming stylistic and organizational issues, with the premise that having such a stance will simplify things - will eliminate a number of the complexities and  sources of error endemic in programming - and will reduce common causes of unproductive effort in application programming.  
 </p>
 <p>
-  In this sense, relish is a rather take-it-or-leave it proposition. It will not please all application programmers, particularly those who have arrived at strong alternative opinions on stylistic or language-feature issues. It is not flexible. Its philosophy is that rigidity and minimalism in the programming language syntax and code organization conventions, after a short learning and acclimatization period, will lead to better (well-factored, readable, maintainable, extensible) application code in less time.
+  In this sense, relish is a rather take-it-or-leave it proposition. It will not please all application programmers, particularly those who have arrived at strong alternative opinions on stylistic or language-feature issues. It is not flexible. Its philosophy is that rigidity and minimalism in the programming language syntax and code organization conventions, after a short learning and acclimatization period, will lead to better (well-factored, readable, maintainable, extensible) application code in less time. Come along for the ride, sit still in your cramped seat, relish says to a programmer, and I will get you where you want to go efficiently. Or if you prefer a different metaphor, learn the strict techniques and rules of drawing lines (or plucking the 6 classical guitar strings in the correct way and moving on to the next note), and you will make beautiful Japanese line paintings (or music), with no ultimate limitation in your creative freedom.
 </p>
 <p>
   relish takes the "convention over configuration" philosophy to the extreme.</br>
-  relish's opinion on program expression style is that if something is important enough to be a best-practices convention in the programming community, then it is important enough to be enforced by the language. Benefits will ensue, both in code clarity, 
-  and, because the language compiler can make more assumptions about what something is based on the element's syntax convention and its position in the code file, the compiler needs many fewer secondary hints such as complex punctuation and keywords.
+  relish's opinion on program expression style is that if something is important enough to be a best-practices convention in the programming community, then it is important enough to be enforced by the language. Benefits will ensue. Code will gain clarity and consistency. 
+  And, because the language compiler can make more assumptions about what an element in the code is, based on the element's syntax convention and its position in the code file, the compiler needs many fewer secondary hints such as complex punctuation and keywords.
 </p>
 <p>
-  While minimalist and rigid in the area of programming language syntax and code location conventions, the relish language runtime environment and standard libraries are on the other hand extended out considerably in a few selected areas of concern. The purpose is at allow the software developer to spend more effort spent on application-domain modelling and perfecting business logic and user interaction, and less time on housekeeping concerns.
+  While drawing strongly from best-practice program expression conventions (e.g. consistent indenting, conventions for variable, method, and constant naming syntax), relish violates one prevalent programming convention: It does not have a "similar to C" syntax. Its overall syntax look-and-feel is much more based on common lisp, but with mandatory indentation substituting for almost all uses of parentheses.
+</p>
+<p>
+   But relish syntax departs from the most common present-day syntax conventions one step further than LISP. 
+   The compiler has sufficient positional and name-convention information that the language does not need role-defining keywords such as "type", "def", "func", "var" "const" preceding introduced names and declarations. The role of each name in the program becomes obvious, both to the compiler and to the reader of code, from context.<br/>
+   A relish program reads like a story of something happening in the application's domain, where the program-story is written with little more vocabulary than domain-specific nouns and verbs (type names, variable names, and method names) organized by "while", "for", and "if" control keywords.
+</p>
+<p>
+  While minimalist and rigid in the area of programming language syntax and code location conventions, the relish language runtime environment and standard libraries are on the other hand extended out considerably in a few selected areas of concern. The purpose is to allow the software developer to spend more effort on application-domain modelling and perfecting application logic and user interaction, and less time on housekeeping concerns.
 </p>
 <p>
   The runtime environment and standard libraries are designed to substantially reduce effort on:
@@ -88,8 +96,12 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </p>
 	<a name="Principles"><h3>Principles</h3></a>
 	<p>
-	This guide will get you started rapidly with your first software application written in relish&#8482;. 
+	Convention over configuration - zero-conf goal - Enforced convention
 </p>
+<p>
+  
+  </p>
+
 <p>
    This guide will not teach you how to program, nor even how to program in relish. To learn how to program in relish, you will need to read the relish language reference manual and/or the simple programs examples.
 </p>
