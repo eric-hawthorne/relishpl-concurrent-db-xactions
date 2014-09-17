@@ -109,211 +109,190 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <li>Local Data Persistence Should Be Easy To Set Up And Use</li>
 <li>Persistence Should Be Infectious</li>
 <li>Go Forth And Multiple Inherit - More General Code Is More Reusable</li>
-<li>Support Mixin of Abstract and Partially Abstract Behaviours</li>
-<li>Methods Should Be Polymorphic with Runtime Type of All Arguments Used To Select Method</i>
-<li>Methods Are Owned By the Type-Tuple Of Their Parameter-Type Signature - Not by one Type</li> 
+<li>Methods Should Be Polymorphic with Runtime Type of All Arguments Used To Select Method</li>
+<li>Methods Are Owned By the Type-Tuple Of Their Parameter-Type Signature - Not by One Type</li> 
 <li>Ensure No Package/Library Namespace Conflicts, Globally and Long-term</li>
 <li>If You Import It (Call It By Its True Name), It Will Come - Internet Code Fetching</li>
-- Import a 3rd Party Package With Its Full Name - relish Should Find It On The Internet And Use It</li>
 <li>Web Apps and Web Services Are First-Class Programming Language Constructs</li>
+</ol>
 
-DEPRECATED - See above
-<li>Support Multiple Inheritance - Single Inheritance Reduces Code General-purposeness And Reusability </li>l
-<li>Allow Specification Of Traits - Mixin Of Abstract And Partially Abstract Behaviour Into Types</li>
 
-<li>Perform Polymorphic Method Dispatch based on the runtime-known type of all method arguments</li> 
 
-- The First Object Argument Of A Method Shouldn't Be Special. runtime-known type of all arguments to the method call should be used to select which method implementation to call</li>
+<a name="Discussion"><h3>Further Discussion and Examples</h3></a>
 
-<li>Methods Are Not Owned By A Data Type - They Are Owned By The Tuple Of Types That Is Their Parameter-type Signature</li>
 
-<li>Ensure No Namespace Conflicts, Globally and Long-term</li>
-    - Of Code Library, Framework, And Module/package Namespaces On A Global And Long-term Basis
+<h4>Convention Over Configuration - Enforced Convention - Goal Is Zero Configuration</h4>
 
-<li></li>
-<li>Use name-based addressing to find 3rd party code on the Internet</li>
-    - The language runtime environment should be able to find, fetch, load and link authenticated 3rd party code from the Internet, if the programmer knows the fully qualified name of the code unit
+<ul>
+  <li>If there is one good way of doing something, let there only be one way.</li>
+  <li>Everything should go in a designated place, so we know where to find it.</li>
+</ul>
 
-- Methods Should Be Dispatched (a Particular Implementation Chosen) Based On The Best Match Of Parameter Type Signature To The Runtime Type Of All Arguments supplied in the method call
+<h4>Readability And Code Uniformity Over Programmer Freedom Of Stylistic Expression</h4>
 
-Global And Long-term, Versioned Code (library/framework) Interoperability Is Important And Deserves First-class Language Support
+<ul>
+  <li>Strict name conventions plus meaningful indentation leads to more uniformity and readabilty</li>
+  <li>and eliminates need for distracting and hard-to-learn punctuation and brackets </li>
+   <li>also eliminates the need for keywords such as "const" "var" "function" "type" which interrupt the flow of reading 
+  the program-as-a-story-of-the-domain</li>
+</ul>
 
+<h4>Equality Of Syntax For Operations On All Data Types </h4>
 
-- If a programmer knows and states in an import statement the full proper name of a code library, framework, (or package therein), THE LANGUAGE SHOULD BE ABLE TO FIND ON THE INTERNET AND FETCH FROM THE INTERNET THE CODE AND LINK AND LOAD THE CODE.
+<ul>
+  <li>Arithmetic is no longer syntax-privileged (given more concise syntax than operations on other types).</li>
+   <li>It is not the 1960s - computers are not arithmetic calculators - they are general symbolic model manipulators.</li>
+</ul>
 
-Web UIs And Web Services Are Important And Deserve First-class Language Support
+<h4>Except That Core Collection Types And Operations Are First-class Language Constructs</h4>
 
+<ul>
+  <li>Collections have concise access-operation and mutation-operation syntax.</li>
+  <li>Working with groups of data should be as syntactically easy as working with a single datum.</li>
+</ul>
 
+<h4>Functions And Relations Are Both Important</h4>
+<ul>
+  <li>Methods should be able to express a function (zero or more inputs mapped to 1 output) or a relation (zero or more inputs mapped to multiple outputs) with equal convenience</li>
+<li>so methods can have multiple return-values</li>
+<li>so multiple-assignment statements are provided, to accept multi-value results of method calls</li> 
+<li>so data-type relation rules (such as relationship cardinality constraints) can be expressed in the language as if creating an ERD</li>
+<li>so function closures can be created, passed as first-class values, and applied<li>
+</ul>
 
 
+<h4>Local Data Persistence Should Be Easy To Set Up And Use</h4>
+ <ul>
+  <li>Data types and attributes should not have to be declared once for in-memory objects and again for persistent representation.</li>
+  <li>The same goes for collections, and relations between datatypes. Declaring the collections or relations in the program should determine the persistent representation of the collection or relation, with no additional persistence configuration work or query-specification work on the part of the programmer.</li> 
+  <li>The language should support automatic fetch of objects from the local persistent store when attributes or relations are traversed ( <code>v = a.b.c.d</code> ) from an in-memory persistent object ( e.g. <code>a</code> ) to not-yet-fetched attributes or related objects.</li>
+  <li>An OQL query syntax (similar to SQL but tailored to object-network traversal) and mechanism should be built into the language and runtime, to allow the programmer to query and fetch into memory objects or lists of objects based on relational database attribute-query, sorting, and joining capabilities.</li> 
+ </ul>
+<h4>Persistence Should Be Infectious</h4>
+<ul><li>when an non-persistent object is joined to a persistent one - becomes an attribute of the persistent object or a relation of it ( <code>a.b = v</code> ) - the non-persisted object  ( e.g. <code>v</code> ) should automatically become persistent, as should its attributes and relations, recursively.</li></ul>
 
+<h4>Go Forth And Multiple Inherit - More General Code Is More Reusable</h4>
 
-
-
-
-
-
-
-
-	Convention Over Configuration - Enforced Convention - Goal Is Zero Configuration
-
-- If there is one good way of doing something, let there only be one way.
-
-
-Readability And Code Uniformity Over Programmer Freedom Of Stylistic Expression
-
- - strict name conventions plus meaningful indentation leads to more uniformity and readabilty 
- - and eliminates need for distracting and hard to learn punctuation and brackets 
-- also eliminates the need for keywords such as "const" "var" "function" "type" which interrupt the flow of reading 
-  the program-as-a-story-of-the-domain
-
-Equality Of Syntax For Operations On All Data Types 
-
-(arithmetic is no longer privileged - it is not the 1960s - computers are not arithmetic calculators - they are general symbolic model manipulators)
-
-Except That Core Collection Types Are First-class Language Constructs, 
-
-   - collections have concise access-operation and mutation-operation syntax.
-
-
-
-   - Working with groups of data should be as syntactically easy as working with a single datum.
-
-Functions And Relations Are Both Important
-
-   - so multiple return values and multiple-assignment statements are supported
-   - so data type relation rules can be expressed in the language as if creating an erd
-   - so function closures can be created and applied
-
-Local Data Persistence Should Be Easy To Set Up And Use
-
- - And data types and attributes should not have to be declared once for in-memory objects and again for persistent representation.
-
-Persistence Should Be Infectious 
-- when a non-persistent object is joined to a persistent one
-
-Allow Multiple Inheritance 
-- AVOID ARTIFICIAL RANKING OF ONE KIND OF DISTINCTION OVER ANOTHER THAT SINGLE INHERITANCE FORCES
-
-Allow Specification Of Traits - Mixin Of Abstract And Partially Abstract Behaviour Into Types
-
-Perform Polymorphic Method Dispatch, But The First Object Argument Of A Method Shouldn't Be Special. 
-
-Methods Are Not Owned By A Data Type - They Are Owned By The Tuple Of Types That Is Their Parameter-type Signature
-
-
-- Methods Should Be Dispatched (a Particular Implementation Chosen) Based On The Best Match Of Parameter Type Signature To The Runtime Type Of All Arguments supplied in the method call
-
-Global And Long-term, Versioned Code (library/framework) Interoperability Is Important And Deserves First-class Language Support
-
-
-- If a programmer knows and states in an import statement the full proper name of a code library, framework, (or package therein), THE LANGUAGE SHOULD BE ABLE TO FIND ON THE INTERNET AND FETCH FROM THE INTERNET THE CODE AND LINK AND LOAD THE CODE.
-
-Web UIs And Web Services Are Important And Deserve First-class Language Support
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<ul><li>Support mix-in of pure abstract behaviours and of partially abstract behaviours (interface &amp; trait specification)</li>
+<li>Support inheritance of of common object state (attributes) from multiple parent types</li>
+<li>Support inheritance of required or allowed relations, from multiple parent types</li>
+<li>Support transparent, zero-configuration persistence of multiple-inheritance-defined object instance state.</li> 
+</ul>
 <p>
-   This guide will not teach you how to program, nor even how to program in relish. To learn how to program in relish, you will need to read the relish language reference manual and/or the simple programs examples.
+  An inheritance hierarchy (specialization hierarchy) is about concisely expressing the commonalities among and the distinctions between different data types (entity types), then sharing code (factoring it to work on the most general type possible) to take advantage of the commonalities.
+</p>
+<p>Single inheritance forces the programmer/domain-modeller to artificially rank one kind of distinction between types as a more primary distinction than another independent kind of distinction. One kind of distinction is further up the type tree, and the other kind of distinction must artificially be thought of as a sub-distinction, even though the kinds of distinctions are independent. For example, imagine a domain that is about vehicles and taxation and insurance. I may have Internal-Combustion-Engine (ICE) Cars, ICE Large Trucks, and ICE Motorcycles, Electric Cars, Electric Trucks, and Electric Motorcycles.</p>
+<p>With single inheritance, programmer Jane may create the following object/entity type hierarchy:
+<pre><code>
+                Vehicle
+                   |
+            -------------------------------------------------------------------
+           /                                     |                             \
+      LargeVehicle                          SmallVehicle                VerySmallVehicle    
+    /             \                           /     \                     /          \ 
+ICETractorTrailer  ElectricTractorTrailer  ICECar ElectricCar   ICEMotorcycle   ElectricMotorcycle
+</code></pre>
+</p>
+<br/>
+<p>
+Whereas programmer Alec may create the following hierarchy:
 </p>
 <p>
-   This guide just gets the skeleton of your relish application up and running quickly, showing you how to create a new barebones template software-application project. It gives you a hello world program, with proper relish artifact directory structure set up around it. Once you've learned relish programming, you can modify your hello world program to do whatever you want it to do. 
+<pre><code>  
+                Vehicle
+                   |
+            ------------------------------------------------
+           /                                                 \
+       ICEVehicle                                       ElectricVehicle     
+           |                                                  |
+     ---------------------------                        ----------------------------                                           
+    /                |          \                      /               |            \ 
+ICETractorTrailer  ICECar  ICEMotorcycle   ElectricTractorTrailer  ElectricCar  ElectricMotorcycle
+</code></pre>
+</p>
+<br/>
+<p>
+  Each hierarchy creates problems. In the first domain model, one cannot express, for example, collections of electric vehicles, 
+  or methods/method implementations that are common to all electric vehicles. In the second domain model, one cannot express collections of large vehicles,
+  and methods/method implementations that are common to all large vehicles.
 </p>
 <p>
-   One last thing. If you want your software application to be a web application; that is, a program which uses web pages as its user interface, you should read the <a href="relish_web_app_quick_start_guide.html">Quick-Starting a web application project</a> guide instead of this guide.
+  Also, imagine trying to integrate two programs or databases, one of which had been modelled the domain the first way, and one the second way. Nightmare.
+  </p>
+<p>And it is a good thing we do not care about the colour of the vehicles for insurance-rating purposes.</p>  
+<p>Multiple inheritance is not a panacea - used badly it can produce confusing domain models - but in this case - both programmers might arrive at a domain model like the following, assuming that code behaviours were needed depending on each of the kinds of distinctions.
+<pre><code>  
+          Vehicle                                                                       
+             |
+    ------------------------------------------------------------------------------------------
+   /                                  |                        |             |                \
+LargeVehicle                       SmallVehicle          VerySmallVehicle    ICEVehicle     ElectricVehicle
+      |                               \       \                   |     \     |               |
+     -----------------                 \       \                  |      \    |               |
+    /                 \                 \       \                 |       \   |               |
+   /                   \                 \       \                |        \  |               |
+  /             --------\-----------------\-------\---------------|---------\--               |
+  |             |        \                 \   |   \              |    |     \                |
+  |             |         \   --------------\--|----\-------------|----|------\----------------
+  |             |          \  |              \ |     \ |          |    |       \         |
+ ICETractorTrailer  ElectricTractorTrailer  ICECar ElectricCar   ICEMotorcycle   ElectricMotorcycle
+</code></pre>
+</p>
+<br/>
+<p>
+  If looking at or conceptualizing a multiple-inheritance specialization lattice is an overwhelming task, that is a programming tools problem (an IDE problem) rather than a programming language problem. IDEs should be developed which allow views of individual trees down the forest-of-trees of the specialization lattice, to create selectable/filterable simpler views for programmers.
 </p>
 
 
+<h4>Methods Should Be Polymorphic with Runtime Type of All Arguments Used To Select Method</h4>
 
-	<a name="Discussion"><h3>Further Discussion and Examples</h3></a>
-	<p>
-	   Your first step is actually to decide the official name of your software artifact. The name of a relish program must follow a specific naming convention, as shown by example here: some-origin.com2014/some_artifact_name
-   </p>
-   <p>
-	   Make sure you understand what a relish code origin is and what a relish software artifact is.
-	   Here's the <a href="/references/relish_syntax_and_semantics_by_example.html#SoftwareArtifacts">relevant section of the reference manual</a>. If you don't know what your code origin name should be yet, you might try a temporary one just to get started. One example might be yourfirstname-yourlastname.commons.relish.pl2012 so your software application artifact might be, for example
-	   willy-wonka.commons.relish.pl2012/chocolate_factory_controller
-   </p>
-	<p>
-		Once you've decided on a code origin id and an artifact name, open a terminal window.
-	</p>
-	<p>
-	   <code><pre>
-cd ~/relish     # Assuming that is your relish installation directory.
+In almost all object-oriented programming languages (Common Lisp and Julia being some exceptions), the first argument to a method call is known as the receiver of the message/method-call and is treated specially compared to the second and subsequent arguments to the method call. The choice of which method-implementation to run is made based on the runtime-known type of that first argument, which is also often given special prefix notation <code>object.method(arg2,arg3)</code>. The method is said to be polymorphic on the first argument object's type.</p>
+<p>It needs to be remembered though that dot-notation on method calls is just syntactic sugar and the real situation is <code>method(arg1, arg2, arg3)</code></p>
+<p>A method implements a relation or a joint behaviour of several object instances/values considered or acting together, so it is problematic that one of those argument objects/values has had to have been considered special, and the other argument objects are, well, chopped liver. For one thing, on what principle do I as programmer choose which of several argument objects should have its type own the method? A definite arbitrariness creeps in, and it is one more pretty much useless (but cognitively difficult) choice the programmer/domain modeller has to make.</p>
+<p>The net effect of many arbitrary or semi-arbitrary method-to-class assignments is a rigid, hard to re-factor, and insufficiently generalized type hierarchy and collective-behaviour set.</p>
+<p> relish, following Common Lisp, takes the view that the first argument to a multi-argument method should not be considered special, and that the choice of which method-implementation to invoke should be based on the closest match of method signature (among same-named methods) to the runtime-known types of all of the arguments.</p>
 
-relish -init willy-wonka.commons.relish.pl2012/chocolate_factory_controller
-</pre></code>
-</p>
-<p>
-You will then see as a response the following confirmation and instructions:
-</p>
-<p>
-   <code><pre>
-Created relish project template 
-/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/chocolate_factory_controller
 
-To run your project template's dummy main program, relish willy-wonka.commons.relish.pl2012/chocolate_factory_controller
-</pre></code>
-</p>
-<p>
-You will find the main package of your software application in the main/ directory under
-<code><pre> 
-/Users/willy/relish/artifacts/willy-wonka.commons.relish.pl2012/chocolate_factory_controller/v0.1.0/src/
-</pre></code>
-</p>
-<p>
-The main program is in the file main.rel in the main/ package directory. Learn to program in relish, then modify the main program to do something other than printing hello.
-   </p>
-   <p>
-      If your software application is non-trivial, organize it into more package directories. In that case, probably your main.rel file in the main/ package will do nothing more than create some objects defined in other packages then call a method on one of those objects to start the real work.
-   </p>
-   	<a name="Advanced"><h3>Advanced Note</h3></a>   
-   	<p>
-   	   Should you wish to develop each of your relish applications in a completely separate location on disk, separate from the location of your relish installation directory tree, you can do so, and here's how:
-      </p>
-      <p>
-         First, create a directory for your application project. e.g.
-   <code><pre>
-   cd /opt/devel
-   mkdir chocolate
-   cd chocolate   
-   </pre></code>
-   </p>
-   <p>
-   Now, run the project init command from within /opt/devel/chocolate
-   <code><pre>   
-   relish -init willy-wonka.commons.relish.pl2012/chocolate_factory_controller
-   </pre></code>
-   This will create an /opt/devel/chocolate/relish directory, with your new project in the artifacts directory under that.
-   You could now choose, for example, to create a git or hg repository for the whole chocolate directory tree, so that
-   you can include development notes or whatever else in the project repository. This also allows you to manage several chocolate-related artifacts in a single git/hg repository, should you so choose.
-   </p>
-   <p>
-   Make sure you issue further relish commands, to run your project artifact, from within the /opt/devel/chocolate/relish directory tree.
-   </p>
-   <p>
-   If you create your project the originally suggested way, under the relish installation itself, then you would probably create your git or hg repository for each artifact directory separately.
-   </p>   
+<h4>Methods Are Owned By the Type-Tuple Of Their Parameter-Type Signature - Not by One Type</h4> 
+<ul><li>Methods are scoped in a package not a class</li>
+  <li>Conceptually, a method <b><code>foo arg1 Type1 arg2 Type2 arg4 Type3</code></b> forms part of the behavioural 
+    interface of Type1, Type2, and Type3. </li>
+</ul>
+<h4>Ensure No Package/Library Namespace Conflicts, Globally and Long-term</h4>
+
+<ul><li>Enforced globally and long-term unique code namespaces will help ensure interoperability of all software libraries and frameworks developed by different developers and organizations.</li></ul>
+
+
+
+<h4>If You Import It (Call It By Its True Name), It Will Come - Internet Code Fetching</h4>
+
+<ul><li>The language can take advantage of strong global code namespace and code-artifact versioning rules to automatically find, fetch, and link 3rd party libraries.</li>
+<li>The language runtime includes a code-publishing option, which generates signed, shareable, zipped code artifact files with standard names.</li>
+<li>Import at the top of your .rel source code file a published, shared 3rd Party package by mentioning the package's fully-qualified name including code origin name and artifact name, and the relish runtime should be able to find the software artifact (and its package that you want) on the Internet using standard server host and path conventions, and standard artifact naming conventions.</li>
+<li>relish will download, verify, install (cache on local disk), load, and link the 3rd party code.</li>
+</ul>
+
+<h4>Web Apps and Web Services Are First-Class Programming Language Constructs</h4>
+<ul>
+  <li>routing of URLs to relish methods is built-in, with no configuration required.</li>
+  <li>mapping of URL path-parts and arguments to relish method arguments is automatic.</li>
+  <li>mapping of POSTed html-form values to relish method arguments is automatic.</li>
+  <li>mapping of html-form-uploaded files to relish File objects is supported.</li>
+  <li>Cookie-processing is supported.</li>
+  <li>http response-formatting options are built-in, including: 
+     <ul>
+     <li>an html-templating system based on Go's html/template library
+     <li>responding with media files</li>
+     <li>responding with http error or redirect responses</li>
+
+   </ul>
+   </li>
+  <li>relish object-tree to JSON transcoding is built-in.</li>
+     <li>serving static files with low overhead is supported.</li>  
+     <li>an http listener on port 80 or configurable is built-in.</li>
+     <li>a TLS (https) listener on port 443 or configurable is built-in.</li>  
+</ul>
+
 <br/>
 <br/>
 </div>
