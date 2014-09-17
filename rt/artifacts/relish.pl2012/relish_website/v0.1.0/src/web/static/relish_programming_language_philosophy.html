@@ -65,11 +65,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   relish&#8482; is an opinionated programming language - it has / reflects / enforces a rather strong opinion on various programming stylistic and organizational issues, with the premise that having such a stance will simplify things - will eliminate a number of the complexities and  sources of error endemic in programming - and will reduce common causes of unproductive effort in application programming.  
 </p>
 <p>
-  In this sense, relish is a rather take-it-or-leave it proposition. It will not please all application programmers, particularly those who have arrived at strong alternative opinions on stylistic or language-feature issues. It is not flexible. Its philosophy is that rigidity and minimalism in the programming language syntax and code organization conventions, after a short learning and acclimatization period, will lead to better (well-factored, readable, maintainable, extensible) application code in less time. Come along for the ride, sit still in your cramped seat, relish says to a programmer, and I will get you where you want to go efficiently. Or if you prefer a different metaphor, learn the strict techniques and rules of drawing lines (or plucking the 6 classical guitar strings in the correct way and moving on to the next note), and you will make beautiful Japanese line paintings (or music), with no ultimate limitation in your creative freedom.
+  In this sense, relish is a rather take-it-or-leave it proposition. It will not please all application programmers, particularly those who have arrived at strong alternative opinions on stylistic or language-feature issues. It is not flexible. Its philosophy is that rigidity and minimalism in the programming language syntax and code organization conventions, after a short learning and acclimatization period, will lead to better (well-factored, readable, maintainable, extensible) application code in less time. Come along for the ride, sit still in your cramped seat, relish says to a programmer, and I will get you where you want to go efficiently. Or if you prefer a different metaphor, learn the strict techniques and rules of drawing lines (or plucking the 6 classical guitar strings in the correct way), and you will make beautiful Japanese line paintings (or music), with no ultimate limitation in your creative freedom.
 </p>
 <p>
   relish takes the "convention over configuration" philosophy to the extreme.</br>
-  relish's opinion on program expression style is that if something is important enough to be a best-practices convention in the programming community, then it is important enough to be enforced by the language. Benefits will ensue. Code will gain clarity and consistency. 
+  relish's opinion on program expression style is that <b><em>if something is important enough to be a best-practices convention in the programming community, then it is important enough to be enforced by the language.</em></b> Benefits will ensue. Code will gain clarity and consistency. 
   And, because the language compiler can make more assumptions about what an element in the code is, based on the element's syntax convention and its position in the code file, the compiler needs many fewer secondary hints such as complex punctuation and keywords.
 </p>
 <p>
@@ -81,26 +81,147 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
    A relish program reads like a story of something happening in the application's domain, where the program-story is written with little more vocabulary than domain-specific nouns and verbs (type names, variable names, and method names) organized by "while", "for", and "if" control keywords.
 </p>
 <p>
-  While minimalist and rigid in the area of programming language syntax and code location conventions, the relish language runtime environment and standard libraries are on the other hand extended out considerably in a few selected areas of concern. The purpose is to allow the software developer to spend more effort on application-domain modelling and perfecting application logic and user interaction, and less time on housekeeping concerns. "Don't Configure. Just Code! Go Figure! Program with relish!"
+  While minimalist and rigid in the area of programming language syntax and code location conventions, the relish language runtime environment and standard libraries are on the other hand extended out considerably in a few selected areas of concern. The purpose is to allow the software developer to <b><em>spend more effort on application-domain modelling and perfecting application logic and user interaction, and less time on housekeeping concerns.</em></b> 
 </p>
 <p>
   The runtime environment and standard libraries are designed to substantially reduce effort on:
     <ul>
       <li>Specification and configuration and management of (local) data persistence</li>
       <li>Configuration of the relationship of web application user interface (view) layer to business-logic and domain-model</li>
-      <li>Creation of simple form-based webapp dialogs</li>
-      <li>Creation and configuration of restful web service interfaces</li>
-      <li>Search, download, authentication, installation, configuration, and version management 
-          of 3rd-party software libraries and frameworks</li>  
+      <li>Creation of simple form-based (or AJAX) webapp dialogs</li>
+      <li>Creation and configuration of RESTful web service interfaces</li>
+      <li>Incorporation of 3rd-party software libraries and frameworks into your program:
+      <ul>
+<li><font size="-1">The relish language standardizes hierarchical naming conventions for software artifacts (libraries, frameworks, or applications) and packages within them, to ensure global interoperability of code.</font></li>
+      <li><font size="-1">The relish runtime environment automates the Internet search for, download of, authentication and integrity checking of, installation, version management, loading and linking of 3rd-party software libraries and frameworks.</font></li></ul></li>  
     </ul>
   </p>
-	<a name="Principles"><h3>Principles</h3></a>
-	<p>
-	Convention over configuration - zero-conf goal - Enforced convention
-</p>
-<p>
-
+  <p>
+  <b><em>"Don't Configure. Just Code! Go Figure! Program with relish!"</em></b>
   </p>
+	<a name="Principles"><h3>Principles</h3></a>
+<ol>
+<li>Convention Over Configuration - Enforced Convention - Goal Is Zero Configuration</li>
+<li>Readability And Code Uniformity Over Programmer Freedom Of Stylistic Expression</li>
+<li>Equality Of Syntax For Operations On All Data Types </li>
+<li>Except That Core Collection Types And Operations Are First-class Language Constructs</li>
+<li>Functions And Relations Are Both Important</li>
+<li>Local Data Persistence Should Be Easy To Set Up And Use</li>
+<li>Persistence Should Be Infectious</li>
+<li>Support Multiple Inheritance - Single Inheritance Reduces Code General-purposeness And Reusability </li>l
+<li>Allow Specification Of Traits - Mixin Of Abstract And Partially Abstract Behaviour Into Types</li>
+
+<li>Perform Polymorphic Method Dispatch based on the runtime-known type of all method arguments</li> 
+
+- The First Object Argument Of A Method Shouldn't Be Special. runtime-known type of all arguments to the method call should be used to select which method implementation to call</li>
+
+<li>Methods Are Not Owned By A Data Type - They Are Owned By The Tuple Of Types That Is Their Parameter-type Signature</li>
+
+<li>Ensure No Namespace Conflicts, Globally and Long-term</li>
+    - Of Code Library, Framework, And Module/package Namespaces On A Global And Long-term Basis
+
+<li></li>
+<li>Use name-based addressing to find 3rd party code on the Internet</li>
+    - The language runtime environment should be able to find, fetch, load and link authenticated 3rd party code from the Internet, if the programmer knows the fully qualified name of the code unit
+
+- Methods Should Be Dispatched (a Particular Implementation Chosen) Based On The Best Match Of Parameter Type Signature To The Runtime Type Of All Arguments supplied in the method call
+
+Global And Long-term, Versioned Code (library/framework) Interoperability Is Important And Deserves First-class Language Support
+
+
+- If a programmer knows and states in an import statement the full proper name of a code library, framework, (or package therein), THE LANGUAGE SHOULD BE ABLE TO FIND ON THE INTERNET AND FETCH FROM THE INTERNET THE CODE AND LINK AND LOAD THE CODE.
+
+Web UIs And Web Services Are Important And Deserve First-class Language Support
+
+
+
+
+
+
+
+
+
+
+
+
+
+	Convention Over Configuration - Enforced Convention - Goal Is Zero Configuration
+
+- If there is one good way of doing something, let there only be one way.
+
+
+Readability And Code Uniformity Over Programmer Freedom Of Stylistic Expression
+
+ - strict name conventions plus meaningful indentation leads to more uniformity and readabilty 
+ - and eliminates need for distracting and hard to learn punctuation and brackets 
+- also eliminates the need for keywords such as "const" "var" "function" "type" which interrupt the flow of reading 
+  the program-as-a-story-of-the-domain
+
+Equality Of Syntax For Operations On All Data Types 
+
+(arithmetic is no longer privileged - it is not the 1960s - computers are not arithmetic calculators - they are general symbolic model manipulators)
+
+Except That Core Collection Types Are First-class Language Constructs, 
+
+   - collections have concise access-operation and mutation-operation syntax.
+
+
+
+   - Working with groups of data should be as syntactically easy as working with a single datum.
+
+Functions And Relations Are Both Important
+
+   - so multiple return values and multiple-assignment statements are supported
+   - so data type relation rules can be expressed in the language as if creating an erd
+   - so function closures can be created and applied
+
+Local Data Persistence Should Be Easy To Set Up And Use
+
+ - And data types and attributes should not have to be declared once for in-memory objects and again for persistent representation.
+
+Persistence Should Be Infectious 
+- when a non-persistent object is joined to a persistent one
+
+Allow Multiple Inheritance 
+- AVOID ARTIFICIAL RANKING OF ONE KIND OF DISTINCTION OVER ANOTHER THAT SINGLE INHERITANCE FORCES
+
+Allow Specification Of Traits - Mixin Of Abstract And Partially Abstract Behaviour Into Types
+
+Perform Polymorphic Method Dispatch, But The First Object Argument Of A Method Shouldn't Be Special. 
+
+Methods Are Not Owned By A Data Type - They Are Owned By The Tuple Of Types That Is Their Parameter-type Signature
+
+
+- Methods Should Be Dispatched (a Particular Implementation Chosen) Based On The Best Match Of Parameter Type Signature To The Runtime Type Of All Arguments supplied in the method call
+
+Global And Long-term, Versioned Code (library/framework) Interoperability Is Important And Deserves First-class Language Support
+
+
+- If a programmer knows and states in an import statement the full proper name of a code library, framework, (or package therein), THE LANGUAGE SHOULD BE ABLE TO FIND ON THE INTERNET AND FETCH FROM THE INTERNET THE CODE AND LINK AND LOAD THE CODE.
+
+Web UIs And Web Services Are Important And Deserve First-class Language Support
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 <p>
    This guide will not teach you how to program, nor even how to program in relish. To learn how to program in relish, you will need to read the relish language reference manual and/or the simple programs examples.
