@@ -170,7 +170,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <li>An OQL query syntax (similar to SQL but tailored to object-network traversal) and mechanism should be built into the language and runtime, to allow the programmer to query and fetch into memory objects or lists of objects based on relational database attribute-query, sorting, and joining capabilities.</li> 
  </ul>
 <h4>Persistence Should Be Infectious</h4>
-<ul><li>when an non-persistent object is joined to a persistent one - becomes an attribute of the persistent object or a relation of it ( <code>a.b = v</code> ) - the non-persisted object  ( e.g. <code>v</code> ) should automatically become persistent, as should its attributes and relations, recursively.</li></ul>
+<ul><li>when a non-persistent object is joined to a persistent one - becomes an attribute of the persistent object or a relation of it ( <code>a.b = v</code> ) - the non-persisted object  ( e.g. <code>v</code> ) should automatically become persistent, as should its attributes and relations, recursively.</li></ul>
 
 <h4>Go Forth And Multiple Inherit - More General Code Is More Reusable</h4>
 
@@ -218,7 +218,7 @@ ICETractorTrailer  ICECar  ICEMotorcycle   ElectricTractorTrailer  ElectricCar  
   and methods/method implementations that are common to all large vehicles.
 </p>
 <p>
-  Also, imagine trying to integrate two programs or databases, one of which had been modelled the domain the first way, and one the second way. Nightmare.
+  Also, imagine trying to integrate two programs or databases, one of which had modelled the domain the first way, and one the second way. Nightmare.
   </p>
 <p>And it is a good thing we do not care about the colour of the vehicles for insurance-rating purposes.</p>  
 <p>Multiple inheritance is not a panacea - used badly it can produce confusing domain models - but in this case - both programmers might arrive at a domain model like the following, assuming that code behaviours were needed depending on each of the kinds of distinctions.
