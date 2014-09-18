@@ -2548,19 +2548,19 @@ More built-in methods, concerned with data persistence, are listed in the next s
 <code><pre>
 // Persistence built-in methods
 
-dub obj Struct name String
+dub obj NonPrimitive name String
 """
  Gives the object the specified unique canonical name in the local database,
  and persists the object and all objects in the network of the object's attributes,
  and their attributes, and so on.
  Throws a runtime error if the name is already in use as a canonical object name
  in the local database.
- <em>Currently it appears it is possible to dub an object with several names
+ <em>Currently it is possible to dub an object with several names
  in several separate uses of dub. <span class="future">Not sure if this will continue to be allowed.</span></em>
 """   
 
 
-summon name String > obj Struct
+summon name String > obj NonPrimitive
 """
  Fetches from the local database the object identified by the specified canonical name.
  Throws a runtime error if there is no object of that name in the local database.
