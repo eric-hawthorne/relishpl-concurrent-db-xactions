@@ -10,11 +10,11 @@ package http_methods
 
 import (
 	. "relish/runtime/data"
-//	"os"
 	"io"
 	"bufio"
 	"net/http"
 	"mime/multipart"
+	"fmt"
 )
 
 ///////////
@@ -141,6 +141,13 @@ func InitHttpMethods() {
 		panic(err)
 	}    
 
+    // First, make sure we have the appropriate list type in existence.
+    cookieType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"]
+    cookieListType, err := RT.GetListType(cookieType) 
+	if err != nil {
+		panic(err)
+	}  	
+
     // files r Request key String > fs [] UploadedFile
 	uploadedFilesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"uploadedFiles", []string{"request","key"},  []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{uploadedFileListType.Name}, false, 0, false)
 	if err != nil {
@@ -158,9 +165,18 @@ func InitHttpMethods() {
     //   TODO
     //
     // cookies r Request > c [] Cookie
-    //
-    // cookie r Request key String > c Cookie err String
+	cookiesMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"cookies", []string{"request"},  []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request"}, []string{cookieListType.Name}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookiesMethod.PrimitiveCode = cookies
 
+    // cookie r Request name String > c Cookie err String
+	cookieMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"cookie", []string{"request","name"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Request","String"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie","String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieMethod.PrimitiveCode = cookie
 
 
 	// contentLength r Request > Int 
@@ -227,7 +243,198 @@ func InitHttpMethods() {
 	}
 	remoteAddrMethod.PrimitiveCode = remoteAddr
 
+
+
+
+    // http_srv.Cookie methods
+
+    // See golang.org/pkg/net/http/#Cookie for attribute meanings
+
+    // name c Cookie > String
+    //
+	cookieNameMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"name", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieNameMethod.PrimitiveCode = cookieName
+
+    // value c Cookie > String
+	//
+	cookieValueMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"value", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieValueMethod.PrimitiveCode = cookieValue
+
+    // path c Cookie > String
+    //
+	cookiePathMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"path", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookiePathMethod.PrimitiveCode = cookiePath
+
+    // domain c Cookie > String
+    //
+	cookieDomainMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"domain", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieDomainMethod.PrimitiveCode = cookieDomain 
+
+    // expires c Cookie > Time 
+    //
+	cookieExpiresMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"expires", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"Time"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieExpiresMethod.PrimitiveCode = cookieExpires
+
+    // rawExpires c Cookie > String
+    //
+	cookieRawExpiresMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"rawExpires", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieRawExpiresMethod.PrimitiveCode = cookieRawExpires	
+
+	// // maxAge=0 means no 'Max-Age' attribute specified.
+	// // maxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
+	// // maxAge>0 means Max-Age attribute present and given in seconds
+	// maxAge c Cookie > Int
+
+	cookieMaxAgeMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"maxAge", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"Int"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieMaxAgeMethod.PrimitiveCode = cookieMaxAge
+
+    // secure c Cookie > Bool
+	//
+	cookieSecureMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"secure", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieSecureMethod.PrimitiveCode = cookieSecure
+
+    // httpOnly c Cookie > Bool
+    //
+	cookieHttpOnlyMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"httpOnly", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"Bool"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieHttpOnlyMethod.PrimitiveCode = cookieHttpOnly
+
+
+    // raw c Cookie > String      
+    //
+	cookieRawMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"raw", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieRawMethod.PrimitiveCode = cookieRaw
+
+    // initString s String c Cookie > String  
+    //
+	initStringFromCookieMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"initString", []string{"s","c"}, []string{"String","shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	initStringFromCookieMethod.PrimitiveCode = initStringFromCookie
+
+    // setCookie c Cookie > String    
+	// """
+	//  Return a proper header line for setting the cookie in an http response
+	// """
+    //
+	cookieSetMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"setCookie", []string{"c"}, []string{"shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieSetMethod.PrimitiveCode = cookieSetHeader
+
+    // setCookie name String value String maxAge Int path String domain String > String
+    //
+	cookieSet2Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"setCookie", []string{"name","value","maxAge","path","domain"}, []string{"String","String","Int","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	cookieSet2Method.PrimitiveCode = cookieSetHeader2
+
+
+    // header h1 String > String
+    //
+	headerMethod, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"header", []string{"h1"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headerMethod.PrimitiveCode = header
+
+    // headers h1 String > String
+    //
+	headers1Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers1Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String > String
+    //
+	headers2Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2"}, []string{"String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers2Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String > String
+    //
+	headers3Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3"}, []string{"String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers3Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String h4 String > String
+    //
+	headers4Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3","h4"}, []string{"String","String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers4Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String h4 String h5 String > String
+    //
+	headers5Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3","h4","h5"}, []string{"String","String","String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers5Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String h4 String h5 String h6 String > String
+    //
+	headers6Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3","h4","h5","h6"}, []string{"String","String","String","String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers6Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String h4 String h5 String h6 String h7 String > String
+    //
+	headers7Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3","h4","h5","h6","h7"}, []string{"String","String","String","String","String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers7Method.PrimitiveCode = headers
+
+    // headers h1 String h2 String h3 String h4 String h5 String h6 String h7 String h8 String > String
+    //
+	headers8Method, err := RT.CreateMethod("shared.relish.pl2012/relish_lib/pkg/http_srv",nil,"headers", []string{"h1","h2","h3","h4","h5","h6","h7","h8"}, []string{"String","String","String","String","String","String","String","String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	headers8Method.PrimitiveCode = headers						
 }
+
 
 
 
@@ -456,8 +663,60 @@ func uploadedFile(th InterpreterThread, objects []RObject) []RObject {
 //   TODO
 //
 // cookies r Request > c [] Cookie
-//
-// cookie r Request key String > c Cookie err String
+
+func cookies(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+		
+
+    cookieType := RT.Types["shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie"]
+
+    cookieList,err := RT.Newrlist(cookieType,0,-1,nil,nil,nil)
+    if err != nil {
+    	panic(err)
+    }
+
+    cookies := request.Cookies()
+
+    var cookieObj RObject
+
+	for _,cookie := range cookies {
+       cookieObj, err = createCookie(cookie)
+       if err != nil {
+	       panic(err)
+       }    		
+	   cookieList.AddSimple(cookieObj)
+    }
+	return []RObject{cookieList}
+}
+
+// cookie r Request name String > c Cookie err String
+
+func cookie(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	request := wrapper.GoObj.(*http.Request)
+
+    name := string(objects[1].(String))		
+
+    var cookieObj RObject = NIL
+
+    cookie, err := request.Cookie(name) 
+    if err == nil {
+        cookieObj, err = createCookie(cookie)
+    }
+
+    var errStr string
+    if err != nil {
+    	errStr = err.Error()
+    } else if cookieObj == NIL {
+        errStr = "http_srv: no such cookie"   	
+    } 
+
+	return []RObject{cookieObj, String(errStr)}    
+}
+
 
 
 // contentLength r Request > Int 
@@ -537,6 +796,238 @@ func remoteAddr(th InterpreterThread, objects []RObject) []RObject {
 
 
 
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// Cookie functions
+
+// See golang.org/pkg/net/http/#Cookie for attribute meanings
+
+// name c Cookie > String
+//
+func cookieName(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.Name)}
+}
+
+
+// value c Cookie > String
+//
+func cookieValue(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.Value)}
+}
+
+
+// path c Cookie > String
+//
+func cookiePath(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.Path)}
+}
+
+
+// domain c Cookie > String
+//
+func cookieDomain(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.Domain)}
+}
+
+
+// expires c Cookie > Time 
+//
+func cookieExpires(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{RTime(cookie.Expires)}
+}
+
+
+// rawExpires c Cookie > String
+//
+func cookieRawExpires(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.RawExpires)}
+}
+
+
+// // maxAge=0 means no 'Max-Age' attribute specified.
+// // maxAge<0 means delete cookie now, equivalently 'Max-Age: 0'
+// // maxAge>0 means Max-Age attribute present and given in seconds
+// maxAge c Cookie > Int
+//
+func cookieMaxAge(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{Int(cookie.MaxAge)}
+}
+
+
+// secure c Cookie > Bool
+//
+func cookieSecure(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{Bool(cookie.Secure)}
+}
+
+
+// httpOnly c Cookie > Bool
+//
+func cookieHttpOnly(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{Bool(cookie.HttpOnly)}
+}
+
+
+// raw c Cookie > String      
+//
+func cookieRaw(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.Raw)}
+}
+
+
+// initString s String c Cookie > String  
+//
+func initStringFromCookie(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[1].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String(cookie.String())}
+}
+
+// setCookie c Cookie > String
+// """
+//  Return a proper header line for setting the cookie in an http response
+// """
+func cookieSetHeader(th InterpreterThread, objects []RObject) []RObject {
+	
+	wrapper := objects[0].(*GoWrapper)	
+	cookie := wrapper.GoObj.(*http.Cookie)
+		
+	return []RObject{String("Set-Cookie: " + cookie.String())}
+}
+
+// setCookie name String value String maxAge Int path String domain String > String
+// """
+//  Return a proper header line for a cookie in an http response.
+//  The maxAge is in seconds.
+//
+//  the returned string can be used in the HEADERS directive returned from a relish web dialog method. 
+//  This is most easily facilitated by using the header or headers methods of the http_srv package.
+//  Example:
+//  
+//     => headers 
+//           setCookie "SESS" "A1YJ243E2G6FSL8" 3600 "/" "example.com"
+//           NO_CACHE
+//        "foo.html"
+//        fooDialogArgs
+//
+//  If maxAge < 0, no max-age attribute is included in the cookie.
+//  If path is "", it is not included in the cookie, and the cookie works only for the exact path
+//  of the http request that the http response is for.
+//  If domain is "", it is not included in the cookie, and whatever domain is responding to the 
+//  request becomes the effective cookie domain on the client.
+//  
+//
+// """
+func cookieSetHeader2(th InterpreterThread, objects []RObject) []RObject {
+	name := string(objects[0].(String))
+	value := string(objects[1].(String))
+	maxAge := int(int64(objects[2].(Int)))
+	path := string(objects[3].(String))		
+	domain := string(objects[4].(String))			
+    
+	cookie := &http.Cookie{ Name: name,
+		                    Value: value,
+	                      }
+    if path != "" {
+    	cookie.Path = path
+    }
+    if domain != "" {
+       cookie.Domain = domain
+    }
+    if maxAge >= 0 {
+       cookie.MaxAge = maxAge
+	}
+	return []RObject{String("Set-Cookie: " + cookie.String())}
+}
+
+// header h1 String > String
+// """
+//  Return a HEADERS argument with one header.
+//  The result of this call can be returned as the first return-value of a relish web dialog method
+//  to set the header in the http response.
+// """
+func header(th InterpreterThread, objects []RObject) []RObject {
+	
+	h1 := string(objects[0].(String))	
+    h := `HEADERS
+%s
+`
+    h = fmt.Sprintf(h,h1)
+
+	return []RObject{String(h)}
+}
+
+
+// headers 
+//    h1 String 
+//    h2 String
+//    h3 String
+//    hN String
+// > 
+//    String
+// """
+//  Return a HEADERS argument with the specified header lines
+//  The result of this call can be returned as the first return-value of a relish web dialog method
+//  to set the headers in the http response.
+// """
+func headers(th InterpreterThread, objects []RObject) []RObject {
+	
+	h := "HEADERS\n"
+	for _,arg := range objects {
+	   h += "%s\n"
+	   hi := string(arg.(String))	
+       h = fmt.Sprintf(h,hi)
+    }
+
+	return []RObject{String(h)}
+}
+
+
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // Type init functions
 
@@ -547,7 +1038,9 @@ Construct and initialize an http_srv.UploadedFile object.
 func createUploadedFile(fh *multipart.FileHeader) (uf RObject, err error) {
    
     uf,err = RT.NewObject("shared.relish.pl2012/relish_lib/pkg/http_srv/UploadedFile")
-
+    if err != nil {
+    	return
+    }
     ufWrapper := uf.(*GoWrapper)
 
     uploadedFile := &UploadedFile{fh,nil}
@@ -558,5 +1051,19 @@ func createUploadedFile(fh *multipart.FileHeader) (uf RObject, err error) {
 }
 
 
+/*
+Construct and initialize an http_srv.Cookie object.
+*/
+func createCookie(cookie *http.Cookie) (cookieObj RObject, err error) {
+   
+    cookieObj,err = RT.NewObject("shared.relish.pl2012/relish_lib/pkg/http_srv/Cookie")
+    if err != nil {
+    	return
+    }
+    cookieWrapper := cookieObj.(*GoWrapper)
+    cookieWrapper.GoObj = cookie
+
+	return 
+}
 
 

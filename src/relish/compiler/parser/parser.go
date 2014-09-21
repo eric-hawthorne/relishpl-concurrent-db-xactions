@@ -145,6 +145,8 @@ type parser struct {
     // Probable cause of an error. Set speculatively. Used to create better error messages.
 	probableErrorCause string
 	probableCausePos token.Pos   // token position	
+
+  isPrivateCode bool  // Whether the source file is named ...private.rel indicating all code is package-private.
 }
 
 
@@ -165,6 +167,9 @@ func scannerMode(mode uint) uint {
 func (p *parser) init(fset *token.FileSet, filename string, src []byte, mode uint) {
 	p.file = fset.AddFile(filename, fset.Base(), len(src))
 	p.Scanner.Init(p.file, src, p, scannerMode(mode))
+
+
+  p.isPrivateCode = strings.HasSuffix(filename, "private.rel") 
 
 	p.mode = mode
 	p.trace = mode&Trace != 0 // for convenience (p.trace is used frequently)
@@ -4386,6 +4391,8 @@ Car
       attr2 = s
 
    TODO Have to handle __clan__ __clan_or_kin__ __kin__ __private__ sections within the type declaration.
+
+   TODO Note that __private__ shouldn't be able to occur in a type declaration inside a _private.rel source file.
 */
 func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
     if p.trace {
@@ -4393,27 +4400,64 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
     }	
 
     // parse
-    st := p.State()
+
+    // Based on whether we are in a _private.rel file, all attributes are private (or not) 
+    visibilityLevel := "public"  
+    if p.isPrivateCode {
+       visibilityLevel = "private"
+    }
 
     var attrs []*ast.AttributeDecl
 
     if p.BlanksAndIndent(col,true) {
-       if ! p.parseReadWriteAttributeDecl(&attrs,"public") {
-  	      return p.Fail(st)
-       }
+
+       // fmt.Printf("printBlanksAndIndent(%d)\n",col)
+       if p.parsePrivateSectionHeader() {
+          if visibilityLevel == "private" {
+             p.stop("__private__ declaration cannot occur in a source file or attributes-section that is already private.")    
+          }
+          visibilityLevel = "private"
+        } else {
+           requiredThing := "an attribute declaration or __private__ section declaration"
+           if visibilityLevel == "private" {
+               requiredThing = "an attribute declaration"
+           }
+           p.required(p.parseReadWriteAttributeDecl(&attrs,visibilityLevel),requiredThing)
+        }
     } else if p.BlanksAndMiniIndent(col, true) {
-       if ! (p.parseReadOnlyAttributeDecl(&attrs,"public") || p.parseWriteOnlyAttributeDecl(&attrs,"public")) {	
-	      return p.Fail(st)
-       }	
+       // fmt.Printf("printBlanksAndMiniIndent(%d)\n",col)      
+       requiredThing := "an attribute declaration or __private__ section declaration"
+       if visibilityLevel == "private" {
+           requiredThing = "an attribute declaration"
+       }      
+       p.required (p.parseReadOnlyAttributeDecl(&attrs,visibilityLevel) || p.parseWriteOnlyAttributeDecl(&attrs,visibilityLevel),
+                   requiredThing)	
     } else {
+      // fmt.Printf("parseTypeBody returning false : col=%d\n",col)       
 	    return false
     }
 
     for {
-	    if p.BlanksAndIndent(col, true) {
-	       p.required(p.parseReadWriteAttributeDecl(&attrs,"public"),"an attribute declaration")
+	     if p.BlanksAndIndent(col, true) {
+          if p.parsePrivateSectionHeader() {
+             if visibilityLevel == "private" {
+                p.stop("__private__ declaration cannot occur in a source file or attributes-section that is already private.")    
+             }
+             visibilityLevel = "private"
+          } else {
+             requiredThing := "an attribute declaration or __private__ section declaration"
+             if visibilityLevel == "private" {
+                 requiredThing = "an attribute declaration"
+             }
+             p.required(p.parseReadWriteAttributeDecl(&attrs,visibilityLevel),requiredThing)
+          }
 	    } else if p.BlanksAndMiniIndent(col, true) {
-	       p.required(p.parseReadOnlyAttributeDecl(&attrs,"public") || p.parseWriteOnlyAttributeDecl(&attrs,"public"),"an attribute declaration starting with < or >") 	
+         requiredThing := "an attribute declaration or __private__ section declaration"
+         if visibilityLevel == "private" {
+             requiredThing = "an attribute declaration"
+         }
+	       p.required(p.parseReadOnlyAttributeDecl(&attrs,visibilityLevel) || p.parseWriteOnlyAttributeDecl(&attrs,visibilityLevel),
+                    requiredThing) 	
 	    } else {
 		    break
 	    }	
@@ -4425,6 +4469,14 @@ func (p *parser) parseTypeBody(col int, typeDecl *ast.TypeDecl) bool {
 
     return true   
 }
+
+func (p *parser) parsePrivateSectionHeader() bool {
+    if p.trace {
+       defer un(trace(p, "PrivateSectionHeader"))
+    } 
+    return p.Match("__private__")   
+}
+
 
 /*
    attrName SomeType
@@ -4478,6 +4530,44 @@ func (p *parser) parseAttributeDecl(attrs *[]*ast.AttributeDecl, read, write boo
     }
 
 	attr := &ast.AttributeDecl{Name:attrName, Arity:aritySpec, Type:typeSpec}
+
+  //PublicReadable, PackageReadable, SubtypeReadable, PublicWriteable, PackageWriteable, SubtypeWriteable bool
+  // Reassignable, CollectionMutable, Mutable, DeeplyMutable                                               bool
+
+  // Note: the SubtypeWriteable designation may not make any sense. What could it mean given that types don't
+  // own methods? 
+  // That subtype initType methods and accessors and setters (even in other packages) can write to the attribute?
+
+  // Also, what does "not even package-writeable" mean? That you can init the value in a constructor but never
+  // change it after that?
+
+  attr.PackageReadable = true
+  attr.Reassignable = true
+  attr.CollectionMutable = true
+  attr.Mutable = true
+  attr.DeeplyMutable = true
+  
+  switch visibilityLevel {
+  case "public":
+    if read {
+       attr.PublicReadable = true
+    }
+    if write {
+       attr.PublicWriteable = true
+       attr.PackageWriteable = true       
+    }
+  case "private":
+    if write {
+       attr.PackageWriteable = true       
+    }
+  }
+
+
+
+
+
+
+
 	
 	// Here, we have to check whether the name occurs already in this type's attribute scope.
 	// If it does, there are legal and illegal ways that can happen.
@@ -5168,7 +5258,7 @@ func (p *parser) parseOneLineReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) boo
 
     var typeSpec *ast.TypeSpec
     // Should I allow maybe? Yes probably.
-    if ! p.parseTypeSpec(false, false,true, true, false, false, &typeSpec) {
+    if ! p.parseTypeSpec(false, true, true, true, false, false, &typeSpec) {
 	    return p.Fail(st)
     }
 
@@ -5366,11 +5456,31 @@ func (p *parser) parseRelationDeclaration(relDecls *[]*ast.RelationDecl) bool {
   // To decide this, we have to review how relations were to be represented in the DB.
   //
 
-
-
     end1Decl := &ast.AttributeDecl{Name:rel1EndName, Arity:arity1Spec, Type:type1Spec}
 
     end2Decl := &ast.AttributeDecl{Name:rel2EndName, Arity:arity2Spec, Type:type2Spec}
+
+    end1Decl.PackageReadable = true
+    end1Decl.PackageWriteable = true
+    end1Decl.Reassignable = true
+    end1Decl.CollectionMutable = true
+    end1Decl.Mutable = true
+    end1Decl.DeeplyMutable = true
+
+    end2Decl.PackageReadable = true
+    end2Decl.PackageWriteable = true
+    end2Decl.Reassignable = true
+    end2Decl.CollectionMutable = true
+    end2Decl.Mutable = true
+    end2Decl.DeeplyMutable = true    
+
+    if ! p.isPrivateCode {
+       end1Decl.PublicReadable = true
+       end1Decl.PublicWriteable = true
+
+       end2Decl.PublicReadable = true
+       end2Decl.PublicWriteable = true  
+    } 
 
     relDecl := &ast.RelationDecl{end1Decl, end2Decl}
 
@@ -5700,10 +5810,20 @@ func (p *parser) parseFile() *ast.File {
     
     for {
        if ! p.BlankLine() {
-          break	
+          break
        }
        if ! p.BlankLine() {
-         break	
+          st2 := p.State()
+          if p.Below(1) && p.LineComments() { 
+             // fmt.Println("continue 2")                 
+             continue 
+          } else {
+             // fmt.Printf(">%v<\n",p.Ch())                
+             // fmt.Println("break 2")    
+             // p.error(p.Pos(),"break 2")  
+             p.Fail(st2)          
+             break
+          }
        }
        if ! p.BlanksAndBelow(1,false) {
 	      break

@@ -22,13 +22,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <table>
 	<tr>
 	  <td>	
-        <a href="/"><img src="/relish_logo4_small.png"></a>
+        <a href="http://relish.pl"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+        <h1><a href="http://relish.pl">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
@@ -39,10 +39,10 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
     </tr>
   </table>
   </div>
-  <a id="artifacts_button" class="menubutton" href="/directory">
+  <a id="artifacts_button" class="menubutton" href="http://shared.relish.pl/directory">
 	Artifacts
   </a>
-  <a id="featured_button" class="menubutton" href="/featured">
+  <a id="featured_button" class="menubutton" href="http://shared.relish.pl/featured">
 	Featured
   </a>
   <a id="register_button" class="menubutton" href="/register">
@@ -74,6 +74,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 <p>
 <form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
     <fieldset>
+      <input type="hidden" name="o" id="o" value="{{.}}">    
       <input type="file" name="myfiles" id="myfiles" multiple="multiple">
       <input type="submit"  value="upload artifact files">
   </fieldset>
@@ -81,7 +82,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 </p>
 	<ul>
 		<li>If you upload your relish software artifact here, it will be published on this site, and become part of a searchable and browsable directory of relish software artifacts. As well, relish programs which import your artifact by name will be able to find, download, and link with your software artifact automatically.</li>
-		<li>If you publish your software artifact here, you, or the rightsholder if not you, retain copyright and all other rights to the software artifact, except the right to keep the artifact a trade secret. 
+		<li>If you publish your software artifact here, you, or the rightsholder if not you, retain copyright and all other rights to the software artifact, except the right to keep the artifact or any of its contents a trade secret. 
 		</li>  
 		<br/>
 		<li>BY THE ACT OF UPLOADING THE SOFTWARE ARTIFACT HERE, YOU ASSERT THAT YOU PERSONALLY (AND THE ORGANIZATION LISTED AS CODE ORIGINATOR, IF ANY) HAVE THE RIGHT TO PUBLISH THE SOFTWARE, OR ARE PROPERLY AUTHORIZED TO DO SO BY THE RIGHTSHOLDER. 
@@ -92,15 +93,26 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 </td>
 <td class="contentside">
 <div id="content_right">
+<!--
 	<h2>More info</h2>
 	<p>
 		Goes here.
 	</p>
-	
+-->
 </div>
 </td>
 </tr>
 </table>	
 </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-5', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>

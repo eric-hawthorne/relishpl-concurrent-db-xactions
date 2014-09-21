@@ -22,13 +22,13 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <table>
 	<tr>
 	  <td>	
-        <a href="/"><img src="/relish_logo4_small.png"></a>
+        <a href="http://relish.pl"><img src="/relish_logo4_small.png"></a>
       </td>
 	  <td>	
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+        <h1><a href="http://relish.pl">relish<span class="trademark">&#8482;</span></a></h1>
       </td>
 	  <td style="width: 4em">	
          &nbsp; &nbsp;
@@ -59,14 +59,18 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 	<p>
 		Copy the private-key base-64-encoded text block into the file
 		RELISH_RUNTIME_DIR/keys/private/origin__{{.originId}}__private_key.pem
-		where RELISH_RUNTIME_DIR is your relish installation's root directory (i.e. the .../relish directory) if you have a binary distribution of relish, or is the .../relish/rt directory if you have a relish source distribution.
+		where RELISH_RUNTIME_DIR is your relish installation's root directory (i.e. the .../relish directory) if you have a binary distribution of relish, or is the .../relish/rt directory if you have a relish source distribution.<br/>
+		<em>You will have to create keys and private directories first if they don't exist already.</em>
 	</p>
 	<p>
 		Copy the public-key base-64-encoded text block into the file
 		RELISH_RUNTIME_DIR/keys/public/origin__{{.originId}}__public_key.pem	
+		<br/>
+		<em>You will have to create keys and public directories first if they don't exist already.</em>
 </p>
-<p>
+<p><!--
 	If you are viewing this page on a smartphone and cannot update your relish installation directories currently, then you should log in to shared.relish.pl again once you get to a computer from which you can add files into your relish installation. When you log in again, you will be given the option to generate your code-signing keys.
+	-->
 </p>
 <form method="post" action="/generateKeysAction">
 	<input type="hidden" name="originId" value="{{.originId}}" />
@@ -82,23 +86,33 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
 </table>
 </form>
 
-	<h3>XYZ</h3>
-	<p>
-Lorum ipsum.	
-</p>
+<br/>
+<br/>
 
 </div>
 </td>
 <td class="contentside">
 <div id="content_right">
+<!--
 	<h2>Yada yada</b>?</h2>
 	<p>
-		Every day.
+		Lorem Ipsum
 	</p>
+	-->
 </div>
 </td>
 </tr>
 </table>	
 </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-5', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>

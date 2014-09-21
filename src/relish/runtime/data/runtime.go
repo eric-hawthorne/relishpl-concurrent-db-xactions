@@ -88,6 +88,10 @@ type RuntimeEnv struct {
 	// from fully qualified constant name to value.
 	constants map[string]RObject
 
+    // From name of private constant to package in which it is defined.
+    // TODO this should be removed and replaced with compile-time constant accessibility checking
+    privateConstantPackage map[string]*RPackage
+
     // The following is to make sure that objects in-transit in a channel
     // can be marked by the relish garbage collector.
     // The map contains objects which have been sent into a channel and not yet received.
@@ -121,7 +125,7 @@ type RuntimeEnv struct {
     // This keeps track of all multimethods which include the abstract method and implementing
     // methods of a trait method. The multimethods in this map are the same ones that are
     // owned by packages. 
-    // Whenever a new non-trait package is loaded, its non trait-abstract methods need to be checked
+    // Whenever a new non-trait package is loaded, its (public) non trait-abstract methods need to be checked
     // against these traitMultimethods, and if name and type-compatible, added to the trait-multimethod
     // here. A multi-method here needs to be cache-cleared if it is added to.
     //
@@ -167,16 +171,32 @@ func (rt *RuntimeEnv) DBT() DBT {
 
 
 func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
+/*
+Creates a new constant.
+If 
+*/
+func (rt *RuntimeEnv) CreateConstant(name string, value RObject, privateConstPackage *RPackage) (err error) {
 	if _, found := rt.constants[name]; found {
 		err = fmt.Errorf("Redefining constant '%s'", name)
 		return 
 	}
 	rt.constants[name] = value
+
+    if privateConstPackage != nil {
+    	rt.privateConstantPackage[name] = privateConstPackage
+    }
+
 	return
 }
 
-func (rt *RuntimeEnv) GetConstant(name string) (val RObject, found bool) {
+func (rt *RuntimeEnv) GetConstant(name string, fromPackage *RPackage) (val RObject, found bool, hidden bool) {
 	val, found = rt.constants[name]
+	// TODO The following should have been checked at compile time.
+	constPackage, constantIsPrivate := rt.privateConstantPackage[name]
+	if constantIsPrivate {
+       hidden = (constPackage != fromPackage)
+	}
+
 	return
 }
 
@@ -255,13 +275,14 @@ func NewRuntimeEnv() *RuntimeEnv {
 		PkgShortNameToName: make(map[string]string),   
 		PkgNameToShortName: make(map[string]string),		
 		TypeTupleTree: &TypeTupleTreeNode{},
-		TypeTupleTrees: make([]*TypeTupleTreeNode,20),
+		TypeTupleTrees: make([]*TypeTupleTreeNode,100),
 		objects:       make(map[int64]RObject),
 		objectIds:     make(map[RObject]uint64),
 		idGen:         NewIdGenerator(),
 		// attributes:    make(map[*AttributeSpec]map[RObject]RObject),
 		context:       make(map[string]RObject),
 		constants:     make(map[string]RObject),
+		privateConstantPackage:     make(map[string]*RPackage),		
 		inTransit:     make(map[RObject]uint32),
 	    ReflectedDataTypes: make(map[string]RObject),
 	    ReflectedAttributes: make(map[string]RObject),
@@ -319,7 +340,9 @@ that the object state is first restored from database before getting the attribu
 func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency1"))
 	th.AllowGC()
+	// fmt.Println("txOpsMutex.Lock() ing etc1")
     txOpsMutex.Lock()
+	// fmt.Println("txOpsMutex.Lock() ed etc1")    
     th.DisallowGC()
     defer txOpsMutex.Unlock()
 
@@ -342,12 +365,19 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
     	if th != nil && th.Transaction() != unit.transaction {
            tx := unit.transaction	
            txOpsMutex.Unlock()
+	       // fmt.Println("txOpsMutex.Unlock() etc1 diff xactions")
+
            th.AllowGC()
-           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+	       // fmt.Println("tx.RLock() ing etc1")           
+           tx.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+	       // fmt.Println("tx.Lock() ed etc1")            
            th.DisallowGC()
-           tx.mutex.RUnlock()
+           tx.RUnlock()
+	       // fmt.Println("tx.Unlock() etc1")            
            th.AllowGC()
+	       // fmt.Println("txOpsMutex.Lock() ing etc1 #2")           
            txOpsMutex.Lock()
+	       // fmt.Println("txOpsMutex.Lock() ed etc1 #2")            
            th.DisallowGC()
         }
         if unit.transaction == RolledBackTransaction || unit.IsLoadNeeded() {  // The object state has been rolled back.
@@ -362,9 +392,12 @@ func ensureMemoryTransactionConsistency1(th InterpreterThread, unit *runit) {
 	       }
         }
     } 
+
+	// fmt.Println("txOpsMutex.Unlock() etc1 end")    
 }
 
 func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err error) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency2"))	
     th.AllowGC()	
     txOpsMutex.Lock()
     th.DisallowGC()    
@@ -397,9 +430,9 @@ func ensureMemoryTransactionConsistency2(th InterpreterThread, unit *runit) (err
         tx := unit.transaction
         txOpsMutex.Unlock() 
         th.AllowGC()               
-        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.RLock()   // Wait for the transaction to commit or rollback.
         th.DisallowGC()
-        tx.mutex.RUnlock()
+        tx.RUnlock()
         th.AllowGC()         
         txOpsMutex.Lock()
         th.DisallowGC()        
@@ -426,6 +459,7 @@ Also makes sure that if the object state is invalid, due to a rolled back transa
 that the object state is first restored from database before getting the attribute value.
 */
 func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency3"))		
     th.AllowGC()   	
     txOpsMutex.Lock()
     th.DisallowGC()    
@@ -449,9 +483,9 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
            tx := coll.Transaction()	
            txOpsMutex.Unlock()
            th.AllowGC()            
-           tx.mutex.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
+           tx.RLock()  // Block til the transaction that the object is dirty in commits or rolls back.
            th.DisallowGC()            
-           tx.mutex.RUnlock()
+           tx.RUnlock()
            th.AllowGC()             
            txOpsMutex.Lock()
            th.DisallowGC()             
@@ -471,6 +505,7 @@ func ensureMemoryTransactionConsistency3(th InterpreterThread, coll RCollection)
 }
 
 func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection) (err error) {
+	defer Un(Trace(PERSIST_TR,"ensureMemoryTransactionConsistency4"))		
     th.AllowGC()  	
     txOpsMutex.Lock()
     th.DisallowGC()        
@@ -492,9 +527,9 @@ func ensureMemoryTransactionConsistency4(th InterpreterThread, coll RCollection)
         tx := coll.Transaction()
         txOpsMutex.Unlock()  
         th.AllowGC()              
-        tx.mutex.RLock()   // Wait for the transaction to commit or rollback.
+        tx.RLock()   // Wait for the transaction to commit or rollback.
         th.DisallowGC()         
-        tx.mutex.RUnlock()
+        tx.RUnlock()
         th.AllowGC()           
         txOpsMutex.Lock()
         th.DisallowGC()          
@@ -531,6 +566,15 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
 	
 
     t := obj.Type()
+
+    if ! attr.PublicReadable {
+    	if t.Package != th.Package() {
+	       panic(fmt.Sprintf("Attribute %s.%s is private; not readable outside of the package in which the attribute is declared.", obj, attr.Part.Name))		    		
+    	}
+    }
+
+
+
     i := attr.Index[t]
     var unit *runit
     var isUnit bool
@@ -541,7 +585,9 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
     }
 
     if obj.IsBeingStored() {
+       // fmt.Println("AttrValue - ensureMemoryTransactionConsistency1") 
        ensureMemoryTransactionConsistency1(th, unit)
+       // fmt.Println("done AttrValue - ensureMemoryTransactionConsistency1") 
     }
 
     val = unit.attrs[i]
@@ -552,7 +598,7 @@ func (rt *RuntimeEnv) AttrValue(th InterpreterThread, obj RObject, attr *Attribu
     }
 
     if (! checkPersistence) && (! allowNoValue) {
-	   panic(fmt.Sprintf("Error: attribute %s.%s has no value.", obj, attr.Part.Name))			
+	   panic(fmt.Sprintf("Attribute %s.%s has no value.", obj, attr.Part.Name))			
 	}    	
 
 	//Logln(PERSIST_,"AttrVal ! found in mem and strdlocally=",obj.IsStoredLocally())
@@ -713,6 +759,17 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
 	
 
     t := obj.Type()
+
+    if ! attr.PublicWriteable {
+    	if t.Package != th.Package() {
+    	   fmt.Println(t.Package)
+    	   fmt.Println(th.Package)
+	       err = fmt.Errorf("Attribute %s.%s is private; not settable outside of the package in which the attribute is declared.", obj, attr.Part.Name)
+	       return	    		
+    	}
+    }
+
+
     i := attr.Index[t]
 
     var unit *runit
@@ -744,7 +801,7 @@ func (rt *RuntimeEnv) SetAttr(th InterpreterThread, obj RObject, attr *Attribute
    unit.attrs[i] = val
 
 
-	if obj.IsStoredLocally() {
+	if obj.IsBeingStored() {
 		th.DBT().PersistSetAttr(th, obj, attr, val, found)
 	}
 
@@ -798,14 +855,31 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 	// Note: Need to put in a check here as to whether the collection accepts NIL elements, and
 	// if val == NIL, reject the addition.	
 
-	objColl, err := rt.EnsureMultiValuedAttributeCollection(obj, attr)
-	if err != nil {
-		return
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
+    // NOTE 2014 07 24 ! This does another ensureMemoryTransactionConsistency1 inside AttrVal! !!!
+    // Two transaction state checks? Why? Inefficient?
+    //
+    objColl, collectionFound := rt.AttrVal(th, obj, attr) 
+    if ! collectionFound {
+    	panic("There was supposed to be a collection value ensured as the value of the multi-valued attribute.")
 	}
+
+
+
+	// objColl, err := rt.EnsureMultiValuedAttributeCollection(obj, attr)
+	// if err != nil {
+	//	return
+	// }
+	// NOTE THE rt.Ensure... ABOVE CREATES A COLLECTION WHETHER THE ATTRIBUTE WAS collectionType = "" or not
+    // BUT IT DOES NOT RETRIEVE THE ATTRIBUTE FROM PERSISTENCE IF NOT FETCHED YET.!!!!!!
+    // And we need to do that.
+
 
 
 	addColl := objColl.(AddableMixin)     // Will throw an exception if collection type does not implement Add(..)
 	added, newLen := addColl.Add(val, context) // returns false if is a set and val is already a member.
+
+	// fmt.Println("AddToAttr (added, newLen)",added,newLen)
 
 	/* TODO figure out efficient persistence of collection updates
 	 */
@@ -813,7 +887,7 @@ func (rt *RuntimeEnv) AddToAttr(th InterpreterThread, obj RObject, attr *Attribu
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
 	if added {
-	    if obj.IsStoredLocally() {
+	    if obj.IsBeingStored() {
 			var insertIndex int
 			if objColl.(RCollection).IsSorting() {
 				orderedColl := objColl.(OrderedCollection)
@@ -858,7 +932,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if coll.IsStoredLocally() {
+    if coll.IsBeingStored() {
        ensureMemoryTransactionConsistency4(context.InterpThread(), coll)    	
     }	
 
@@ -873,7 +947,7 @@ func (rt *RuntimeEnv) AddToCollection(coll AddableCollection, val RObject, typeC
 	//fmt.Printf("IsStoredLocally=%v\n",obj.IsStoredLocally())
 
 	if added {
-	    if coll.IsStoredLocally() {
+	    if coll.IsBeingStored() {
 			var insertIndex int
 			if coll.IsSorting() {
 				orderedColl := coll.(OrderedCollection)
@@ -897,14 +971,14 @@ func (rt *RuntimeEnv) RemoveFromCollection(th InterpreterThread, collection Remo
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if collection.IsStoredLocally() {  	
+    if collection.IsBeingStored() {  	
        ensureMemoryTransactionConsistency4(th, collection)    	
     }	
 
 	removed, removedIndex := collection.Remove(val)
 	
 	if removed  {
-	   if removePersistent && collection.IsStoredLocally() {
+	   if removePersistent && collection.IsBeingStored() {
 	    	th.DBT().PersistRemoveFromCollection(collection, val, removedIndex)
 	   }
 	}
@@ -951,7 +1025,7 @@ func (rt *RuntimeEnv) ClearAttr(th InterpreterThread, obj RObject, attr *Attribu
 	collection := objColl.(RemovableMixin) // Will throw an exception if collection type does not implement ClearInMemory()
 	collection.ClearInMemory()	
 	
-	if obj.IsStoredLocally() {
+	if obj.IsBeingStored() {
 	   err = th.DBT().PersistClearAttr(obj, attr)
     }
 	return
@@ -972,7 +1046,7 @@ func (rt *RuntimeEnv) ClearCollection(th InterpreterThread, collection Removable
 
 	collection.ClearInMemory()	
 	
-	if collection.IsStoredLocally() {
+	if collection.IsBeingStored() {
 	   err = th.DBT().PersistClearCollection(collection)
     }
 	return
@@ -1070,13 +1144,13 @@ func (rt *RuntimeEnv) PutInMapTypeChecked(theMap Map, key RObject, val RObject, 
     // Note. This needs to be locked, so that the attribute setting only gets associated with one
     // transaction, and there is no race.
 
-    if theMap.IsStoredLocally() {   	
+    if theMap.IsBeingStored() {   	
        ensureMemoryTransactionConsistency4(context.InterpThread(), theMap)    	
     }	
 
     isNewKey,_ := theMap.Put(key, val, context)
 	
-	if theMap.IsStoredLocally() {
+	if theMap.IsBeingStored() {
 	   err = context.InterpThread().DBT().PersistMapPut(context.InterpThread(), theMap, key, val, isNewKey)  
     }
 	return
@@ -1284,14 +1358,12 @@ func (rt *RuntimeEnv) EnsureCollectionAttributeVal(th InterpreterThread, obj ROb
          orderAttr,  
          nil, // keyType *RType, 
          attr.Part.Type.ElementType())  
+    if err != nil {
+    	return
+    }
 	
 
     err = RT.SetAttr(th, obj, attr, collection, true, th.EvaluationContext(), false)
-    if err != nil {
-	   if ! ( strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") ) {
-	       panic(err)
-	   }
-    }
 
     return
 }
@@ -1636,6 +1708,8 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 	    // TODO WHOA WHOA WHOA  just because the collection wasn't there in mem doesn't mean the value shouldnt be removed
 	    // from the database representation of the multi-valued attribute association table does it????
 	    // Can this situation arise?
+        // OK OK, it looks like now that rt.AttrVal(...) will pull the collection into memory.
+
 
 		return
 	}
@@ -1655,11 +1729,15 @@ func (rt *RuntimeEnv) RemoveFromAttr(th InterpreterThread, obj RObject, attr *At
 
 
 
-   
+    // fmt.Println("collection.Remove(val)", removed, removedIndex)
 	
 	if removed  {
-	   if removePersistent && obj.IsStoredLocally() {
-	    	th.DBT().PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	   if removePersistent && obj.IsBeingStored() {
+            // fmt.Println("calling th.DB().PersistRemoveFromAttr(obj, attr, val, removedIndex)")	   	
+	    	err = th.DBT().PersistRemoveFromAttr(obj, attr, val, removedIndex)
+	    	if err != nil {
+	    		return
+	    	}
 	   }
 	
 	   if ! isInverse && attr.Inverse != nil {
@@ -1719,8 +1797,11 @@ func (rt *RuntimeEnv) UnsetAttr(th InterpreterThread, obj RObject, attr *Attribu
 
       unit.attrs[i] = nil
 
-       if removePersistent && obj.IsStoredLocally() {
+       if removePersistent && obj.IsBeingStored() {
 	          err = th.DBT().PersistRemoveAttr(obj, attr) 	 
+	          if err != nil {
+	          	 return
+	          } 
        }
        
 
@@ -1747,7 +1828,10 @@ func (rt *RuntimeEnv) RemoveAttrGeneral(th InterpreterThread, obj RObject, attr 
    return
 }
 
-
+/*
+Returns the object that has been given the specified name in the global context map.
+Returns *nil* if no object found in the global context map under the name.
+*/
 func (rt *RuntimeEnv) ContextGet(name string) RObject {
 	rt.contextMutex.RLock()
 	defer rt.contextMutex.RUnlock()
@@ -1816,7 +1900,6 @@ type RelEnd struct {
 
    OrderMethod *RMultiMethod
 
-   Protection string // "public" "protected" "package" "private"
    DependentPart bool // delete of parent results in delete of attribute value
 }
 */

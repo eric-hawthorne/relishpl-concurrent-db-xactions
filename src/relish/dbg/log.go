@@ -132,9 +132,13 @@ const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  INTERP__TR2 | INTERP2__ | ALWAYS_
 
-// const SOME_DEBUG_FLAGS =  WEB2__ | ALWAYS_
+// const SOME_DEBUG_FLAGS =  PERSIST__TR2 | WEB2__ | ALWAYS_
 
-// const SOME_DEBUG_FLAGS =  PARSE__ | ALWAYS_
+// Note: To get a trace of generated AST, also need to 
+// uncomment 
+// var parserDebugMode uint = parser.DeclarationErrors | parser.Trace
+// on line 218 of global_loader/code_load.go
+const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  GENERATE2__ | ALWAYS_
 

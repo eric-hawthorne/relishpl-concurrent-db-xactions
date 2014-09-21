@@ -39,19 +39,7 @@ motivating discussion or further explanation of each installation step.
    relish requires you to issue command-line commands to install it and to run relish programs.
    (On Mac, you can type 'terminal' into the Spotlight search to launch a terminal window.) 
 
-3. ( SKIP STEP 3. on Apple Mac. sqlite3 comes pre-installed with MACOSX 10.5+ ) 
-   
-   Install the sqlite3 database software on your machine if not already installed.
-   Unfortunately, this is not currently distributed with the relish binary distribution.
-   
-   aptitude show sqlite3
-   ...and if State: not installed...
-   sudo apt-get install sqlite3
-
-   works nicely on Ubuntu,
-   or equivalent package installation procedure on your linux distribution.
-
-4. Create your relish home directory.
+3. Create your relish home directory.
    You must CREATE this directory manually if you do not already have one. 
 
    It is strongly recommended that you stick to using either a direct subdirectory
@@ -64,17 +52,17 @@ motivating discussion or further explanation of each installation step.
 
    ~/relish will be used as an example in the discussion below.
    
-5. Extract the downloaded binary distribution tarball in the relish directory you
+4. Extract the downloaded binary distribution tarball in the relish directory you
    created, as described in the list of installation commands in the main DOWNLOAD page.
 
-6. As root, run the ./install.sh script in the relish directory. This will place
+5. As root, run the ./install.sh script in the relish directory. This will place
    links in /usr/local/bin to the relish command and other commands you need to develop
    and run relish programs. /usr/local/bin is already in your PATH, so after this,
    you are able to run the command: relish ... to run a relish program.
    If you prefer, you can append ~/relish/bin to your PATH
    environment variable in your ~/.bashrc or similar file, instead of running ./install.sh
 
-7. Try running your first relish program.
+6. Try running your first relish program.
    The "relish" command that you just finished installing is used to run programs,
    as well as for a number of different development utility purposes.
    
@@ -93,7 +81,7 @@ motivating discussion or further explanation of each installation step.
    ~/relish/shared/relish/replicas/shared.relish.pl2012/hello_application/
 
 
-8. If you want to download and install an upgrade of the relish binary distribution, 
+7. If you want to download and install an upgrade of the relish binary distribution, 
    -Obtain the new tarball file (e.g. relish_0.1.1.darwin_amd64.tar.gz) and place it in ~/relish
    -cd ~/relish
    -Move or remove the old ~/relish/pl directory   e.g. mv pl pl0.0.9

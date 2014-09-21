@@ -79,3 +79,7 @@ func WriteFile(filename string, data []byte, perm os.FileMode) error {
 func ReadFile(filename string) ([]byte, error) {
    return ioutil.ReadFile(filepath.FromSlash(filename))
 }
+
+func ToOsSpecificPath(filePath string) string {
+   return filepath.FromSlash(filePath)
+}

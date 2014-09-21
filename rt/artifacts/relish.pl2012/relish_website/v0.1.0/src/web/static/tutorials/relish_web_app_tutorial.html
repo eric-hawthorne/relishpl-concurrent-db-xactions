@@ -71,10 +71,11 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#Uploading" class="alt">File Uploading</a><br/>   
   <a href="#RequestObj">Request Headers</a><br/>     
   <a href="#VarArgs" class="alt">Variable # of Args</a><br/>     
+  <a href="#SettingCookies">Setting Cookies</a><br/>   
 </div>  
 <div id="content_manual">
 	<a name="BackgroundNeeded"><h3>Background Knowledge Needed to Use This Document</h3></a>
-	This is not a tutorial intended to teach beginning programmers how to create their first web application. This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Ruby on Rails, PHP, or ASP.NET. 
+	This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Scala, Node.js, Ruby on Rails, PHP, or ASP.NET. 
 
 
 
@@ -127,9 +128,24 @@ This runs the relish web app program. First, the "main" method in the main.rel f
 relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop
 </pre></code>	  
       instead. 
+<br/><br/>
+  <b><em>Note on running on the production web server port: 80 (or 443)</em></b><br/><br/>
+   For linux:<br/>
+  If you wish to run relish as a standalone web server on port 80 (or with the -tls 443 option to run a https web server) then
+  ordinarily you must run relish as the root user because listening on ports &lt; 1024 is a privileged operation. 
+  <b>However</b>, running a server as root is a bad idea, security-wise! <br/>
+  One workaround is the following:<br/>
+  <code>sudo setcap 'cap_net_bind_service=+ep' /opt/devel/relish/bin/relish</code><br/>
+  which will give the relish executable the capability to listen on ports &lt; 1024 even when relish
+  is run from a regular (non-root) user account.<br/>
+  There are other options, such as using an iptables prerouting rule to map a high port to port 80,
+  or, to run the relish web server behind an apache or nginx proxy.<br/> 
+  Not sure the best plan for MACOSX. You could just try<br/>
+  <code>sudo relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop</code> but the security risk then exists.
    </p>
 <p>
    To test your web app, point your web browser at localhost:8080, or simply localhost, if you did -web 80.
+ 
 </p>   
 
  <a name="DynamicPages"><h3>Making Web Pages Dynamic - Filling Page Content from the Program</h3></a>
@@ -613,15 +629,6 @@ image id String > String String String
 => "XML FILE" "mime/type" "some/file/path.xml"  // Note: file paths are relative to the dialog.rel's directory
 
 
-=> "MEDIA" "mime/type" dataAsStringType
-
-=> "MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
-
-// If the mime/type argument is missing, no Content-type: header is explicitly
-// set, and we are relying on the server and/or client to recognize the type of data
-// by applying data-stream type-guessing "magic".
-
-
 => "HTML" 
    """
 &lt;html>literal html text here&lt;/html>
@@ -641,9 +648,13 @@ image id String > String String String
 => "VIDEO FILE" ["mp4"] "some/file/path.mp4"
 
 
-=> "MEDIA" "mime/type" ObjectPossiblyToBeConverted
+=> "MEDIA" "mime/type" dataAsStringType
 
 => "MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
+
+// If the mime/type argument is missing, no Content-type: header is explicitly
+// set, and we are relying on the server and/or client to recognize the type of data
+// by applying data-stream type-guessing "magic".
 
 
 => "REDIRECT"  [code] urlString  // code is 301,302,303,or 307, default 303
@@ -698,7 +709,9 @@ Content-Disposition: attachment; filename="fname.png"
 		<em>Hint: If you make a change to an html template, to a css file, or to a dialog.rel file and you don't see a change when you reload the dynamic web page in your browser, the page may have been cached in the browser. The HEADERS Cache-control... technique eliminates that issue, or, if you want a real refresh while testing but caching in production, just use whatever means your browser has to clear the cache each time while testing.</em>
 	</p>	
 	<p>
-	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop
+	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should<br/><code>rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop</code><br/>
+     (when the web-app relish program is not running.)<br/><br/>
+     <em>rmdb is a shell script which your relish installation installed. It deletes the database of the specified relish artifact. Careful!</em>
    </p>
    
    
@@ -710,7 +723,7 @@ Imagine you write a web page to allow the web app user to upload a file to the s
 <code><pre>
 &lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
     &lt;fieldset>
-      &lt;input type="file" name="myfiles" id="myfile">
+      &lt;input type="file" name="myfile" id="myfile">
       &lt;input type="submit"  value="upload file">
   &lt;/fieldset>
 &lt;/form>
@@ -843,11 +856,11 @@ import
    http_srv
       
       
-myHandlerMethod request http_srv.Request otherFormInput1 String otherFormInput2 String > String String
+myHandlerMethod request http_srv.Request formInput1 String formInput2 String > String String
 </pre></code>
 Instead, it gives you an object representing the http request. You can apply methods to this object
 to obtain the http request headers that were set with the request. Here's the current list
-of header accessor methods available for http_src.Request objects:
+of header accessor methods available for http_srv.Request objects:
 <code><pre>
 // These methods are defined in the relish standard-library http_srv package:
    
@@ -874,16 +887,44 @@ uploadedFile r Request key String > f UploadedFile err String
 
 cookies r Request > c [] Cookie
 """
- NOT IMPLEMENTED YET
+ Returns a list of the cookies present in the http request.
 """
 
 
 cookie r Request key String > c Cookie err String
 """
- NOT IMPLEMENTED YET
+ Returns the cookie in the http request that has the particular cookie name.
+ The err return value is set to a message if no valid, unexpired 
+ cookie of that name is present in the request.
  """
  
  
+Cookie
+"""
+ An http cookie. Attributes accessible only through methods below.
+ See golang.org/pkg/net/http/#Cookie for cookie attribute meanings 
+"""
+
+name c Cookie > String
+value c Cookie > String
+path c Cookie > String
+domain c Cookie > String
+expires c Cookie > Time 
+rawExpires c Cookie > String
+
+// maxAge=0 means no 'Max-Age' attribute specified.
+// maxAge&lt;0 means delete cookie now, equivalently 'Max-Age: 0'
+// maxAge>0 means Max-Age attribute present and given in seconds
+maxAge c Cookie > Int
+secure c Cookie > Bool
+httpOnly c Cookie > Bool
+raw c Cookie > String      
+initString s String c Cookie > String
+"""
+ Return a string representation of the cookie's attributes.
+""" 
+
+
 requestUri r Request > String 
 """
  The entire request URL including arguments, unmodified i.e.
@@ -915,6 +956,10 @@ remoteAddr r Request > String
  The client address
  IP:port
 """
+
+
+ 
+
 
 </pre></code>
 </p>   
@@ -986,7 +1031,135 @@ args List. That is, args gets any arguments which are not matched to other metho
 <br/>
 
 
-</div>
 
+
+<a name="SettingCookies"><h3>Setting Cookies in an http Response</h3></a>   
+<p>
+The following cookie-setting methods are included in the http_srv package:
+<code><pre> 
+
+setCookie c Cookie > String    
+"""
+ Return a proper header line for setting the cookie in an http response.
+ Note: currently there is no way to construct a valid cookie except the
+ method variant below.
+ So this variant of the setCookie method is currently 
+ only for passing to the http response
+ a cookie received in the http request, unmodified.
+ TODO: Add Cookie constructor methods or attribute setter methods.
+"""
+
+
+setCookie name String value String maxAge Int path String domain String > String
+"""
+ Return a proper header line for setting the cookie in an http response.
+ See also the high-level methods below for shortcuts for session maintenance with 
+ a session cookie.
+"""
+
+
+// now some higher-level methods, specifically for login-session maintenance
+
+
+newSessionToken > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+
+
+sessionCookie sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+
+
+sessionCookieAndNoCache sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+
+
+session request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+
+
+// Usage of the preceding high-level web-app session-maintenance methods:
+//
+// import
+//    http_srv
+//
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+//    => newSessionHeaders
+//       "REDIRECT"
+//       cat "somePageYouMustBeLoggedInToView/" arg1 "/" arg2
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// somePageYouMustBeLoggedInToView 
+//    request http_srv.Request 
+//    arg1 String 
+//    arg2 Int 
+// > 
+//    String 
+//    String 
+//    Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+</pre></code> 
+</p>
+<br/>
+<br/>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>

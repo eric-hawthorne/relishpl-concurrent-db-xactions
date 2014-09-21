@@ -80,6 +80,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   <a href="#Relations">Relations</a><br/> 
   <a href="#Concurrency">Concurrency</a><br/> 
   <a href="#Packages">Packages</a><br/> 
+  <a href="#TraitPackages">Trait Packages</a><br/>   
   <a href="#SoftwareArtifacts">Software Artifacts</a><br/> 
 </div>  
 <div id="content_manual">
@@ -156,10 +157,23 @@ The reserved words may not be used as variable names, method names, or package n
     PI  E  MAX_WIDTH  LIMIT1  DIM1_SIZE 
     </code><br/><br/>
     Usage in context:<br/><br/>
-    <code>
-    PI = 3.1415926535<br/>
+    <code><pre>
+    PI = 3.1415926535
     DEFAULT_GREETING = "Hello, World!"
-    </code><br/>
+
+    ... assuming PI was declared in an artifact called usefulstuff.com2014/general_utility_lib
+    in a package called math then, in some other package in a different artifact:
+
+    import
+       usefulstuff.com2014/general_utility_lib/pkg/math
+
+
+    circleArea r Float > float
+    """
+     Returns the area of a circle of the given radius r.
+    """
+       => times 2 (times math.PI r)
+    </pre></code><br/>
     <p>
     	<b>Syntax:</b>
     </p>
@@ -172,7 +186,8 @@ Note: All single latin-1 capital letters except T denote constants. T,T1,... den
     Constants must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
     Constants are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
     the constant-defining package, and if the constant name has been package-qualified in that use, the constant is visible
-    in the package that imports the constant-defining package. <span class="future">However, if a constant is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    in the package that imports the constant-defining package. However, if a constant is defined in a source code file whose name 
+    follows the pattern  ..._private.rel, the constant is not visible outside the defining package.
     </p>
         <p>
     	<b>Semantics:</b>
@@ -207,7 +222,8 @@ Note that underscores are not permitted (since they are an alternative to camel-
     Data types must be defined at the top-level scope of a source code file. They cannot be defined within a method body.
     Type names are visible throughout the package in which they are defined. If their name is referred to inside a package that imports
     the type-defining package, and if the type name has been package-qualified in that use, the type is visible
-    in the package that imports the type-defining package. <span class="future">However, if a data type is defined within the __private__ section of a source code file, its name is never visible outside the defining package.</span>
+    in the package that imports the type-defining package. However, if a data type is defined within a source code file whose name 
+    follows the pattern  ..._private.rel, the type is not visible outside the defining package.
     </p>
         <p>
     	<b>Semantics:</b>
@@ -298,12 +314,12 @@ Callable &lt;: RelishPrimitive      Abstract supertype of all function types
 MultiMethod &lt;: Callable          A set of methods in a namespace that share the same name
 Method &lt;: Callable               An executable function implementation
 
-NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive             
+NonPrimitive &lt;: Any              Abstract supertype of any type which is not a RelishPrimitive</span>              
 Struct &lt;: Any                    Abstract supertype of programmer-defined structured object types
-Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map</span>
+Collection of T &lt;: Any           Abstract supertype of collection classes e.g. List Set Map
 List of T &lt;: Collection of T     Collection which maintains elements in a sequence
-<span class="future">Set of T &lt;: Collection of T      Collection which holds at most one of each value
-Map of T1 T2 &lt;: Collection of T1 Map from one data type to another</span> 
+Set of T &lt;: Collection of T      Collection which holds at most one of each value
+Map of T1 T2 &lt;: Collection of T1 Map from one data type to another
 
 InChannel &lt;: Any                 A channel which can be read from
 OutChannel &lt;: Any                A channel which can be written to
@@ -328,16 +344,16 @@ OwnedMutex &lt; Any                 A mutual-exclusion lock that is owned by the
 0600<br/>
 0xBadFace<br/>
 170141183460469231731687303715884105727<br/>  
-<span class="future">-42<br/>
+-42<br/>
 -0600<br/>
 -0xBadFace<br/>
--170141183460469231731687303715884105727<br/></span>
+-170141183460469231731687303715884105727<br/>
     </code><br/>
     Usage in context:<br/><br/>
     <code>
     a = 42<br/>
     color = 0xFFCADD<br/>
-    <span class="future">n = plus -42 260<br/></span>
+    n = plus -42 260<br/> 
     </code>
     <p>
 An integer literal is a sequence of digits representing an integer constant. An optional prefix sets a non-decimal base: 0 for octal, 0x or 0X for hexadecimal. In hexadecimal literals, letters a-f and A-F represent values 10 through 15. An optional negation prefix - (which if present must come before the non-decimal base prefix) negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0
@@ -357,20 +373,20 @@ An integer literal is a sequence of digits representing an integer constant. An 
 1E6
 .25
 .12345E+5
-<span class="future">-72.40
+-72.40
 -072.40  // == -72.40
 -2.71828
 -1.e+0
 -6.67428e-11
 -1E6
 -.25
--.12345E+5</span>
+-.12345E+5
 </pre></code>
     Usage in context:<br/><br/>
     <code>
     PI = 3.14159265357989<br/>
     r = 6.67428e-2<br/>
-    <span class="future">p = -1.7<br/></span>
+    p = -1.7<br/>
     </code>
     <p>
 A floating-point literal is a decimal representation of a floating-point constant. It has an integer part, a decimal point, a fractional part, and an exponent part. The integer and fractional part comprise decimal digits; the exponent part is an e or E followed by an optionally signed decimal exponent. One of the integer part or the fractional part may be elided; one of the decimal point or the exponent may be elided.  An optional negation prefix - negates the value represented by the sequence of digits. The negation prefix cannot appear in a literal whose value is 0.
@@ -399,12 +415,13 @@ So values that test false or act as false in boolean operator functions are:
 <pre>
 0
 0.
+0.0
 false
-[]T   // empty list of T
-<span class="future">{}T   // empty set of T
-{}T=>T1 // empty map</span>
-""   // empty string
-<span class="future">nil</span>
+[]T      // empty list of T
+{}T      // empty set of T
+{}T > T1 // empty map
+""       // empty string
+nil
 </pre>
 All other values of any data type test non-false, and act non-false in boolean operator functions.
 </p>
@@ -439,6 +456,19 @@ and turgidly melodramatic story,
 but I couldn't help myself. "Damn!", I said to myself,
 this is the end.
 """
+
+More raw strings:
+
+```I am an explanation\nof formatting. Backslashes are not escapes in a raw string.```
+
+   
+      ```
+"""
+Wow! an example of a relish multi-line raw string where the example itself
+is expressed as a multi-line raw string.
+"""```
+
+
 </pre></code>
     Usage in context:<br/>
 <code><pre>
@@ -464,29 +494,69 @@ stupid does.
 Strings in relish (currently) exhibit and behave much as string values do in Go, because their underlying implementation is a Go string. 
 </p>
 <p>
-A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and multi-line raw String literals.
+A String literal represents a String constant obtained from concatenating a sequence of characters. There are two forms: single-line interpreted String literals and (typically multi-line) raw String literals.
 </p>
 <p>
 Interpreted String literals are character sequences between double quotes "". The text between the quotes, which may not contain newlines, forms the value of the literal, with backslash escapes interpreted as they are in rune literals (except that \' is illegal and \" is legal), with the same restrictions. The three-digit octal (\nnn) and two-digit hexadecimal (\xnn) escapes represent individual bytes of the resulting string; all other escapes represent the (possibly multi-byte) UTF-8 encoding of individual characters. Thus inside a string literal \377 and \xFF represent a single byte of value 0xFF=255, while ÿ, \u00FF, \U000000FF and \xc3\xbf represent the two bytes 0xc3 0xbf of the UTF-8 encoding of character U+00FF.
 </p>
 <p>
-Multi-line raw String literals are character sequences between triple-doublequote delimiters. 
+Raw String literals are character sequences between triple-doublequote delimiters """, or between triple-backquote delimeters ```. 
 Within the delimiters, any character is legal. The value of a raw string literal is the string composed of the uninterpreted (implicitly UTF-8-encoded) characters between the delimiters; in particular, backslashes have no special meaning and the string may contain newlines. Carriage returns inside raw string literals are discarded from the raw string value.
 </p>
 <p>
 Because of the heavily indentation-dependent nature of relish source code, multi-line raw string literals are first introduced
-in their proper indented location, by a single """. 
-The actual raw string value begins at the beginning (file column 0) of the next line. 
-The raw string continues until the next (third) """, which must again occur at the beginning of a line of the source code file.
-So raw strings are always multi-line. Raw string literal values do not include the initial newline character, but do include the last newline character.
-The shortest possible multi-line raw string is 
+in their proper indented location, by a single """ or ``` opening string-delimiter.
+</p>
+<p>
+Here there is a subtle difference between """-delimited raw strings and ```-delimited raw strings:<br/>
+For a """ raw string, 
+the actual raw string value begins at the beginning (file column 1) of the next line. 
+The raw string continues until the next """, which must again occur at the beginning of a line of the source code file.
+So """-delimited raw strings are always multi-line. """ raw string literal values do not include the initial newline character, but do include the last newline character.
+An example raw string with """ delimiters is 
+<pre>
+   s = """
+Here is my raw string content
+which as you can see 
+can be multi-line.
+The string includes 
+the final newline after this line but not the first newline after the opening delimiter.
+"""
+</pre>
+
+The shortest possible raw string with """ delimiters is 
 <pre>
    s = """
 """
 </pre>
 Which is equivalent to the interpreted string literal "\n". 
 </p>
+<p>
+A ``` raw string obeys the following rules:<br/>
+1) The terminating ``` delimiter need not occur at the beginning of a line of the source code file.<br/>
+2) The string MAY start right after the ``` and need not include any newlines.
+<pre>
+   s = ```say "Woohoo"```
+</pre>
+If however the very first character after the opening ``` is a newline, then that newline is discarded from the raw string
+value, and the raw string starts at the beginning of the next line of the source code file. This form can be used
+if you need to represent relish code, with """ comments, as a raw string value. e.g.
+<pre>
+   exampleRawString = ```
+s = """
+Here is the inner string. 
+Maybe I am generating relish code as a string for some reason.
+"""
+```
+</pre>
+You can make a multi-line raw string with ``` delimiters that includes neither an initial nor a final newline character in the actual string value:
+<pre>
+   exampleRawString = ```
+I am multi-line content but I have no
+terminating newline included in my string value.```
+</pre>
 </p>
+
 <p>
 One peculiarity of Go strings is that their index operator returns a byte at the ith byte position, whereas the string is fundamentally supposed to be a 
 sequence of utf-8 encoded unicode codepoints. Each codepoint, utf-8 encoded, can occupy multiple bytes of the string. Also, disturbingly, the len function of a Go string returns the number of bytes, not the number of unicode codepoints in the string. I don't really like these split-personality
@@ -955,9 +1025,16 @@ opposites = {
 
 <h4>Map element selector expression</h4>
 <code><pre>
-a = aMap["Earth"] 
+a = aMap[! "Earth"]  // The ! is used if we know the key is in the map. 
+                     // There is only one return value: the value that the key maps to. 
 
-a = aMap[
+planet planetFound = aMap["Pluto"]  // In this case, two values are returned.
+                                    // The mapped value, if the key is found,
+                                    // and a Bool indicating whether the key was found.
+
+planetFound = aMap[? "Pluto"]  // Returns whether the key is in the map.                                    
+
+a = aMap[!
            expr
               like 
               this
@@ -1026,7 +1103,7 @@ a b c =
 
 obj1.obj2.obj3.a = 143.65
 
-myList[3].myMap["Joe Bloggs"].a[i] = "3155 Kent Street"
+myList[3].myMap[! "Joe Bloggs"].a[i] = "3155 Kent Street"
 
 coord[0].lat = 49.5
 
@@ -1101,6 +1178,8 @@ PI = 3.14159265357989
 E = 2.17  // or roughly anyway
 
 MAX_WIDTH = 1024
+
+INNER_PLANETS = ["Mercury" "Venus" "Earth" "Mars"]
     </pre></code>
 <p>
 <b>Syntax:</b>
@@ -1124,7 +1203,8 @@ A constant declaration can only appear at the top-level lexical scope in a sourc
 </p>
 <p>
 A constant can only be assigned a value once, at its declaration. The name then represents that value and can be used as the value in an expression.
-Constant names are exported from the package in which they occur <span class="future">unless they are declared within the __private__ section of a source code file, in which case they are only visible within the package.</span>
+Constant names are exported from the package in which they occur unless they are declared within a source code file whose name 
+    follows the pattern ..._private.rel, in which case they are only visible within the declaring package.
 </p>
 
 
@@ -1285,7 +1365,7 @@ for key val
    statement
    statement   
 
-for val in someList<span class="future">OrSet</span>
+for val in someListOrSet
    statement
    statement
 
@@ -1400,7 +1480,7 @@ IMPORTANT NOTE: The behaviour of "for" iteration over collections/maps which are
 <b>Syntax:</b>
 </p>
 <p>
-Method names have the same syntax as variable names, method-parameter names, structured-object attribute names<span class="future">, and relation-end names</span>. In relish, you must use contextual information (where they appear in the program, how they are juxtaposed with other program elements, and whether a variable or parameter or attribute <span class="future">or relation-end</span> name has been explicitly defined in the scope) to distinguish the two. <b>Aside on Language philosophy:</b> This conflation of the names of named values (e.g. variables, attributes) and the names of functions, which supply values, is deliberate. It promotes object-oriented data hiding, in that the syntax for getting and setting the values of object attributes is identical to the syntax for calling getter and setter methods. The syntax for calling a unary function of an object is also identical to the syntax for getting the value of an attribute of the object. Therefore, the implementor of the object's data type (class) is free to substitute a computed function for an explicitly stored attribute, or vice versa, without requiring change in code that uses the object.
+Method names have the same syntax as variable names, method-parameter names, structured-object attribute names, and relation-end names. In relish, you must use contextual information (where they appear in the program, how they are juxtaposed with other program elements, and whether a variable or parameter or attribute or relation-end name has been explicitly defined in the scope) to distinguish the two. <b>Aside on Language philosophy:</b> This conflation of the names of named values (e.g. variables, attributes) and the names of functions, which supply values, is deliberate. Once the language supports setter methods, getter methods, and unary functions in infix dot-notation, the language will promote object-oriented data hiding, in that <span class="future">the syntax for getting and setting the values of object attributes will be identical to the syntax for calling getter and setter methods. The syntax for calling a unary function of an object will also be identical to the syntax for getting the value of an attribute of the object. Therefore, the implementor of the object's data type (class) will be free to substitute a computed function for an explicitly stored attribute, or vice versa, without requiring change in code that uses the object.</span>
 </p>
 <p>
 A method call consists of the name of the method followed by zero or more argument expressions. There are three allowed spatial configurations of the arguments in the source code:
@@ -1527,28 +1607,29 @@ foo a Int b Int > Int
    => add a b
 
 
-divide a Int b Int > dividend Float err er.Error
+divide a Int b Int > dividend Float err String
 """
  Divides a by b. Returns an exception if b is zero.
  If one return argument is named, all must be named for consistency.
- <span class="future">If return arguments have been named, the return statement can
+ If return arguments have been named, the return statement can
  occur without any expressions after it, and will cause execution to
  return from the function immediately. return arguments should already
  have been assigned to by this time, or they default to the zero/nil value 
- of their type.</span>
+ of their type.
 """
    if eq b 0
-      err = Error "Divide by zero!"   <span class="future">=>  // Three spaces precede in-line return statement</span>
+      err = "Divide by zero!"  
+      => 
    dividend = div a b
 
 
 foo a Vehicle b Vehicle 
-> Bool er.Error
+> Bool String
 """
  This is a declaration of a method's interface, with no implementation.
- <span class="future">This is allowed, and results in a requirement that there exist 
+This is allowed, and results in a requirement that there exist 
  a method with an implementation to handle each possible subtype combination of the 
- input argument types.</span>
+ input argument types.
  This example was put here to show the variation in layout of the return values specification.
 """
 
@@ -1556,7 +1637,7 @@ foo a Vehicle b Vehicle
 divide a Int b Int 
 > 
    dividend Float 
-   err er.Error
+   err String
 """
  Divides a by b. Returns an exception if b is zero.
  Again, just an interface declaration with no method body statements, put here
@@ -1569,7 +1650,7 @@ divide
    b Int 
 > 
    dividend Float 
-   err er.Error
+   err String
 """
  Divides a by b. Returns an exception if b is zero.
  This example shows vertically indented input argument specifications.
@@ -1582,6 +1663,7 @@ divide
    => dividend
       nil
 
+
 stamp p Passport
 """
  Stamps the passport with an entry stamp.
@@ -1591,6 +1673,7 @@ stamp p Passport
    position p
    open p
    bangStamp p
+
 
 doTheHokeyPokey
 """
@@ -1642,7 +1725,7 @@ The method name can be followed by zero or more input parameter declarations. Ea
       Method body statements must be laid out, one below the other, indented one level (3 spaces) from the column position of the method name and header comment.
     </p>
     <p>
-       <span class="future">relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence (excluding assignment statements). Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements  (excluding assignments) in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
+       <span class="future">Under consideration (possibly with a relish -strict mode): relish forces the factoring of method complexity, by allowing a maximum of 9 statements in the method body statement sequence (excluding assignment statements). Nested constructs (ifs, loops) within that statement sequence can each also contain up to 9 statements  (excluding assignments) in each clause. Also to this end, relish imposes a limit of 9 required positional input parameters for a method, and a limit of 9 result values per method. The input parameter limit can be worked around in two ways; by using keyword-style parameters, and by declaring a variadic parameter which will collect additional method-call arguments into a list.</span>
     </p>
 
 <h4>"Return" statements</h4>
@@ -1674,24 +1757,16 @@ with a type only), then the following form of return statement must be used:
   </pre></code>
 A method which specifies names for its return arguments cannot use the form of return statement that has arguments.
 Instead, if a return value is to be set, the return argument must be assigned to within the 
-subroutine body. Named return values which are not assigned to default to the nil/zero-value of the data type. 
+subroutine body. Named return values which are not assigned-to default to the nil/zero-value of the data type. 
 Note that this zero-value defaulting ONLY works for named return args.
 
-  <span class="future">If you want to specify an early return from a subroutine with named return args or no return args, 
-you should use the =&gt; statement with no arguments. In this case only, the =&gt; statement may
-appear on the same line as the end of the previous statement, separated from it by 3 spaces.</span>
+If you want to specify an early return from a subroutine with named return args or no return args, 
+you should use the =&gt; statement with no arguments.
     <code><pre>
-<span class="future">
-   if weNeedToGetOutOfThisMethod
-      doSomeFinalCleanup arg   =>  // ...and exit
-   moreMethodStuff here
-
-   // or...
-
    if weReallyNeedToGetOutOfThisMethod
       doSomeFinalCleanup arg  
       =>  // ...and exit
-   moreMethodStuff here</span> 
+   moreMethodStuff here
  </pre></code>
 <br/>
 
@@ -2246,6 +2321,17 @@ dbg val Any
 """
 
 
+incomplete val Any > err String
+"""
+ Returns an empty String "" if the object is fully initialized (all its required attributes have
+ been assigned a value), and the object is fully connected (it is related to other objects within
+ the bounds of the cardinality constraints of all relations declared between the object's 
+ type and supertypes and other types.)
+ Returns an appropriate error message otherwise, detailing which attribute(s) or relation(s)
+ of the object are unsatisfied.
+"""
+
+
 sendEmail 
    smtpServerAddr String 
    from String 
@@ -2462,19 +2548,19 @@ More built-in methods, concerned with data persistence, are listed in the next s
 <code><pre>
 // Persistence built-in methods
 
-dub obj Struct name String
+dub obj NonPrimitive name String
 """
  Gives the object the specified unique canonical name in the local database,
  and persists the object and all objects in the network of the object's attributes,
  and their attributes, and so on.
  Throws a runtime error if the name is already in use as a canonical object name
  in the local database.
- <em>Currently it appears it is possible to dub an object with several names
+ <em>Currently it is possible to dub an object with several names
  in several separate uses of dub. <span class="future">Not sure if this will continue to be allowed.</span></em>
 """   
 
 
-summon name String > obj Struct
+summon name String > obj NonPrimitive
 """
  Fetches from the local database the object identified by the specified canonical name.
  Throws a runtime error if there is no object of that name in the local database.
@@ -2482,7 +2568,7 @@ summon name String > obj Struct
  upon first subsequent request for the attribute value in the program.
  All summoned and also indirectly fetched or fetched-by-query persistent objects are 
  placed in an in-memory cache so that there is only one in-memory instance of each 
- persistent object. <span class="future">This will likely be generalized in future to 
+ persistent object. <span class="future">This may be generalized in future to 
  support transaction-local mem-caches.</span>
 """
 
@@ -2658,15 +2744,21 @@ of a relish program.
 <li>The first is to summon the object by its official canonical name.</li>
 <li> The second is to follow the chain of reference from a retrieved persisted object, to find associated objects. You just use ordinary object attribute accessing notation in the programming language to do this (e.g. car.owner) and the associated object is automatically fetched into memory from the database.</li>
 <li>The third retrieval method is to construct a list of the type of object you want e.g. cars = []Car but to include a String argument after the []Car list constructor. The argument String should contain SQL selection criteria (i.e. the tests that occur in a WHERE clause) and can also have a SQL order by clause.
-  Currently, the selection criteria expressions are limited to those involving the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory. This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><em>IMPORTANT NOTE: There is a performance distinction in SELECT-style object retrieval: If the list element-type has subtypes,the fetch from the database is polymorphic, meaning that instances of objects of different subtypes of the list element-type may need to be retrieved. Each element may have a different specific data type. Therefore, n+1 database queries are done; one to fetch the list of object ids, and n to fetch the attributes of each of the n objects. If on the other hand you ask to retrieve by query a list whose element-type is a most-specific data type with no subtypes, the whole list of objects can be fetched from the database using one SQL join query.</em> 
+  Currently, the selection criteria expressions are limited to those involving:
+  <ul>
+  <li>the immediate primitive-valued attributes of the data type whose object instances are to be selected and retrieved into memory, ( e.g. for an object type that has b and c primitive attributes: <code>b = 2 and c > 4</code> ) or </li>
+  <li>the primitive-valued attributes of an object that is an immediate attribute or relation of the target object. ( e.g. for an object type that has an attribute "employer" and a relation "partner": <code>partner.experience > 2 and employer.name ='IBM'</code> ).   That is, (implicit) single-joins are usable in the WHERE criteria, by using dot-notation to access attributes of the joined associated type.</li>
+  </ul>
+ <br/>
+  This form of list construction expression will result in a list of those Cars which meet the SQL selection criteria, ordered as per the SQL order by clause.<br/><br/><em>IMPORTANT NOTE: There is a performance distinction in SELECT-style object retrieval: If the list element-type has subtypes,the fetch from the database is polymorphic, meaning that instances of objects of different subtypes of the list element-type may need to be retrieved. Each element may have a different specific data type. Therefore, n+1 database queries are done; one to fetch the list of object ids, and n to fetch the attributes of each of the n objects. If on the other hand you ask to retrieve by query a list whose element-type is a most-specific data type with no subtypes, the whole list of objects can be fetched from the database using one SQL join query.</em> 
   </li>
 </ul>
 </p>
 <p>
-  Currently, only a structured object can be dubbed with an official name to make it persistent.<br/>
-  To persist primitive values, you must make them an attribute of a structured object type and persist an object instance.<br/>
+  Currently, only a structured object (an object whose type is declared and specifies attributes), or a list, set, or map collection, can be dubbed with an official name to make it persistent.<br/>
+  To persist primitive values, you must make them an attribute of a structured object type and persist an object instance, or make them the elements of a collection and persist the collection.<br/>
   Note that a structured object can have multi-valued attributes, and these are effectively collections which
-  are persisted along with the object. In fact, the only way to persist collections (in the current version of relish) is to define a structured object type with one or more multi-valued attributes declared. The following example structured object type illustrates these points:
+  are persisted along with the object. So a collection can be dubbed directly with a name, and be independent, or it can be an attribute of a persisted struct object. This second case is illustrated in the example below. To persist a group of collections, a structured object type with several multi-valued attributes is declared: 
   </p>
 <code><pre>
 Company
@@ -2707,8 +2799,9 @@ doThingsToPersistentObjects rootObjName String > err String
 </p>
 <p>
    In a transparent-persistence programming language, each persistent data object has both an in-memory aspect 
-   and a stored-in-database aspect. <em>It is fair to say that not all issues implicit in rolling back a transaction that 
-   involves such dual-aspect objects have been handled yet at the current version of relish. Specifically, the in-memory attribute values of any persistent objects modified during the transaction can no longer be relied on in the program, and should be properly invalidated. TBD</em>
+   and a stored-in-database aspect. When a transaction rolls back, relish invalidates the state of objects whose attributes or relations were modified in the scope of that transaction. When in subsequent code, a value of an attribute or relation of the object is accessed, the object's state will be refreshed from the (pre-transaction-state-of-the) database transparently.
+
+   <em>Transactional memory (synchronized with database transactions) is a very complex topic though, particularly in the presence of concurrency, so all wrinkles may not be worked out yet.</em>
 </p>
 <p>
    <span class="future">A variant of the</span></p><code><pre><span class="future">
@@ -2821,9 +2914,13 @@ Car
 
    wheels 3 4 Wheel  // A set of 3 or 4 Wheels
 
-   bucketSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 bucket seats
+   cupHolders 0 N CupHolder  // A set of 0 to any number of cup-holders
 
-   cupHolders {} CupHolder  // A set of an undetermined nuber of cup-holders
+   frontSeats 2 2 [] BucketSeat  // An ordered list of exactly 2 seats
+
+   bumperStickers {} BumperSticker  // A set of bumper stickers 
+                                    // - the Set-collection is independent of the car object
+
   
 </pre></code><br/>
 
@@ -2879,9 +2976,15 @@ Both the data type name and the header comment must begin at column 1 of the sou
 <p>
 	  A multi-valued attribute may be declared by specifying:  
 	<ul>
-		<li>a cardinality specification ( e.g. <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated onjects/values,</li>
-		<li>a List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
-		<li>or both. If the List/Set specifier is omitted, it defaults to Set. If [] or {} is present but cardinality constraints are missing, cardinality can be zero or more.</li>
+		<li>a cardinality specification ( e.g. <b>0 N</b> or <b>0 1</b> or <b>0 2</b> or <b>3 4</b> or <b>4</b> or <b>1</b> or <b>N</b> ) specifying the allowed number/range of numbers of associated objects/values,</li>
+		<li>an optional List or Set specifier ( <b>[]</b> or <b>{}</b> ) specifying whether the collection of attribute objects/values will be held in a list (an ordered, indexable collection that may contain an object/value multiple times), or a set (an unordered collection that contains each object/value only once.)</li>
+		 If the List/Set specifier is omitted, it defaults to Set.</li>
+  </ul>
+</p>
+<p>
+A single-valued attribute whose type is a collection:
+<ul>
+    <li> If [] or {} is present but cardinality constraints are missing, as in the bumperStickers attribute example above, it is NOT CONSIDERED to be a multi-valued attribute, but rather a single-valued attribute whose type is a collection. This distinction matters in a number of subtle ways.<br/> Firstly, if you assign a Set of BumperStickers to be the value of this attribute of the car, then the self-same set-collection is just referred to by the car object attribute. So if you had another reference to the set and added a member to it, the car.bumperStickers would refer to the enlarged set of bumperstickers. On the other hand, a multi-valued attribute, like the frontSeats or cupHolders examples above, is implemented by a hidden collection that is owned by and managed by the car object. If you WERE to take an independent set of CupHolders, and assign it to the car.cupHolders attribute, your original collection would not be used as the car's attribute. Rather, all its members would be added into the car's managed collection of cupholders.<br/>Another distinction is that the persistence representation is different. A multi-valued attribute has no independent persistent object to represent the collection. Rather, a relation table is set up where id0 is the owning object (the car) and id1 is the part. Multiple rows of this table represent the multi-valued attribute in the database. A single-valued attribute, whose type is a collection, will be represented in persistent store as a relation-table entry with id0 = the car and id1 = the Set object. Another relation table will have id0 = the Set object, and id1 each member of the set. So you can see that single valued, collection-typed attributes refer to an independent collection, that can be referred to by other objects as well. Multi-valued attributes are owned exclusively by the "whole" object, and the managed-collection cannot be referred to by other persistent objects. <span class="future">In future, the distinction may matter even more, as persistent-deep-deletion semantics may be different for multi-part attribute values (when persistence-deleting the "whole" object), compared to the semantics for collection-typed single-value attributes.</span> </li>
    </ul>		
 </p>
 
@@ -2912,22 +3015,14 @@ The relationship between a data type and its supertypes is an is-a relationship.
 	</dd>
 <dt>A data type's structure of attributes</dt> 
 	<dd>Some  but not all datatypes are defined to have a structure, comprising a list of attributes. Each attribute is either a primitive-type value (such as a Numeric, String, or Bool), a collection of primitive-type values, a reference to a structured object, or a collection of references to structured objects. The attributes can be viewed as the components/parts of the structured object being defined by the data type.<br/>
-<span class="future">Attributes which refer to a structured object can be defined to be optional or required. An optional attribute is allowed to be a nil reference. A required attribute (the default) is not.</span><br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+  Attributes which refer to a structured object can be defined to be optional or required. An optional attribute e.g. <code>hat ?Hat</code> is allowed to be a nil reference. A required attribute (the default e.g. <code>hat Hat</code> ) is not.<br/>Philosophically, an object's attributes can be considered special cases of the object's specified behaviour. <span class="future">This view is encouraged by relish, which provides identical syntax for getting and setting attribute values and for calling unary methods or setter functions on an object.</span></dd>
+<!--
 <dt><span class="future">A data type's type-invariant predicate</span></dt>
-	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd>
-<dt><span class="future">The "valid" test</span></dt>
-	<dd><span class="future">
-		relish has a built-in method called "valid" which accepts any object/value as its argument, and returns a boolean status and a String error message. The "valid" function returns true, and an empty error String if the object/value it is passed is currently a valid, fully constructed, and fully-connected instance of its data type. If the object is not currently valid, the valid function returns false and an error message stipulating the general type of invalidity. The valid method checks validity of the object with respect to its datatype and all supertypes of that type. The valid method invokes the type-invariant predicate of all types in the object's type lattice which define an <b>invariant</b> method.
-		<br/>
-		<br/>
-		When an object is invalid, the valid method will return false and one of the following error messages: 
-		<br/>
-		<br/>
-		"MISSING REQUIRED RELATION - relationName - TYPE full/type/Name"<br/>
-		"RELATION CARDINALITY VIOLATION - relationName - TYPE full/type/Name "<br/>
-		"MISSING REQUIRED ATTRIBUTE - attributeName - TYPE full/type/Name"<br/>
-		"TYPE INVARIANT CONDITION VIOLATED - TYPE full/type/Name"<br/>
-	</span></dd>
+	<dd><span class="future">Each data type can have an optional Boolean function, known as its type-invariant predicate, that describes a condition that is always true of a valid instance of the type. The invariant predicate is created by declaring a method named <b>invariant</b> in the package that declares the data type, where the invariant method is declared to accept a single input parameter of the data type, and to return Bool. The <b>invariant</b> method can be called directly in a relish program, but it is also used by the built-in <b>valid</b> method described below. The invariant method should assume and should not test proper relation-connectedness of the object and proper attribute slot filling in the object, and should test for required internal constraints beyond that. TODO Need to figure out whether and how the invariant function should explicitly invoke invariant methods of all of the type's direct supertypes. Probably it should not. The <b>valid</b> function will do that for it.</dd> -->
+<dt>The "incomplete" test</dt>
+	<dd>
+		relish has a built-in method called "incomplete" which accepts any object/value as its argument, and returns a String error message. The "incomplete" function returns an empty error String if the object/value it is passed is currently a fully constructed, and fully-connected instance of its data type. If the object is not fully initialized, or is not fully connected, according to its type's (and supertypes') declared relation cardinality constraints, the "incomplete" function returns an error message stipulating which required attribute is missing or which relationship is missing or not related with cardinality as specified in the relation declarations. The "incomplete" method checks validity of the object with respect to its datatype and all supertypes of that type. 
+</dd>
 	
 </dl>
 
@@ -2936,7 +3031,7 @@ The relationship between a data type and its supertypes is an is-a relationship.
 
 
 <p>
-  NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.
+  <em>NOTE: The issue of how to deal with a data type that has multiple supertypes that each define the same attribute has not been dealt with yet in relish. For now, avoid this situation when defining your datatypes or bad things are likely to happen. It is probable that an attribute name-aliasing mechanism such as Eiffel's will be used to resolve this, but that will complicate the persistence-mapping and object-fetch-query code, so it may take a while for the capability to arrive.</em>
 </p>
 
 <br/>
@@ -3140,11 +3235,15 @@ A set of relation declarations in relish is equivalent to an Entity-Relation-Dia
 	Two data types can be related in several different ways to each other. So the same pair of data types can appear together in multiple relation declarations, so long as the relation-end names are different in the different relation declarations. 
 </p>
 <p>
-As explained in the "Semantics of Data Types" section of this manual, relish can check objects with a "valid" method which among other things, checks that the object is currently related to the right number of other objects of the right type via the right relations.
+As explained in the "Semantics of Data Types" section of this manual, a relish programmer can check objects with a built-in "incomplete" method  checks that the object is currently related to the right number of other objects of the right type via all declared relations involving the object's type and supertypes.
 </p>
 <p>
 	The other benefit that relish relations convey is that they ensure that if a relation with an object b is established from the point of view of one object a, that the inverse relation is simultaneously established. The a object will be able to access the b object via the A type's implicit attribute name for the relation. But the b object will also be able to access the a object via the B type's implicit attribute name for the relation. Relish relations are always bi-directionally accessible in this manner. 
 </p>
+<p>
+The attribute names (relation-end names) which are declared implicitly or explicitly in a relation declaration are exported from the package in which they occur unless the relation is declared within a source code file whose name 
+    follows the pattern ..._private.rel, in which case they are only visible within the declaring package.
+  </p>
 <p>
 	<b>Etymology:</b> Language and runtime-environment support for relations as first-class, primitive concepts is what gives "relish" its name. That and that it is hoped that after the initial learning curve, programmers will "enjoy greatly" how quickly they can get down to focussing on their domain problems and solutions (and not focussing on low-level data-structure and persistence mechanics) when programming in this language.
 </p>
@@ -3392,7 +3491,138 @@ import
 	The package we are importing is called phys_obj/gravity and it will be known just as gravity when referred to
 	in this source code file. As in gravity.G 
 	</p>
+  <p>
+  When referring to a package from a different artifact in an import line, "/pkg/" is used to separate the name of the 
+  foreign artifact from the pathname of the package within that artifact.
+  </p>
+<p>
+  <b>Semantics:</b>
+</p>  
+<p>
+  Packages support organization of large bodies of code into modules. They force the module-coupling structure of the program to be declared explicitly in the form of package-import statements. Code in one package (module) cannot use code defined
+  in another package without importing the other package using an import statement at the top of the using code's source file.
+  </p>
+
+  <p>
+    <em><b>Package-private</b></em>: By default, all symbols (data types and their attributes, constants, relations, and methods) declared in a package are visible
+    in another package that imports the first package. However, some symbols (data types, or selected attributes of datatypes, constants, relations, and methods) in the first package can be restricted in visibility so they are only visible within their own package. This is called package-private code.
+    There are two ways of declaring symbols to be package-private. The first way is that any symbols defined (declared) in a source code file whose name is <em>somename</em>_private.rel are package-private and not visible outside the package. Secondly, some of the attributes of a publicly exported data type can be declared to be package-private. This is done as shown in the following example:
+  <code><pre>
+  Sleeve
+  """
+   A sleeve of a garment.
+  """
+    colour Colour
+    arm Arm
+    __private__
+    card PlayingCard
+    length Int  
+  </pre></code>  
+  </p>  
+  <p>
+    A data type can only have one __private__ section which applies to all attributes declared below the __private__ header.
+  </p>
+
 <br/>
+
+
+
+  <a name="TraitPackages"><h3>Trait Packages</h3></a>
+<code><pre>
+origin   elvisoft.com2012
+artifact general_utility_lib  
+package  debuggable_trait
+  
+
+debug obj Any > String
+"""
+ Return a representation of the state of the object, suitable for helping with debugging.
+"""
+
+</pre></code>
+<p>
+  <b>Syntax:</b>
+</p>
+<p>
+Any package which is named <em>somename</em>_trait can contain trait abstract methods, such as the debug
+method shown above.
+</p>
+<p>
+  <b>Semantics:</b>
+</p>
+<p>
+Traits are a programming language construct which allow the specification of abstract behaviour
+(via specifying abstract method signatures), and allow the mixing of that behavour into the capabilities
+of data objects. 
+
+If you are unfamiliar with traits as a programming language concept, you may wish to read about traits 
+in the Scala programming language, or refresh your knowledge of interfaces in Java or Go, 
+</p>
+<p>
+Trait abstract methods, which have no method-body statements defined, have the following special property in relish:<br/>
+The best-matching method implementation in the entire program will be run if a trait package is imported
+and the trait abstract method is invoked. The implementing method's package need not be imported.
+Once again with a few more details: 
+Any method with the same name (e.g. "debug") that is defined anywhere in any package of any 
+artifact in the running relish program, and whose parameter signature is compatible with 
+(same types as or subtypes of) the parameter types of the trait abstract method is implicitly
+an implementor of the trait abstract method EVEN IF THE PACKAGE of the implementing method
+is NOT IMPORTED into the package that wants to use the debug method.
+</p>
+<p>
+As long as the debug-using package imports the debuggable_trait package, then it can
+call a debug method, and the multi-method dispatch mechanism of relish will select the
+most appropriate implementing method, based on the types of the argument(s) to the trait
+method.
+</p>
+<p>
+Trait packages, with trait abstract methods, are essentially the equivalent of interfaces in 
+other programming languages such as Java or Go, or are like traits in languages like Scala.
+The difference is that the trait being added is the whole trait package worth of abstract methods,
+and a trait is added (to an importing package) by importing the ..._trait package. 
+Unlike in Scala, Java, or Go, a trait in relish need not define a data type; it can just specify a set of
+methods that can be expected to be available. That is, the trait can just add new abstract behaviours 
+to existing types or tuples of types. A trait in relish IS a whole package, however, so optionally,
+you can define a data type or data types within the trait package, use those general types in the signatures of your trait methods,
+and have your other more concrete data types in other packages inherit from the type you defined in a trait package.
+</p>
+<p>
+In relish, trait methods are used to allow co-dependency among two or more other packages, 
+by going through a common interface package which is imported by both (all) of the inter-dependent packages.
+Since the implementor methods of trait methods need not be imported by the trait method user,
+dependency loops are avoided. This is the same as the programming pattern in Java or Go of importing and using interfaces
+to avoid package dependency loops.
+</p>
+<p>
+_trait packages (as with Scala traits but not Java/Go interfaces) can also contain non-abstract methods (which can of course call the trait abstract methods). So snippets of concrete behaviour can be mixed in by importing a trait package, as well as abstract behaviour method-interfaces.<br/>
+When defining a _trait package, you SHOULD avoid importing other non-trait packages and using their methods
+and types in the trait package. This will ensure that your trait remains very general (and importable by any package without
+causing package reference loops.) This guideline is not enforced. You could create a ridiculously specific
+and dependent _trait package if you wished.
+</p>
+<p>
+A security mechanism is being considered but not yet implemented for traits. It would have it that
+by default only methods defined in the same artifact as the _trait package can be an implementor of
+a trait abstract method. A program-global security configuration file could then allow other
+artifacts and packages (or patterns thereof) to add implementing methods to the trait abstract method.
+<b>CAUTION</b>: Right now, any artifact you import can behind the scenes add implementor methods to any
+trait abstract method in your program, and change the behaviour of your existing packages that call the trait method. 
+Watch out. Make sure you know and trust the code of the artifacts you import.
+</p>
+<br/>
+
+
+
+
+
+
+
+
+
+
+
+
+
   <a name="SoftwareArtifacts"><h3>Software Artifacts</h3></a>
 <p>
 relish code must be organized into coherent units called relish software artifacts. The software artifact, consisting of its metadata file and one or more packages, is the unit of code that
@@ -3422,6 +3652,15 @@ the domain name. Third-level or fourth-level domain names may be used. e.g. gene
 	relish insists on this discipline of software organization to ensure that relish software artifacts and packages are globally interoperable, and will remain so over long software lifecycles. The mandatory code organization conventions are used as the basis for a version-sensitive Internet code fetching and loading system. The relish code fetching and loading system should allow a relish program to find and load its dependencies, in the proper version required, automatically over the Internet, provided the external packages are named fully (as in origin/artifact/pkg/path/to/package) in the import section of dependent code.
 	</p>
 </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
 
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
 </body>
 </html>

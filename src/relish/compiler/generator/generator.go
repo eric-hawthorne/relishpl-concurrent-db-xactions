@@ -24,11 +24,13 @@ import (
 // The parser structure holds the parser's internal state.
 type Generator struct {
 	files map[*ast.File]string  // map from ast filenode to filename root without .rel or .rlc suffix
+	astFiles map[string]*ast.File
 	Interp *interp.Interpreter
 	th *interp.Thread
 	packageName string // Full name of origin, artifact, and package
 	packagePath string // Full name of origin, artifact, and package, ending in a /
 	pkg *data.RPackage // the current package which this file is being generated into
+	currentFile *ast.File  // Set temporarily for reporting errors.
 }
 
 func NewGenerator(files map[*ast.File]string) *Generator {
@@ -41,7 +43,11 @@ func NewGenerator(files map[*ast.File]string) *Generator {
 		packagePath = packageName + "/"
 		break
 	}
-	return &Generator{files,interpreter,thread,packageName,packagePath,nil}
+	astFiles := make(map[string]*ast.File)
+	for file,fileNameRoot := range files {
+       astFiles[fileNameRoot] = file
+	}	
+	return &Generator{files,astFiles,interpreter,thread,packageName,packagePath,nil,nil}
 }
 
 /*
@@ -126,6 +132,7 @@ declared even in indirect dependency packages of any of the packages explicitly 
 */
 func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 	for file := range g.files {
+		g.SetCodeFile(file)
 		imports := file.RelishImports  // package specifications
 		for _,importedPackageSpec := range imports {		
 			dependencyPackageName := importedPackageSpec.OriginAndArtifactName + "/pkg/" + importedPackageSpec.PackageName
@@ -134,7 +141,7 @@ func (g *Generator) updatePackageDependenciesAndMultiMethodMap() {
 	           var dependencyPackageExists bool	
 			   dependencyPackage, dependencyPackageExists = data.RT.Packages[dependencyPackageName]
 			   if ! dependencyPackageExists {
-	              rterr.Stopf("Package %s imported in file %s is an incorrectly defined native extension package.",dependencyPackageName,g.files[file])
+	              rterr.Stopf1(g, importedPackageSpec,"Imported package %s is an incorrectly defined native extension package.",dependencyPackageName)
                }
 
 			   g.pkg.Dependencies[dependencyPackageName] = dependencyPackage
@@ -306,6 +313,15 @@ func (g *Generator) qualifyTypeName(typeName string) string {
    */
 }
 
+// Implement CodeFileLocated interface for error reporting
+
+func (g *Generator) SetCodeFile(f *ast.File) {
+   g.currentFile = f
+}
+
+func (g *Generator) CodeFile() *ast.File {
+   return g.currentFile
+}
 
 
 /*
@@ -335,11 +351,15 @@ type CollectionTypeSpec struct {
 	OrderFunc   string
 }
 */
-func (g *Generator) ensureTypeName(typeSpec *ast.TypeSpec, fileNameRoot string) string {
+func (g *Generator) ensureTypeName(typeSpec *ast.TypeSpec) string {
 	
    typ, err := g.Interp.EnsureType(g.packagePath, typeSpec) 
    if err != nil {
-	  rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())	   	
+	  // rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())	
+	  rterr.Stop1(g, typeSpec, err)
+   }
+   if typ.IsPrivate && typ.Package != g.pkg {
+	  rterr.Stopf1(g, typeSpec, "Type %s is private to its package. Not visible.", typ.Name)	   	   
    }
    return typ.Name
 
@@ -420,6 +440,7 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
 	// Collect all type declarations from all files into a map by full type name
     //
 	for file, fileRoot := range g.files { 
+		g.SetCodeFile(file)
 		for _,typeDeclaration := range file.TypeDecls {
 		   // egh Nov 12, 12	
 		   //typeName := g.packagePath + typeDeclaration.Spec.Name.Name		
@@ -427,7 +448,7 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
 		   if allTypeDecls[typeName] != nil {
 			  slashPos := strings.LastIndex(typeName, "/")
 			  typeLocalName := typeName[slashPos+1:]
-		   	  rterr.Stopf("Type '%s' declaration in file %s.rel is 2nd declaration of this type found in package.",typeLocalName,fileRoot)
+		   	  rterr.Stopf1(g, typeDeclaration, "Type '%s' declaration is 2nd declaration of this type found in package.",typeLocalName)
 		   }
            allTypeDecls[typeName] = typeDeclaration
            typeDeclFile[typeName] = fileRoot
@@ -453,10 +474,10 @@ func (g *Generator) generateTypesWithoutAttributes(allTypeDecls map[string]*ast.
    If the parent types are not already generated and are in this package, recurse to generate the parent type before finishing generating this one.
 */
 func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclaration *ast.TypeDecl, allTypeDecls map[string]*ast.TypeDecl, types map[*data.RType]bool, typesBeingGenerated map[string]bool, typeDeclFile map[string]string) {
-       
+   g.SetCodeFile(g.astFiles[typeDeclFile[typeName]])       
    _,found := typesBeingGenerated[typeName]
    if found {
-	  rterr.Stopf("Type '%s' declaration in file %s.rel is involved in a type inheritance loop!",typeDeclaration.Spec.Name.Name,typeDeclFile[typeName])
+	  rterr.Stopf1(g, typeDeclaration, "Type '%s' declaration is involved in a type inheritance loop!",typeDeclaration.Spec.Name.Name)
    }
    typesBeingGenerated[typeName] = true
 
@@ -471,8 +492,12 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
 
       parentTypeName := g.qualifyTypeName(parentTypeSpec.Name.Name)
 	  
-	  _, parentFound := data.RT.Types[parentTypeName]
-	  if ! parentFound {
+	  parentType, parentFound := data.RT.Types[parentTypeName]
+	  if parentFound {
+         if parentType.IsPrivate && parentType.Package != g.pkg {       	
+	        rterr.Stopf1(g, typeDeclaration, "Error creating type %s: Supertype %s is private (visible only inside its package).", typeName, parentTypeName)         	
+         }
+	  } else {
 	  	 parentTypeDecl, parentDeclaredInPackage := allTypeDecls[parentTypeName]
 	  	 if parentDeclaredInPackage {
             g.generateTypeWithoutAttributes(parentTypeName, parentTypeDecl, allTypeDecls, types, typesBeingGenerated, typeDeclFile)    
@@ -487,13 +512,18 @@ func (g *Generator) generateTypeWithoutAttributes(typeName string, typeDeclarati
 	
    theNewType, err := data.RT.CreateType(typeName, typeShortName, parentTypeNames)
    if err != nil {
-
-      sourceFilename := typeDeclFile[typeName] + ".rel"
-	  rterr.Stopf("Error creating type %s (%s): %s", typeName, sourceFilename, err.Error())
+	  rterr.Stopf1(g, typeDeclaration,"Error creating type %s: %s", typeName, err.Error())
    }	
+
    if ! theNewType.Less(data.CollectionType) {
    	  theNewType.IsStruct = true
    }   
+
+   theNewType.Package = g.pkg  
+
+   if strings.HasSuffix(typeDeclFile[typeName], "private") {
+   	  theNewType.IsPrivate = true
+   }
 
    types[theNewType] = true	 // record that this is one of the new RTypes we generated !
 
@@ -510,7 +540,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
     for theNewType := range types {
        typeName := theNewType.Name
        typeDeclaration := allTypeDecls[typeName]
-       sourceFilename := typeDeclFile[typeName] + ".rel"
+       g.SetCodeFile(g.astFiles[typeDeclFile[typeName]])       
 
 	   for _,attrDecl := range typeDeclaration.Attributes {
 		  var minCard int32 = 1
@@ -584,7 +614,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           if multiValuedAttribute {
           	  if attrDecl.Type.Name ==  nil {
                    if attrDecl.Type.Params[0].Name == nil {
-		              rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, "A Multi-valued attribute (with arity specification) must have a simple type, not a collection of collections.")          	
+		              rterr.Stopf1(g, attrDecl, "Error creating attribute %s.%s: %s", typeName, attributeName, "A Multi-valued attribute (with arity specification) must have a simple type, not a collection of collections.")          	
                    } else {
                      attributeTypeName = g.qualifyTypeName(attrDecl.Type.Params[0].Name.Name)                  	   
                    }
@@ -592,7 +622,7 @@ func (g *Generator) generateAttributes(allTypeDecls map[string]*ast.TypeDecl, ty
           	  	   attributeTypeName = g.qualifyTypeName(attrDecl.Type.Name.Name)
           	  }
           } else {
-              attributeTypeName = g.ensureTypeName(attrDecl.Type, sourceFilename)
+              attributeTypeName = g.ensureTypeName(attrDecl.Type)
           }
           
 /*"vector"
@@ -605,8 +635,7 @@ RelEnd
 */
 
          
-
-	      _,err := data.RT.CreateAttribute(typeName,
+	      attr,err := data.RT.CreateAttribute(typeName,
 									 	 attributeTypeName,
 										 attributeName,
 										 minCard,
@@ -617,9 +646,22 @@ RelEnd
 										 false,
 										 false,
 										 false,
-										 orderings)
+										 orderings,
+										 attrDecl.PublicReadable,
+										 attrDecl.PackageReadable,
+										 attrDecl.SubtypeReadable,
+										 attrDecl.PublicWriteable,
+										 attrDecl.PackageWriteable,
+										 attrDecl.SubtypeWriteable,
+										 attrDecl.Reassignable,
+										 attrDecl.CollectionMutable,
+										 attrDecl.Mutable,
+										 attrDecl.DeeplyMutable)
 		   if err != nil {
-		      rterr.Stopf("Error creating attribute %s.%s (%s): %s", typeName, attributeName, sourceFilename, err.Error())
+		      rterr.Stopf1(g, attrDecl, "Error creating attribute %s.%s (%s): %s", typeName, attributeName, err.Error())
+		   }
+		   if attr.Part.Type.IsPrivate && g.pkg != attr.Part.Type.Package {
+		      rterr.Stopf1(g, attrDecl, "Error creating attribute %s.%s (%s): Type %s is private and not visible in this package.", typeName, attributeName, attributeTypeName)		   	
 		   }
         }
     }
@@ -724,16 +766,24 @@ func (g *Generator) ensureAttributeAndRelationTables(types map[*data.RType]bool)
 }
 
 /*
-TODO Need to add the constraint that the method is public here !!!!
+Method is mapped to a url
 */
 func (g *Generator) isWebDialogHandlerMethod(fileNameRoot string) bool {
 	return strings.HasSuffix(fileNameRoot,"dialog") && strings.Contains(g.packagePath,"/pkg/web/")
 }
 
+/*
+The file is defining package-private code (types, methods, or constants)
+*/
+func (g *Generator) isPrivateCodeFile(fileNameRoot string) bool {
+	return strings.HasSuffix(fileNameRoot,"private")
+}
 
 func (g *Generator) generateMethods() {
 	
 	for file, fileNameRoot := range g.files {	
+		g.SetCodeFile(file)
+		privateCode := g.isPrivateCodeFile(fileNameRoot)
 		for _,methodDeclaration := range file.MethodDecls {
 
 		   methodName := methodDeclaration.Name.Name
@@ -772,19 +822,19 @@ func (g *Generator) generateMethods() {
 			  if inputArgDecl.IsVariadic {
                  if inputArgDecl.Type.CollectionSpec.Kind == token.LIST { 
 			         variadicParameterName = inputArgDecl.Name.Name
-			         variadicParameterType = g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+			         variadicParameterType = g.ensureTypeName(inputArgDecl.Type)
 //			         variadicParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot) ???
 			
 			
 	              } else { // inputArgDecl.Type..CollectionSpec.Kind == token.MAP				
 				     wildcardKeywordsParameterName = inputArgDecl.Name.Name
-				     wildcardKeywordsParameterType = g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
+				     wildcardKeywordsParameterType = g.ensureTypeName(inputArgDecl.Type)
 //				     wildcardKeywordsParameterType = g.qualifyTypeName(inputArgDecl.Type.Name.Name)  // g.ensureTypeName(inputArgDecl.Type, fileNameRoot)
 
 			      }
 			  } else {
 			     parameterNames = append(parameterNames, inputArgDecl.Name.Name)
-			     parameterTypes = append(parameterTypes, g.ensureTypeName(inputArgDecl.Type, fileNameRoot))
+			     parameterTypes = append(parameterTypes, g.ensureTypeName(inputArgDecl.Type))
 		      }
 		   }	   
 	
@@ -792,7 +842,7 @@ func (g *Generator) generateMethods() {
                if returnArgDecl.Name != nil {
                	  returnArgsAreNamed = true
                }
-			   returnValTypes = append(returnValTypes, g.ensureTypeName(returnArgDecl.Type, fileNameRoot))               
+			   returnValTypes = append(returnValTypes, g.ensureTypeName(returnArgDecl.Type))               
 		   }
 
            var rMethod *data.RMethod
@@ -832,12 +882,13 @@ func (g *Generator) generateMethods() {
 				                                   returnArgsAreNamed,
 				                                   methodDeclaration.NumLocalVars,
                                                    isTraitAbstractMethod,
-				                                   allowRedefinition  )
+				                                   allowRedefinition,
+				                                   ! privateCode  )
 		   }
 		
 		   if err != nil {
 		       // panic(err)
-			   rterr.Stopf("Error creating method %s (%s): %s", methodName, fileNameRoot +".rel", err.Error())	
+			   rterr.Stopf1(g, methodDeclaration, "Error creating method %s: %s", methodName, err.Error())	
 		   }
 	
 	       rMethod.Code = methodDeclaration // abstract syntax tree	
@@ -863,16 +914,27 @@ func (g *Generator) qualifyConstName(constName string) string {
 
 
 func (g *Generator) generateConstants () {
+	var privateConstPackage *data.RPackage
 	for file, fileNameRoot := range g.files {	
+		g.SetCodeFile(file)	
+
+		privateCode := g.isPrivateCodeFile(fileNameRoot)
+		if privateCode {
+		   privateConstPackage = g.pkg
+		} else {
+			privateConstPackage = nil
+		}
 		for _,constDeclaration := range file.ConstantDecls {
 		
 		   constantName := g.qualifyConstName(constDeclaration.Name.Name)
 		   g.Interp.EvalExpr(g.th,constDeclaration.Value)
 		   obj := g.th.Pop()
-		   err := data.RT.CreateConstant(constantName,obj)
+
+
+		   err := data.RT.CreateConstant(constantName,obj, privateConstPackage)
 		   if err != nil {
 		       // panic(err)
-			   rterr.Stopf("Error in file %s: %s", fileNameRoot +".rel", err.Error())	
+			   rterr.Stop1(g, constDeclaration, err.Error())	
 		   }	
 	    }	
     }
@@ -895,7 +957,8 @@ that db tables exist for these.
 */
 func (g *Generator) generateRelations(types map[*data.RType]bool, orderings map[string]*data.AttributeSpec) {
 
-	for file, fileNameRoot := range g.files {
+	for file := range g.files {
+		g.SetCodeFile(file)
 		for _,relationDeclaration := range file.RelationDecls {
 		
 	       end1 := relationDeclaration.End1
@@ -1008,13 +1071,39 @@ func (g *Generator) generateRelations(types map[*data.RType]bool, orderings map[
 											orderFuncOrAttrName2,
 											isAscending2,	
 											false,
-											orderings) 
-
+											orderings,
+										    end1.PublicReadable,
+										    end1.PackageReadable,
+										    end1.SubtypeReadable,
+										    end1.PublicWriteable,
+										    end1.PackageWriteable,
+										    end1.SubtypeWriteable,
+										    end1.Reassignable,
+										    end1.CollectionMutable,
+										    end1.Mutable,
+										    end1.DeeplyMutable,
+										    end2.PublicReadable,
+										    end2.PackageReadable,
+										    end2.SubtypeReadable,
+										    end2.PublicWriteable,
+										    end2.PackageWriteable,
+										    end2.SubtypeWriteable,
+										    end2.Reassignable,
+										    end2.CollectionMutable,
+										    end2.Mutable,
+										    end2.DeeplyMutable)
 
 
 	       if err != nil {
 	           // panic(err)
-			   rterr.Stopf("Error creating relation %s %s -- %s %s (%s): %s", typeName1, attributeName1, attributeName2, typeName2, fileNameRoot +".rel", err.Error())	
+			   rterr.Stopf1(g, relationDeclaration, "Error creating relation %s %s -- %s %s: %s", typeName1, attributeName1, attributeName2, typeName2, err.Error())	
+	       }
+
+		   if type1.IsPrivate && g.pkg != type1.Package {
+		      rterr.Stopf1(g, relationDeclaration, "Error creating relation %s %s -- %s %s: Type %s is private and not visible in this package.", typeName1, attributeName1, attributeName2, typeName2, typeName1)		   	
+		   }
+		   if type2.IsPrivate && g.pkg != type2.Package {
+		      rterr.Stopf1(g, relationDeclaration, "Error creating attribute %s.%s (%s): Type %s is private and not visible in this package.", typeName1, attributeName1, attributeName2, typeName2, typeName2)		   	
 	       }
 
 	       types[type1] = true	

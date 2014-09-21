@@ -659,6 +659,9 @@ func (S *Scanner) BlanksAndBelow(col int, lineCommentsAllowed bool) bool {
 		return S.Fail(st)
 	}
 
+	if S.ch == -1 { // EOF
+		return S.Fail(st)
+	}
 	return true
 }
 

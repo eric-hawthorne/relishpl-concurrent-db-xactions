@@ -1103,7 +1103,7 @@ TODO Better error reporting
 */
 func (db *SqliteDBThread)  Delete(obj RObject) (err error) {
 
-    if ! obj.IsStoredLocally() {
+    if ! obj.IsBeingStored() {
     	return
     }
 
@@ -1361,11 +1361,10 @@ func (db *SqliteDBThread) fetch1(query string, arg interface{}, radius int, errS
 	err = selectStmt.Query(arg)
     if err != nil {
     	if err == io.EOF {
-		   panic(fmt.Sprintf("No object found in database with %s.", errSuffix)) 		
-        } else {
+		   err = fmt.Errorf("No object found in database with %s.", errSuffix)		
+        }
            return
         }
-    }
 
 	var id int64
 	var id2 int64
@@ -2039,6 +2038,38 @@ func convertAttrVal(valByteSlice []byte, attr *AttributeSpec, val *RObject) (non
 }
 
 
+var extraTimeZones map[string]string = map[string]string{  
+	"pst" : "America/Vancouver",
+	"pdt" : "America/Vancouver",
+	"mst" : "America/Calgary",
+	"mdt" : "America/Calgary",	
+	"cst" : "America/Winnipeg",
+	"cdt" : "America/Winnipeg",
+	"est" : "America/Toronto",
+	"edt" : "America/Toronto",	
+	"ast" : "America/Halifax",
+	"adt" : "America/Halifax",			
+}
+
+/*
+Kludge to get around that on some platforms, common short timezone names are unknown.
+Seem to be getting this on Mac OS X 10.9.4 all of a sudden.
+Should move this to a util/time_util package.
+*/
+func LoadLocation(locationName string) (location *time.Location, err error) {
+
+	location, err = time.LoadLocation(locationName)
+	if err != nil {
+       name := strings.ToLower(locationName)
+       var locationFound bool
+       locationName, locationFound = extraTimeZones[name]
+       if locationFound {
+       	  location, err = time.LoadLocation(locationName)
+       }
+	}		
+    return
+}
+
 /*
 Convert the byte slice which was returned as a column-value of a databse result row into
 a primitive-type RObject. Sets the val argument to the new RObject.
@@ -2061,7 +2092,7 @@ func convertAttrValTwoFields(valByteSlice []byte, valByteSlice2 []byte, attr *At
 			if err != nil {
 				panic(errors.New("attr " + attr.Part.Name + " as Time: " + err.Error()))
 			}
-			location, err := time.LoadLocation(locationName)
+			location, err := LoadLocation(locationName)
 			if err != nil {
 				panic(errors.New("attr " + attr.Part.Name + " time.Location: " + err.Error()))
 			}			
@@ -2198,7 +2229,7 @@ func convertValTwoFields(valByteSlice []byte, valByteSlice2 []byte, typ *RType, 
 			if err != nil {
 				panic(errors.New(errPrefix + " as Time: " + err.Error()))
 			}
-			location, err := time.LoadLocation(locationName)
+			location, err := LoadLocation(locationName)
 			if err != nil {
 				panic(errors.New(errPrefix + " time.Location: " + err.Error()))
 			}			
