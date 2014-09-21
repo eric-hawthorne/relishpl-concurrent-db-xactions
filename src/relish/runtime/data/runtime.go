@@ -170,7 +170,6 @@ func (rt *RuntimeEnv) DBT() DBT {
 }
 
 
-func (rt *RuntimeEnv) CreateConstant(name string, value RObject) (err error) {
 /*
 Creates a new constant.
 If 

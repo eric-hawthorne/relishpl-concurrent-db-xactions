@@ -138,7 +138,7 @@ const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
 // uncomment 
 // var parserDebugMode uint = parser.DeclarationErrors | parser.Trace
 // on line 218 of global_loader/code_load.go
-const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | ALWAYS_
+// const SOME_DEBUG_FLAGS =  AST__ | PARSE__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =  GENERATE2__ | ALWAYS_
 

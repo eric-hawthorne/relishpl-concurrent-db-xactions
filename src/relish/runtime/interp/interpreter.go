@@ -251,7 +251,7 @@ func (t *Thread) CommitOrRollback() {
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
 
-	      err := t.DB().RollbackTransaction()
+	      err := t.DBT().RollbackTransaction()
 	      if err != nil {
 	         Logln(ALWAYS_,err.Error())
           }
