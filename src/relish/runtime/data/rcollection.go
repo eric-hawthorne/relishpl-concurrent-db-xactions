@@ -18,6 +18,7 @@ import (
 	"errors"
 	"time"
 	"sync"
+	"strings"
 )
 
 const MAX_CARDINALITY = 999999999999999999 // Replace with highest int64?
@@ -787,7 +788,13 @@ func (s *rsortedset) At(th InterpreterThread, i int) RObject {
 func vectorAtErrHandle(i int, v *RVector) {
       r := recover()	
       if r != nil {
-          panic(fmt.Sprintf("Error: index [%d] is out of range. Sorted set length is %d.",i,v.Len()))
+          s, isString := r.(string)
+          if isString { 
+             if strings.HasPrefix(s, "Error fetching") {
+             	panic(s)
+             }
+          }
+          panic(fmt.Sprintf("Error: index [%d] is out of range. Collection length is %d.",i,v.Len()))
       }	
 }	
 

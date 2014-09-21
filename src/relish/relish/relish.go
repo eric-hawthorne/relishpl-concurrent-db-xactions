@@ -100,6 +100,7 @@ var reVersion *regexp.Regexp = regexp.MustCompile("([0-9]+\\.[0-9]+\\.[0-9]+)")
 func main() {
     var loggingLevel int
     var webListeningPort int
+    var tlsWebListeningPort int    
     var shareListeningPort int  // port on which source code will be shared by http    
     var sharedCodeOnly bool  // do not use local artifacts - only those in shared directory.
     var explorerListeningPort int // port on which data explorer_api web service will be served.   
@@ -114,6 +115,8 @@ func main() {
     //var fset = token.NewFileSet()
 	  flag.IntVar(&loggingLevel, "log", 0, "The logging level: 0 is least verbose, 2 most")	
 	  flag.IntVar(&webListeningPort, "web", 0, "The http listening port - if not supplied, does not listen for http requests")
+    flag.IntVar(&tlsWebListeningPort, "tls", 0, "The https listening port - if not supplied, does not listen for https requests")
+
 	  flag.IntVar(&explorerListeningPort, "explore", 0, "The explorer_api web service listening port - if supplied, the data explorer tool can connect to this program on this port")		
 	  flag.StringVar(&dbName, "db", "db1", "The database name. A SQLITE database file called <name>.db will be created/used in artifact data directory")			
 
@@ -287,6 +290,10 @@ func main() {
 	    originAndArtifact = pathParts[0]
 	    version = pathParts[1]
 
+      if strings.HasSuffix(originAndArtifact,"/") {  // Strip trailing / if present
+         originAndArtifact = originAndArtifact[:len(originAndArtifact)-1] 
+      }      
+
       err = global_publisher.PublishSourceCode(relishRoot, originAndArtifact, version)
 	    if err != nil {
 		    fmt.Println(err)
@@ -301,16 +308,25 @@ func main() {
       // or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory.		
       sourceCodeShareDir = relishRoot + "/shared"
     }
-    onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0)
+    onlyCodeSharing := (shareListeningPort != 0 && webListeningPort == 0 && tlsWebListeningPort == 0)
 
     if onlyCodeSharing {
 
-      if shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
-         fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
+      if shareListeningPort < 1024 && shareListeningPort != 80 {
+         fmt.Println("Error: The source-code sharing port must be 80 or > 1023 (8421 is the standard if using a high port)")
          return		
       }  		
 
       web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir)	
+
+      // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+      // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+      // have permission to listen on a < 1024 port like port 80.
+      fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                 "Did you setup to give relish permission to bind to privileged ports?\n" +
+                 "or is another process already listening on this port?\n",shareListeningPort)
+      return                
     }
 
 
@@ -337,7 +353,7 @@ func main() {
              packagePath = packagePathOrVersion
 
           } 
-  	   } else if shareListeningPort == 0 || webListeningPort != 0 {
+  	   } else if shareListeningPort == 0 || webListeningPort != 0  || tlsWebListeningPort != 0 {
          if len(pathParts) != 1 {
   	       fmt.Println("Usage: relish [-web 80] originAndArtifact [version] [path/to/package]\n# package path defaults to main")            
   	       return
@@ -405,6 +421,9 @@ func main() {
     		numListeners += 1
     	}
     }
+    if tlsWebListeningPort != 0 {
+      numListeners += 1       
+    }
     if explorerListeningPort != 0 {
     	numListeners += 1
     }
@@ -415,32 +434,41 @@ func main() {
     // check for disallowed port numbers, and if not, load the packages needed for web app serving
 
 	if webListeningPort != 0 {
-	   if webListeningPort < 1024 && webListeningPort != 80 && webListeningPort != 443 {
-			fmt.Println("Error: The web listening port must be 80, 443, or > 1023")
+	   if webListeningPort < 1024 && webListeningPort != 80 {
+			fmt.Println("Error: The web listening port must be 80 or > 1023")
 			return		
 	   }
 	
-       if shareListeningPort != webListeningPort && shareListeningPort != 0 && shareListeningPort < 1024 && shareListeningPort != 80 && shareListeningPort != 443 {
-	  	  fmt.Println("Error: The source-code sharing port must be 80, 443, or > 1023 (8421 is the standard if using a high port)")
-		  return		
-       }		
-	
-       err = loader.LoadWebPackages(originAndArtifact, version, runningArtifactMustBeFromShared)	
-	   if err != nil {
-		    if version == "" {
-			   fmt.Printf("Error loading web packages from current version of %s:  %v\n", originAndArtifact, err)		
-			} else {
-			   fmt.Printf("Error loading web packages from version %s of %s:  %v\n", version, originAndArtifact, err)
-		    }
-			return	
-	   }
+     if shareListeningPort != webListeningPort && shareListeningPort != 0 && shareListeningPort < 1024 && shareListeningPort != 80 {
+	  	  fmt.Println("Error: The source-code sharing port must be 80 or > 1023 (8421 is the standard if using a high port)")
+		    return		
+     }		
 	}
 
-    // check for disallowed port numbers, and if not, load the package needed for explorer_api web service serving
+  if tlsWebListeningPort != 0 {
+     if tlsWebListeningPort < 1024 && tlsWebListeningPort != 443 {
+      fmt.Println("Error: The tls web listening port must be 443 or > 1023")
+      return    
+     }
+  }
+
+  if webListeningPort != 0 || tlsWebListeningPort != 0 {
+     err = loader.LoadWebPackages(originAndArtifact, version, runningArtifactMustBeFromShared)  
+     if err != nil {
+        if version == "" {
+         fmt.Printf("Error loading web packages from current version of %s:  %v\n", originAndArtifact, err)   
+      } else {
+         fmt.Printf("Error loading web packages from version %s of %s:  %v\n", version, originAndArtifact, err)
+        }
+      return  
+     }
+  }  
+
+  // check for disallowed port numbers, and if not, load the package needed for explorer_api web service serving
 
 	if explorerListeningPort != 0 {
-	   if explorerListeningPort < 1024 && explorerListeningPort != 80 && explorerListeningPort != 443 {
-			fmt.Println("Error: The explorer listening port must be 80, 443, or > 1023")
+	   if explorerListeningPort < 1024 && explorerListeningPort != 80 {
+			fmt.Println("Error: The explorer listening port must be 80 or > 1023")
 			return		
 	   }
 
@@ -456,7 +484,7 @@ func main() {
 		              err)		
    		   return	
        }	     
-    }
+  }
 
 	   
 	if numListeners > 0 {  // If we'll be listening for http requests, run main in a background goroutine.
@@ -464,34 +492,86 @@ func main() {
 	}
 
 
-	if webListeningPort != 0 {
+	if webListeningPort != 0 || tlsWebListeningPort != 0 {
 
 	   web.SetWebPackageSrcDirPath(loader.PackageSrcDirPath(originAndArtifact + "/pkg/web"))
-	  
-	   if shareListeningPort == webListeningPort {
-          numListening += 1
-          if numListening == numListeners {
-	         web.ListenAndServe(webListeningPort, sourceCodeShareDir)
-	      } else {
-	         go web.ListenAndServe(webListeningPort, sourceCodeShareDir)	      	
-	      }
-	   } else {
-          if shareListeningPort != 0 {
-          	 numListening += 1
-	         go web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
-	      }		
+	
+    if webListeningPort != 0 {
+  	   if shareListeningPort == webListeningPort {
+            numListening += 1
+            if numListening == numListeners {
+  	           web.ListenAndServe(webListeningPort, sourceCodeShareDir)
+               // The previous call should wait on incoming socket connections on the specified port, and never return.
 
-	      numListening += 1
-	      if numListening == numListeners {	
-	         web.ListenAndServe(webListeningPort, "")	
-	      } else {
-	         go web.ListenAndServe(webListeningPort, "")	      	
-	      }
-	   }
-	   	
-	} 
+               // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+               // have permission to listen on a < 1024 port like port 80.
+               fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                          "Did you setup to give relish permission to bind to privileged ports?\n" +
+                          "or is another process already listening on this port?\n",webListeningPort)
+               return                              
+  	        } else {
+  	           go web.ListenAndServe(webListeningPort, sourceCodeShareDir)	      	
+  	        }
+  	   } else {
+            if shareListeningPort != 0 {
+            	 numListening += 1
+  	           go web.ListenAndServeSourceCode(shareListeningPort, sourceCodeShareDir) 
+  	        }		
+
+    	      numListening += 1
+    	      if numListening == numListeners {	
+    	         web.ListenAndServe(webListeningPort, "")	
+               // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+               // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+               // have permission to listen on a < 1024 port like port 80.
+               fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                          "Did you setup to give relish permission to bind to privileged ports?\n" +
+                          "or is another process already listening on this port?\n",webListeningPort)
+               return                 
+    	      } else {
+    	         go web.ListenAndServe(webListeningPort, "")	      	
+    	      }
+  	   } 	
+  	} 
+
+    if tlsWebListeningPort != 0 {
+
+      tlsCertPath, tlsKeyPath, err := crypto_util.GetTLSwebServerCertAndKeyFilePaths() 
+      if err != nil {
+          fmt.Printf("Error starting TLS web listener: %s\n", err)    
+          return     
+      }
+      numListening += 1
+      if numListening == numListeners {
+         web.ListenAndServeTLS(tlsWebListeningPort, tlsCertPath, tlsKeyPath) 
+         // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+         // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+         // have permission to listen on a < 1024 port like port 80.
+         fmt.Printf("Error: Could not bind to port %d to listen for https connections.\n" +
+                    "Did you setup to give relish permission to bind to privileged ports?\n" +
+                    "or is another process already listening on this port?\n",tlsWebListeningPort)
+         return           
+      } else {
+         go web.ListenAndServeTLS(tlsWebListeningPort, tlsCertPath, tlsKeyPath)         
+      }
+   }
+ }
+
+
+
+
 	if explorerListeningPort != 0 {         
-      web.ListenAndServeExplorerApi(explorerListeningPort)	          
+      web.ListenAndServeExplorerApi(explorerListeningPort)	
+      // The previous call should wait on incoming socket connections on the specified port, and never return.
+
+      // If get here, we had a PORT binding problem. Perhaps relish (running as current user) does not
+      // have permission to listen on a < 1024 port like port 80.
+      fmt.Printf("Error: Could not bind to port %d to listen for http connections.\n" +
+                "Did you setup to give relish permission to bind to privileged ports?\n" +
+                "or is another process already listening on this port?\n",explorerListeningPort)
+      return                  
    }
    
    // This will only be reached if numListeners == 0 or there is an error starting listeners.

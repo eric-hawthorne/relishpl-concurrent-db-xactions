@@ -710,7 +710,7 @@ func (o *runit) ToMapListTree(th InterpreterThread, includePrivate bool, visited
 	
 	for _, attr := range o.rtype.Attributes {
 
-        if includePrivate || attr.Part.IsPublicReadable() {
+        if includePrivate || attr.IsPublicReadable() {
             key = attr.Part.Name
 
 			  value, found := RT.AttrVal(th, o, attr)
@@ -732,7 +732,7 @@ func (o *runit) ToMapListTree(th InterpreterThread, includePrivate bool, visited
 
 	for _, typ := range o.rtype.Up {
 		for _, attr := range typ.Attributes {
-	        if includePrivate || attr.Part.IsPublicReadable() {
+	        if includePrivate || attr.IsPublicReadable() {
 	            key = attr.Part.Name
 
 				value, found := RT.AttrVal(th, o, attr)

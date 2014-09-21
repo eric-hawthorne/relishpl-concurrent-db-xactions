@@ -421,7 +421,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
    t.DBT().BeginTransaction()
 
+   t.SetTransaction(NewTransaction())   
+   t.SetErr("Uncaught panic while running web app method.")
+   defer t.SetTransaction(nil)
    defer t.CommitOrRollback()
+
+
+   // fmt.Printf("Began transaction now running dialog handler method: %s\n",handlerMethod.Name)   
 	
    resultObjects,err := interpreter.RunServiceMethod(t, 
 	                                                 handlerMethod, 
@@ -429,6 +435,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	                                                 keywordArgStringValues,
 	                                                 r)   
 
+   // fmt.Printf("Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_,"Finished running dialog handler method: %s\n",handlerMethod.Name)   
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)      
@@ -436,6 +443,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
    if err != nil {
       fmt.Println(err)  
       fmt.Fprintln(w, err)
+      t.SetErr(err.Error())
       return  
    }   
 
@@ -443,8 +451,12 @@ func handler(w http.ResponseWriter, r *http.Request) {
    if err != nil {
       fmt.Println(err)	
       fmt.Fprintln(w, err)
+      t.SetErr(err.Error())      
       return	
    }	
+
+   t.SetErr("")  // Yay! We did not panic
+   // fmt.Println("finished processing response of " + handlerMethod.Name)	
 }
 
 
@@ -1285,6 +1297,9 @@ func underscoresToCamelCase(s string) string {
 	return cs
 }
 
+var handlerAdded = false; // Whether the relish webapp method-mapping handler has been added to DefaultServeMux yet
+var listenerConfigMutex sync.Mutex
+
 /*
   Starts up relish web app serving on the specified port.
   If sourceCodeShareDir is not "" it should be the "relish/shared" 
@@ -1295,8 +1310,29 @@ func ListenAndServe(portNumber int, sourceCodeShareDir string) {
 	if sourceCodeShareDir != "" {
 		http.Handle("/relish/", http.FileServer(http.Dir(sourceCodeShareDir)))
 	}
+    listenerConfigMutex.Lock()
+    if ! handlerAdded { 
     http.HandleFunc("/", handler)
+       handlerAdded = true
+    }
+    listenerConfigMutex.Unlock()
     http.ListenAndServe(fmt.Sprintf(":%d",portNumber), nil)
+}
+
+/*
+  Starts up relish web app serving via TLS on the specified port.
+  If sourceCodeShareDir is not "" it should be the "relish/shared" 
+  or "relish/rt/shared" of "relish/4production/shared" or "relish/rt/4production/shared" directory. 
+  In that case, also serves source code from the shared directory tree.
+*/
+func ListenAndServeTLS(portNumber int, certFilePath string, keyFilePath string) {
+    listenerConfigMutex.Lock()  
+    if ! handlerAdded { 
+       http.HandleFunc("/", handler)
+       handlerAdded = true       
+    }
+    listenerConfigMutex.Unlock()    
+    http.ListenAndServeTLS(fmt.Sprintf(":%d",portNumber), certFilePath, keyFilePath, nil)
 }
 
 /*

@@ -43,6 +43,17 @@ errf preamble String name String err String > String String
 <p style="max-width: 800px; padding: 30px">
 %s %s: %s
 </p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
+
 </center>
 </html>
 """
@@ -66,6 +77,16 @@ errf preamble String err String > String String
 <p style="max-width: 800px; padding: 30px">
 %s: %s
 </p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
 </center>
 </html>
 """
@@ -88,6 +109,115 @@ errf err String > String String
 <p style="max-width: 800px; padding: 30px">
 %s
 </p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
+</center>
+</html>
+"""
+           err
+
+
+errf3 extendSession String preamble String name String err String > String String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => extendSession
+      "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s %s: %s
+</p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
+</center>
+</html>
+"""
+           preamble
+           name
+           err
+
+
+errf3 extendSession String preamble String err String > String String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => extendSession
+      "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s: %s
+</p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
+</center>
+</html>
+"""
+           preamble
+           err
+
+
+errf3 extendSession String err String > String String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => extendSession
+      "HTML"
+      fill """
+<html>
+<center>
+<p style="max-width: 800px; padding: 30px">
+%s
+</p>
+<br/>
+<br/>
+<script>
+function goBack() {
+    window.history.back()
+}
+</script>
+
+
+<button onclick="goBack()">Try Again</button>
 </center>
 </html>
 """

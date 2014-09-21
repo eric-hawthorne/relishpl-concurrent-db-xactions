@@ -490,6 +490,31 @@ func GetPublicKeyCert(entityType string, entityName string) (publicKeyCertPEM st
 }
 
 /*
+Get a private key in PEM format from the standard directory in the relish installation, 
+using standard file naming convention. 
+*/
+func GetTLSwebServerCertAndKeyFilePaths() (certPath string, keyPath string, err error) {
+	certPath = relishRuntimeLocation + "/keys/public/tls_web_server_cert.pem"
+	keyPath = relishRuntimeLocation + "/keys/private/tls_web_server_key.pem"
+
+   _,err = gos.Stat(certPath)	
+   if err != nil {
+   	  return
+   }
+
+   _,err = gos.Stat(keyPath)	
+   if err != nil {
+   	  return
+   }
+
+	certPath = gos.ToOsSpecificPath(certPath)
+	keyPath = gos.ToOsSpecificPath(keyPath)
+	return
+}
+
+
+
+/*
 Store a private key in PEM format into a file in the standard directory in the relish installation, 
 using standard file naming convention. 
 */
@@ -508,8 +533,18 @@ using standard file naming convention.
 */
 func StorePublicKeyCert(entityType string, entityName string, publicKeyCertPEM string) (err error) {
 	fileName := entityType + "__" + entityName + "__public_key.pem"
-	path := relishRuntimeLocation + "/keys/public/" + fileName
-	var perm os.FileMode = 0666
+
+	keyDirPath := relishRuntimeLocation + "/keys/public"
+	path := keyDirPath + "/" + fileName
+
+    var perm os.FileMode = 0777
+
+    err = gos.MkdirAll(keyDirPath, perm)
+    if err != nil {
+       return
+    }
+    
+	perm = 0666
     err = gos.WriteFile(path, ([]byte)(publicKeyCertPEM), perm) 	
     return
 }

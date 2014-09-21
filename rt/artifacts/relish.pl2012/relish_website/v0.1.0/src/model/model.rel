@@ -78,7 +78,7 @@ recordDownload fileName String
       tarPos = index fileName ".tar.gz"
       if gt tarPos 0
          fileRoot = slice fileName 7 tarPos
-      else  // must be .zip
+      else  // must be .pkg or .msi
          fileRoot = slice fileName 7 -4
       lastDotPos = lastIndex fileRoot "."
       platform = slice fileRoot (plus lastDotPos 1)

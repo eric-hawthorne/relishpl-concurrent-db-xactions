@@ -10,22 +10,16 @@ Steps for Linux and Apple Mac
    relish requires you to issue command-line commands to install it and to run relish programs. 
    (On Mac, you can type 'terminal' into the Spotlight search to launch a terminal window.)    
 
-2. Install the sqlite3 database software and its header files on your machine if not already installed.
+2. Install gcc (c compiler) so that go can build the go-sqlite library.
 
-   aptitude show sqlite3
-   ...and if State: not installed...
-   sudo apt-get install sqlite3
-   aptitude show libsqlite3-dev
-   ...and if State: not installed...
-   sudo apt-get install libsqlite3-dev
+   On Mac, you can install the gcc compiler by downloading and installing the 
+   <b>Command Line Developer Tools</b> subset of Xcode, which is 
+   currently described and available at developer.apple.com/technologies/tools/features. 
+   Note you need an AppleID to download XCode tools.
 
-   works nicely on Ubuntu,
-   or equivalent package installation procedure on your linux distribution.
-   
-	On MACOSX, sqlite3 is already installed but you need the libsqlite3-dev library, which should be obtainable 
-	by downloading and installing Apple's full <b>Xcode</b> toolkit, or by downloading and installing
-	the <b>Command Line Developer Tools</b> subset of Xcode, which is currently described and available at 
-	developer.apple.com/technologies/tools/features. Note you need an AppleID to download these.   
+   On ubuntu linux, 
+   sudo apt-get install build-essential 
+   will install gcc if "which gcc" reveals it does not exist on your platform.   
 
 3. Install mercurial version control system on your machine if not already installed.
 
@@ -39,7 +33,7 @@ Steps for Linux and Apple Mac
 
    or equivalent package installation procedure on your linux distribution.
 
-4. Install Go 1.1 or higher (from http://golang.org). 
+4. Install Go 1.3 or higher (from http://golang.org). 
    A binary distribution is available for some linuxes including Ubuntu. 
    A package installer (.pkg file) is available for MACOSX. 
 
@@ -81,9 +75,9 @@ Steps for Linux and Apple Mac
     source ~/.bashrc (~/.bash_profile) in your current terminal window.
 
 
-9. Install the gosqlite package into the Go environment.
+9. Install the go-sqlite package into the Go environment.
 
-   go get code.google.com/p/gosqlite/sqlite
+   go get code.google.com/p/go-sqlite/go1/sqlite3    
 
 10. build the relish compiler-interpreter 
 

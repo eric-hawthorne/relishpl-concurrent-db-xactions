@@ -51,6 +51,9 @@ type RMultiMethod struct {
 	                          // Note that a method may be referenced by multiple packages' multimethods
 	                          // the method itself points to one of these (does not matter which - it just gets its name from the mm)	
     IsExported    bool  // If true, this is a public method exported to packages that import this package.
+    DefinesNewMethod bool  // If true, this multimethod defines at least one new method (i.e. the pkg that owns mm defines a method)
+                           // Distinguishes the mm from one that has been created solely to merge exported methods from 2 or more
+                           // dependency packages.    
     TraitAbstractMethod *RMethod  // If non-nil, this multimethod is the implementation map for a trait abstract method.
 }
 
@@ -341,6 +344,10 @@ func (p *RMethod) IsZero() bool {
 	return false
 }
 
+func (m RMethod) Name() string {
+	return m.multiMethod.Name
+}
+
 func (m RMethod) String() string {
 	return fmt.Sprintf("%s %v %v", m.multiMethod.Name, m.ParameterNames, m.Signature)
 }
@@ -514,6 +521,7 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 	returnValTypes []string,
 	                  returnValNamed bool, numLocalVars int, allowRedefinition bool) (*RMethod, error) {
 	    nilArgAllowed := make([]bool,len(parameterTypes))
+	    isExported := true
 		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -525,7 +533,8 @@ func (rt *RuntimeEnv) CreateMethod(packageName string, file *ast.File, methodNam
 						                  returnValNamed, 
 						                  numLocalVars, 
 						                  false,
-						                  allowRedefinition)
+						                  allowRedefinition,
+						                  isExported)
 }
 
 
@@ -541,7 +550,8 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
 	returnValNamed bool, 
 	numLocalVars int, 
 	isTraitAbstractMethod bool,
-	allowRedefinition bool) (*RMethod, error) {
+	allowRedefinition bool,
+	isExported bool) (*RMethod, error) {
 		return rt.CreateMethodGeneral(packageName, file, methodName, parameterNames, nilArgAllowed, parameterTypes, 
 						                  nil,
 						                  nil,
@@ -553,7 +563,8 @@ func (rt *RuntimeEnv) CreateMethodV(packageName string, file *ast.File, methodNa
 						                  returnValNamed, 
 						                  numLocalVars, 
 						                  isTraitAbstractMethod,
-						                  allowRedefinition)
+						                  allowRedefinition,
+						                  isExported)
 }
 
 /*
@@ -591,9 +602,8 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 	                  returnArgsNamed bool,
 	                  numLocalVars int, 
 	                  isTraitAbstractMethod bool, 
-	                  allowRedefinition bool) (*RMethod, error) {
-
-    isExported := true // Temporary: All multimethods are "public" - change this when __private__ is introduced to relish
+	                  allowRedefinition bool,
+	                  isExported bool) (*RMethod, error) {
 
 	if packageName == "" { 
 		packageName = "relish.pl2012/core/inbuilt"
@@ -625,6 +635,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
     var found bool
 
     if isTraitAbstractMethod {
+    	if ! isExported {
+		   return nil, fmt.Errorf("Trait abstract method '%v' cannot be defined in a _private.rel file.", methodName)
+        }
 		multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
 	    pkg.MultiMethods[methodName] = multiMethod	
 
@@ -636,6 +649,17 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			multiMethod = newRMultiMethod(methodName, numReturnArgs, pkg, isExported)
 			pkg.MultiMethods[methodName] = multiMethod
 		} else {
+			if multiMethod.IsExported != isExported {
+
+               if (! multiMethod.IsExported) && (multiMethod.Pkg == pkg) && (! multiMethod.DefinesNewMethod) {
+               	  // This is just a merge mm, but we are now adding a new exported method to it.
+               	  multiMethod.IsExported = true
+               } else {
+   			      fmt.Println(multiMethod.Debug())
+			      fmt.Println(isExported)
+		          return nil, fmt.Errorf("Method '%v' cannot be defined as private in one source code file and as exported in another.", methodName)				
+			   }
+			}
 			if multiMethod.NumReturnArgs != numReturnArgs {
 			   return nil, fmt.Errorf("Method '%v' is already defined to have %v return arguments and cannot have other than that.", methodName, multiMethod.NumReturnArgs)
 	        }
@@ -750,6 +774,9 @@ func (rt *RuntimeEnv) CreateMethodGeneral(packageName string, file *ast.File, me
 			multiMethod.Methods[arity] = []*RMethod{method}
 		}
 	}
+
+
+	multiMethod.DefinesNewMethod = true  // This multi-method defines at least one method that has not been defined in merged-in mms.
 
 
 

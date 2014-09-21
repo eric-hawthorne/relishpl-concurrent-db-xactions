@@ -36,7 +36,8 @@ MKDIR %RELEASEDIR%\pl\bin
 
 REM preserve executable mode, timestamps
 XCOPY %SRCDIR%\bin\relish.exe %RELEASEDIR%\pl\bin
-XCOPY %SRCDIR%\bin\post_install.bat %RELEASEDIR%\pl\bin
+REM XCOPY %SRCDIR%\bin\post_install.bat %RELEASEDIR%\pl\bin
+XCOPY %SRCDIR%\bin\playground.bat %RELEASEDIR%\pl\bin
 REM XCOPY %SRCDIR%\bin\cleanr.bat %RELEASEDIR%\pl\bin
 REM XCOPY %SRCDIR%\bin/rmdb.bat %RELEASEDIR%\pl\bin
 

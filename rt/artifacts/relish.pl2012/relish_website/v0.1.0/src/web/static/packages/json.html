@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>
-http - the relish programming language
+json - the relish programming language
 </title>
 
 <meta name="keywords" content="relish programming language web application development framework persistence" />
@@ -34,7 +34,7 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
          &nbsp; &nbsp;
       </td>
 	  <td>	
-        <h2>Package http</h2>
+        <h2>Package json</h2>
 
       </td>
     </tr>
@@ -51,29 +51,49 @@ relish is implemented in Go, and inherits/wraps some Go features like goroutine 
   </a>
   <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
 	Artifacts
-  </a>
+  </a>  
   <a id="download_button" class="menubutton" href="/download/">
 	DOWNLOAD
   </a>	
 <div id="index">
 	<a href="#Summary">Summary</a><br/>	
-	<a href="#httpGet">httpGet</a><br/>	
-	<a href="#httpPost" class="alt">httpPost</a><br/>
+	<a href="#jsonMarshal">jsonMarshal</a><br/>	
+	<a href="#jsonUnmarshal" class="alt">jsonUnmarshal</a><br/>
 </div>  
 <div id="content_manual">
 <a name="Summary"><h3>Summary</h3></a>
 <p>
-Methods of a simple http client. 
-Enables HTTP GET requests and HTTP POST form-posts.
-You can supply an https url to the methods as well as http.
+Methods to marshal data into a JSON-formatted serialized form, and to recreate relish objects
+from JSON-formatted data.
+
+Pattern of use would be e.g.
+<code><pre>
+
+import
+   json
+
+
+serializeAndBack students [] Student > [] Student   
+"""
+ Sends some students through the transporter beam, and recreates them
+ as new objects somewhere else.
+"""
+   jsonText err = jsonMarshal students 
+
+   reconstitutedStudents = []Student
+   reconstitutedStudents err = jsonUnmarshal jsonText reconstitedStudents
+   => reconstitutedStudents
+
+</pre></code>
+<br/>
 </p>	
 	<center>
 <table>
 <tr>	
-	<td><a href="#httpGet">httpGet</a></td><td> - perform a GET request - return the response body or an error string</td>
+	<td><a href="#jsonMarshal">jsonMarshal</a></td><td> - convert an object (tree) to JSON text. &nbsp; &nbsp; &nbsp; &nbsp; </td>
 </tr>
 <tr>
-    <td><a href="#httpPost">httpPost</a></td><td> - POST some keys and values as in submitting an html form - return response body or an error</td>
+    <td><a href="#jsonUnmarshal">jsonUnmarshal</a></td><td> - convert JSON text into an object (tree). &nbsp; &nbsp; &nbsp; &nbsp;</td>
 </tr>
 </table>	
 </center>
@@ -85,77 +105,35 @@ You can supply an https url to the methods as well as http.
 <h3>Methods</h3>
 <code><pre>
 
-<a name="httpGet">httpGet url String > responseBody String err String</a>
+<a name="jsonMarshal">jsonMarshal</a> val Any > jsonEncoded String err String
 """
- Performs an HTTP GET request to the specified http or https url.
- Returns the body of the response (not the response headers or trailers) as a String.
- If there is an error, the responseBody will be the empty String "" and err will
- be an error message. If the request was successful, err will be ""
-
- Follows up to 10 redirects.
+ Marshals the argument value/object/collection including only the public
+ attributes of structured objects. 
+ The object tree cannot contain reference loops or multiple references to the same object.
 """
 
 
-<a name="httpPost">httpPost</a>
-   url String
-   keysVals {} String > Any
-> 
-   responseBody String 
-   err String
+jsonMarshal val Any includePrivate bool > jsonEncoded String err String  
 """
- Post the keys and values (as if they were html form-input names and values) to a 
- form-handling web service.
-
- Performs an HTTP POST request to the specified http or https url, passing
- the (url-arg-encoded) map of keys and values as the content of the POST request.
- Returns the body of the response (not the response headers or trailers) as a String.
- If there is an error, the responseBody will be the empty String "" and err will
- be an error message. If the request was successful, err will be ""
-
- The keysVals map should be a map from String to (value or collection of values)
- The values are converted to their default String representation to be used as
- posted form-field values.    
-
- Example:
-
-    responseBody err = 
-       httpPost 
-          "http://example.com/form-action"
-          {
-             "firstName" => "Arnold"
-             "lastName"  => "Palmer"
-             "friend"    => ["Alice" "Bob" "Charlie"]   
-          }String > Any
-
-
- IMPORTANT LIMITATION! Does not follow redirects. This is a Go http library problem about
- which there is a bug report.
+ Marshals the argument value/object/collection including the public
+ and if indicated also the private attributes of structured objects.
+ The object tree cannot contain reference loops or multiple references to the same object.
 """
 
 
-httpPost 
-   url String 
-   mimeType String
-   bodyContentToPost String
-> 
-   responseBody String 
-   err String
+<a name="jsonUnmarshal">jsonUnmarshal</a> json String > val Any err String 
 """
- Posts the data with the specified mime type as the Content-type: header. 
- Eventually there should be a variant that accepts a [] Byte body argument
- and a variant that accepts a Reader argument.
-"""  
+ Decodes the json-encoded string argument into a relish object or object tree, which is returned.
+"""
 
 
-
-
-
-
-
-
-
-
-
+jsonUnmarshal json String obj Any > obj Any err String 
+"""
+ Decodes the json-encoded string argument into a relish object or object tree, which is returned.
+ Attempts to populate the supplied object (second argument), 
+ which must be a collection, a map, or a structured object. The object argument itself
+ is returned, after being populated with attribute/collection values from the JSON string.
+"""
 </pre></code>
 
 

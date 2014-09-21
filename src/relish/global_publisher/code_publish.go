@@ -18,6 +18,7 @@ import (
     "util/crypto_util"  
     "errors"
     "path/filepath"
+    "relish/global_loader"
 )
 
 /*
@@ -97,7 +98,14 @@ func PublishSourceCode(relishRoot string, originAndArtifact string, version stri
 
    sharedRelishPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")  
    if err != nil {
-      return
+      sharedRelishPublicKeyCertificate, err = global_loader.FetchSharedRelishPublicKeyCert()
+      if err != nil {
+          return
+       }
+       err = crypto_util.StorePublicKeyCert("origin", "shared.relish.pl2012",sharedRelishPublicKeyCertificate)
+       if err != nil {
+           return
+       }       
    }
 
    // Validate that it is signed properly, obtaining the shared.relish.pl2012 publicKeyPEM.
@@ -661,8 +669,6 @@ func zipSrcDirTree1(srcDirectoryPath string, docDirectoryPath string) (buf *byte
 
 /*
    Helper. Recursively zip the contents of a directory tree using the zip.Writer.
-   
-   Filters so it only includes .rel files
 
    Note: this will not work if there are symbolic links in the src directory tree.
    (because Readdir does not follow links.)
@@ -687,34 +693,33 @@ func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string)
               return
            }
         } else { // plain old file to be added.
-           if strings.HasSuffix(fileInfo.Name(), ".rel") || strings.HasSuffix(fileInfo.Name(), ".txt") || strings.HasSuffix(fileInfo.Name(), ".html") || strings.HasSuffix(fileInfo.Name(), ".htm") || strings.HasSuffix(fileInfo.Name(), ".css") {
-              subItemPath := directoryPath + "/" + fileInfo.Name()    
-              subItemRelativePath := relativeDirName + "/" + fileInfo.Name()   
+            subItemPath := directoryPath + "/" + fileInfo.Name()    
+            subItemRelativePath := relativeDirName + "/" + fileInfo.Name()   
 
-              var fh *zip.FileHeader
-              fh, err = zip.FileInfoHeader(fileInfo)
-              if err != nil {
-                 return
-              }                
-              fh.Name = subItemRelativePath
+            var fh *zip.FileHeader
+            fh, err = zip.FileInfoHeader(fileInfo)
+            if err != nil {
+               return
+            }                
+            fh.Name = subItemRelativePath
 
-              var zw io.Writer
-              zw, err = w.CreateHeader( fh )
-              if err != nil {
-                 return
-              }    
-              var f *os.File
-              f,err = gos.Open(subItemPath)
-              if err != nil {
-                 return
-              }
-            
-              _, err = io.Copy(zw, f)
-              err = f.Close()   
-              if err != nil {
-                 return
-              }      
-           }
+            var zw io.Writer
+            zw, err = w.CreateHeader( fh )
+            if err != nil {
+               return
+            }    
+            var f *os.File
+            f,err = gos.Open(subItemPath)
+            if err != nil {
+               return
+            }
+          
+            _, err = io.Copy(zw, f)
+            err = f.Close()   
+            if err != nil {
+               return
+            }      
+           
         }
     }
 

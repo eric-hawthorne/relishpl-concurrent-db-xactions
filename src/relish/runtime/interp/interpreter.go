@@ -95,7 +95,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 	if ! quiet {
 	   Logln(ANY_, " ")
 	   Logln(ANY_, "==============================")
-	   Logln(ANY_, "== RELISH Interpreter 0.1.1 ==")
+	   Logln(ANY_, "== RELISH Interpreter 0.1.3 ==")
 	   Logln(ANY_, "==============================")
     }
 	Logln(GENERATE2_, " ")
@@ -119,6 +119,8 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 
 	args := []RObject{}
 	
+	defer methodCallErrHandle(t,nil)	
+
 	// TODO Figure out a way to pass command line args (or maybe just keyword ones) to the main program 
 	
 	method, typeTuple := i.dispatcher.GetMethod(mm, args)
@@ -226,6 +228,8 @@ func (i *Interpreter) RunServiceMethod(t *Thread, mm *RMultiMethod, positionalAr
 }
 
 /*
+TODO: Why is  this not in thread.go ???
+
 In future, a thread panic would cause t.err to be an error message.
 
 TODO: Make some way of setting t.err when relish-panicking.
@@ -246,11 +250,27 @@ func (t *Thread) CommitOrRollback() {
 	   err := t.DBT().CommitTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
+
+	      err := t.DB().RollbackTransaction()
+	      if err != nil {
+	         Logln(ALWAYS_,err.Error())
+          }
+	      if t.transaction != nil {
+	          t.transaction.RollBack()
+	      }  	      
+       } else {  // successful commit
+	      if t.transaction != nil {
+	         t.transaction.Commit()
+	      }     	
 	   }	   
     } else {
 	   err := t.DBT().RollbackTransaction()
 	   if err != nil {
 	      Logln(ALWAYS_,err.Error())
+       }
+	
+       if t.transaction != nil {
+          t.transaction.RollBack()
        }
 	
 	   for ! t.DBT().ReleaseDB() {}  // Loop til we definitely unlock the dbMutex
@@ -917,9 +937,11 @@ TODO handle fully qualified constant names properly.
 */
 func (i *Interpreter) EvalConst(t *Thread, id *ast.Ident) {
 	// defer UnM(t,TraceM(t,INTERP_TR, "EvalConst", id.Name))
-	val, found := i.rt.GetConstant(id.Name)
+	val, found, hidden := i.rt.GetConstant(id.Name, t.ExecutingPackage)
 	if ! found {
 		rterr.Stopf1(t,id,"Constant %s used before it has been assigned a value.",id.Name)
+	} else if hidden {
+		rterr.Stopf1(t,id,"Constant %s is private to its package and is not visible in %s.",id.Name, t.ExecutingPackage.Name)
 	}
 	t.Push(val)	
 }
@@ -1224,9 +1246,19 @@ func methodCallErrHandle(t *Thread, call *ast.MethodCall) {
       if r != nil {
           if t.CodeFile() == nil {
              if t.ExecutingMethod == nil {
-                rterr.Stopf("%v",r) 
+             	fmt.Println()
+                rterr.Stopf("%v\n",r) 
              } else {
-                rterr.Stopf("%v (%s): %v",t.ExecutingMethod,t.ExecutingPackage.Name,r)                 
+             	fmt.Println()             	
+                rterr.Stopf("%v (%s):\n\n%v\n",t.ExecutingMethod,t.ExecutingPackage.Name,r)                 
+             }                                 
+          } else if call == nil {
+             if t.ExecutingMethod == nil {
+             	fmt.Println()             	
+                rterr.Stopf("%v\n",r) 
+             } else {
+             	fmt.Println()             	
+                rterr.Stopf("%v:\n\n%v\n",t.ExecutingMethod.Name(),r)                 
              }                                 
           } else {
              rterr.Stopf1(t,call,"%v",r)
@@ -1857,6 +1889,9 @@ func (i *Interpreter) EvalFunExpr(t *Thread, call *ast.MethodCall) (isTypeConstr
 			obj, err = i.rt.NewObject(id.Name)
 			if err != nil {
 				rterr.Stop1(t, fun, err)
+			}
+			if obj.Type().IsPrivate && obj.Type().Package != t.ExecutingPackage {
+				rterr.Stopf1(t, fun, "'%s' is a package-private Type not visible from within package %s", id.Name, t.ExecutingPackage.Name)				
 			}
 			t.Push(obj)
 			
@@ -2889,16 +2924,13 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 			                for v := range coll.Iter(t) {
 								err := RT.AddToAttr(t, assignee, attr, v, true, t.EvalContext, false)
 								if err != nil {
-									if strings.Contains(err.Error()," a value of type ") {
 										rterr.Stop1(t, selector, err)
 									} 					
-									panic(err)
-								}				               
 			                }
 		                } else if val == NIL {
 			                err := i.rt.ClearAttr(t, assignee, attr)
 			                if err != nil {
-							       panic(err)	
+							    rterr.Stop1(t, selector, err)	
 							    }	
 					       } else {
 			                rterr.Stop1(t, selector,"Only nil or a collection can be assigned to a multi-valued attribute.")						
@@ -2907,11 +2939,8 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 
 						   err := RT.SetAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 						   if err != nil {
-							   if strings.Contains(err.Error()," a value of type ") || strings.Contains(err.Error(),"nil") {
 								   rterr.Stop1(t,selector, err)
 							   } 
-							   panic(err)
-						   }
 				    }
 				    		    
 				case token.ADD_ASSIGN:
@@ -2919,11 +2948,8 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 					    // A multi-valued attribute
 	   					err := RT.AddToAttr(t, assignee, attr, t.Pop(), true, t.EvalContext, false)
 	   					if err != nil {
-	   						if strings.Contains(err.Error()," a value of type ") {
 	   							rterr.Stop1(t,selector,err)
 	   						} 					
-	   						panic(err)
-	   					}
 				   } else {
 				      // A single-valued attribute whose value is a collection
 
@@ -2966,7 +2992,7 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 						// TODO TODO	
 						err := RT.RemoveFromAttr(t, assignee, attr, t.Pop(), false, true)
 						if err != nil {
-							panic(err)
+                           rterr.Stop1(t,selector,err)
 						}
 				    } else {
 				   	   // A single-valued attribute whose value is a collection
@@ -3047,14 +3073,14 @@ func (i *Interpreter) ExecAssignmentStatement(t *Thread, stmt *ast.AssignmentSta
 							}
 						    owner := coll.Owner()                 
 		                    if owner == nil {
-		                        if coll.IsStoredLocally() {
+		                        if coll.IsBeingStored() {
 		                            err := t.DBT().PersistSetCollectionElement(t, coll, val, ix)                         		
 		                            if err != nil {					
 		   							       rterr.Stop1(t,indexExpr,err)       				                               
 		                            }    
 		                         }                     
 		                    } else {
-		                         if owner.IsStoredLocally() {
+		                         if owner.IsBeingStored() {
 		                            attr := coll.Attribute()
 		                            err := t.DBT().PersistSetAttrElement(t, owner, attr , val, ix)  
 		                            if err != nil {					

@@ -30,6 +30,8 @@ import (
 
 const STANDARD_SOURCE_CODE_SHARING_PORT = "8421"  // relish source code may be shared on port 80 or 8421
 
+const SHARED_RELISH_PUBLIC_KEY_URL = "http://shared.relish.pl/relish/origin__shared.relish.pl2012__public_key.pem"
+
 
 type Loader struct {
 	RelishRuntimeLocation string
@@ -212,7 +214,8 @@ func (ldr *Loader) databaseDirPath(originAndArtifact string) string {
 
 
 var parserDebugMode uint = parser.DeclarationErrors
-
+// Use the following line instead if you want to trace the parser execution:
+// var parserDebugMode uint = parser.DeclarationErrors | parser.Trace
 
 
 
@@ -672,6 +675,23 @@ func (ldr *Loader) LoadPackage (originAndArtifactPath string, version string, pa
        signature = strings.TrimSpace(string(signatureBytes))
 
        installationSharedRelishPublicKeyCert, err = crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")
+       if err != nil {
+          // Could not find shared relish pl public key cert in keys/public directory of this relish project directory.
+          // Try downloading the public key from http://shared.relish.pl and installing it in the project directory.
+          var cert string
+          cert, err = FetchSharedRelishPublicKeyCert()
+          if err != nil {
+             return
+          }           
+          err = crypto_util.StorePublicKeyCert("origin", "shared.relish.pl2012",cert)
+          if err != nil {
+             return
+          }           
+          installationSharedRelishPublicKeyCert, err = crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")  
+          if err != nil {
+             return
+          }                
+       }
        installationSharedRelishPublicKeyCert = strings.TrimSpace(installationSharedRelishPublicKeyCert)
        if err != nil {
           return
