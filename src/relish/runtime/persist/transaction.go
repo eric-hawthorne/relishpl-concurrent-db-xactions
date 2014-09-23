@@ -17,18 +17,32 @@ package persist
 
 import (
 	"sync"
+   "math/rand"
+   "time"
 )
 
 
 // A mutual-exclusion lock which ensures single-goroutine-at-a-time serialized access to the database.
 var dbMutex sync.Mutex
 
+const N_BEGIN_TRIES = 30
+const N_COMMIT_TRIES = 30
+const TRY_GAP_WIDENING_MS_INCREMENT = 100  // longest wait will be 6 seconds + random factor 
  
 /*
 Begins an immediate-mode database transaction.
 */
 func (db *SqliteDBThread) BeginTransaction() (err error) {
    err = db.ExecStatement("BEGIN IMMEDIATE TRANSACTION")
+
+   var tryGapWidth int64 = TRY_GAP_WIDENING_MS_INCREMENT
+   var r int64
+   for i := 0; i < N_BEGIN_TRIES && err != nil; i ++ {
+      r = rand.Int63n(1000 + tryGapWidth)
+      tryGapWidth += TRY_GAP_WIDENING_MS_INCREMENT
+      time.Sleep( time.Duration( (tryGapWidth + r) * 1000000 ) )
+      err = db.ExecStatement("BEGIN IMMEDIATE TRANSACTION")
+   }
    return
 }
 
@@ -37,6 +51,17 @@ Commits the in-effect database transaction.
 */
 func (db *SqliteDBThread) CommitTransaction() (err error) {
    err = db.ExecStatement("COMMIT TRANSACTION")
+
+   var tryGapWidth int64 = TRY_GAP_WIDENING_MS_INCREMENT
+   var r int64
+   for i := 0; i < N_COMMIT_TRIES && err != nil; i ++ {
+      r = rand.Int63n(1000 + tryGapWidth)
+      tryGapWidth += TRY_GAP_WIDENING_MS_INCREMENT
+      time.Sleep(  time.Duration( (tryGapWidth + r) * 1000000 ) )
+      err = db.ExecStatement("COMMIT TRANSACTION")
+   }
+   return
+
    return
 }
 
