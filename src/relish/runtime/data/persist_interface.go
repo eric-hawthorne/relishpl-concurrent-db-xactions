@@ -87,7 +87,7 @@ type DB interface {
    /*
    Returns a DBConnectionThread 
    */
-   NewDBThread() DBT  
+   NewDBThread(th InterpreterThread) DBT  
 
    /*
    Returns a DBConnectionThread that is created upon creation of the db proxy. 
@@ -170,11 +170,13 @@ type DBT interface {
     Begins an immediate-mode database transaction.	
     Implementations may also first lock program access to the database to ensure a single goroutine at a time
     runs a database transaction and no other goroutines interact with the database at all during the transaction.
+    Accepts InterpreterThread so it can AllowGC() while waiting to Begin the Transaction.    
 	*/
-	 BeginTransaction() (err error)
+	 BeginTransaction(transactionType string) (err error)
 
 	/*
     Implementations may also unlock program access to the database to allow other goroutines to use the database.
+    Accepts InterpreterThread so it can AllowGC() while waiting to use db.   
 	*/
 	 CommitTransaction() (err error)
 
@@ -190,6 +192,7 @@ type DBT interface {
 	(Or may also be used in multi-threaded extensions of the Begin,Commit,RollbackTransaction methods.)
 
 	This method will block until no other goroutine is using the database.
+  Accepts InterpreterThread so it can AllowGC() while waiting to use db.
 	*/
 	 UseDB()
 	

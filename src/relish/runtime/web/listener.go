@@ -419,13 +419,43 @@ func handler(w http.ResponseWriter, r *http.Request) {
    Log(GC2_," Args: %v\n",positionalArgStringValues)   
    Log(GC2_," KW Args: %v\n",keywordArgStringValues)   
 
-   t.DBT().BeginTransaction()
 
-   t.SetTransaction(NewTransaction())   
+   // Get annotations of the URL-mapped method.
+   // These determine what kind of transaction behaviour it will have.
+   // Options:
+   // <none>  Wrap method execution and response processing in an IMMEDIATE (reserved for write) TRANSACTION
+   // "READ" Wrap method execution and response processing in a DEFERRED TRANSACTION which has done a trial db read.
+   // "NOTX" Do not use a long transaction at all. Use AUTOCOMMIT transactions, one per db statement.
+   // If not doing any persistence in the service method, use NOTX
+   //
+   mods, err := interpreter.GetServiceMethodModifiers(handlerMethod)
+   if err != nil {
+      panic(err)
+   }
+
+   if ! mods["NOTX"] {
+
+      var transactionType string
+      if mods["READ"] {
+         transactionType = "DEFERRED"
+      } else {
+         transactionType = "IMMEDIATE"
+      }
+
+      err := t.DBT().BeginTransaction(transactionType)
+      if err != nil {
+         fmt.Println(err)  
+         fmt.Fprintln(w, err)
+         t.SetErr(err.Error())
+         return  
+      }       
+      t.SetTransaction(NewTransaction())   
+
+      defer t.SetTransaction(nil)
+      defer t.CommitOrRollback()
+   }
+   
    t.SetErr("Uncaught panic while running web app method.")
-   defer t.SetTransaction(nil)
-   defer t.CommitOrRollback()
-
 
    // fmt.Printf("Began transaction now running dialog handler method: %s\n",handlerMethod.Name)   
 	
@@ -586,7 +616,11 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 
    defer interpreter.DeregisterThread(t)
 
-   t.DBT().BeginTransaction()
+   t.DBT().BeginTransaction("IMMEDIATE")
+
+   t.SetTransaction(NewTransaction())   
+   t.SetErr("Uncaught panic while running explorer web app method.")
+   defer t.SetTransaction(nil)
 
    defer t.CommitOrRollback()
 	
@@ -603,12 +637,15 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
    }   
    
    err = processResponse(w,r,pkg, handlerMethod.Name, resultObjects, t)
-
    if err != nil {
-      fmt.Println(err)	
+      fmt.Println(err)  
       fmt.Fprintln(w, err)
-      return	
-   }	
+      t.SetErr(err.Error())      
+      return   
+   }  
+
+   t.SetErr("")  // Yay! We did not panic
+
 
 }
 
