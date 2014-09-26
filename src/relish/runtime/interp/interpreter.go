@@ -149,6 +149,21 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 }
 
 
+/*
+   Return the annotations of the URL-mapped method.
+   These determine transaction behaviour etc.
+*/
+func (i *Interpreter) GetServiceMethodModifiers(mm *RMultiMethod) (modifiers map[string]bool, err error) {
+	method := i.dispatcher.GetSingletonMethod(mm)
+
+	if method == nil {
+		err = fmt.Errorf("No method '%s' found.", mm.Name)
+		return
+	}
+    modifiers = method.Code.ModifierKeywords
+    return
+}
+
 
 /*
 Runs a service handler method. 
@@ -1172,7 +1187,7 @@ func (i *Interpreter) EvalMethodCall(t *Thread, t2 *Thread, call *ast.MethodCall
         // fmt.Println(mm.Debug())
 
 		// Comment out the defer statement to get panics with go stack traces for debugging runtime errors	
-		defer methodCallErrHandle(t,call)	
+		// defer methodCallErrHandle(t,call)	
 		method, typeTuple = i.dispatcher.GetMethod(mm, evaluatedArgs) // nArgs is WRONG! Use Type.Param except vararg
 		if method == nil {
 			if isTypeConstructor && nArgs == 0 {  // There is no other-argless init<TypeName> method.

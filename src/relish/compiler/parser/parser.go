@@ -5283,6 +5283,42 @@ func (p *parser) parseReturnArgDecl(returnArgs *[]*ast.ReturnArgDecl) bool {
 
 
 
+var METHOD_MODIFIERS []string = []string{"READ","NOTX"}
+
+/*
+Parses modifier keywords to the right of the mandatory """ comment starting delimiter 
+at the top of a method declaration.
+*/  
+func (p *parser) parseMethodModifiers(methodDecl *ast.MethodDeclaration) bool {
+   if p.trace {
+      defer un(trace(p, "MethodModifiers"))
+   }  
+   st := p.State()
+   mods := make(map[string]bool)
+   for p.Space() {
+      for _,mod := range METHOD_MODIFIERS {
+         if mods[mod] {
+               p.stop("method modifier keyword repeated")
+         }
+         if p.Match(mod) {
+            mods[mod] = true
+            st = p.State()
+            break
+         }     
+      }
+   }
+   if len(mods) == 0 {
+      return p.Fail(st)
+   } else {
+      if mods["READ"] && mods["NOTX"] {
+          p.stop("A method cannot have both READ and NOTX modifier")
+      }
+      methodDecl.ModifierKeywords = mods
+      p.Fail(st)
+      return true
+   }
+}
+
 
 
 /*
@@ -5302,7 +5338,8 @@ func (p *parser) parseMethodComment(col int, methodDecl *ast.MethodDeclaration) 
    
    // dbg.Log(dbg.PARSE_,"Got here ch=%s\n",string(p.Ch()))	
 
-   if ! ( p.Match(`"""`) &&
+   if ! ( p.Match(`"""`) && 
+          p.optional(p.parseMethodModifiers(methodDecl)) &&
           p.required(p.BlankToEOL(),`nothing on line after """`) ) {
        return p.Fail(st)
    }

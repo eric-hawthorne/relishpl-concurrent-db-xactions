@@ -33,9 +33,9 @@ import (
 
 
 
-func (db *SqliteDB) NewDBThread() DBT {
+func (db *SqliteDB) NewDBThread(th InterpreterThread) DBT {
    dbti := &SqliteDBThread{db:db}
-   dbt := &DBThread{db: db, dbti: dbti}
+   dbt := &DBThread{db: db, dbti: dbti, th: th}
    dbti.dbt = dbt
    return dbt
 }
@@ -66,6 +66,8 @@ type DBThread struct {
                               // because Go Mutexes are not inherently owned by any particular goroutine.	
 
   conn Connection // SQL db connection
+
+  th InterpreterThread
 }
 
 /*
@@ -73,10 +75,10 @@ Grabs the dbMutex when it can (blocking until then) then executes a BEGIN IMMEDI
 Does not unlock the dbMutex or release this thread's ownership of the mutex. 
 Use CommitTransaction or RollbackTransaction to do that.
 */
-func (dbt * DBThread) BeginTransaction() (err error) {
+func (dbt * DBThread) BeginTransaction(transactionType string) (err error) {
    Logln(PERSIST2_,"DBThread.BeginTransaction") 	
    dbt.UseDB()	
-   err = dbt.dbti.BeginTransaction() 
+   err = dbt.dbti.BeginTransaction(transactionType) 
    if err != nil {
    	   dbt.ReleaseDB()
    }
@@ -133,8 +135,13 @@ func (dbt * DBThread) UseDB() {
    if dbt.dbLockOwnershipDepth == 0 {
    	   dbt.acquiringDbLock = true
 
+       if dbt.th != nil {
+          dbt.th.AllowGC()          
+       }
        dbt.conn = dbt.db.GrabConnection()
-
+       if dbt.th != nil {
+          dbt.th.DisallowGC()
+       }
       
 
    	   // dbt.db.UseDB()
@@ -159,7 +166,6 @@ func (dbt * DBThread) ReleaseDB() bool {
 	   dbt.dbLockOwnershipDepth--
        Logln(PERSIST2_,"DBThread.ReleaseDB: Set ownership level to",dbt.dbLockOwnershipDepth)  	
 	   if dbt.dbLockOwnershipDepth == 0 {
-
         dbt.db.ReleaseConnection(dbt.conn)
          
         dbt.conn = nil
@@ -455,7 +461,7 @@ func NewDB(dbName string) *SqliteDB {
 
 	db.pool = NewConnectionPool(dbName, params.DbMaxConnections, NewSqliteConn)
 
-    db.defaultDBThread = db.NewDBThread()
+    db.defaultDBThread = db.NewDBThread(nil)
 
     // db.preparedStatements = make(map[string]*sqlite.Stmt)
 	db.defaultDBThread.EnsureObjectTable()

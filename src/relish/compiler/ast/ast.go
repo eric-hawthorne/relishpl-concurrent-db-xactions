@@ -106,6 +106,7 @@ type MethodDeclaration struct {
 	NumLocalVars int
 	NumFreeVars int  // may be > 0 if this is a closure method
 	IsClosureMethod bool
+	ModifierKeywords map[string]bool  // modifiers (annotations) which do things like db transaction type etc
 }
 
 

@@ -62,7 +62,8 @@ const (
 	GC2_        = 1 << iota		
 	GC3_        = 1 << iota		
 	COLL_       = 1 << iota		
-	COLL2_      = 1 << iota				
+	COLL2_      = 1 << iota		
+	LOCK_       = 1 << iota		 		
 	ANY_        = 0xFFFFFFFFFFFFFFFF	
 )
 
@@ -97,6 +98,7 @@ const (
 	GC3__       = GC3_ | GC2__	
 	COLL__        = COLL_	
 	COLL2__       = COLL2_ | COLL__	
+	LOCK__        = LOCK_
 )
 	
 	
@@ -116,7 +118,7 @@ const (
 
 // const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
 
-const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | ALWAYS_
+const SOME_DEBUG_FLAGS =   PERSIST2__ | PERSIST__TR2 | GC__ | ALWAYS_
 
 // const SOME_DEBUG_FLAGS =   INTERP_TR | GC__ | ALWAYS_
 

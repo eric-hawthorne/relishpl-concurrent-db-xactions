@@ -42,6 +42,8 @@ Command line options:
 -db <dbname>  The database name. A SQLITE database file called <dbname>.db will be created/used in artifact data directory.
               Defaults to db1   i.e. db1.db	
 
+-pool <#connections>   Maximum number of db connections to open with the database.
+
 -cpuprofile <filepath>.prof  Write cpu profile to file. Then use go tool pprof /opt/devel/relish/bin/relish somerun.prof 
 
 
@@ -132,8 +134,10 @@ func main() {
 
     flag.StringVar(&projectPath, "init", "", "<artifactpath> [webapp] - create directory tree and template files for a relish software project")    
     
-    flag.IntVar(&params.GcIntervalSeconds, "gc", 20, "The garbage collection check interval (seconds): defaults to 20")	
-    
+    flag.IntVar(&params.GcIntervalSeconds, "gc", params.GcIntervalSeconds, "The garbage collection check interval (seconds): defaults to 20")	
+
+    flag.IntVar(&params.DbMaxConnections, "pool", params.DbMaxConnections, "Maximum number of db connections to open with the database: defaults to 2")     
+
     flag.Parse()
 
 

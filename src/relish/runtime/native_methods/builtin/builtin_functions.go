@@ -251,6 +251,11 @@ func InitBuiltinFunctions(relishRoot string) {
 	execNoWait7Method.PrimitiveCode = builtinExecNoWait		
 	
 	
+	panicMethod, err := RT.CreateMethod("",nil,"panic", []string{"message"}, []string{"String"}, nil, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	panicMethod.PrimitiveCode = builtinPanic
 	
 
 
@@ -1233,6 +1238,15 @@ func InitBuiltinFunctions(relishRoot string) {
 		panic(err)
 	}
 	beginMethod.PrimitiveCode = builtinBeginTransaction
+
+    // err = begin "READ" // Begins a db transaction usable only for reading. On success returns an empty string.
+    //
+	begin2Method, err := RT.CreateMethod("",nil,"begin", []string{"transactionType"}, []string{"String"}, []string{"String"}, false, 0, false)
+	if err != nil {
+		panic(err)
+	}
+	begin2Method.PrimitiveCode = builtinBeginTransaction
+
 
     // err = local  // Begins a db transaction which TODO: never contributes new or fetched-from-db objects to the global
     //              // in-memory object cache. On success returns an empty string.
@@ -4104,6 +4118,14 @@ var transactionMutex sync.Mutex
 // err = begin  // Begins a db transaction. On success returns an empty string.
 //
 func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject {
+
+    transactionType := "IMMEDIATE"
+    if len(objects) > 0 {
+	   transactionTypeKeyword := objects[0].String()
+	   if transactionTypeKeyword == "READ" {
+	   	   transactionType = "DEFERRED"
+	   }
+    }
 	th.AllowGC()	
 	transactionMutex.Lock()
 	th.DisallowGC()
@@ -4115,8 +4137,12 @@ func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject 
     	errStr = "Cannot begin a transaction. Goroutine is already participating in an active transaction."
     } else {
 	    transactionMutex.Unlock()    	
-	    err := th.DBT().BeginTransaction()
-	    transactionMutex.Lock()	    
+	    err := th.DBT().BeginTransaction(transactionType)
+
+	    th.AllowGC()		    
+	    transactionMutex.Lock()
+	    th.DisallowGC()	    	    
+		
 		if err != nil {
 			errStr = err.Error()
 		} else {
@@ -4133,13 +4159,13 @@ func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject 
 // err = local  // Begins a db transaction which TODO: never contributes new or fetched-from-db objects to the global
 //              // in-memory object cache. On success returns an empty string.
 //
-// TODO: Implement
+// TODO: Implement MAYBE. THIS IS OBSOLETE !!
 //
 func builtinBeginLocalTransaction(th InterpreterThread, objects []RObject) []RObject {
 	relish.EnsureDatabase()
     var errStr string
     panic("UNIMPLEMENTED")
-    err := th.DBT().BeginTransaction()
+    err := th.DBT().BeginTransaction("IMMEDIATE")
 	if err != nil {
 		errStr = err.Error()
 	}
@@ -4174,31 +4200,16 @@ func builtinCommitTransaction(th InterpreterThread, objects []RObject) []RObject
 		if err != nil {
 			errStr = err.Error()
 
-            time.Sleep(2 * time.Second)
-
-	        err = th.DBT().CommitTransaction()
-	        if err != nil {
-               time.Sleep(4 * time.Second)
-	           err = th.DBT().CommitTransaction()	 
-	           if err != nil {
-          
-                  rollBackErrStr := rollbackTransactionCore(th)
-                  if rollBackErrStr != "" {
-                     errStr = fmt.Sprintf("%s. Rollback also failed: %s",errStr,rollBackErrStr)
-                     th.DBT().ReleaseDB()
-                     // Roll back the state of the in memory objects anyway, forcing re-load
-                     // of objects from database.
-		             th.Transaction().RollBack()	
-		             th.SetTransaction(nil)	
-                  }
-	           	} else {
-	           		errStr = ""
-	           	}     	
-	        } else {
-	        	errStr = ""
-	        }
-		}
-		if errStr == "" {
+           rollBackErrStr := rollbackTransactionCore(th)
+           if rollBackErrStr != "" {
+              errStr = fmt.Sprintf("%s. Rollback also failed: %s",errStr,rollBackErrStr)
+              th.DBT().ReleaseDB()
+              // Roll back the state of the in memory objects anyway, forcing re-load
+              // of objects from database.
+              th.Transaction().RollBack()	
+              th.SetTransaction(nil)	
+           }
+		} else {  // db commit succeeded
 		   th.Transaction().Commit()	
 		   th.SetTransaction(nil)	
 		}	
@@ -6182,7 +6193,13 @@ func builtinExecNoWait(th InterpreterThread, objects []RObject) []RObject {
 }
 
 
+func builtinPanic(th InterpreterThread, objects []RObject) []RObject {
+   message := string(objects[0].(String))	
 
+   panic(message)
+
+   return []RObject{}
+}
 
 
 
