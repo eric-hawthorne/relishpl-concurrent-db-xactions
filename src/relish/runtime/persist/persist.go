@@ -67,6 +67,8 @@ type DBThread struct {
 
   conn Connection // SQL db connection
 
+  isReadOnlyTransaction bool  // Experiment
+
   th InterpreterThread
 }
 
@@ -77,7 +79,15 @@ Use CommitTransaction or RollbackTransaction to do that.
 */
 func (dbt * DBThread) BeginTransaction(transactionType string) (err error) {
    Logln(PERSIST2_,"DBThread.BeginTransaction") 	
+
+   if transactionType == "DEFERRED" {
+       dbt.isReadOnlyTransaction = true
+   }
+   
    dbt.UseDB()	
+
+   dbt.isReadOnlyTransaction = false  // was only needed to influence UseDB()
+
    err = dbt.dbti.BeginTransaction(transactionType) 
    if err != nil {
    	   dbt.ReleaseDB()
@@ -138,7 +148,7 @@ func (dbt * DBThread) UseDB() {
        if dbt.th != nil {
           dbt.th.AllowGC()          
        }
-       dbt.conn = dbt.db.GrabConnection()
+       dbt.conn = dbt.db.GrabConnection(! dbt.isReadOnlyTransaction)
        if dbt.th != nil {
           dbt.th.DisallowGC()
        }
@@ -459,7 +469,8 @@ func NewDB(dbName string) *SqliteDB {
 	// }
 	// db.conn = conn
 
-	db.pool = NewConnectionPool(dbName, params.DbMaxConnections, NewSqliteConn)
+  maxWriteConnections := 1  // Experiment
+	db.pool = NewConnectionPool(dbName, params.DbMaxConnections, maxWriteConnections, NewSqliteConn)
 
     db.defaultDBThread = db.NewDBThread(nil)
 
@@ -515,8 +526,26 @@ A SQLITE3 connection which implements the Connection interface.
 type SqliteConn struct {
 	conn *sqlite.Conn
 	preparedStatements map[string]*sqlite.Stmt
+  isReadOnly bool
   id int
 }
+
+/*
+Set whether this connection is only to be used for read operations on the database.
+e.g. selects but not inserts or updates. If never set, the connection defaults to 
+read-or-write-enabled.
+*/
+func (conn *SqliteConn) SetReadOnly(isReadOnly bool) {
+  conn.isReadOnly = isReadOnly
+}
+
+/*
+Returns whether this connection is restricted to reading from the database.
+*/
+func (conn *SqliteConn) IsReadOnly() bool {
+  return conn.isReadOnly
+}
+
 
 /*
 Return a prepared statement based on the sql string.
@@ -556,8 +585,8 @@ func NewSqliteConn(dbName string, connectionId int) (conn Connection, err error)
 	return
 }
 
-func (db *SqliteDB) GrabConnection() Connection {
-	return db.pool.GrabConnection()
+func (db *SqliteDB) GrabConnection(doingWrite bool) Connection {
+	return db.pool.GrabConnection(doingWrite)
 }
 
 func (db *SqliteDB) ReleaseConnection(conn Connection) {

@@ -28,7 +28,10 @@ import (
 type ConnectionPool struct {
 	  maxConnections int
 	  numConnections int
+    maxWriteConnections int  // if -1, means read and write connections use same pool.
+    numWriteConnections int
     unusedConnections *Stack
+    unusedWriteConnections *Stack
     connectionCreationMutex sync.Mutex
 	  dbName string
     newConn ConnectionFactory
@@ -36,23 +39,59 @@ type ConnectionPool struct {
 
 
 
-func NewConnectionPool(dbName string, maxConnections int, newConnFnc ConnectionFactory ) *ConnectionPool {
-   pool := &ConnectionPool{maxConnections:maxConnections,
-                           unusedConnections: NewStack(),
-                           dbName: dbName,
-                           newConn: newConnFnc,
+func NewConnectionPool(dbName string, maxConnections int, maxWriteConnections int, newConnFnc ConnectionFactory ) (pool *ConnectionPool) {
+
+   if maxWriteConnections == -1 {
+      pool = &ConnectionPool{maxConnections:maxConnections,
+                            maxWriteConnections: maxWriteConnections,
+                            unusedConnections: NewStack(),
+                            dbName: dbName,
+                            newConn: newConnFnc,
                           }
-   return pool
+   } else {
+      pool = &ConnectionPool{maxConnections:maxConnections,
+                            maxWriteConnections: maxWriteConnections,
+                            unusedConnections: NewStack(),
+                            unusedWriteConnections: NewStack(),
+                            dbName: dbName,
+                            newConn: newConnFnc,
+                          } 
+   }
+   return
 }
 
 
-func (pool *ConnectionPool) GrabConnection() (conn Connection) {
+func (pool *ConnectionPool) GrabConnection(doingWrite bool) (conn Connection) {
+   if doingWrite && pool.maxWriteConnections != -1 {
+     
+      val := pool.unusedWriteConnections.PopIf()
+      if val != nil {
+          conn = val.(Connection)
+      } else {
+          var err error
+          conn, err = pool.createConnection(doingWrite)
+          if err != nil {
+              panic(fmt.Sprintf("Unable to open the database '%s': %s", pool.dbName, err))
+          }
+          if conn == nil {
+              val = pool.unusedWriteConnections.Pop()  // really have to wait this time
+              conn = val.(Connection)
+          } else {
+              Log(PERSIST2_, "Created write connection %d\n",conn.Id())
+          }        
+      }    
+      Log(PERSIST2_, "Grabbed write connection %d\n",conn.Id())          
+
+       return
+   }
+
+
     val := pool.unusedConnections.PopIf()
     if val != nil {
         conn = val.(Connection)
     } else {
         var err error
-        conn, err = pool.createConnection()
+        conn, err = pool.createConnection(doingWrite)
         if err != nil {
             panic(fmt.Sprintf("Unable to open the database '%s': %s", pool.dbName, err))
         }
@@ -69,22 +108,49 @@ func (pool *ConnectionPool) GrabConnection() (conn Connection) {
 
 
 func (pool *ConnectionPool) ReleaseConnection(conn Connection) {
-    Log(PERSIST2_, "Released connection %d\n",conn.Id())   
-    pool.unusedConnections.Push(conn)
+    if conn.IsReadOnly() || pool.maxWriteConnections == -1 {
+       Log(PERSIST2_, "Released connection %d\n",conn.Id())  
+       pool.unusedConnections.Push(conn)
+    } else {
+       Log(PERSIST2_, "Released write connection %d\n",conn.Id())  
+       pool.unusedWriteConnections.Push(conn)      
+    }
 }
 
 
-func (pool *ConnectionPool) createConnection() (conn Connection, err error) {
+func (pool *ConnectionPool) createConnection(doingWrite bool) (conn Connection, err error) {
     pool.connectionCreationMutex.Lock() 
-    defer pool.connectionCreationMutex.Unlock()        
+    defer pool.connectionCreationMutex.Unlock()  
+
+    if pool.maxWriteConnections != -1 && doingWrite {
+
+        if pool.numWriteConnections < pool.maxWriteConnections {
+           conn, err = pool.newConn(pool.dbName, pool.numWriteConnections + 1)
+           if err == nil {
+              pool.numWriteConnections++
+              conn.SetReadOnly(false)              
+           }
+
+        }
+        return 
+    }
+
     if pool.numConnections < pool.maxConnections {
        conn, err = pool.newConn(pool.dbName, pool.numConnections + 1)
        if err == nil {
-          pool.numConnections++
+           pool.numConnections++
+           if pool.maxWriteConnections != -1 {
+               conn.SetReadOnly(true)
+           }          
        }
    }
+
+
+ 
    return
 }
+
+
 
 
 

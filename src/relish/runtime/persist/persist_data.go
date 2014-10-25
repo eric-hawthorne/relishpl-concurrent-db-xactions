@@ -1002,8 +1002,7 @@ func (db *SqliteDBThread) ObjectNameExists(name string) (found bool, err error) 
 		return
 	}
 
-    // This is a well used prepared statement so does not need to be destroyed with Finalize.
-	// defer selectStmt.Finalize()
+	defer selectStmt.Reset()  // Ensure the statement is not left open 	
 
 	err = selectStmt.Query(name)
     if err != nil {

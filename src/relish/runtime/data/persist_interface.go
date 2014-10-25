@@ -81,7 +81,7 @@ func (sg *StatementGroup) ClearArgs() {
 
 
 type DB interface {
-   GrabConnection() Connection
+   GrabConnection(doingWrite bool) Connection
    ReleaseConnection(conn Connection)
 
    /*
@@ -224,6 +224,17 @@ type Connection interface {
   Save the prepared statement in the connection.
   */
   CachePreparedStatement(sql string, statement Statement)
+
+  /*
+  This connection is only used for reading from the database. Never writing.
+  */
+  IsReadOnly() bool 
+
+  /*
+  Asserts that this connection is only used for db reads.
+  Default is it could be read or write.
+  */
+  SetReadOnly(isReadOnly bool) 
 
   Close() error
 

@@ -27,10 +27,10 @@ import (
 // A mutual-exclusion lock which ensures single-goroutine-at-a-time serialized access to the database.
 var dbMutex sync.Mutex
 
-const N_BEGIN_TRIES = 40
-const N_COMMIT_TRIES = 40
+const N_BEGIN_TRIES = 10
+const N_COMMIT_TRIES = 10
 
-var TRY_GAP_WIDENING_MS_INCREMENT = 10  // ms - longest wait will be 6 seconds + random factor 
+var TRY_GAP_WIDENING_MS_INCREMENT = 100  // ms 
  
 var dummyQuery *sqlite.Stmt
 
@@ -45,14 +45,14 @@ func (db *SqliteDBThread) BeginTransaction(transactionType string) (err error) {
    stmt := "BEGIN " + transactionType + " TRANSACTION"
    err = db.ExecStatement(stmt)
 
-   var TRY_GAP_WIDENING_MS_INCREMENT int64 = 10  // ms - longest wait will be 6 seconds + random factor 
+   var TRY_GAP_WIDENING_MS_INCREMENT int64 = 100  // ms - longest wait will be 6 seconds + random factor 
    var tryGapWidth int64 = TRY_GAP_WIDENING_MS_INCREMENT
    var r int64
    for i := 0; err != nil && i < N_BEGIN_TRIES ; i ++ {
       Logln(PERSIST2_,"BEGIN", transactionType, "ERR:",err)
-      r = rand.Int63n(1 + tryGapWidth)
-      if i > 20 {
-         TRY_GAP_WIDENING_MS_INCREMENT = 100
+      r = rand.Int63n(500 + tryGapWidth)
+      if i > 5 {
+         TRY_GAP_WIDENING_MS_INCREMENT = 1000
       }
       tryGapWidth += TRY_GAP_WIDENING_MS_INCREMENT
       time.Sleep( time.Duration( (tryGapWidth + r) * 1000000 ) )
@@ -73,17 +73,17 @@ func (db *SqliteDBThread) BeginTransaction(transactionType string) (err error) {
           }
       }
 
-      err = dummyQuery.Query()
+      err = dummyQuery.Query()  
       dummyQuery.Reset()
 
-      var TRY_GAP_WIDENING_MS_INCREMENT int64 = 10  // ms - longest wait will be 6 seconds + random factor 
+      var TRY_GAP_WIDENING_MS_INCREMENT int64 = 100  // ms - longest wait will be 6 seconds + random factor 
       var tryGapWidth int64 = TRY_GAP_WIDENING_MS_INCREMENT
       var r int64
       for j := 0; err != nil && j < N_BEGIN_TRIES  ; j++ {
          Logln(PERSIST2_,"BEGIN DEFERRED: ERR executing dummy select query:",err)
-         r = rand.Int63n(1 + tryGapWidth)
-         if j > 20 {
-            TRY_GAP_WIDENING_MS_INCREMENT = 100
+         r = rand.Int63n(500 + tryGapWidth)
+         if j > 5 {
+            TRY_GAP_WIDENING_MS_INCREMENT = 1000
          }
          tryGapWidth += TRY_GAP_WIDENING_MS_INCREMENT
          time.Sleep( time.Duration( (tryGapWidth + r) * 1000000 ) )
@@ -107,14 +107,14 @@ func (db *SqliteDBThread) CommitTransaction() (err error) {
    db.dbt.th.AllowGC()
    defer db.dbt.th.DisallowGC()
    err = db.ExecStatement("COMMIT TRANSACTION")
-   var TRY_GAP_WIDENING_MS_INCREMENT int64 = 10  // ms - longest wait will be 6 seconds + random factor 
+   var TRY_GAP_WIDENING_MS_INCREMENT int64 = 100  
    var tryGapWidth int64 = TRY_GAP_WIDENING_MS_INCREMENT
    var r int64
    for i := 0;  err != nil && i < N_COMMIT_TRIES ; i ++ {
       Logln(PERSIST2_,"COMMIT ERR:", err)      
-      r = rand.Int63n(1 + tryGapWidth)
-      if i > 20 {
-         TRY_GAP_WIDENING_MS_INCREMENT = 100
+      r = rand.Int63n(500 + tryGapWidth)
+      if i > 5 {
+         TRY_GAP_WIDENING_MS_INCREMENT = 1000
       }      
       tryGapWidth += TRY_GAP_WIDENING_MS_INCREMENT
       time.Sleep(  time.Duration( (tryGapWidth + r) * 1000000 ) )
@@ -134,7 +134,7 @@ func (db *SqliteDBThread) RollbackTransaction() (err error) {
    defer db.dbt.th.DisallowGC()  
    err = db.ExecStatement("ROLLBACK TRANSACTION")
    if err == nil {
-      Logln(PERSIST2_,"<<<<<<<<<<<<<<<<<<<<<<<<<< SUCCESSFULLY COMMITTED TRANSACTION")
+      Logln(PERSIST2_,"<<<<<<<<<<<<<<<<<<<<<<<<<< SUCCESSFULLY ROLLED BACK TRANSACTION")
    } else {
       Logln(PERSIST2_,"FAILED !!!!! To ROLLBACK TRANSACTION !!!!!!!! ???")
    }   
