@@ -4119,7 +4119,7 @@ var transactionMutex sync.Mutex
 //
 func builtinBeginTransaction(th InterpreterThread, objects []RObject) []RObject {
 
-    transactionType := "IMMEDIATE"
+    transactionType := "EXCLUSIVE"
     if len(objects) > 0 {
 	   transactionTypeKeyword := objects[0].String()
 	   if transactionTypeKeyword == "READ" {

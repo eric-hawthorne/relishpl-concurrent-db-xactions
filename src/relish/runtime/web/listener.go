@@ -439,7 +439,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
       if mods["READ"] {
          transactionType = "DEFERRED"
       } else {
-         transactionType = "IMMEDIATE"
+         transactionType = "EXCLUSIVE"
       }
 
       err := t.DBT().BeginTransaction(transactionType)
@@ -616,7 +616,7 @@ func explorerHandler(w http.ResponseWriter, r *http.Request) {
 
    defer interpreter.DeregisterThread(t)
 
-   t.DBT().BeginTransaction("IMMEDIATE")
+   t.DBT().BeginTransaction("EXCLUSIVE")
 
    t.SetTransaction(NewTransaction())   
    t.SetErr("Uncaught panic while running explorer web app method.")
