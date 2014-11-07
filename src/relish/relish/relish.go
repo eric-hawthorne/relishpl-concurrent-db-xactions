@@ -44,6 +44,12 @@ Command line options:
 
 -pool <#connections>   Maximum number of db connections to open with the database.
 
+-rpool <#connections>   Maximum number of read-only db connections to open with the database.
+
+-wpool <#connections>   Maximum number of writeable db connections to open with the database.
+
+Use either e.g -pool 20 or e.g. -rpool 5 -wpool 2
+
 -cpuprofile <filepath>.prof  Write cpu profile to file. Then use go tool pprof /opt/devel/relish/bin/relish somerun.prof 
 
 
@@ -136,7 +142,12 @@ func main() {
     
     flag.IntVar(&params.GcIntervalSeconds, "gc", params.GcIntervalSeconds, "The garbage collection check interval (seconds): defaults to 20")	
 
-    flag.IntVar(&params.DbMaxConnections, "pool", params.DbMaxConnections, "Maximum number of db connections to open with the database: defaults to 2")     
+    flag.IntVar(&params.DbMaxConnections, "pool", params.DbMaxConnections, "Maximum number of db connections to open with the database: defaults to 1")     
+
+    flag.IntVar(&params.DbMaxReadConnections, "rpool", params.DbMaxReadConnections, "Maximum number of read-only db connections to open with the database")     
+
+    flag.IntVar(&params.DbMaxWriteConnections, "wpool", params.DbMaxWriteConnections, "Maximum number of writeable db connections to open with the database")     
+
 
     flag.Parse()
 
