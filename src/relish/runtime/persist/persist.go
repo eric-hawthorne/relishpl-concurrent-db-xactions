@@ -29,6 +29,7 @@ import (
 	. "relish/dbg"
 	. "relish/runtime/data"
 	"relish/params"
+  "os"
 )
 
 
@@ -469,10 +470,22 @@ func NewDB(dbName string) *SqliteDB {
 	// }
 	// db.conn = conn
 
-  maxWriteConnections := 1  // Experiment
-	db.pool = NewConnectionPool(dbName, params.DbMaxConnections, maxWriteConnections, NewSqliteConn)
+  maxConnections := params.DbMaxConnections
+  if params.DbMaxWriteConnections != -1 {
+     if params.DbMaxConnections > 1 {
+          Logln(ALWAYS_,"Error. Specify either -pool or both -rpool and -wpool")
+          os.Exit(1)     
+     } 
+     if params.DbMaxReadConnections != -1 {
+         maxConnections = params.DbMaxReadConnections
+     } else {
+         Logln(ALWAYS_,"Error. Specify either -pool or both -rpool and -wpool")
+         os.Exit(1)
+     }
+  }
+	db.pool = NewConnectionPool(dbName, maxConnections, params.DbMaxWriteConnections, NewSqliteConn)
 
-    db.defaultDBThread = db.NewDBThread(nil)
+  db.defaultDBThread = db.NewDBThread(nil)
 
     // db.preparedStatements = make(map[string]*sqlite.Stmt)
 	db.defaultDBThread.EnsureObjectTable()
