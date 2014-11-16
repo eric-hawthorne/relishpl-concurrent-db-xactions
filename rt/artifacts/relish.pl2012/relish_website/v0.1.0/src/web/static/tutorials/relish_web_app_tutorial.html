@@ -1,0 +1,1165 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish web application tutorial
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Tutorial (Intermediate-Level) - Writing a Web Application</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#BackgroundNeeded">Background Needed</a><br/>	
+	<a href="#Definition" class="alt">Web App Definition</a><br/>
+	<a href="#RoleOfRelish">The Role of relish</a><br/>
+	<a href="#GetStarted" class="alt">Create Web App</a><br/>	
+	<a href="#StartApp">Start Web App</a><br/>	
+	<a href="#DynamicPages" class="alt">Dynamic Web Pages</a><br/>		
+  <a href="#Routing" >Routing URLs to Methods</a><br/>   
+  <a href="#Persistent" class="alt">Persistent Data</a><br/>
+  <a href="#Response">Formatting the Response</a><br/>
+  <a href="#Templates" class="alt">Templates</a><br/>
+  <a href="#TemplateSyntax">HTML Template Syntax</a><br/>    
+  <a href="#FormatType" class="alt">Format-type Directives</a><br/>  
+  <a href="#Restarting">Development Workflow</a><br/>   
+  <a href="#Uploading" class="alt">File Uploading</a><br/>   
+  <a href="#RequestObj">Request Headers</a><br/>     
+  <a href="#VarArgs" class="alt">Variable # of Args</a><br/>     
+  <a href="#SettingCookies">Setting Cookies</a><br/>   
+</div>  
+<div id="content_manual">
+	<a name="BackgroundNeeded"><h3>Background Knowledge Needed to Use This Document</h3></a>
+	This tutorial is written for a programmer who is already familiar with the basics of and technical terminology of web application development and wants to understand how to develop web applications using the relish&#8482; full-stack web application development framework. For example, the reader may have some experience developing web applications with platforms such as Java EE, Python web frameworks, Scala, Node.js, Ruby on Rails, PHP, or ASP.NET. 
+
+
+
+	<a name="Definition"><h3>Working Definition of Web Application</h3></a>
+	<p>
+		For purposes of this tutorial, a web application is defined as a computer program, with persistent data storage, that uses web pages as its user interface, and/or provides a web services API to other applications. 
+	</p>
+	<p>
+		The UI web pages may be simple HTML with HTML forms, or they may include client-side javascript for such purposes as:
+		   <ul>
+		   	<li>input validation,</li>
+		   <li>content layout, interaction, or animation,</li>  
+		   <li>AJAX asynchronous loading of page element content or data for the client-side,</li>
+		   <li>AJAX communication of user commands to the server.</li>
+		</ul>
+	</p>
+
+	<a name="RoleOfRelish"><h3>Role of relish in a Web Application</h3></a>
+	<p>
+		relish is for programming the server-side aspects of a web application:
+		   <ul>
+		   	<li>business logic</li>
+		   	<li>domain data model</li>		   	
+		   <li>data persistence and querying</li>  
+		   <li>template-based dynamic web-page generation</li>
+		   <li>JSON or XML responses to web service requests</li>
+		   <li>static web-page or static image/media content serving</li>
+		   <li>email message sending from application (if an SMTP server is available)</li>
+		   <li>making http GET/POST requests to downstream web services</li>
+		</ul>		
+		relish does not replace client-side javascript programming, if such is needed for your application.
+	</p>
+	
+
+    <a name="GetStarted"><h3>Getting Started - Create a Web-App Software Artifact</h3></a>
+	<p>
+	   The <a href="relish_web_app_quick_start_guide.html">relish Web Application Quick-Start Guide</a> shows you how to create a new web app project directory structure using a relish command. The example web application it creates is trivial and very silly, but we'll use it here nonetheless to teach some relish web-app programming concepts. So go ahead and create the chocolate shop web application shown in the quick-start guide, so you can look at its code for examples as you read about web app programming in this tutorial.
+</p>
+ <a name="StartApp"><h3>Starting the Web Application</h3></a>
+<p>
+As mentioned in the quick-start guide, you start a relish web application by issuing a command at the shell prompt in a terminal window; a command like:
+<code><pre>
+relish -web 8080 willy-wonka.commons.relish.pl2012/online_chocolate_shop
+</pre></code>
+This runs the relish web app program. First, the "main" method in the main.rel file of the main package is run, so you can put code that checks for and initializes base data in the main method. In "main" you can also start any background housekeeping goroutines your web app might need. Usually, none will be needed.
+	</p>
+	<p>
+	   Your relish command also causes the program to listen for http connections on port 8080, and to process those requests and return responses by http protocol. If you want to start a production web server on the standard http port, then use the command:
+<code><pre>
+relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop
+</pre></code>	  
+      instead. 
+<br/><br/>
+  <b><em>Note on running on the production web server port: 80 (or 443)</em></b><br/><br/>
+   For linux:<br/>
+  If you wish to run relish as a standalone web server on port 80 (or with the -tls 443 option to run a https web server) then
+  ordinarily you must run relish as the root user because listening on ports &lt; 1024 is a privileged operation. 
+  <b>However</b>, running a server as root is a bad idea, security-wise! <br/>
+  One workaround is the following:<br/>
+  <code>sudo setcap 'cap_net_bind_service=+ep' /opt/devel/relish/bin/relish</code><br/>
+  which will give the relish executable the capability to listen on ports &lt; 1024 even when relish
+  is run from a regular (non-root) user account.<br/>
+  There are other options, such as using an iptables prerouting rule to map a high port to port 80,
+  or, to run the relish web server behind an apache or nginx proxy.<br/> 
+  Not sure the best plan for MACOSX. You could just try<br/>
+  <code>sudo relish -web 80 willy-wonka.commons.relish.pl2012/online_chocolate_shop</code> but the security risk then exists.
+   </p>
+<p>
+   To test your web app, point your web browser at localhost:8080, or simply localhost, if you did -web 80.
+ 
+</p>   
+
+ <a name="DynamicPages"><h3>Making Web Pages Dynamic - Filling Page Content from the Program</h3></a>
+<p>
+Look at the relish source code file
+<code><pre>
+~/relish/artifacts/willy-wonka.commons.relish.pl2012/online_chocolate_shop/v0.1.0/src/web/dialog.rel
+</pre></code>
+It has examples of the subjects discussed below, although currently, its example code is not identical to the code examples in the tutorial below. Still, if you want to see an analogous and working example to what is discussed below, that dialog.rel file is your best bet currently, until the documentation and example suite improves.
+</p>
+<p>
+The general pattern of execution of a web application is that 
+<ul>
+<li>a web client (a browser, or web service client) makes a GET or POST http-request to a server.</li>
+<li>The server-side program has defined a set of web request handler methods, or just handler methods for short, each designed to process a different kind of request from a web client (i.e. each handler method knows how to process a different requested URL path on the server).</li>
+<li>The server routes the request (according to the request's URL path-parts) to the appropriate handler method in the server-side programming language.</li>
+<li>The GET query-arguments and/or POSTed data of the request are mapped to arguments of the method.</li>
+<li>The handler method, often using the argument data as lookup keys, typically looks up some data from persistent storage (or an in-memory cache corresponding to persistent storage.)</li>
+<li>Then it may perform some processing on the persistent data or just look up requested values from the persistent data store.</li>
+<li>The method then decides what the http response to the web client will be (for example an error message, or the requested data, or confirmation of a requested action).</li>
+<li>Finally, the handler method specifies how the response data will be formatted to create a valid http response of the kind expected by the client. The response may be formatted as an html web page with data values from the program/persistent store mixed into the web page, or the response could be pure data, formatted in any number of formats such as image/png, text/csv, text/xml, text/json.</li>
+</ul>
+<p>
+ In the following sections, the relish way of setting up URL routing and handler methods will be explained.
+</p>
+ <a name="Routing"><h3>Routing from Request URL to Handler Method</h3></a>
+<p>
+The request from the web client asks the server for the content associated with a particular URL, perhaps with a path in the URL after the hostname, and perhaps with ?arg1=val1&arg2=val2 arguments. Or the argument data could be POSTed in arg1=val1&arg2=val2 form. The task of the routing part of the web application framework is to translate the request URL path, and any args after the ? and any args POSTed, into a call to the correct request handler method in the server side programming language. That method will examine the request and its arguments, formulate a response, and send the response back via http to the client. In this section, you wil learn the details of how a request URL, with its "/"-separated path parts and its arguments, is routed to a particular relish method, and how that method is then automatically called with the URL arguments and posted data automatically supplied to the method as values of the method's declared formal parameters. Subsequent sections will discuss how the method typically might look up persistent data based on the URL arguments, and how the method can specify different formats for http responses to the client.
+</p>
+<p>
+Any relish source code file called dialog.rel (or someparticular_dialog.rel etc.) that is found in the web/ package of an artifact (or in any subpackage of web/) is a special source code file in that each of the methods that is declared in the dialog file is automatically mapped to a like-named URL of the web app's website. So for example if the web/dialog.rel file contained a method declared as
+<code><pre>
+products category String > String String
+"""
+ Lists the products in the category.
+"""
+</pre></code>
+Then this method is automatically the handler for a request to URL:
+<code><pre>
+http://localhost:8080/products?category=Chocolate%20Bars
+</pre></code>
+or on the production website:
+<code><pre>
+http://willywonkachocolates.com/products?category=Chocolate%20Bars
+</pre></code>
+</p>
+<p>
+When an http GET request to that URL is processed by the relish web app, the products method in the dialog.rel file is automatically called. The category parameter of the method is bound to the value of the category URL query argument (URL-decoded), so in this case, the category parameter of the method is bound to "Chocolate Bars".
+</p>
+<p> 
+The method is called in the context of a new local-database transaction which lasts throughout the processing of the request by the method, and commits just before the http response is sent to the web browser. 
+</p>
+<p>
+   Note that the products method as defined above is also mapped to the following URL:
+</p>
+<code><pre>
+http://localhost:8080/products/Chocolate%20Bars
+</pre></code>
+or on the production website:
+<code><pre>
+http://willywonkachocolates.com/products/Chocolate%20Bars
+</pre></code>
+<p>
+The general rule is that dialog method parameters are matched first by name to name=value query arguments and name=value posted form data, then any left over method parameters are assigned, in left to right order, the remaining URL path segments.
+</p>
+<p>
+If no method is found in web/...dialog.rel that matches the "products" part of the path, then the web app src directory web/products is checked, and if it exists and has a ...dialog.rel file, the matching process begins again in that directory, with the /products part of the URL already consumed and not available to match a method name or parameter.
+</p>
+<p>
+Finally, if no sub directories of the src/web/ directory match the URL path parts, then the method named "default" in the src/web/...dialog.rel file is invoked if it exists.
+</p>
+<p>
+Minor note. A URL like
+<code><pre>
+http://willywonkachocolates.com/product_catalog/Chocolate%20Bars
+
+or like
+
+http://willywonkachocolates.com/productCatalog/Chocolate%20Bars
+</pre></code>
+will both match a method called productCatalog in the web/...dialog.rel file. Underscores in URL path parts are converted to a camelCase version of the phrase, before being matched to a method name.
+</p>
+<a name="Index"><h4>The "index" Handler-Method</h4></a>
+<p>
+If there is a method called "index" in web/...dialog.rel, it will be called if a web client requests
+<code><pre>
+http://willywonkachocolates.com
+</pre></code> 
+</p>
+<p>
+   If a web/products/...dialog.rel file exists and that .rel file has an "index" method, it will match
+<code><pre>
+http://willywonkachocolates.com/products
+</pre></code>    
+if there was not a products method in the web/...dialog.rel file
+</p>
+<p>
+It is an error to have both a method called products in web/...dialog.rel and also a web/products/ subdirectory, because
+everything in the web/products/ subdirectory would be hidden by the method match in the parent directory.
+</p>
+
+
+ <a name="Persistent"><h3>Looking up and Modifying Persistent Data</h3></a>
+<p>
+The following code snippet demonstrates looking up persistent objects from the local database using an OQL (similar to SQL) query. The parameter to the query is the value of the category argument that was in the URL and was passed in to the method.
+This code shows the use of a list constructor ( []Product ) which takes a query string and extra arguments that are substituted into the query string using SQL variable substitution.
+<code><pre>   
+products category String > String String
+"""
+ Lists the products in the category.
+"""   
+   candyProducts = []Product ["category = ?" category]
+   
+   // Process in some way (modify) the persistent data. The resulting modifications to data are
+   // automatically (transparently) persisted, since they were applied to persistent data objects.
+   //
+   for candyProduct in candyProducts
+      if mod candyProduct.serialNumber 1000000
+         candyProduct.couponText = "You Won a Tour of the Chocolate Factory ! Call 604 123 4567"
+      else
+         candyProduct.couponText = "Sorry. Try Again."
+   ...      
+   ...  
+</pre></code>         
+</p>    
+<p> 
+    VERY IMPORTANT NOTE: Do not concatenate or string-substitute values that you receive as handler method arguments into a query string. That technique is vulnerable to SQL injection attacks. Use the SQL ? variable substitution as shown above instead.
+</p>
+
+<p>
+Here is a second example of looking up persistent data in a request handler method.
+This version assumes that a data object has been persisted in the local database by use
+of a <code><b>dub object name</b></code> command, as in 
+<code><pre>
+productCategory = "BonBon"
+dub currentChocolateBonBon (cat productCategory "_" serialNumber)
+</pre></code>
+If each individual chocolate treat is given its canonical name in the db, and persisted, as shown
+just above, then the following web request handler method might look up the treat, summoning
+it back into memory upon the web request:
+<code><pre>   
+chocolateTreatDetails category String serialNumber String > String Any
+"""
+ Returns a description of a particular chocolate treat manufactured in the chocolate factory,
+ including its date of manufacture and its best before date,
+ given the treat's product category and production serial number, which can be found on its wrapper.
+"""   
+   treat = summon (cat category "_" serialNumber)
+   ...      
+   ...  
+</pre></code>         
+</p>    
+
+
+ <a name="Response"><h3>Specifying http Response Format</h3></a>
+<p>
+You may have noticed the previous two example handler methods tailing off with ... ... to indicate more code.
+Clearly, what that additional code should do is return to the web client the results of looking up and possibly processing data. 
+</p>
+<p>
+   More precisely, the relish web application framework takes care of sending the method's output back
+   to the web client by http. But the last piece of code in the handler method must specify HOW the 
+   output is to be formatted, to create the http response.
+</p>
+<p>
+   Luckily, there are a set of high-level response-formatting directives that a relish web request handler
+   method can use to tell the framework how to format the response. These response-formatting directives
+   are explained below. 
+</p>
+<p>
+   The general pattern of response-formatting directives is that the handler method returns two or more values
+   (to the relish web-app framework that called the method.) The first return value is a formatting directive and the second and possibly third values are the data to be formatted, or a modifier of the directive. In simplest terms, the directive return-argument tells relish how to format the data return-argument. There are two types of directives; 
+   template directive, and format-type directive.
+</p>
+<p>
+   In a <em>template directive</em>, the first return-value of the handler method is the name of an html template file (e.g. "product_list.html"). The second value is one of three things:
+   <ul>
+      <li>a single object, whose attribute values can be substituted into the template by including {{.someAttribute}} in the template,</li> 
+         <li>a single simple value to be substituted into the html template wherever the template includes {{.}}, or</li>
+            
+         <li>a Map of names to values, where the values are substituted into the html template wherever the corresponding {{.name}} is found in the html template file.</li>
+</ul>            
+             These substitutions of values for {{.}} or {{.name}} variables in the template  produce the final html response from the web app.
+</p>
+
+
+
+<p>
+   In a <em>format-type directive</em>, the first return-value of the handler method is a FORMATTING COMMAND - an uppercase string token like "JSON" - which signals the kind of formatting of data that is to be done. The second value is usually the data itself, which is to be formatted. In some cases there may be two data values accepted after the formatting command.
+</p>
+
+
+
+<a name="Templates"><h4>Template Directives</h4></a>
+<p>
+   We'll start with a couple of fairly common examples, then just list and describe each available template directive.
+   Here, as typical examples, consider the handler methods we've been working on above. Let's complete the code for those methods, by adding their response-formatting code, which is found in the value-return expression of the method.
+</p>
+<p>
+<code><pre>   
+products category String > String String
+"""
+ Lists the products in the category.
+"""   
+   candyProducts = []Product ["category = ?" category]
+
+   // Process in some way (modify) the persistent data. The resulting modifications to data are
+   // automatically (transparently) persisted, since they were applied to persistent data objects.
+   //
+   for candyProduct in candyProducts
+      if mod candyProduct.serialNumber 1000000
+         candyProduct.couponText = "You Won a Tour of the Chocolate Factory ! Call 604 123 4567"
+      else
+         candyProduct.couponText = "Sorry. Try Again."
+
+   => "product_list.html"
+      candyProducts 
+</pre></code>   
+</p>
+<p>
+   The product_list.html file, also to be located in the src/web/ directory of the web app alongside the dialog.rel file, might be an html template file something like this:
+</p>
+<p>
+<code><pre>    
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+   &lt;head>
+      &lt;title>candy products&lt;/title> 
+   &lt;/head>
+   &lt;body>
+      &lt;h1>Willy Wonka Candy Products&lt;/h1>
+      &lt;table class="productList">
+      {{range .}}  
+         &lt;tr>
+            &lt;td>{{.name}}&lt;/td>&lt;td>{{.sku}}&lt;/td>&lt;td>{{.price}}&lt;/td>
+         &lt;/tr>
+         &lt;tr>
+            &lt;td colspan="3">{{.description}}&lt;/td>
+         &lt;/tr>
+      {{end}}
+      &lt;/table>
+   &lt;/body>
+&lt;/html>   
+</pre></code>       
+</p>
+<p>
+   Here is a slightly more advanced version of the example above. You might need to look at the html template syntax section below to understand some of the template constructs in this example. The main thing being demonstrated is the use of a Map as the data being passed to the template as the template argument.
+</p>
+
+<p>
+<code><pre>   
+products category String > String String
+"""
+ Lists the products in the category.
+"""   
+   candyProducts = []Product ["category = ?" category]
+
+   // Process in some way (modify) the persistent data. The resulting modifications to data are
+   // automatically (transparently) persisted, since they were applied to persistent data objects.
+   //
+   for candyProduct in candyProducts
+      if mod candyProduct.serialNumber 1000000
+         candyProduct.couponText = "You Won a Tour of the Chocolate Factory ! Call 604 123 4567"
+      else
+         candyProduct.couponText = "Sorry. Try Again."
+
+   => "product_list.html"
+      {
+         "category" => category
+         "products" => candyProducts 
+      }String > Any
+</pre></code>   
+</p>
+<p>
+   The product_list.html file, also to be located in the src/web/ directory of the web app alongside the dialog.rel file, might be an html template file something like this:
+</p>
+<p>
+<code><pre>    
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+   &lt;head>
+      &lt;title>{{$cat := .category}}{{lower $cat}} products&lt;/title> 
+   &lt;/head>
+   &lt;body>
+      &lt;h1>Willy Wonka {{.category}} Products&lt;/h1>
+      &lt;table class="productList">
+      {{range .products}}  
+         &lt;tr>
+            &lt;td>{{.name}}&lt;/td>&lt;td>{{.sku}}&lt;/td>&lt;td>{{.price}}&lt;/td>
+         &lt;/tr>
+         &lt;tr>
+            &lt;td colspan="3">{{.description}}&lt;/td>
+         &lt;/tr>
+      {{end}}
+      &lt;/table>
+   &lt;/body>
+&lt;/html>   
+</pre></code>       
+</p>
+<p>
+Here is the completion of the second handler method from previous sections.
+</p>
+<p>
+<code><pre>   
+chocolateTreatDetails category String serialNumber String > String Any
+"""
+ Returns a description of a particular chocolate treat manufactured in the chocolate factory,
+ including its date of manufacture and its best before date,
+ given the treat's product category and production serial number, which can be found on its wrapper.
+"""   
+   treat = summon (cat category "_" serialNumber)
+   
+   => "candy_item_details.html"
+      treat  
+</pre></code>
+</p>
+<p>
+   The corresponding html template might be:
+</p>
+<p>
+<code><pre>    
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+   &lt;head>
+      &lt;title>Manufactured Candy Details&lt;/title> 
+   &lt;/head>
+   &lt;body>
+      &lt;h1>Willy Wonka Manufactured Candy Details&lt;/h1>
+      &lt;table class="itemDetail">  
+         &lt;tr>
+            &lt;td>Category:&lt;/td>&lt;td>{{.productCategory}}&lt;/td> 
+         &lt;/tr>
+         &lt;tr>
+            &lt;td>Product Name:&lt;/td>&lt;td>{{.productName}}&lt;/td> 
+         &lt;/tr>     
+         &lt;tr>
+            &lt;td>SKU:&lt;/td>&lt;td>{{.sku}}&lt;/td> 
+         &lt;/tr>
+         &lt;tr>
+            &lt;td>Weight:&lt;/td>&lt;td>{{.weight}} grams&lt;/td> 
+         &lt;/tr>    
+         &lt;tr>
+            &lt;td>Serial#:&lt;/td>&lt;td>{{.serialNumber}}&lt;/td> 
+         &lt;/tr>           
+         &lt;tr>
+            &lt;td>Manufactured on:&lt;/td>&lt;td>{{with .manufDate}}{{format . "2006/01/02"}}{{end}}&lt;/td> 
+         &lt;/tr>         
+         &lt;tr>
+            &lt;td>Best Before:&lt;/td>&lt;td>{{with .bestBefore}}{{format . "2006/01/02"}}{{end}}&lt;/td> 
+         &lt;/tr>                                      
+      &lt;/table>
+   &lt;/body>
+&lt;/html>   
+</pre></code>       
+</p>
+
+<p>
+Here is the second handler method example again, this time with the html template expressed
+inline in the method declaration instead of being in a separate file. This might be fine for
+small simple html-formatted responses.
+</p>
+<p>
+<code><pre>   
+chocolateTreatDetails category String serialNumber String > String Any
+"""
+ Returns a description of a particular chocolate treat manufactured in the chocolate factory,
+ including its date of manufacture and its best before date,
+ given the treat's product category and production serial number, which can be found on its wrapper.
+"""   
+   treat = summon (cat category "_" serialNumber)
+   
+   => "TEMPLATE"
+      """
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+   &lt;head>
+      &lt;title>Manufactured Candy Details&lt;/title> 
+   &lt;/head>
+   &lt;body>
+      &lt;h1>Willy Wonka Manufactured Candy Details&lt;/h1>
+      &lt;table class="itemDetail">  
+         &lt;tr>
+            &lt;td>Category:&lt;/td>&lt;td>{{.productCategory}}&lt;/td> 
+         &lt;/tr>
+         &lt;tr>
+            &lt;td>Product Name:&lt;/td>&lt;td>{{.productName}}&lt;/td> 
+         &lt;/tr>     
+         &lt;tr>
+            &lt;td>SKU:&lt;/td>&lt;td>{{.sku}}&lt;/td> 
+         &lt;/tr>
+         &lt;tr>
+            &lt;td>Weight:&lt;/td>&lt;td>{{.weight}} grams&lt;/td> 
+         &lt;/tr>    
+         &lt;tr>
+            &lt;td>Serial#:&lt;/td>&lt;td>{{.serialNumber}}&lt;/td> 
+         &lt;/tr>           
+         &lt;tr>
+            &lt;td>Manufactured on:&lt;/td>&lt;td>{{with .manufDate}}{{format . "2006/01/02"}}{{end}}&lt;/td> 
+         &lt;/tr>         
+         &lt;tr>
+            &lt;td>Best Before:&lt;/td>&lt;td>{{with .bestBefore}}{{format . "2006/01/02"}}{{end}}&lt;/td> 
+         &lt;/tr>                                      
+      &lt;/table>
+   &lt;/body>
+&lt;/html>        
+"""      
+      treat  
+</pre></code>
+</p>
+<h5>Available template directives</h5>
+<p>
+   In summary, the available template directives for substituting handler method output into a template are:
+<code><pre>
+=> "path/to/template.html" someObjToPassToTemplate  // Note: file paths are relative to the dialog.rel's directory
+
+
+=> "TEMPLATE" "literal template text - probably html formatted" someObjToPassToTemplate
+</pre></code>
+</p>
+
+<a name="TemplateSyntax"><h4>HTML Template Syntax</h4></a>
+<p>
+   Until full relish html template documentation is available, you should know that relish html template syntax is essentially a subset of Go html template syntax, so you should read the <a href="http://golang.org/pkg/text/template/" target="_blank">Go  template documentation</a> and html template documentation. 
+</p>
+<p>relish html templates have all of the Go template constructs like {{.}}, {{.attribute}}, {{if}}...{{else}}...{{end}}, {{range .}}...{{end}}, {{with .attribute}}...{{end}}, with the exception of nested templates, which are not supported.<br/>
+They also have template-variable assignment: {{$a := .attribute}} or {{range $i,$val := .products}}
+</p>
+<p>
+relish html templates can also contain relish method calls such as<code><pre>{{$date := .expiryDate}}{{format $date "Jan 2, 2006"}} or {{if neq . $b}}</pre></code> so long as the methods are either relish built-ins, are defined in the same web package as the handler method that the template is being invoked from, or are in packages that have been imported into the dialog.rel file that the template is being invoked from. Two related limitations on relish method expressions within templates: 1) You cannot nest method calls, and 2) the arguments can only be . (the template's current object) or a template variable e.g. $a or $date or a literal string or numeric value. Specifically, you cannot express {{foo .attr1}} directly. Do {{$a1 := .attr1}}{{foo $a1}} instead.
+</p>
+
+
+<a name="FormatType"><h4>Format-type Directives</h4></a>
+<p>
+   We'll start with an example shown in handler method context, then just list and describe each available format-type directive.
+   Here, as typical examples, consider the handler methods we've been working on above. Let's complete the code for those methods, by adding their response-formatting code, which is found in the value-return expression of the method.
+</p>
+<p>
+<code><pre>
+Image
+"""
+ An object type used to represent an image and its metadata.
+"""
+   data String
+   imageFormat String
+   
+
+image id String > String String String
+"""
+ Handler method for a request for an image.
+ Summons the specified image from the local database and returns the image data.
+ For clarity of exposition, we'll ignore the imageFormat attribute of the image and
+ assume it is "image/png".
+"""
+   if not exists id
+      => "HTTP ERROR" 404 "Image not found."
+   img = summon id
+   => "MEDIA" "image/png" img.data
+
+</pre></code>
+</p>
+<h5>Available format-type directives</h5>
+<p>
+   Here are the available format-type directives for formatting handler method output data:<br/>
+   (In the following, [a] means a is optional.)
+<code><pre>
+=> "JSON" anyValueOrStructuredObjectOrCollectionOrMapToBeConverted
+
+=> "JSON PRE" "{'John Smith':[2,6,4]}"   // Expects a pre-formatted JSON string.
+
+=> "JSON FILE" "some/file/path.json"
+   
+   
+=> "XML PRE" 
+   "mime/type"                          
+   """
+&lt;?xml version="1.0"?>
+&lt;sometag>
+&lt;/sometag>
+"""
+
+=> "XML FILE" "mime/type" "some/file/path.xml"  // Note: file paths are relative to the dialog.rel's directory
+
+
+=> "HTML" 
+   """
+&lt;html>literal html text here&lt;/html>
+"""
+
+=> "HTML FILE" "foo.html"
+
+
+=> "IMAGE" "jpeg" imageDataAsStringType  // valid types "jpeg" "gif" "png"
+
+=> "IMAGE FILE" "jpeg" "some/file/path.jpg"
+
+
+=> "VIDEO" "mp4" videoDataAsStringType  // valid types "mp4" "mpeg" "ogg" "quicktime" "webm"
+                                        // "x-matroska" "x-ms-wmv" "x-flv"
+
+=> "VIDEO FILE" ["mp4"] "some/file/path.mp4"
+
+
+=> "MEDIA" "mime/type" dataAsStringType
+
+=> "MEDIA FILE" ["application/x-octetstream"] "some/file/path.dat"
+
+// If the mime/type argument is missing, no Content-type: header is explicitly
+// set, and we are relying on the server and/or client to recognize the type of data
+// by applying data-stream type-guessing "magic".
+
+
+=> "REDIRECT"  [code] urlString  // code is 301,302,303,or 307, default 303
+
+
+=> "HTTP ERROR" 404 ["Resource Not Found"]  // or 403 (no permission) etc  
+
+=> "HTTP CODE" 200 ["OK"]  // Same as HTTP ERROR except ERROR only accepts error codes i.e. 4XX through 5XX.
+
+
+
+// The HEADERS directive can prefix any of the other forms, to add additional http headers. 
+
+=> """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""
+   "JSON"
+   object
+
+
+or 
+
+
+=> """
+HEADERS 
+Content-Disposition: attachment; filename="fname.png"
+"""
+   "MEDIA FILE" 
+   "image/png" 
+   "some/file/path.png"
+</pre></code>
+</p>
+
+
+
+
+
+
+
+    <a name="Restarting"><h3>Changing Code and Restarting the Web Application</h3></a>
+	<p>
+         If you edit and change any of your .rel files in the application, you must shut down the web application (Ctrl-c in the terminal window),
+         and then start the web application again by re-issuing the relish -web 8080 ... command.<br/>
+	</p>
+	<p>
+		You can modify html template files without shutting down the web application. Just reload the web page in the browser after changing the html template file.
+	</p>	
+	<p>
+		<em>Hint: If you make a change to an html template, to a css file, or to a dialog.rel file and you don't see a change when you reload the dynamic web page in your browser, the page may have been cached in the browser. The HEADERS Cache-control... technique eliminates that issue, or, if you want a real refresh while testing but caching in production, just use whatever means your browser has to clear the cache each time while testing.</em>
+	</p>	
+	<p>
+	   Note that your persistent data, as might be expected, survives restarts of the web-app. If you want to reset the persistent data to an empty database, you should<br/><code>rmdb willy-wonka.commons.relish.pl2012/online_chocolate_shop</code><br/>
+     (when the web-app relish program is not running.)<br/><br/>
+     <em>rmdb is a shell script which your relish installation installed. It deletes the database of the specified relish artifact. Careful!</em>
+   </p>
+   
+   
+   
+<a name="Uploading"><h3>Accepting uploaded files</h3></a>   
+
+<p>
+Imagine you write a web page to allow the web app user to upload a file to the server. A snippet of the web page might look like:
+<code><pre>
+&lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
+    &lt;fieldset>
+      &lt;input type="file" name="myfile" id="myfile">
+      &lt;input type="submit"  value="upload file">
+  &lt;/fieldset>
+&lt;/form>
+&lt;/p>
+</pre></code>   
+</p>
+<p>
+Here is an example relish dialog.rel request-handler method which handles a file upload:
+<code><pre>
+   
+import
+   http_srv
+   
+      
+uploadAction request http_srv.Request > String String
+"""
+ Processes an upload of a single file.
+"""
+   file err = uploadedFile request "myfile"
+   if err
+      => errf "Error: No uploaded file" "myfile" err  
+
+   fileName = name file
+   err = open file
+   if err
+      => errf "Error opening uploaded file" fileName err
+     
+   content err = readAllBinary file
+   if err
+      => errf "Error reading uploaded file" fileName err
+
+   close file
+      
+   if eq fileName "metadata.txt"
+      ...
+   elif hasSuffix fileName ".zip"
+      ...
+
+   => "HTML"
+      """
+&lt;html>
+Uploaded !
+&lt;/html>
+"""
+
+
+errf preamble String name String err String > String String
+"""
+ Return an html formatted error message as the second argument, and "HTML" as the first argument.
+ This variant takes 3 arguments, a message, a name of some object, and the error message that was 
+ produced.
+ The result of this function is suitable for being returned (in the case of error) by a web dialog
+ request-handler method.
+"""   
+   => "HTML"
+      fill """
+&lt;html>
+&lt;center>
+&lt;p style="max-width: 800px; padding: 30px">
+%s %s: %s
+&lt;/p>
+&lt;/center>
+&lt;/html>
+"""
+           preamble
+           name
+           err
+</pre></code> 
+</p>   
+
+
+<p>
+What if you need to write a web page to allow the web app user to upload multiple files to the server all in one go. A snippet of the web page might look like:
+<code><pre>
+&lt;form class="form-signin" method="post" action="/uploadAction" enctype="multipart/form-data">
+    &lt;fieldset>
+      &lt;input type="file" name="myfiles" id="myfiles" multiple="multiple">
+      &lt;input type="submit"  value="upload files">
+  &lt;/fieldset>
+&lt;/form>
+&lt;/p>
+</pre></code>   
+</p>
+<p>
+Here is an example relish dialog.rel request-handler method which handles multi-file upload:
+<code><pre>
+   
+import
+   http_srv
+   
+      
+uploadAction request http_srv.Request > String String
+"""
+ Processes an upload of multiple files.
+"""
+   fileList = uploadedFiles request "myfiles"
+   for file in fileList
+      fileName = name file
+      err = open file
+      if err
+         => errf "Error opening uploaded file" fileName err
+     
+      content err = readAllBinary file
+      if err
+         => errf "Error reading uploaded file" fileName err
+
+      close file
+      
+      if eq fileName "metadata.txt"
+         ...
+      elif hasSuffix fileName ".zip"
+         ...
+
+   => "HTML"
+      """
+&lt;html>
+Uploaded !
+&lt;/html>
+"""
+</pre></code> 
+</p>   
+   
+<a name="RequestObj"><h3>Examining the http request metadata (headers)</h3></a>   
+<p>
+   You saw in the file upload example above the inclusion of a special "request" parameter to the handler method.
+   Such a parameter can ALWAYS be included as the first parameter of a handler method, and it does
+   not match with URL arguments, URL path elements, or posted argument values.     
+<code><pre>
+import
+   http_srv
+      
+      
+myHandlerMethod request http_srv.Request formInput1 String formInput2 String > String String
+</pre></code>
+Instead, it gives you an object representing the http request. You can apply methods to this object
+to obtain the http request headers that were set with the request. Here's the current list
+of header accessor methods available for http_srv.Request objects:
+<code><pre>
+// These methods are defined in the relish standard-library http_srv package:
+   
+
+uploadedFiles r Request key String > fs [] UploadedFile
+"""
+Return a list of uploaded files or an empty list if no file upload input of the
+given name (the key) was found in this http request.
+
+An http_srv.UploadedFile object can be used in the same way as
+a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+uploadedFile r Request key String > f UploadedFile err String
+"""
+ Return a single uploaded file or an error if no file upload input of the
+ given name (the key) was found in this http request.
+ 
+ An http_srv.UploadedFile object can be used in the same way as
+ a files.File object, at least for read operations and obtaining its file name.
+"""
+
+
+cookies r Request > c [] Cookie
+"""
+ Returns a list of the cookies present in the http request.
+"""
+
+
+cookie r Request key String > c Cookie err String
+"""
+ Returns the cookie in the http request that has the particular cookie name.
+ The err return value is set to a message if no valid, unexpired 
+ cookie of that name is present in the request.
+ """
+ 
+ 
+Cookie
+"""
+ An http cookie. Attributes accessible only through methods below.
+ See golang.org/pkg/net/http/#Cookie for cookie attribute meanings 
+"""
+
+name c Cookie > String
+value c Cookie > String
+path c Cookie > String
+domain c Cookie > String
+expires c Cookie > Time 
+rawExpires c Cookie > String
+
+// maxAge=0 means no 'Max-Age' attribute specified.
+// maxAge&lt;0 means delete cookie now, equivalently 'Max-Age: 0'
+// maxAge>0 means Max-Age attribute present and given in seconds
+maxAge c Cookie > Int
+secure c Cookie > Bool
+httpOnly c Cookie > Bool
+raw c Cookie > String      
+initString s String c Cookie > String
+"""
+ Return a string representation of the cookie's attributes.
+""" 
+
+
+requestUri r Request > String 
+"""
+ The entire request URL including arguments, unmodified i.e.
+ raw as it appeared in the http request data stream.
+"""
+
+
+referer r Request > String 
+"""
+ URL of page from which the present URL link was clicked on.
+ Note: Misspelling of "referrer" is carried over from http specification.
+"""
+
+
+method r Request > String 
+"""
+ GET POST PUT
+"""
+
+
+host r Request > String 
+"""
+ host or host:port
+"""
+
+
+remoteAddr r Request > String 
+"""
+ The client address
+ IP:port
+"""
+
+
+ 
+
+
+</pre></code>
+</p>   
+   
+<a name="VarArgs"><h3>Handling requests with a variable number of GET/POST/path-segment arguments</h3></a>   
+<p>
+Imagine you have a URL which if the user is logged in has a token argument, and has no arguments if not.
+To handle that, we might make a dialog.rel handler method like this:
+<code><pre>   
+listAccounts
+   ...kw {} String > String 
+> 
+   String 
+   Any
+"""
+ Displays the user's bank accounts showing balance of each.
+
+ There may be a token argument. If so, look up the Visit object of the logged in
+ user. If not, redirect to the login page.
+"""
+
+   token tokenFound = kw["token"]
+   if tokenFound
+      if not exists token  // Invalid token - doesn't correspond to a user visit.
+         => "HTTP ERROR" 404
+      visit = summon token
+   else
+      => "REDIRECT" "login"  
+      
+   => "list_accounts.html"   
+      visit.user.accounts
+</pre></code>  
+The ...kw parameter's declared type is a Map from String to String. If such an parameter, with the ... form,
+is found in a handler method declaration, any leftover name=value arguments 
+from the request URI and the POSTed data are put into the kw Map. That is, kw gets any arguments
+which are not matched to other method parameters by the usual matching rules.
+</p>
+<p>
+As another case, imagine you want to handle RESTful resource requests. In that case, you may
+wish to process all of the path elements of the URL, to see which resource is being referred to.
+<code><pre>   
+index
+   ...args [] String 
+> 
+   String 
+   Any
+"""
+ Handles a request for the root (i.e. empty path) url on the server and port.
+"""
+  if args 
+     resourceType = args[0]  
+       
+     if gt (len args) 1
+        resourceId = args[1]
+        => "JSON" 
+           getResource resourceType resourceId        
+     else
+        => "JSON" 
+           listResources resourceType
+  => "JSON" 
+     listResourceTypes           
+</pre></code>
+The ...args parameter's declared type is List of String.
+If such an parameter, with the ... form,
+is found in a handler method declaration, any leftover arguments from the request URI and the POSTed data are put into the 
+args List. That is, args gets any arguments which are not matched to other method parameters by the usual matching rules.
+</p>
+<br/>
+<br/>
+
+
+
+
+<a name="SettingCookies"><h3>Setting Cookies in an http Response</h3></a>   
+<p>
+The following cookie-setting methods are included in the http_srv package:
+<code><pre> 
+
+setCookie c Cookie > String    
+"""
+ Return a proper header line for setting the cookie in an http response.
+ Note: currently there is no way to construct a valid cookie except the
+ method variant below.
+ So this variant of the setCookie method is currently 
+ only for passing to the http response
+ a cookie received in the http request, unmodified.
+ TODO: Add Cookie constructor methods or attribute setter methods.
+"""
+
+
+setCookie name String value String maxAge Int path String domain String > String
+"""
+ Return a proper header line for setting the cookie in an http response.
+ See also the high-level methods below for shortcuts for session maintenance with 
+ a session cookie.
+"""
+
+
+// now some higher-level methods, specifically for login-session maintenance
+
+
+newSessionToken > String
+"""
+ Generate a token suitable for identifying a login session for a webapp.
+ Currently just uses a hash of the time and another factor that is
+ an incrementing number. Not intended to be a cryptographically secure random token.
+"""
+
+
+sessionCookie sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates a Set-Cookie: http header row
+ to set a session cookie called SESS that will time out in the
+ specified number of minutes.
+"""
+
+
+sessionCookieAndNoCache sessionToken String sessionTimeoutMinutes Int > String
+"""
+ High-level method. Given a session token such as one generated by the 
+ newSessionToken method, generates http headers suitable for
+ sending in a response to an http request from within a webapp.
+
+ Sends a Set-Cookie: http header row
+ to set a session cookie called SESS, whose value is the sessionToken and
+ that will time out in the specified number of minutes.
+ Also sets he following cache-control headers to prevent caching
+ of the response by browsers and web proxies:
+ Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+ Pragma: no-cache
+ Expires: 0
+"""
+
+
+session request Request > token String
+"""
+ Return the session token string from the http request, 
+ or the empty string "" if no session cookie was found.
+ Does not validate that it is a valid current session token.
+"""
+
+
+// Usage of the preceding high-level web-app session-maintenance methods:
+//
+// import
+//    http_srv
+//
+//
+// For action method that processes a successful user login:
+// 
+//    tok = http_srv.newSessionToken
+//
+//    newSessionHeaders = sessionCookieAndNoCache tok 60
+//
+//    => newSessionHeaders
+//       "REDIRECT"
+//       cat "somePageYouMustBeLoggedInToView/" arg1 "/" arg2
+//
+// 
+// For a dialog method which must have a valid existing session:
+//
+// somePageYouMustBeLoggedInToView 
+//    request http_srv.Request 
+//    arg1 String 
+//    arg2 Int 
+// > 
+//    String 
+//    String 
+//    Any
+// """
+//  Processes an in-session http request.
+// """
+//    tok = session request
+//    // TODO verify token is a valid logged-in visit identifier
+//
+//    extendSessionHeaders = sessionCookieAndNoCache tok 60    
+//
+//    => extendSessionHeaders
+//       "somePage.html"
+//       {
+//          "title" => arg1 
+//          "arg2"  => arg2
+//       }String > Any
+
+</pre></code> 
+</p>
+<br/>
+<br/>
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>

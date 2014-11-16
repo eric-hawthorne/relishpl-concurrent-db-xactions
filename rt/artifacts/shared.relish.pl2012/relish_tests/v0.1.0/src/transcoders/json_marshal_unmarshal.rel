@@ -1,0 +1,38 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  transcoders
+
+""" 
+ json_marshal_unmarshal.rel
+
+ Test marshalling and unmarshalling text/json data.
+"""
+
+import
+   json
+
+
+testJson
+"""
+ Tests marshalling an object tree into JSON data and unmarshalling it back into a relish object tree.
+"""
+   print "Testing JSON"
+   
+   a = {
+          "firstName" => "Joe"
+          "lastName"  => "Cool"
+          "age"       => 23
+          "numbers"   => [1 2 3 5 8 13 21]
+       }String > Any
+   
+   encoded err = jsonMarshal a
+
+   if err 
+      print err
+   else    
+      print encoded
+      b err = jsonUnmarshal encoded
+      if err 
+         print "Error:" err
+      else
+         print b

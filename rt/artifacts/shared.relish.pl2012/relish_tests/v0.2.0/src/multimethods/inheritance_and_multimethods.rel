@@ -1,0 +1,353 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  multimethods
+
+""" 
+ inheritance_and_multimethods.rel
+
+ Test multiple inheritance of data types and their attributes and relations,
+ as well as multimethod dispatch. (multi-argument polymorphic dynamic method-dispatch)
+ where the method to be executed is selected based on the run-time type of all of the 
+ required positional arguments.
+
+ The following data type specialization lattice will be created as test data
+ for these tests:
+
+ Shape                  distance overlaps distance contains
+   |    \     \     \  
+ Shape2D Point Curve  Surface
+   |     /       |   \       \
+ Point2D    Polyline Polygon  Region
+                                 \
+                               Doughnut
+"""
+
+
+import
+   test
+   
+   
+main
+"""
+ Main program.
+"""
+   testMultimethods
+
+
+
+
+Shape
+"""
+ A geometric shape.
+"""
+
+
+Point <: Shape
+"""
+ A shape which is topologically 0-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Curve <: Shape
+"""
+ A shape which is topologically 1-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Surface <: Shape
+"""
+ A shape which is topologically 2-dimensional. This is independent of the number of dinensions of the space.
+"""
+
+
+Shape2D <: Shape
+"""
+ A shape defined in a two-dimensional cartesian co-ordinate space.
+"""
+
+
+Point2D <: Shape2D Point
+"""
+ A point with 2-dimensional co-ordinates.
+"""
+
+
+
+Polyline <: Shape2D Curve
+"""
+ An open curve in 2D space, defined with a list of line-segments. The two ends are distinct points.
+"""
+
+
+Polygon <: Shape2D Curve
+"""
+ A closed curve in 2D space, defined with a list of line-segments.
+"""
+
+
+Region <: Shape2D Surface
+"""
+ A contiguous surface in 2-dimensional space.
+"""
+
+
+Doughnut <: Region
+"""
+ A region with one or more holes in it.
+"""
+
+
+StraightLine <: Polyline
+"""
+ Actually a single line-segment in 2D space.
+"""
+
+
+// Define some geometric methods.
+//
+// distance overlaps touches contains
+
+
+distance s1 Shape2D s2 Shape2D > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Point2D:1" "Shape2D"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Point2D:2" "Shape2D"
+   => 0.0  // TODO Implement
+
+
+distance s1 Point2D s2 Polyline > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Point2D:1" "Point2D"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Polyline:3" "Polyline 1"
+   => 0.0  // TODO Implement
+
+
+distance s1 Point2D s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Point2D:1" "Point2D"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Polygon:4" "Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Point2D s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Polyline:3" "Point2D"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Region 1"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polyline s2 Polyline > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/StraightLine:6" "Polyline 2"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Polyline 3"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polyline s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   print (String s1) (String s2)
+   print "distance Polyline Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polyline s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Polyline:3" "Polyline" 
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Region"
+
+   => 0.0  // TODO Implement
+
+
+distance s1 StraightLine s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/StraightLine:6" "StraightLine"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Region 2"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polygon s2 Polygon > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "" "Polygon"
+   assertEq (String s2) "" "Polygon"
+   => 0.0  // TODO Implement
+
+
+distance s1 Polygon s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Polygon:4" "Polygon"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Region 3"
+   => 0.0  // TODO Implement
+
+
+distance s1 Region s2 Region > Float
+"""
+ Return the minimum linear distance between the shapes.
+"""
+   assertEq (String s1) "shared.relish.pl2012/relish_tests/pkg/multimethods/Doughnut:5" "Region 4"
+   assertEq (String s2) "shared.relish.pl2012/relish_tests/pkg/multimethods/Region:7" "Region 4"
+   => 0.0  // TODO Implement
+
+
+
+touches s1 Shape2D s2 Shape2D > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Shape2D Shape2D"
+   => false  // TODO Implement
+
+
+touches s1 Point2D s2 Polyline > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Point2D Polyline"
+   => false  // TODO Implement
+
+
+touches s1 Point2D s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Point2D Polygon"
+   => false  // TODO Implement
+
+
+touches s1 Point2D s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Point2D Region"
+   => false  // TODO Implement
+
+
+touches s1 Polyline s2 Polyline > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Polyline Polyline"
+   => false  // TODO Implement
+
+
+touches s1 Polyline s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Polyline Polygon"
+   => false  // TODO Implement
+
+
+touches s1 Polyline s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print "touches Polyline Region"
+   => false  // TODO Implement
+
+
+touches s1 Polygon s2 Polygon > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Polygon Polygon"
+   => false  // TODO Implement
+
+
+touches s1 Polygon s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Polygon Region"
+   => false  // TODO Implement
+
+
+touches s1 Region s2 Region > Bool
+"""
+ Whether one shape touches or overlaps with the other.
+"""
+   print (String s1) (String s2)
+   print "touches Region Region"
+   => false  // TODO Implement
+
+
+
+
+testMultimethods
+"""
+ Test multiple inheritance and multi-argument multimethod dispatch, where the method to
+ be executed is selected based on the run-time type of all of the required positional arguments.
+"""
+   print "===== Multimethods"
+
+   point1 = Point2D
+   
+   point2 = Point2D
+
+   polyline1 = Polyline 
+
+   polyline2 = StraightLine    
+   
+   polygon1 = Polygon   
+
+   polygon2 = Polygon   
+
+   region1 = Region
+
+   region2 = Doughnut
+
+   distance point1 point2
+
+   distance point1 polyline1
+
+   distance point1 polygon1
+
+   distance polyline1 region2
+
+   distance polyline2 region2
+
+   distance region2 region1   
+
+   distance polygon1 region2   
+   
+   print "PASSED"
+
+
+argTest
+   a Float
+   b String
+   bar Int = 0
+   ...v [] String
+> 
+   Float   
+"""
+ Test defaulted-keyword and variadic arguments to functions. This is a TODO because these are not
+ supported in the generator and interpreter yet.
+"""
+   => a

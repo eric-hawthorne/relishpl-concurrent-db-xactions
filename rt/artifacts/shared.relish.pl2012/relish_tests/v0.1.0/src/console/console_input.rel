@@ -1,0 +1,24 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  console 
+
+""" 
+ console_input.rel
+
+ Test interactive input from the console (i.e. terminal).
+"""
+
+
+main
+"""
+ Main program.
+"""
+   testInput
+
+
+testInput
+"""
+ Test interactive input from the console.
+"""
+   s = input "What is your name?\n>"
+   print s      

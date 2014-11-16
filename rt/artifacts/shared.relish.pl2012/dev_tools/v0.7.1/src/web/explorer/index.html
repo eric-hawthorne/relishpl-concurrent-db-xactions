@@ -1,0 +1,796 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language
+</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/explorer.css" />
+
+<!-- Uncomment only one of the following 3 lines. -->
+<script type="text/javascript" src="jquery-2.0.3.js"></script> <!-- jquery for testing - 230kB -->
+<!-- <script type="text/javascript" src="jquery-2.0.3.min.js"></script> --> <!-- minified jquery for production - 81kB -->
+<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script> --> <!-- jquery loaded from a CDN -->
+
+	<script type="text/javascript">
+		
+		function help(topic) {
+			mywindow = window.open ("/explorer/help/" + topic + ".html");
+			mywindow.moveTo(150,50);	
+			return false;		
+		}
+
+
+    var programURL = "";  // Web services root url we are currently connected to. Excludes trailing /
+
+    var artifact = "{{.artfctName}}";
+    
+    var invokedFromPlayground = ("{{.artfctName}}" != "");
+      
+    /*
+    Makes a web service request to the explorer_api of the target program, which is assumed to be
+    listening for and responding to http requests to the explore_api.
+    Requests the list of (non-primitive) data types in the target program.
+    Populates the type select options.
+    */
+    function connectToProgram(expected) {
+      programURL = document.getElementById("programUrl").value
+      programURL = programURL.trim()
+      if (programURL.length > 0 && programURL.lastIndexOf("/") == programURL.length - 1) {
+         programURL = programURL.substring(0,programURL.length - 1)
+      }
+      if (programURL == "") {
+         if (expected) {
+            alert("Please supply the web service URL of the target program that is to be debugged.");
+         }
+         return
+      }
+      if (programURL.indexOf("http://") == -1 && programURL.indexOf("https://") == -1) {
+         programURL = "http://" + programURL
+      }
+      $.ajax({
+        type: "POST",
+        url: "/explorer/types",
+        dataType: "json",         
+        data: {"url" : programURL}
+      }).done( function(msg) {
+           $("select#type").html("")
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<option>" + msg[i] + "</option>\n";
+           }
+          $("select#type").append(options);
+          
+          checkIfPaused(false);   // determine if resume button is needed. If so, display it.
+
+          findNamedObjects1("**Object in Focus**", false); // pull up the in-focus object if any.
+
+        // alert( "Data Received: " + msg );
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });
+    }
+
+    function findNamedObjects() {
+      if (programURL == "") {
+         alert("Please supply the web service URL of the target program that is to be debugged.");
+         return         
+      }    
+
+      var prefix = document.getElementById("prefix").value
+
+      findNamedObjects1(prefix, false);
+    }
+
+
+    function findNamedObjects1(prefix, isOnNewlyPaused) {
+      $.ajax({
+        type: "POST",
+        url: "/explorer/names",
+        dataType: "json",         
+        data: {"url" : programURL, "prefix" : prefix}
+      }).done( function(msg) {
+           if (msg.length >= 1 || ! isOnNewlyPaused) {
+              $("div#objectList").html("")
+           }
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
+           }
+          $("div#objectList").append(options) 
+         if (msg.length == 1) {
+             focusOnObject1(msg[0]);
+          } else if (! isOnNewlyPaused) {
+             $("div#dataPane").html("");  // clear the data pane pending choice of object ot focus on.
+          }          
+          // alert( "Data Received: " + msg );
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });
+    }
+
+
+
+
+
+    function selectObjectsOfType() {
+      if (programURL == "") {
+         alert("Please supply the web service URL of the target program that is to be debugged.")
+         return         
+      }      
+  
+      var typeSelect = document.getElementById("type")
+      if (typeSelect.selectedIndex == -1) {
+          alert("The target program does not appear to define or use\nany structured-object or collection datatypes.\nNothing to explore.");
+         return       
+      }
+      var objType = typeSelect.options[typeSelect.selectedIndex].value
+      var whereClause = document.getElementById("where").value
+      if (objType == "") {
+         alert("The target program does not appear to define or use\nany structured-object or collection datatypes.\nNothing to explore.");
+         return
+      }
+      $.ajax({
+        type: "POST",
+        url: "/explorer/list",
+        dataType: "json",        
+        data: {"url" : programURL, "type": objType, "where" : whereClause}
+      }).done( function(msg) {
+           $("div#objectList").html("")
+           var options = ""
+           for (i = 0; i < msg.length; i++) {
+               options += "<div class='objectListEntry' onclick='focusOnObject(this)'>" + msg[i] + "</div>\n";
+           }
+          $("div#objectList").append(options)
+          if (msg.length == 1) {
+             focusOnObject1(msg[0]);
+          } else {
+             $("div#dataPane").html("");  // clear the data pane pending choice of object ot focus on.
+          }
+          // alert( "Data Received: " + msg );	
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      });   
+
+    }    
+
+    /*
+    Populate the dataPane with an object network centred on (focussed on) the selected object.
+    */
+    function focusOnObject(theDiv) {
+      var selectedObjectToken = $( theDiv ).text();
+      focusOnObject1(selectedObjectToken)
+      return false;
+    } 
+    
+    function focusOnObject2(reflectId) {
+      focusOnObject1(":#" + reflectId);
+      cancelBubble();
+      return false;
+    }    
+      
+   function focusOnObject1(selectedObjectToken) {   
+      $.ajax({
+        type: "POST",
+        url: "/explorer/objectTree",
+        dataType: "json",        
+        data: {"url" : programURL, "objectToken": selectedObjectToken, "depth": 3}
+      }).done( function(tree) { 
+         $("div#dataPane").html("");
+         if ("service error" in tree) {
+            $("div#dataPane").append("<h3>service error</h3>");   
+            $("div#dataPane").append("<p>" + tree["service error"] + "</p>"); 
+         } else if (tree.rootReflectId == "NOT FOUND") {
+            $("div#dataPane").append("<h3>OBJECT NOT FOUND</h3>");                                    
+         } else {
+            var visitedObjects = {};          
+            var treeHtml = displayTree(tree.objects, 
+                                       tree.rootReflectId, 
+                                       tree.depth, 
+                                       tree.depth, 
+                                       visitedObjects,
+                                       "");
+            $("div#dataPane").append(treeHtml);               
+         }
+
+         //$("div#dataPane").text(msg)
+         //alert( "Data Received: " + msg );  
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;
+    }
+
+    var pausedTestNum = 0;
+    var maxPausedTests = 4;
+
+
+    /* determine if resume button is needed. If so, display it.
+    */
+    function checkIfPaused(testingAfterResumed) {
+      $.ajax({
+        type: "POST",
+        url: "/explorer/paused",
+        dataType: "json",
+        data: {"url" : programURL}        
+      }).done( function(isPaused) { 
+         if (invokedFromPlayground && ! testingAfterResumed) {               
+            $("td#exit").css("display","block");  
+         }              
+        if (isPaused) {
+          $("td#resume").css("display","block");
+                         
+          if (testingAfterResumed) {
+             pausedTestNum = 0;
+             findNamedObjects1("**Object in Focus**", true); // pull up the in-focus object if any.             
+          }
+        } else {
+           $("td#resume").css("display","none"); 
+
+           if (testingAfterResumed) {
+              launchPausedTest();  // wait then test again  
+           }
+        }
+
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;      
+    }  
+
+
+    function resumeProgram() {
+      $.ajax({
+        type: "POST",
+        url: "/explorer/resume",
+        dataType: "json",
+        data: {"url" : programURL} 
+      }).done( function(status) { 
+        if (status != "RESUMED") {
+           alert(status);
+        }
+        $("td#resume").css("display","none"); 
+        launchPausedTest();
+
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;     
+    }
+    
+    
+    function terminateProgram() {
+      $.ajax({
+        type: "POST",
+        url: "/explorer/exit",
+        dataType: "json",
+        data: {"url" : programURL} 
+      }).done( function(status) { 
+        if (status != "EXITED") {
+           alert(status);
+        } else {
+           
+           $("td#resume").css("display","none");  
+           $("td#exit").css("display","none");   
+           alert("Target program {{.artfctName}} terminated. Switching back to simple program trial environment.");    
+           location.href="/playground?artfct={{.artfctName}}";
+        }
+
+      }).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+        alert(
+          "Your form submission failed.\n\n"
+            + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+            + ",\nStatus Text: " + statusText
+            + ",\nError Thrown: " + errorThrown );
+      }); 
+      
+      return false;     
+    }    
+
+
+
+    function launchPausedTest() {
+       pausedTestNum += 1;
+       if (pausedTestNum > maxPausedTests) {
+          pausedTestNum = 0;
+       } else {
+          window.setTimeout(pausedTest,pausedTestNum * 2000);
+       }
+    }
+
+    function pausedTest() {
+       checkIfPaused(true);
+    }
+
+
+
+    var maxNestedListLength = 20; // 2 to test
+    var maxElaboratedListLength = 40; // 3 to test
+    
+    function displayTree(objects,reflectId,depth,coloringDepth,visitedObjects,fromReflectId) {
+       if (depth < 0) {
+           return ""
+       }
+
+       var htmlText = "<div class='objNode" + coloringDepth + "' ";       
+       if (reflectId == "0") {
+          htmlText += "> &nbsp; &nbsp; &nbsp; *nil* &nbsp; &nbsp; &nbsp; </div>";           
+          return htmlText          
+       }
+       
+       var obj = objects[reflectId];  
+
+       if (depth == 3) {
+          htmlText += ">" + objectTokenHtml(obj); 
+       } else {  
+          htmlText += 'onclick="focusOnObject2(\'' +  reflectId + '\')">' + objectTokenHtml(obj);         
+       }
+       
+       var onlyNames = false;
+       
+       if (depth < 1) {
+          onlyNames = true;
+       }
+
+       // Display simple attributes
+
+       var startedSimpleAttrs = false   
+       
+       var simpleAttributes = obj.simpleAttrs;
+       
+       if (simpleAttributes != null) {
+          
+          var simpleAttrsStartingHtml = "<div class='simpleAttrs'><table class='simpleAttrs'>"; 
+          
+          for (var i = 0; i < simpleAttributes.length; i++) {
+             var sAttr = simpleAttributes[i];
+             
+             if (onlyNames) {
+                var isaName = false;
+                if (sAttr.attrName == "title") {
+                   isaName = true;
+                   var nameStartPos = sAttr.attrName.length - 4;
+                   if (nameStartPos < 0) {
+                      nameStartPos = 0;
+                   }
+                } else if (sAttr.attrName.toLowerCase().indexOf("name") >= nameStartPos) {
+                   isaName = true;
+                }
+                if (! isaName) {
+                   continue;
+                }
+             }    
+             
+             var attrVal = sAttr.val;
+             
+             if (! startedSimpleAttrs) {   
+                htmlText += simpleAttrsStartingHtml;
+                startedSimpleAttrs = true;
+             }         
+             
+             htmlText += "<tr><td class='simpleAttrName'><b>" + sAttr.attrName + ":</b></td><td>" + primitiveValHtml(sAttr.typeName, sAttr.val) + "</td></tr>";                              
+          }
+          
+          if (startedSimpleAttrs) {
+             if (onlyNames) {
+                htmlText += "<tr><td colspan='2' style='text-align:centre'> ... </td></tr>";                   
+             }
+             htmlText += "</table></div>";  
+          } 
+       }
+       
+       if (depth < 2) {
+
+          htmlText += "<div class='objNodeBottom'></div></div>";           
+          return htmlText
+       }
+
+       if ( ! ( reflectId in visitedObjects ) ) {
+
+           visitedObjects[reflectId] = obj
+
+           // display complex attributes
+           var complexAttributes = obj.complexAttrs;
+           
+           if (complexAttributes != null) {
+              for (var i = 0; i < complexAttributes.length; i++) {                 
+                 var cAttr = complexAttributes[i];
+                 var hasInverse = (cAttr.inverseAttrName != "");                 
+                 var startedComplexAttr = false       
+                 var nextDepth = depth - 1;            
+                 if (cAttr.vals != null) {
+                    var nAttrVals = cAttr.vals.length;
+                    if (nAttrVals > maxNestedListLength) {
+                       nextDepth = 1;  // A large collection does not show subdivided elements.
+                    }
+                    var singletonComplexAttr = (nAttrVals == 1);                    
+
+                    var complexAttrStartingHtml = "<div class='complexAttr'><h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";  
+                    
+                    // htmlText += "<h4>" + attrNameAndPropertiesHtml(cAttr)+ "</h4>";   
+                    
+                    for (var j = 0; j < nAttrVals; j++ ) {
+                      var val = cAttr.vals[j];
+                      if (cAttr.valIsObject) {    
+                         if ((! hasInverse) || (val != fromReflectId)) { 
+                            if (! startedComplexAttr) {
+                               htmlText += complexAttrStartingHtml;                             
+                               startedComplexAttr = true;
+                            }
+                            if (nAttrVals > 1) {
+                                htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                            } 
+                            if (j > maxElaboratedListLength) { 
+                               nextDepth = 0;
+                            }                                     
+                            htmlText += displayTree(objects,val,nextDepth,coloringDepth-1,visitedObjects,reflectId);
+                            if (nAttrVals > 1) {
+                               htmlText += "</div>";
+                            }   
+                         }
+                        
+                      } else {
+                          if (! startedComplexAttr) {
+                             htmlText += complexAttrStartingHtml;       
+                             startedComplexAttr = true;
+                          }                                                  
+                          if (nAttrVals > 1) {
+                              htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                          }                          
+                          htmlText += primitiveValHtml(cAttr.typeName, val);
+                          if (nAttrVals > 1) {
+                             htmlText += "</div>";
+                          }                   
+                      }
+                    }
+                 }
+                 if (startedComplexAttr) {
+                    htmlText += "</div>"; 
+                 }
+              }
+           }
+
+
+/*
+              isCollection Bool
+              includesCollectionMembers Bool
+              collectionKind String  // "Map" "List" "Set"
+              minArity Int
+              maxArity Int
+              keyIsObject Bool
+              valIsObject Bool
+              keyType String
+              valType String
+              keys 0 N [] String  // Will be empty if not a map  
+              vals 0 N [] String
+*/
+           if (obj.isCollection) {
+              // display collection elements
+           
+              var collectionStartingHtml = "<div class='complexAttr'>";            
+              var startedCollection = false
+                   
+              var nextDepth = depth - 1;            
+              if (obj.vals != null) {
+                 var nVals = obj.vals.length;
+                 if (nVals > maxNestedListLength) {
+                    nextDepth = 1;  // A large collection does not show subdivided elements.
+                 }   
+              
+                 for (var j = 0; j < nVals; j++ ) {
+                   var val = obj.vals[j];
+                   if (obj.valIsObject) {    
+                      if (! startedCollection) {
+                         htmlText += collectionStartingHtml;                             
+                         startedCollection = true;
+                      }
+                      if (obj.collectionKind == "Map") {
+                         var key = obj.keys[j]                         
+                         if (obj.keyIsObject) {
+                             htmlText += "<div class='ordinal'>" 
+                                         + 
+                                         displayTree(objects,key,0,coloringDepth-1,visitedObjects,reflectId)
+                                         + 
+                                         " =&gt;  &nbsp; &nbsp; <br/>";                                      
+                         } else {
+                             htmlText += "<div class='ordinal'>" 
+                                         + primitiveValHtml(obj.keyType, key) 
+                                         + " =&gt; &nbsp; &nbsp; <br/>";                                                         
+                         }                                                
+                      } else {
+                          htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                      } 
+                      if (j > maxElaboratedListLength) { 
+                         nextDepth = 0;
+                      }                                     
+                      htmlText += displayTree(objects,val,nextDepth,coloringDepth-1,visitedObjects,reflectId);
+
+                      htmlText += "</div>";
+  
+                   } else {
+                      if (! startedCollection) {
+                         htmlText += collectionStartingHtml;       
+                         startedCollection = true;
+                      }                                                  
+                      if (obj.collectionKind == "Map") {
+                         var key = obj.keys[j]
+                         if (obj.keyIsObject) {
+                             htmlText += "<div class='ordinal'>" 
+                                         + 
+                                         displayTree(objects,key,0,coloringDepth-1,visitedObjects,reflectId)
+                                         + 
+                                         " =&gt; &nbsp; &nbsp; <br/>";                                      
+                         } else {
+                             htmlText += "<div class='ordinal'>" 
+                                         + primitiveValHtml(obj.keyType, key) 
+                                         + " =&gt; &nbsp; &nbsp; <br/>";                                                         
+                         }                                                
+                      } else {
+                          htmlText += "<div class='ordinal'>" + j + ": <br/>";                   
+                      }                               
+                      htmlText += primitiveValHtml(obj.valType, val);
+
+                      htmlText += "&nbsp; </div>";                  
+                   }
+                 }
+              }
+              if (startedCollection) {
+                 htmlText += "</div>"; 
+              }
+           }
+
+       }
+
+       htmlText += "<div class='objNodeBottom'></div></div>";
+
+       return htmlText   
+    }
+
+    function objectTokenHtml(obj) {
+       return "<h3 title='" + obj.typeName + "'>" + shortTypeName(obj.typeName) + ":#" + obj.reflectId + "</h3>"
+    }
+
+    function shortTypeName(typeName) {
+       commaPos = typeName.indexOf(",")
+       if (commaPos > 0) {
+          return typeName.substring(0,commaPos);
+       }
+       return typeName;
+    }
+
+
+    function attrNameAndPropertiesHtml(complexAttr) {
+       var s = "";
+       if (complexAttr.inverseAttrName != "") {
+          var inverseMaxArity = "N"
+          if (complexAttr.inverseMaxArity != -1) {
+             inverseMaxArity = "" + complexAttr.inverseMaxArity;
+          }
+          var inverseMinArity = ""
+          if (complexAttr.inverseMinArity != 1) {
+              inverseMinArity = "&nbsp;" + complexAttr.inverseMinArity;
+          }
+          s += "&nbsp;&lt;--&nbsp;" + inverseMaxArity + inverseMinArity + "&nbsp;" + complexAttr.inverseAttrName + "&nbsp;---&shy;";
+       } else {
+          s += "&nbsp;--";
+       }
+       
+       var maxArity = "N"
+       if (complexAttr.maxArity != -1) {
+          maxArity = "" + complexAttr.maxArity
+       }
+       var minArity = ""
+       if (complexAttr.minArity != 1) {
+           minArity = complexAttr.minArity + "&nbsp;"
+       }
+       return s += "---&nbsp;" +complexAttr.attrName + "&nbsp;" +  minArity + maxArity + "&nbsp;--&gt;";
+    }
+
+    function primitiveValHtml(typeName,val) {
+      switch(typeName) {
+        case "String":      
+           return "\"" + val + "\"";
+        default:
+           return val;
+      }
+    }
+
+
+/* AJAX Example Code
+$.ajax({
+  type: "POST",
+  url: "example.php",
+  data: "name=John&location=Boston"
+}).done( function(msg) {
+  alert( "Data Saved: " + msg );
+}).fail( function( xmlHttpRequest, statusText, errorThrown ) {
+  alert(
+    "Your form submission failed.\n\n"
+      + "XML Http Request: " + JSON.stringify( xmlHttpRequest )
+      + ",\nStatus Text: " + statusText
+      + ",\nError Thrown: " + errorThrown );
+});
+*/
+
+
+   function cancelBubble(e) {
+    var evt = e ? e:window.event;
+    if (evt.stopPropagation)    evt.stopPropagation();
+    if (evt.cancelBubble!=null) evt.cancelBubble = true;
+   }
+
+
+
+        
+	</script>
+</head>
+<body onload="connectToProgram(false)"> 
+
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 2em">	
+         &nbsp; &nbsp;
+      </td>
+
+     
+	  <td>
+	    <table>
+	      <tr>
+	        <td>	
+              <h2>data explorer</h2>
+            </td>
+            <td style="width: 1em">	
+               &nbsp; &nbsp;
+            </td>
+            <td>
+            	<table id="targetProgram">
+            		<tr>
+                     <td id="exit" style="display: none">
+                        &nbsp; &nbsp; &nbsp; <input type="button" value=" &lt; return to program trial environment " onclick="terminateProgram()"/> &nbsp; &nbsp; &nbsp;
+                     </td>   
+            		 {{if .fromPlayground}}  
+         			  <td>  
+                        <h3>Target Program :</h3>    	
+         			 </td>
+         			 <td>
+         			      <b>{{.artfctName}}</b>          
+         			      <input type="hidden" id="programUrl" value="{{.programUrl}}" />	    			
+         			 </td>            		 
+                  {{else}}   
+         			<td>  
+                        <h3>Target Program URL &nbsp; <input type="button" class="helpbutton" value="?" onclick="javascript:help('target_program_url')"/> :</h3>    	
+         			</td>
+         			<td>
+                        <input type="text" size="40" id="programUrl" value="{{.programUrl}}" />	            			
+         			</td>      
+                     <td>
+                        &nbsp; <input type="button" value="connect to program" onclick="connectToProgram(true)" />
+                     </td>                     
+                  {{end}}      	
+                        <td id="resume" style="display: none">
+                           &nbsp; &nbsp; &nbsp; <input type="button" value="resume" onclick="resumeProgram()"/>
+                        </td>    	        			
+            		</tr>
+         		</table>
+            	<table>	
+            		<tr>
+            		   <td>
+            		      <table class="query">
+                     		<tr>
+                     		    <td colspan="2">
+                        	           <h3>Object Name starts with:</h3>            		    	
+                     			</td>  
+                  			</tr>
+                  			<tr>
+                     			<td>
+                     			   <input type="text" size="30" id="prefix" value="{{.prefix}}" />	
+                     			</td> 
+                                 <td>
+                                    <input type="button" value="find named objects" onclick="findNamedObjects()" />
+         	                    </td>          			
+                     		</tr>   
+                  		</table>
+            		   </td>
+            		   <td>
+            		      &nbsp; or &nbsp;
+         		      </td>
+                     <td>
+                  		<table class="query">         		
+                     		<tr>
+                     		    <td>
+                        	           <h3>Data Type: </h3>            		    	
+                     			</td>  
+                                 <td>
+                           	     <select id="type">
+                           		 {{range .types}}
+                           	 	 <option>{{.}}</option>
+                           	 	 {{end}}
+                                 </select>		
+                                 </td>
+                              </tr>
+                              <tr>
+                     			<td colspan="2">
+                     			   <span class="green3">Where:</span> <input type="text" size="60" id="where" value="{{.where}}" />	
+                                 &nbsp;
+                                   <input type="button" value="find" onclick="selectObjectsOfType()" />
+                              </td>     			
+                     		</tr> 
+                  		</table>
+            		   </td>
+            		</tr>    		            		
+            	</table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+	 
+  </div>
+  <!-- <div id="download_button" class="menubutton" onclick="location='/download/'">
+	DOWNLOAD
+  </div> -->
+
+<div id="content">
+   <table style="width:98%">
+      <tr>
+         <td class="contentSide">
+	         <div id="dataPane">
+	         </div>
+         </td>
+         <td class="contentSide">
+	         <div id="objectList">		
+	         </div>
+         </td>
+	   </tr>
+   </table>
+</div>
+</body>
+</html>

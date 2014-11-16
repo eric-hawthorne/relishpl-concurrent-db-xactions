@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish playground quick start guide
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>relish Playground Quick-Start Guide</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Purpose">Purpose</a><br/>	
+	<a href="#Running" class="alt">Running the Playground</a><br/>
+	<a href="#Instructions">Instructions</a><br/>		
+</div>  
+<div id="content_manual">
+	<a name="Purpose"><h3>Purpose of this Guide</h3></a>
+	<p>
+	   This guide will get you started with finding, invoking, and trying out the
+      <b>relish Simple Program Trial Environment</b> (also known as the Playground). 
+</p>
+<p>
+      This interactive environment allows simple relish programs to be typed in quickly and run. 
+      This is suitable for learning relish programming, for testing/experimenting with relish program 
+      syntax rules, or for testing/learning the functioning of basic program constructs
+      or library methods.	   
+</p>
+<p>
+   The playground also includes, selectable from a drop-down menu, most of the <a href="relish_simple_programs.html">simple programs</a> examples in a form where you can run them easily.
+   </p>
+   <p>The playground is probably the thing <b><u>you should try first</u></b> when exploring relish. Of course, to really grok what you are seeing in the playground, you will also need to read the <a href="../references/relish_syntax_and_semantics_by_example.html" target="_blank">relish by-example reference manual</a>.
+</p>      
+	<a name="Running"><h3>Obtaining and Running the relish Playground</h3></a>	   
+	<p>
+	The relish software artifact that provides the Playground application is described here:
+	<a href="http://shared.relish.pl/relish/artifacts/shared.relish.pl2012/dev_tools/metadata.txt">
+    http://shared.relish.pl/relish/artifacts/shared.relish.pl2012/dev_tools/metadata.txt</a>
+   </p>
+   <p>
+      To auto-download and run the playground, open a terminal window, and cd to your relish directory (or a subdirectory).
+      Then issue the following command:
+<code><pre>
+relish -web 8080 shared.relish.pl2012/dev_tools playground   
+</pre></code>
+You should see a confirmation message that the playground has been started. That terminal window will now be "hung" because the playground web app is running and listening for http connections. 
+   </p>
+   <p>
+      Now, enter the following URL into your web browser's address bar:
+<code><pre>
+   localhost:8080
+</pre></code>
+You should see a multi-pane web page come up, entitled "relish Simple Program Trial Environment".
+   </p>
+   
+	<a name="Instructions"><h3>Instructions - Operating the Simple Program Trial Environment (Playground)</h3></a>	   
+<p>
+   Instructions for operating the environment (the playground) can be found in the /doc/README.txt file in the software artifact. You can find the README file now under your own relish/shared/relish/replicas directory, or at http://shared.relish.pl, specifically here: 
+<a href="http://shared.relish.pl/relish/artifacts/shared.relish.pl2012/dev_tools/v0.7.1/doc/README.txt">README.txt</a>.   
+</p>
+<br/>
+<br/>
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>

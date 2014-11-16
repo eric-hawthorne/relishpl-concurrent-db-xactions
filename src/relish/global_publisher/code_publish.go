@@ -1,0 +1,731 @@
+// Copyright 2012-2014 EveryBitCounts Software Services Inc. All rights reserved.
+// Use of this source code is governed by the GNU GPL v3 license, found in the LICENSE_GPL3 file.
+
+// For each relish code artifact in shared/relish/artifacts, creates a zip file of each version 
+// of the artifact if such a zip file does not already exist.
+
+package global_publisher
+
+import (
+    "fmt"
+    "bufio"
+    "io"
+	  "bytes"
+    "strings"
+    "os"
+    "util/gos"
+    "archive/zip"	 
+    "util/crypto_util"  
+    "errors"
+    "path/filepath"
+    "relish/global_loader"
+)
+
+/*
+Remove the existing shared copy of the version of the artifact (in a failsafe manner).
+Copy source code for the version of the package to the shared sourcecode tree.
+Create a zip file of the version of the artifact. 
+Wrap that with another zip file which will eventually contain a certificate 
+of the origin's public key, and a signature of (the SHA256 hash of) the inner zip file contents.
+Name the outer zip file by an unambiguous name corresponding to the version of the artifact from the origin.
+Check to see if there is a metadata file in the shared directory for the artifact.
+If no metadata file in shared, add it. Metadata file name should again be fully qualified unambiguous name,
+to ensure findability by Google search. Or the content should contain a standard findable title like
+"Relish Artifact Metadata".
+Note that the metadata.txt file should eventually also include,
+below its meaningful text content, a certificate of the origin's public key, and a signature of (the SHA256 hash of)
+the meaningful content.
+Should copy local artifact version directory tree that was published to create the next version to continue work on.
+
+Note about signed code plans
+============================
+The plan is to have every copy of relish include the public key of shared.relish.pl.
+This key can be directly compared manually at any time with the public key published at the site shared.relish.pl.
+
+Each code-origin owner who wants to officially publish relish code should register their origin at shared.relish.pl
+and should receive back both 
+1) a certificate (signed by shared.relish.pl and verifiable with shared.relish.pl's public key)
+   where such certificate attests to the association between another public key and the origin name.
+2) The actual origin public key
+3) A corresponding private key.
+
+The origin owner should keep their private key secret but install it in a standard place
+within their relish development environment so that their relish instance can use it to sign code.
+
+The origin owner should also keep their certificate of their public key installed at a standard place
+in their relish development environment, so they can include that cert in signed-code outer zip files.
+The certified public key should actually be published at a standard place in the canonical server
+for the origin, and also at shared.relish.pl. This is so that such a key can periodically be verified
+as being a currently valid one.
+
+Note: If the private key is stolen, someone else can produce code signed as coming from your origin,
+so maybe the same password used to sign up to register your origin should serve as a decryption key
+for a symmetrically encrypted version of the private key. So you would be prompted to enter the password
+when publishing (and signing) some code.
+
+If not using encrypted private key, then if it is discovered that the key has been stolen (e.g. some code
+fraudulently claiming to be from the origin is discovered), then a solution would be to apply for a 
+new public key for the origin, and re-publish all legitimate code signed by the new key.
+
+Periodically, a imported-code-using instance of relish should re-verify (at the canonical server or shared.relish.pl)
+that the public key that is signing each of their imported artifacts is still the valid public key for the origin.
+
+Perhaps shared.relish.pl can contain a timestamp of when the most recent re-keying incident happened,
+and relish instances can periodically check that to see if re-verification of origin public-keys, and
+possible redownloading of re-signed code artifacts is necessary. 
+
+*/
+func PublishSourceCode(relishRoot string, originAndArtifact string, version string) (err error) {
+
+   slashPos := strings.Index(originAndArtifact,"/")
+   originId := originAndArtifact[:slashPos]
+
+   // Obtain the private key for the origin that is publishing.
+
+   originPrivateKey, err := crypto_util.GetPrivateKey("origin", originId) 
+   if err != nil {
+      return
+   }
+
+   // Obtain the public key certificate for the origin that is publishing.
+
+   originPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", originId)  
+   if err != nil {
+      return
+   }
+
+   // Obtain the public key certificate of shared.relish.pl2012
+
+   sharedRelishPublicKeyCertificate, err := crypto_util.GetPublicKeyCert("origin", "shared.relish.pl2012")  
+   if err != nil {
+      sharedRelishPublicKeyCertificate, err = global_loader.FetchSharedRelishPublicKeyCert()
+      if err != nil {
+          return
+       }
+       err = crypto_util.StorePublicKeyCert("origin", "shared.relish.pl2012",sharedRelishPublicKeyCertificate)
+       if err != nil {
+           return
+       }       
+   }
+
+   // Validate that it is signed properly, obtaining the shared.relish.pl2012 publicKeyPEM.
+
+   sharedRelishPublicKey := crypto_util.VerifiedPublicKey("", sharedRelishPublicKeyCertificate, "origin", "shared.relish.pl2012") 
+
+    if sharedRelishPublicKey == "" {
+        err = errors.New("Invalid shared.relish.pl2012 public key certificate.")
+        return
+    }
+
+   // Do a quick validation of publishing origin's public key cert
+
+   originPublicKey := crypto_util.VerifiedPublicKey(sharedRelishPublicKey, originPublicKeyCertificate, "origin", originId) 
+
+    if originPublicKey == "" {
+        err = errors.New("Invalid " + originId + " public key certificate.")
+        return
+    }
+
+
+
+    // prompt for the publishing origin's private key password.
+
+    var buf *bufio.Reader = bufio.NewReader(os.Stdin)
+    fmt.Print("Enter code-origin administration password:")
+    input,err := buf.ReadString('\n')
+    if err != nil {
+       return
+    }
+    originPrivateKeyPassword := input[:len(input)-1]
+
+
+
+
+
+   localArtifactPath := relishRoot + "/artifacts/" + originAndArtifact + "/"
+   sharedArtifactPath := relishRoot + "/shared/relish/artifacts/" + originAndArtifact + "/"
+
+   // Check if metadata.txt file exists in shared. If not, create it by copying local metadata.txt file
+
+   sharedMetadataPath := sharedArtifactPath + "metadata.txt"
+   _,err = gos.Stat(sharedMetadataPath)    
+   if err != nil {
+        if os.IsNotExist(err) {
+
+           err = gos.MkdirAll(sharedArtifactPath,0777)       
+           if err != nil {
+              fmt.Printf("Error making shared artifact directory %s: %s\n", sharedArtifactPath,err)
+              return 
+           }  
+
+           localMetadataPath := localArtifactPath + "metadata.txt"
+           var content []byte
+           content, err = gos.ReadFile(localMetadataPath)
+           if err != nil {
+             return
+           }
+           err = gos.WriteFile(sharedMetadataPath, content, 0666)
+           if err != nil {
+              return
+           }              
+        } else {    
+           fmt.Printf("Can't stat  '%s' : %v\n", sharedArtifactPath + "metadata.txt", err)
+           return              
+        }
+    } 
+
+   // Note. This does not update the shared metadata.txt file from the local if the shared metadata.txt
+   // file already existed.
+
+   //
+
+   versionPath := "v" + version
+
+   sharedArtifactVersionPath := sharedArtifactPath + versionPath 
+
+   _,err = gos.Stat(sharedArtifactVersionPath)    
+   foundVersionShared := false
+   if err != nil {
+        if ! os.IsNotExist(err) {
+           fmt.Printf("Can't stat directory '%s' : %v\n", sharedArtifactVersionPath, err)
+           return              
+        }
+    } else {
+       foundVersionShared = true
+    } 
+    if foundVersionShared {
+        fmt.Printf("%s already exists. Cannot republish the same version.\n",sharedArtifactVersionPath)
+        return 
+    }
+
+    localSrcDirPath := localArtifactPath + versionPath + "/src"  
+    srcDirPath := sharedArtifactVersionPath + "/src"
+    localDocDirPath := localArtifactPath + versionPath + "/doc"     
+    docDirPath := sharedArtifactVersionPath + "/doc"    
+
+    // mkdir the version of the shared directory
+
+    err = gos.MkdirAll(sharedArtifactVersionPath,0777)
+
+    if err != nil {
+        fmt.Printf("Error making shared artifact version directory %s: %s\n", sharedArtifactVersionPath,err)
+        return 
+    }  
+
+    // Copy source code directory tree to "shared/relish/artifacts" tree root.
+
+    err = copySrcDirTree(localSrcDirPath, srcDirPath)
+    if err != nil {
+        fmt.Printf("Error copying local src dir to create %s: %s\n", srcDirPath,err)
+        return 
+    }   
+
+    _,statErr := gos.Stat(localDocDirPath)
+    if statErr == nil {
+	    err = copyDocDirTree(localDocDirPath, docDirPath)
+	    if err != nil {
+	        fmt.Printf("Error copying local doc dir to create %s: %s\n", docDirPath,err)
+	        return 
+	    }    
+    }  
+    // TBD
+
+    // Zip the source and docs!
+
+
+    srcZipFilePath := sharedArtifactVersionPath + "/artifactVersionContents.zip"
+    err = zipSrcAndDocDirTrees(srcDirPath,docDirPath,srcZipFilePath)
+    if err != nil {
+        fmt.Printf("Error zipping %s and %s: %s\n", srcDirPath,docDirPath,err)
+        return 
+    }
+    
+
+    // Now have to sign it and put into an outer zip file.
+
+    err = signZippedSrc(srcZipFilePath, originPrivateKey, originPrivateKeyPassword, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, sharedArtifactPath,originAndArtifact,version)
+    if err != nil {
+        fmt.Printf("Error signing %s: %s\n", srcZipFilePath,err)
+        return 
+    } 
+
+    err = gos.Remove(srcZipFilePath)
+    if err != nil {
+       fmt.Printf("Error removing %s: %s\n", srcZipFilePath,err)
+       return 
+    }
+    return
+}
+
+// Note: This is an insufficient way of ensuring a shared relish artifact is not malicious.
+// A reputation system should be developed at shared.relish.pl
+
+var blacklistFileExtensions map[string]bool = map[string]bool { 
+   ".AD" : true,
+   ".ADE" : true,
+   ".ADP" : true,  
+   ".APP" : true,
+   ".ASP" : true,
+   ".ASX" : true,
+   ".BAS" : true,
+   ".BAT" : true, 
+   ".BZ" : true,
+   ".BZ2" : true,
+   ".CHM" : true,
+   ".CMD" : true,
+   ".CNF" : true,  
+   ".COM" : true,    
+   ".CPL" : true,
+   ".CRT" : true,
+   ".DBX" : true,
+   ".DLL" : true,
+   ".EMAIL" : true,
+   ".EML" : true,
+   ".EMF" : true,
+   ".EMZ" : true,
+   ".EXE" : true,
+   ".FXP" : true,  
+   ".HLP" : true,
+   ".HTA" : true,  
+   ".INF" : true,
+   ".INS" : true,  
+   ".ISP" : true,
+   ".JSE" : true,  
+   ".LNK" : true,
+   ".MAD" : true,
+   ".MAF" : true,
+   ".MAG" : true,
+   ".MAM" : true,
+   ".MAQ" : true,
+   ".MAR" : true,
+   ".MAS" : true,
+   ".MAT" : true,
+   ".MAU" : true,    
+   ".MAV" : true, 
+   ".MAW" : true,  
+   ".MDA" : true,
+   ".MDB" : true,
+   ".MDE" : true,
+   ".MDT" : true,
+   ".MDW" : true,
+   ".MDZ" : true,
+   ".MHT" : true,
+   ".MHTML" : true,  
+   ".MSC" : true,
+   ".MSI" : true,  
+   ".MSP" : true,
+   ".MST" : true,
+   ".NCH" : true,
+   ".OPS" : true,
+   ".PCD" : true,  
+   ".PIF" : true,
+   ".PRF" : true,
+   ".PRG" : true,  
+   ".PST" : true, 
+   ".REG" : true,  
+   ".SCF" : true,
+   ".SCR" : true,
+   ".SCT" : true,
+   ".SHB" : true,  
+   ".SHS" : true,
+   ".SYS" : true,
+   ".URL" : true,  
+   ".VB" : true,
+   ".VBE" : true,  
+   ".VBS" : true,
+   ".VSD" : true,
+   ".VSMACROS" : true,
+   ".VSS" : true,
+   ".VST" : true,
+   ".VSW" : true,
+   ".VXD" : true,
+   ".WMF" : true,
+   ".WMS" : true,
+   ".WSC" : true,  
+   ".WSF" : true,
+   ".WSH" : true, 
+   ".XNK" : true,
+   ".XBAP" : true,
+   ".Z" : true,
+   ".ZOO" : true,
+   ".BASH" : true,
+   ".COMMAND" : true,
+   ".CSH" : true, 
+   ".DMG" : true,
+   ".GZ" : true,
+   ".KSH" : true,
+   ".LZH" : true,
+   ".PKG" : true,
+   ".RAR" : true,
+   ".SH" : true, 
+   ".TAR" : true,
+   ".TCSH" : true,
+   ".XSL" : true,  
+   ".ZIP" : true,   
+}
+
+func copySrcDirTree(fromSrcDirPath string, toSrcDirPath string) (err error) {
+   
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = gos.Open(fromSrcDirPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
+
+   err = gos.Mkdir(toSrcDirPath,0777)
+
+   for _, fileInfo := range filesInDir {
+        fromItemPath := fromSrcDirPath + "/" + fileInfo.Name()
+        toItemPath := toSrcDirPath + "/" + fileInfo.Name()    
+        if fileInfo.IsDir() {
+           err = copySrcDirTree(fromItemPath, toItemPath)
+           if err != nil {
+              return
+           }
+        } else { // plain old file to be copied.
+
+           // cursory malicious file check
+           suffix := filepath.Ext(fileInfo.Name())
+           if suffix != "" {
+               suffix = strings.ToUpper(suffix)
+               if blacklistFileExtensions[suffix] {
+                  continue
+               }
+           }
+
+           var content []byte
+           content, err = gos.ReadFile(fromItemPath)
+           if err != nil {
+              return
+           }
+           err = gos.WriteFile(toItemPath, content, 0666)
+           if err != nil {
+              return
+           }              
+        }
+    }
+    return
+}
+
+func copyDocDirTree(fromDocDirPath string, toDocDirPath string) (err error) {
+   
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = gos.Open(fromDocDirPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
+
+   err = gos.Mkdir(toDocDirPath,0777)
+
+   for _, fileInfo := range filesInDir {
+        fromItemPath := fromDocDirPath + "/" + fileInfo.Name()
+        toItemPath := toDocDirPath + "/" + fileInfo.Name()    
+        if fileInfo.IsDir() {
+           err = copyDocDirTree(fromItemPath, toItemPath)
+           if err != nil {
+              return
+           }
+        } else { // plain old file to be copied.
+           if strings.HasSuffix(fileInfo.Name(), ".txt") || strings.HasSuffix(fileInfo.Name(), ".html") || strings.HasSuffix(fileInfo.Name(), ".htm") || strings.HasSuffix(fileInfo.Name(), ".css") {
+              var content []byte
+              content, err = gos.ReadFile(fromItemPath)
+              if err != nil {
+                 return
+              }
+              err = gos.WriteFile(toItemPath, content, 0666)
+              if err != nil {
+                 return
+              }              
+           }
+        }
+    }
+    return
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+  Given a zip file of the source code directory tree, 
+  1. Computes the SHA256 hash of the source code zip file contents, then signs the hash using
+  the private key of the origin.
+  2. Adds 
+     a. the certificate of the origin's public key (including that public key), and
+     b. the signature of the source zip file (which can be verified with that public key)
+     c. the source zip file
+     to an outer (wrapper) zip file that it is creating.
+  3. Writes the wrapper zip file as e.g. a.b.com2013--my_artifact_name--1.0.3.zip to the 
+     shared artifact's root directory.
+
+  NOTE: STEPS 1 and 2. a. b. are TBD !!!! Just re-zips the src.zip file presently.   
+*/
+func signZippedSrc(srcZipPath string, 
+                   originPrivateKey string,
+                   originPrivateKeyPassword string, 
+                   originPublicKeyCertificate string, 
+                   sharedRelishPublicKeyCertificate string,
+                   sharedArtifactPath string, 
+                   originAndArtifact string, 
+                   version string) (err error) {
+   originAndArtifactFilenamePart := strings.Replace(originAndArtifact, "/","--",-1)
+   wrapperFilename := originAndArtifactFilenamePart + "---" + version + ".zip"
+   wrapperFilePath := sharedArtifactPath + "/" + wrapperFilename
+ 
+    var srcZipContents []byte
+    srcZipContents, err = gos.ReadFile(srcZipPath) 
+    if err != nil {
+        return
+    }
+
+    content := wrapperFilename + "_|_" + string(srcZipContents)
+    signaturePEM, err := crypto_util.Sign(originPrivateKey, originPrivateKeyPassword, content)
+
+    var buf *bytes.Buffer 
+    buf, err = signZippedSrc1(srcZipPath, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, signaturePEM)
+
+
+    var file *os.File
+    file, err = gos.Create(wrapperFilePath)
+    if err != nil {
+        return
+    }
+
+    _, err = buf.WriteTo(file)
+    if err != nil {
+        return
+    }
+    err = file.Close();   
+
+    return
+}
+
+/*
+   Helper. 
+*/
+func signZippedSrc1(srcZipPath string, originPublicKeyCertificate string, sharedRelishPublicKeyCertificate string, signature string) (buf *bytes.Buffer, err error) {
+
+   buf = new(bytes.Buffer)
+
+   // Create a new zip archive.
+   w := zip.NewWriter(buf)
+
+   err = signZippedSrc2(w, srcZipPath, originPublicKeyCertificate, sharedRelishPublicKeyCertificate, signature)
+   if err != nil {
+      return
+   }    
+
+   err = w.Close()
+
+   return
+}   
+
+/*
+   Helper. Write the wrapper zip file using the zip.Writer.
+   
+Are the cert and the signature actually []byte arguments????
+*/
+func signZippedSrc2(w *zip.Writer, srcZipPath string, originPublicKeyCertificate string, sharedRelishPublicKeyCertificate string, signature string) (err error) {
+
+   var zw io.Writer
+   zw, err = w.Create("artifactVersionContents.zip")
+   if err != nil {
+      return
+   }   
+
+   var f *os.File
+   f,err = gos.Open(srcZipPath)
+   if err != nil {
+      return
+   }            
+   _, err = io.Copy(zw, f)
+   err = f.Close()   
+   if err != nil {
+      return
+   }      
+
+   zw, err = w.Create("sharedRelishPublicKeyCertificate.pem")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(sharedRelishPublicKeyCertificate))
+   if err != nil {
+      return
+   }
+
+   zw, err = w.Create("originPublicKeyCertificate.pem")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(originPublicKeyCertificate))
+   if err != nil {
+      return
+   }
+
+   zw, err = w.Create("signatureOfArtifactVersionContents.pem")
+   if err != nil {
+      return
+   }
+   _, err = zw.Write([]byte(signature))
+   if err != nil {
+      return
+   }   
+
+   return
+}   
+
+
+
+
+
+/*
+Zips the specified directory tree of relish source code files into the specified zip file.
+*/
+func zipSrcAndDocDirTrees(srcDirectoryPath string, docDirectoryPath string, zipFilePath string) (err error) {
+
+    var buf *bytes.Buffer 
+    buf, err = zipSrcDirTree1(srcDirectoryPath, docDirectoryPath)
+
+    var file *os.File
+	file, err = gos.Create(zipFilePath)
+    if err != nil {
+        return
+    }
+
+    _, err = buf.WriteTo(file)
+    if err != nil {
+        return
+    }
+    err = file.Close();
+
+    return
+}
+
+/*
+   Helper. Zip the contents of a directory tree into the byte buffer, which is returned.
+   
+   Filters so it only includes .rel files
+
+   Note: this will not work if there are symbolic links in the src directory tree.
+   (because Readdir does not follow links.)
+*/
+func zipSrcDirTree1(srcDirectoryPath string, docDirectoryPath string) (buf *bytes.Buffer, err error) {
+
+   var srcRootDirFileInfo os.FileInfo
+   srcRootDirFileInfo, err = gos.Stat(srcDirectoryPath)
+   if err != nil {
+       return
+   }
+   if ! srcRootDirFileInfo.IsDir() {
+      err = fmt.Errorf("%s is not a directory.", srcDirectoryPath)
+      return
+   }
+
+   buf = new(bytes.Buffer)
+
+   // Create a new zip archive.
+   w := zip.NewWriter(buf)
+
+   err = zipSrcDirTree2(w, srcDirectoryPath, srcRootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/src"  "src"
+   if err != nil {
+      return
+   }    
+
+   var docRootDirFileInfo os.FileInfo
+   docRootDirFileInfo, err = gos.Stat(docDirectoryPath)
+   if err == nil {
+     if ! docRootDirFileInfo.IsDir() {
+        err = fmt.Errorf("%s is not a directory.", docDirectoryPath)
+        return
+     }
+
+     err = zipSrcDirTree2(w, docDirectoryPath, docRootDirFileInfo.Name())  // "/opt/relish/rt/artifacts/a.com2013/art1/v0001/doc"  "doc"
+     if err != nil {
+        return
+     }      
+   } else if os.IsNotExist(err) {  // /doc directory is allowed not to exist.
+     err = nil
+   } else {
+     return  // weird stat error on /doc path
+   }
+
+   err = w.Close()
+
+   return
+}   
+
+/*
+   Helper. Recursively zip the contents of a directory tree using the zip.Writer.
+
+   Note: this will not work if there are symbolic links in the src directory tree.
+   (because Readdir does not follow links.)
+*/
+func zipSrcDirTree2(w *zip.Writer, directoryPath string, relativeDirName string) (err error) {
+
+   var dir *os.File
+   var filesInDir []os.FileInfo
+   dir, err = gos.Open(directoryPath)
+   filesInDir, err = dir.Readdir(0)
+   if err != nil {
+     return
+   }
+   err = dir.Close()
+
+   for _, fileInfo := range filesInDir {
+        if fileInfo.IsDir() {
+           subItemPath := directoryPath + "/" + fileInfo.Name()    
+           subItemRelativePath := relativeDirName + "/" + fileInfo.Name()               
+           err = zipSrcDirTree2(w, subItemPath, subItemRelativePath)
+           if err != nil {
+              return
+           }
+        } else { // plain old file to be added.
+            subItemPath := directoryPath + "/" + fileInfo.Name()    
+            subItemRelativePath := relativeDirName + "/" + fileInfo.Name()   
+
+            var fh *zip.FileHeader
+            fh, err = zip.FileInfoHeader(fileInfo)
+            if err != nil {
+               return
+            }                
+            fh.Name = subItemRelativePath
+
+            var zw io.Writer
+            zw, err = w.CreateHeader( fh )
+            if err != nil {
+               return
+            }    
+            var f *os.File
+            f,err = gos.Open(subItemPath)
+            if err != nil {
+               return
+            }
+          
+            _, err = io.Copy(zw, f)
+            err = f.Close()   
+            if err != nil {
+               return
+            }      
+           
+        }
+    }
+
+    return
+}   
+
+
+
+

@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+io - the relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="io package for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Package io</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Summary">Summary</a><br/>	
+	<a href="#reader">Reader</a><br/>	
+	<a href="#read" class="alt">read</a><br/>
+	<a href="#writer">Writer</a><br/>
+	<a href="#write" class="alt">write</a><br/>	
+	<a href="#closer">Closer</a><br/>	
+	<a href="#close" class="alt">close</a><br/>			
+</div>  
+<div id="content_manual">
+<a name="Summary"><h3>Summary</h3></a>
+<p>
+	Provides abstract types and methods for input/output.<br/>
+  See also the <b>files</b> package.<br/>
+  See <a href="http://golang.org/pkg/io/" target="_blank">Go io package documentation</a> for further details.
+</p>
+	<center>
+<table>
+<tr>
+   <td><a href="#reader">Reader</a></td><td> - Has/is an I/O stream that can be read from</td>
+</tr>
+<tr>
+   <td><a href="#read">read</a></td><td> - Read bytes from an I/O stream into a buffer</td>
+</tr>
+<tr> 
+   <td><a href="#writer">Writer</a></td><td> - Has/is an I/O stream that can be written to</td>
+</tr>
+<tr>
+   <td><a href="#write">write</a></td><td> - Write the argument data to an I/O stream</td>
+</tr>
+<tr>
+   <td><a href="#closer">Closer</a></td><td> - Can have its I/O stream closed</td>
+</tr>
+<tr>
+   <td><a href="#close">close</a></td><td> - close the I/O stream, freeing resources if applicable</td>
+</tr>
+</table>	
+</center>
+
+<br/>
+<h3>Data Types and Methods</h3>
+<code><pre>
+
+
+<a name="reader">Reader</a>
+"""
+ A Reader has data content (or a data stream) which can be sequentially read.
+ Capable of transferring its data into a Bytes buffer, consuming and transferring 
+ the data in chunks via a sequence of calls to the read method of the Reader.
+"""
+
+
+<a name="read">read r Reader buf Bytes > n Int err String</a>
+"""
+ Reads up to (len buf) bytes from the Reader into buf, consuming the data of the Reader
+ so that the next read call will normally read subsequent data. (Some Reader subtypes may however
+ have methods that reposition or reset to 0 the readable position in the reader's data.)
+
+ Returns the number of bytes read (i.e. copied to buf) as n.
+ Returns an empty String if the read operation succeeded, or an error message if not.
+
+ Details:
+ Read reads up to (len buf) bytes into p. It returns the number of bytes read (0 <= n <= len buf) 
+ and any error encountered. Even if Read returns n < len buf, it may use all of buf as scratch space during the call.
+ If some data is available but not (len buf) bytes, Read conventionally returns what is available instead of waiting 
+ for more.
+
+ When Read encounters an error or end-of-file condition after successfully reading n > 0 bytes, it returns the 
+ number of bytes read. It may return the (non-nil) error from the same call or return the error (and n == 0) 
+ from a subsequent call. An instance of this general case is that a Reader returning a non-zero number of bytes 
+ at the end of the input stream may return either err == EOF or err == nil. The next Read should return 0, EOF 
+ regardless.
+
+ Callers should always process the n > 0 bytes returned before considering the error err. Doing so correctly 
+ handles I/O errors that happen after reading some bytes and also both of the allowed EOF behaviors.
+"""
+   n = 0
+   err = "No read method defined for the type of Reader supplied."
+
+
+<a name="writer">Writer</a>
+"""
+ A Writer can have bytes written to it.
+"""
+
+
+<a name="write">write w Writer buf Bytes > n Int err String</a>
+"""
+ Writes (len buf) bytes from buf to the underlying data stream. 
+ It returns the number of bytes written from buf (0 <= n <= len buf) and any error encountered that caused 
+ the write to stop early. write must return a non-empty error if it returns n < len buf.
+
+ <em>Note: Need to think about covariance/contravariance of input arguments. What constitutes a method
+  that is compatible with this abstract method interface? It would seem that every subtype of Writer
+  needs to have a write method that will be dispatched to preferentially to this method.
+  That could be a method defined on a subtype of Writer and a supertype of Bytes. More pondering
+  needed here. Can we poison/spaecially mark this abstract method to make it not dispatched to unless no 
+  alternative write methods match the runtime args?</em>
+"""
+
+
+<a name="closer">Closer</a>
+"""
+ A Closer can have its I/O stream closed.
+"""
+
+
+<a name="close">close c Closer > err String</a>
+"""
+ Closes the stream, rendering it unusable for I/O. It returns an error, if any.
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre></code>
+
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
+

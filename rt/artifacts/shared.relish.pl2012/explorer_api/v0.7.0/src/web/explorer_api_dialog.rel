@@ -1,0 +1,221 @@
+origin   shared.relish.pl2012
+artifact explorer_api
+package  web 
+
+""" 
+ explorer_api_dialog.rel
+
+ Web dialog handling methods concerned with the data explorer application.
+
+ NOTE: Can I import more dialog handler methods by importing another artifact's
+ web package into a web package, renaming the imported package so it doesn't conflict?
+ e.g. Can I import shared.relish.pl2012/explorer_api/pkg/web as explorer_services
+"""
+
+
+import
+   strings
+   reflect
+
+
+names prefix String > String String List
+"""
+ Returns a JSON formatted list of the names of objects that have been dubbed with a name
+ in the persistence system or have been labelled with a name.
+ If the supplied prefix is non-empty, only names that start with the prefix are returned.
+"""
+   objNames = objectNames prefix
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      objNames 
+
+
+reflectId name String > String String String String
+"""
+ Given an object name (a dubbed name in the persistence system, or a label name)
+ returns the reflectId by which the object can be fetched through this API.
+ The response is a single line of plaintext containing either the reflectId (an integer)
+ or if the name does not find an object, the line 
+ NOT FOUND 
+ is returned.
+"""
+   id = reflectIdByName name
+   if not id
+      id = "NOT FOUND"
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0  
+"""    
+      "MEDIA"
+      "text/plain"   
+      id
+
+
+types 
+> 
+   String 
+   String 
+   [] String
+"""
+ Return a lexicographically ordered list of the datatypes in the target program.
+"""
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      typeNames 1 -1 -1 -1 true
+         
+
+list type String where String 
+> 
+   String 
+   String 
+   [] String
+"""
+ Return a JSON-formatted list of partialTypeName:reflectId of objects compatible with the
+specified type and matching the query criteria.
+"""
+   objectTokens = []String  // A list of "partialTypeName:reflectId" of objects
+   objects = select type where
+   for object in objects
+      dataType = typeOf object
+      slashPos = lastIndex dataType.name "/"
+      if lt slashPos 0
+         objTypeName = dataType.name
+      else 
+         objTypeName = slice dataType.name (plus slashPos 1)
+      objectToken = cat objTypeName ":#" (ensureReflectId object)
+      objectTokens += objectToken
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      objectTokens
+
+
+simpleAttributes reflectId String 
+> 
+   String
+   String
+   [] reflect.SimpleAttrDescriptor 
+"""
+ Returns a JSON formatted list of attribute descriptors for 
+ the simple (unary, atomic-primitive-valued) attributes of the object.
+ An empty list is returned if the object is not found or has no simple attributes.
+"""
+   attrs = getSimpleAttributes reflectId
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      attrs 
+
+
+complexAttributes reflectId String
+> 
+   String
+   String
+   [] reflect.ComplexAttrDescriptor
+"""
+ Returns a JSON formatted list of attribute descriptors of the complex attributes
+ of the object: multi-valued attributes or attributes which are object-valued rather
+ than primitive-valued.
+ An empty list is returned if the object is not found or has no complex attributes.
+"""
+   attrs = getComplexAttributes reflectId
+   print "vals of attr"
+   for attr in attrs
+      for v in attr.vals
+         print v
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      attrs 
+
+
+
+objectTree reflectId String depth Int > String String reflect.ObjectTree
+"""
+ Given either an object name, or "<Type>:#<reflectId>" e.g. "Author:#3", 
+ obtains the reflectId of the object, and
+ returns a JSON representation of the object tree out from that object,
+ to a certain depth.
+
+ Depths are interpreted as:
+ 1 - The focus object and its simple attrs only.
+ 2 - Focus object and directly associated objects (with their simple attributes)
+ 3 - 2 plus the next-level associates of the associated objects (with simple attributes) 
+""" 
+   tree = getObjectTree reflectId depth 
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      tree 
+      
+      
+resume > String String String
+"""
+ Resumes execution of paused threads. 
+"""
+   reflect.resume
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"  
+      "RESUMED" 
+      
+      
+paused > String String Bool
+"""
+ Returns whether the program is paused and needs a resume. 
+"""
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"
+      reflect.paused
+      
+      
+exit > String String String
+"""
+ Resumes execution of paused threads. 
+"""
+   go exitSoon 5 0
+   => """
+HEADERS
+Cache-Control: private, max-age=0, no-cache, no-store, must-revalidate
+Pragma: no-cache
+Expires: 0
+"""   
+      "JSON"  
+      "EXITED"       

@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+relish programming language - download
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+         <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1> <a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Download the relish Programming Language</h2>
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>    
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="content">	
+<table>	
+	<tr>
+		<td class="contentside">
+<div id="content_left">
+	<h3>Binary Distributions</h3>
+	<p>
+		Click one of the links below to download a relish binary distribution for your computing platform. <br/>
+    See "further installation notes" below for how to determine whether you have 64-bit or 32-bit linux.<br/>
+	</p>
+  <p>
+       <a href="binary?file=relish_0.1.3.darwin_amd64.pkg">relish_0.1.3.darwin_amd64.pkg</a> (MAC OSX package installer)
+  </p>  
+	<p>
+       <a href="binary?file=relish_0.1.3.darwin_amd64.tar.gz">relish_0.1.3.darwin_amd64.tar.gz</a> (MAC OSX tarball)
+	</p>  
+	<p>	 
+       <a href="binary?file=relish_0.1.3.linux_amd64.tar.gz">relish_0.1.3.linux_amd64.tar.gz</a> (64-bit linux)
+	</p>
+	<p>	
+       <a href="binary?file=relish_0.1.3.linux_386.tar.gz">relish_0.1.3.linux_386.tar.gz</a> (32-bit linux)
+	</p>
+    <p> 
+       <a href="binary?file=relish_0.1.3.windows_amd64.msi">relish_0.1.3.windows_amd64.msi</a> (Windows installer) 
+  </p>
+  <p>
+  <b>MAC OSX package installer instructions:</b><br/>
+  Press the control-key, then click on the package icon (the .pkg file) after downloading it. relish is not registered as coming from an Apple-identified developer, so just clicking (without control-key) on the .pkg file will pop up a security warning on recent MacOSX versions, and will not run the installer.<br/>
+  You will need to type your user-account password on your Mac to complete the installation.<br/>
+  The installer will install relish in /opt/relish and will place a symbolic link to the relish interpreter
+  executable in /usr/local/bin along with links to a few other tool script executables.<br/>
+  Finally, the installer will launch a relish program in a new terminal (shell) window. It launches the shared.relish.pl2012/dev_tools playground web app, which allows you to browse in a web browser to <b>localhost:8080</b> and try out simple relish programs right away.
+  </p>
+    <p>
+  <b>Windows MSI installer instructions:</b><br/>
+  Double click the .msi file after downloading it, if it does not open automatically.<br/>
+  The installer will install relish in C:\Users\yourusername\Desktop\relish<br/>
+  Finally, the installer will popup a readme file that instructs you how to launch the shared.relish.pl2012/dev_tools playground web app, which allows you to browse in a web browser to <b>localhost:8080</b> and try out simple relish programs right away.
+  </p>
+<p><b>Tarball installation instructions:</b></p>
+	<p>You can install relish under your home directory, or, perhaps better, especially for production servers, you can install it in /opt/relish .
+   </p>
+   <p>Home directory installation:<br/><pre>
+   mkdir ~/relish
+   cd ~/Downloads   # or wherever your binary tarball file was downloaded to.
+   mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz ~/relish   # on MACOSX, the .gz has already been stripped
+   cd ~/relish
+   tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz    # on MACOSX, tar xf relish_&lt;version&gt;.&lt;platform&gt;.tar
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to ~/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl2012/hello_application
+   </pre>
+   </p>	
+	<p>opt directory installation:<br/><pre>
+   sudo mkdir -p /opt/relish
+   sudo chmod go+wx /opt/relish   
+   cd ~/Downloads    # or wherever your binary tarball file was downloaded to.
+   mv relish_&lt;version&gt;.&lt;platform&gt;.tar.gz /opt/relish   # on MACOSX, the .gz has already been stripped
+   cd /opt/relish
+   tar zxf relish_&lt;version&gt;.&lt;platform&gt;.tar.gz    # on MACOSX, tar xf relish_&lt;version&gt;.&lt;platform&gt;.tar
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl/hello_application
+   </pre>
+	</p>	
+
+		
+	<p>
+		<a href="README_INSTALL_BINARY_DISTRIBUTION.txt">Further installation notes</a> for relish binary tarball installation.
+	</p>	
+	<br/>
+	<h3>Source Code Distribution</h3>
+	<p>
+		The relish software project is hosted at
+	 <a href="http://code.google.com/p/relish/">https://code.google.com/p/relish/</a><br/>
+   You will need to install the mercurial version-control-system (similar to git) on your platform in order to get the relish source code.<br/>
+   On Ubuntu linux: sudo apt-get install mercurial
+	</p>
+	<p>
+		To compile the relish programming language, you will first have to install the Go programming language version 1.3 or greater (http://golang.org).<br/>
+		You also need to be able to compile the go-sqlite package, which has native C code, and requires the gcc C compiler.<br/>
+    On MACOSX, you can obtain the C compiler by downloading and installing Apple's full <b>Xcode</b> toolkit, or by downloading and installing
+		the <b>Command Line Developer Tools</b> subset of Xcode, which is currently described and available at 
+		developer.apple.com/technologies/tools/features. Note you need an AppleID to download these.<br/>
+    On Ubuntu linux, <code>sudo apt-get install build-essential</code> will install gcc if "which gcc" reveals it does not exist on your
+    platform.
+	</p>	
+	<pre>	
+   sudo mkdir -p /opt/devel
+   sudo chmod go+wx /opt/devel
+   cd /opt/devel
+   hg clone https://code.google.com/p/relish/ 
+   export GOPATH=/opt/devel/relish              # You should add this export statement to your ~/.bashrc file or
+                                                # ~/.profile file in linux, or create a ~/.bash_profile file in MACOSX 
+                                                # and edit it to contain the export statement
+                                                
+   # Make sure gcc is installed before the next step 
+
+   go get code.google.com/p/go-sqlite/go1/sqlite3  
+   cd relish
+   go install relish/relish
+   sudo ./install.sh    # creates symbolic links in /usr/local/bin to /opt/devel/relish/bin/ executables 
+                        # (puts relish command in your PATH)
+   relish shared.relish.pl2012/hello_application
+</pre>	
+
+<p>
+	<a href="README_INSTALL_SOURCE_DISTRIBUTION.txt">Further installation and build notes</a> for working with the relish source code.
+</p>	
+<br/>
+
+</div>
+</td>
+<td class="contentside">
+<div id="content_right">
+	The relish compiler-interpreter is free software licensed with GPL version 3 and libraries for programmers are licensed with LGPL v3.
+</div>
+</td>
+</tr>
+</table>	
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>

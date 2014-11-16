@@ -1,0 +1,479 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+strings - the relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Package strings</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a> 
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Summary">Summary</a><br/>	
+	<a href="#base64Decode">base64Decode</a><br/>	
+	<a href="#base64Encode" class="alt">base64Encode</a><br/>	
+	<a href="#base64Hash">base64Hash</a><br/>	
+	<a href="#cat" class="alt">cat</a><br/>
+	<a href="#contains">contains</a><br/>
+	<a href="#fill" class="alt">fill</a><br/>	
+	<a href="#first">first</a><br/>	
+	<a href="#hasPrefix" class="alt">hasPrefix</a><br/>			
+  <a href="#hasSuffix">hasSuffix</a><br/>   
+  <a href="#hexHash" class="alt">hexHash</a><br/>
+  <a href="#indx">index</a><br/>
+	<a href="#join" class="alt">join</a><br/>	
+	<a href="#last">last</a><br/>	
+	<a href="#lastIndex" class="alt">lastIndex</a><br/>			
+  <a href="#lower">lower</a><br/>   
+  <a href="#numCodePoints" class="alt">numCodePoints</a><br/>
+  <a href="#replace">replace</a><br/>
+	<a href="#slice" class="alt">slice</a><br/>			
+  <a href="#split">split</a><br/>     
+  <a href="#title" class="alt">title</a><br/>   
+  <a href="#trimSpace">trimSpace</a><br/>
+  <a href="#upper" class="alt">upper</a><br/>
+  <a href="#urlPathPartEncode">urlPathPartEncode</a><br/>
+  <a href="#urlPathPartDecode" class="alt">urlPathPartDecode</a><br/>
+</div>  
+<div id="content_manual">
+<a name="Summary"><h3>Summary</h3></a>
+<p>
+Methods to manipulate or find out about text strings. The String data type in relish is based on the string data type in Go. Strings are byte arrays, each containing a sequence of UTF-8 encoded unicode codepoints. Strings are immutable, so methods returning some modfification/function of a String are returning new copies or immutable slices of the original String.
+As well as the methods in the strings package, listed below, relish also provides built-in len, gt, lt, and eq methods for Strings.
+</p>	
+	<center>
+<table>
+<tr>	
+	<td><a href="#base64Decode">base64Decode</a></td><td> - decodes a base-64 encoded string; returns Bytes</td>
+</tr>
+<tr>	
+	<td><a href="#base64Encode">base64Encode</a></td><td> - encodes Bytes to produce a base-64 encoded String</td>
+</tr>      
+<tr>	
+	<td><a href="#base64Hash">base64Hash</a></td><td> - the SHA-256 hash of the string as a base-64 encoded string</td>
+</tr>
+<tr>
+    <td><a href="#cat">cat</a></td><td> - concatenates string representations of argument values; returns resulting String</td>
+</tr>
+<tr>
+	<td><a href="#contains">contains</a></td><td> - whether a string contains a specified substring</td>
+</tr>
+<tr>	
+	<td><a href="#fill">fill</a></td><td> - substitutes argument values into %s placeholders in the string, returns resulting string</td>
+</tr>
+<tr>
+	<td><a href="#first">first</a></td><td> - the prefix of the string containing n utf8-encoded unicode codepoints</td>
+</tr>
+<tr>
+	<td><a href="#hasPrefix">hasPrefix</a></td><td> - true if the argument is a prefix of the string</td>
+</tr>
+<tr>
+	<td><a href="#hasSuffix">hasSuffix</a></td><td> - true if the argument is a suffix of the string</td>
+</tr>
+<tr>	
+	<td><a href="#hexHash">hexHash</a></td><td> - the SHA-256 hash of s as a lowercase-hexadecimal-encoded string</td>
+</tr>
+<tr>
+	<td><a href="#indx">index</a></td><td> - the index of the first occurrence of the substring in the string</td>
+</tr>
+<tr>
+	<td><a href="#join">join</a></td><td> - concatenates list of values to create a single string; optional separator between elements</td>
+</tr>
+<tr>
+	<td><a href="#last">last</a></td><td> - the suffix of the string  containing the last n utf8-encoded unicode codepoints</td>
+</tr>
+<tr>
+	<td><a href="#lastIndex">lastIndex</a></td><td> - the index of the last occurrence of the substring in the string</td>
+</tr>
+<tr>
+	<td><a href="#lower">lower</a></td><td> - a copy of the string s with all Unicode letters mapped to their lower case</td>
+</tr>
+<tr>
+	<td><a href="#numCodePoints">numCodePoints</a></td><td> - the number of utf-8 encoded unicode codepoints (i.e. unicode characters) </td>
+</tr>
+<tr>
+	<td><a href="#replace">replace</a></td><td> - a copy of the string with instances of old replaced by new</td>
+</tr>
+<tr>
+	<td><a href="#slice">slice</a></td><td> - substring of the string, specified by an inclusive start and (optional) exclusive end index</td>
+</tr>
+<tr>
+  <td><a href="#split">split</a></td><td> - splits the string into a list of substrings that were separated by the specified separator.</td>
+</tr>
+<tr>
+	<td><a href="#title">title</a></td><td> - a copy of the string with first letters of words title-cased and other letters lowercased</td>
+</tr>
+<tr>
+	<td><a href="#trimSpace">trimSpace</a></td><td> - a slice of the string s, with all leading and trailing white space removed</td>
+</tr>
+<tr>
+	<td><a href="#upper">upper</a></td><td> - a copy of the string s with all Unicode letters mapped to their upper case</td>
+</tr>
+<tr>
+	<td><a href="#upper">urlPathPartEncode</a></td><td> - a copy of the string s encoded to be part of a url path</td>
+</tr>
+<tr>
+	<td><a href="#upper">urlPathPartDecode</a></td><td> - a string that is the decoding of an urlPathPartEncode'd string</td>
+</tr>
+</table>	
+</center>
+
+	
+	
+	
+<br/>
+<h3>Methods</h3>
+<code><pre>
+
+
+<a name="base64Decode">base64Decode s String urlSafe Bool > decoded Bytes err String</a>
+"""
+ Decodes a base-64 encoded string; returns Bytes.
+ If urlSafe is true, assumes the string was encoded with the URL-safe and filename-safe encoding 
+ format which uses an alphabet in which codes 62 and 63 are -_
+ If urlSafe is false, assumes the string was encoded with the original base-64 encoding format 
+ which uses an alphabet in which codes 62 and 63 are +/ 
+"""
+
+
+<a name="base64Encode">base64Encode s String urlSafe Bool > decoded Bytes err String</a>
+base64Encode s String urlSafe Bool lineLength Int > decoded Bytes err String
+"""
+ Encodes Bytes to produce a base-64 encoded String.
+ If urlSafe is true, uses the URL-safe and filename-safe encoding format which
+ uses an alphabet in which codes 62 and 63 are -_
+ If urlSafe is false, uses the original base-64 encoding format which
+ uses an alphabet in which codes 62 and 63 are +/ 
+ If lineLength is supplied, the output string is justified into lines of the specified number
+ of characters.
+"""
+
+
+<a name="base64Hash">base64Hash s String > String</a>
+"""
+ Returns the SHA-256 hash of s as a base-64 encoded string.
+"""
+
+
+<a name="cat">cat ...obj Any > String</a>
+"""
+ Concatenates the String representation of up to 9 argument objects together and returns the resulting String.
+ Will eventually accept an arbitrary number of objects as arguments. 
+"""
+
+
+<a name="contains">contains s String substr String > Bool </a>
+"""
+ Returns whether s contains the substring substr.
+"""
+
+
+<a name="fill">fill s String ...obj Any > String</a>
+"""
+ Substitutes objects (currently up to 9) into placeholders in the string s, returning the resulting string.
+ Each placeholder is denoted by a %s inside the string s. The number of object arguments other than s
+ and the number of placeholders in s must be the same.
+ The default String representation of each object is used.
+"""
+
+Examples:
+
+   firstName = "John"
+   lastName = "Doe"
+   s = fill "Hello, my name is %s %s and I am %s years old." firstName lastName 19
+   print s
+
+   // Will print:    
+Hello, my name is John Doe and I am 19 years old.
+
+   s = fill """
+"""
+Hello!
+
+My name is %s %s 
+and I am %d years old.
+"""
+            firstName
+            lastName
+            19
+   print s
+	
+   // Will print:
+Hello!
+
+My name is John Doe 
+and I am 19 years old.	
+
+
+<a name="first">first s String n Int > String</a>
+"""
+ Returns the substring of the string s beginning at beginning of s and containing n utf8-encoded unicode 
+ codepoints.
+ If s has fewer codepoints in it than n, returns the whole string s and does not complain.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode 
+ characters.
+"""
+
+
+<a name="hasPrefix">hasPrefix s String substr String > Bool</a>
+"""
+ Returns true if substr is a prefix of s (or all of s). false otherwise.
+"""
+
+
+<a name="hasSuffix">hasSuffix s String substr String > Bool</a>
+"""
+ Returns true if substr is a suffix of s (or all of s). false otherwise.
+"""
+
+
+<a name="hexHash">hexHash s String > String</a>
+"""
+ Returns the SHA-256 hash of s as a lowercase-hexadecimal-encoded string. 
+ Less compact than base64 but contains only alphanumeric characters.
+"""
+
+
+<a name="indx">index s String substr String > Int</a>
+"""
+ Returns the index (counting in bytes from 0) of the first occurrence of the substring in the string s, or -1 if substr is 
+ not found in s.
+"""
+
+
+<a name="join">join a []String > String</a>
+"""
+ Concatenates the elements of a to create a single string. 
+"""
+
+
+join a []String sep String > String
+"""
+ Concatenates the elements of a to create a single string. The separator string sep is placed between 
+ elements in the resulting string.
+"""
+
+
+join a []Any sep String > String
+"""
+ Concatenates the elements of a to create a single string. The separator string sep is placed between 
+ elements in the resulting string.
+ Note that list arguments are not covariant by element type yet, so you either have to supply
+ a []String or a []Any  - nothing else in between will work yet.
+"""
+
+
+<a name="last">last s String n Int > String</a>
+"""
+ Returns the suffix of the string s containing the last n utf8-encoded unicode codepoints in s.
+ If s has fewer codepoints in it than n, returns the whole string s and does not complain.
+ Note: slice indexes are counting bytes of the string. This method is counting utf8-encoded unicode 
+ characters.
+"""
+
+
+<a name="lastIndex">lastIndex s String substr String > Int</a>
+"""
+ Returns the index (counting in bytes from 0) of the last occurrence of the substring in the string s, 
+ or -1 if substr is not found in s.
+"""
+
+
+<a name="lower">lower s String > String</a>
+"""
+ Returns a copy of the string s with all Unicode letters mapped to their lower case.
+"""
+
+
+<a name="numCodePoints">numCodePoints s String > Int</a>
+"""
+ Returns the number of utf-8 encoded unicode codepoints (i.e. unicode characters) in the String. 
+ This is not the byte-length of the string, which may be greater than the number of encoded codepoints.
+"""
+
+
+<a name="replace">replace s String old String new String > String</a>
+"""
+  Returns a copy of the string s with all non-overlapping instances of old replaced by new. 
+"""
+
+
+replace s String old String new String n Int > String
+"""
+  Returns a copy of the string s with the first n non-overlapping instances of old replaced by new. 
+  If n &lt; 0, there is no limit on the number of replacements.
+"""
+
+
+<a name="slice">slice s String start Int end Int > String</a>
+"""
+ Returns the substring of s beginning at index 'start' (counting in bytes) and ending just before 'end'.
+ If 'end' is negative, the substring ends at the position such that the -'end' last bytes of
+ the original string are not included in the substring. So to remove ".doc" use 
+ slice fileName 0 -4
+"""
+
+
+slice s String start Int > String
+"""
+ Returns the substring of s beginning at index 'start' (counting in bytes) and including all
+ subsequent bytes of the string.
+"""
+
+
+<a name="split">split s String sep String > [] String</a>
+"""
+ Returns the list of substrings of s which were separated in s by the specified separator.
+ If the separator occurs at the beginning of s, an empty string is the first list member.
+ If the separator occurs at the end of s, an empty string is the last list member.
+ If the separator does not occur in s, returns a list containing s.
+ If the separator is the empty string "", s is split into each UTF-8 sequence 
+ (i.e. each unicode character)
+"""
+
+
+<a name="title">title s String > String</a>
+"""
+ Returns a copy of the string s with all Unicode letters that begin words mapped to their title case,
+ and all other Unicode letters mapped to their lower case.
+"""
+
+
+<a name="trimSpace">trimSpace s String > String</a>
+"""
+ Returns a slice of the string s, with all leading and trailing white space removed, as defined by Unicode.
+"""
+
+
+<a name="upper">upper s String > String</a>
+"""
+ Returns a copy of the string s with all Unicode letters mapped to their upper case.
+"""
+
+
+<a name="urlPathPartEncode">urlPathPartEncode
+   s String 
+   encodeDash Bool = true 
+> 
+   String</a>
+"""
+ Returns a copy of the string s with the following characters mapped to %XX where XX is the hexadecimal value
+ of the character's code point.
+
+ Characters that will be escaped (encoded):
+
+  '$','&amp;','+',',','/',':',';','=','?','@','"','\'','&lt;','>','#','%','{','}','|','\\','^','[',']','`'
+
+  codepoint &lt; 32 (decimal), codepoint > 127 (decimal)
+
+ Only works for characters whose code point is in the range 0..255 (decimal) that is 0..FF (hexadecimal).
+ Specifically does not work for unicode characters with code point > 255. These characters are always invalid 
+ in the path part of a URL.
+
+ If encodeDash is true (the default), then spaces ' ' in the input string will be encoded as '-', whereas
+ an actual '-' will be encoded as "*~*" and '.' will be encoded as "_~*"
+This makes nice looking url path parts if the problem would just have
+ been spaces. If encodeDash is false, spaces ' ' are encoded as %20 and '-' and '.' are not encoded.
+"""
+
+
+<a name="urlPathPartDecode">urlPathPartDecode
+   s String 
+   decodeDash Bool = true 
+> 
+   String</a>
+"""
+ Returns a copy of the string s with each %XX escape sequence (where XX is the hexadecimal value
+ of a character's code point) converted back into the original character.
+
+ If decodeDash is true (the default), then '-' in the string will be decoded to spaces ' '
+ and '*~*' in the string decoded to '-'
+ and '_~*' in the string decoded to '.'
+ If decodeDash is false, '-' will be left as is and no other decodings will be done.
+
+ Note: If a URL path has been decomposed by the relish web request handling infrastructure into 
+ individual argument values (or a list of argument values), those argument values will already
+ have been PARTIALLY decoded, in that the %XX escape sequences will have been decoded, but '-'
+ will have been left intact. So further processing will be required. E.g. to get a fully decoded
+ string value, one would do the following to one of these argument values:
+
+ s = urlPathPartDecode urlPathPartEncode argValue false
+  
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+</pre></code>
+
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
+

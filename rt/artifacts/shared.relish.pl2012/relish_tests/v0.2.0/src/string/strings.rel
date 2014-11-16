@@ -1,0 +1,207 @@
+origin   shared.relish.pl2012
+artifact relish_tests
+package  string
+
+""" 
+ strings.rel
+
+ Test the String datatype and String methods.
+"""
+
+import
+   strings
+   test
+
+
+main
+"""
+ Main program.
+"""
+   testStrings
+
+
+testStrings
+"""
+ Test the String data type and methods that operate on Strings.
+"""
+
+   passed = true
+
+   print "===== Strings"
+
+   a = """
+This is the very first
+multi-line string in relish!!
+"""
+
+   // print a
+
+   b = fill """
+This is the #%s
+multi-line %s string in relish!!
+"""
+            2
+            "substitutable"
+
+   c = """
+This is the #2
+multi-line substitutable string in relish!!
+"""
+            
+   passed = and assertEq b c "fill"
+                passed
+   // print b
+
+   passed = and assertEq (len "Well how big am I?") 18 "len String"
+                passed
+                
+   s1 = "How now brown cow?"   
+   s2 = "bro"
+   s3 = "世界Hello"
+   s4 = "one"
+   s5 = "two"
+   s6 = "three"
+   count = [s4 s5 s6]String
+   passed = and assertEq (join count ",") "one,two,three" "join 1"
+                passed
+   passed = and assertEq (join count) "onetwothree" "join 2"
+                passed    
+   v1 = nil
+   assortment = ["one" 2 3.0 "four" v1 false]Any
+   passed = and assertEq (join assortment "|") "one|2|3|four|*nil*|false" "join 3"
+                passed
+
+   assortment[1] = "Two"
+   passed = and assertEq (join assortment "|") "one|Two|3|four|*nil*|false" "join 4"
+                passed
+
+   passed = and assertEq (first s1 2) "Ho" "first"
+                passed
+   passed = and assertEq (first s1 30) "How now brown cow?" "first 2"
+                passed   
+   passed = and assertEq (last s1 4) "cow?" "last"
+                passed
+   passed = and assertEq (last s1 30) "How now brown cow?" "last 2"
+                passed   
+   passed = and assertEq (replace s1 "ow" "ew") "Hew new brewn cew?" "replace"
+                passed
+   passed = and assertEq (replace s1 "ow" "ew" 1) "Hew now brown cow?" "replace 2"   
+                passed
+   
+   passed = and assertNot (hasPrefix s1 s2) "hasPrefix"
+                passed
+   passed = and assert (hasPrefix s1 "How") "hasPrefix 2"
+                passed
+   passed = and assertNot (hasSuffix s1 "cow") "hasPrefix 3"
+                passed
+   passed = and assert (hasSuffix s1 "cow?") "hasPrefix 4"
+                passed
+   
+   
+   
+   passed = and assertEq (cat s1 s2 " " "The End") "How now brown cow?bro The End" "cat"
+                passed
+   passed = and assertEq (index s1 s2) 8 "index"
+                passed
+   passed = and assertEq (lastIndex s1 "ow") 15 "lastIndex"
+                passed
+   passed = and assertEq (slice s1 4 7) "now" "slice"
+                passed
+   passed = and assertEq (slice s1 0 -1) "How now brown cow" "slice 2"
+                passed
+   passed = and assertEq (slice s1 1 -5) "ow now brown" "slice 3"
+                passed
+   passed = and assertEq (slice s1 8) "brown cow?" "slice 4"
+                passed
+   
+
+   passed = and assertEq (first s3 1) "世" "first 3"
+                passed
+   passed = and assertEq (first s3 2) "世界" "first 4"
+                passed
+   passed = and assertEq (first s3 3) "世界H" "first 5"
+                passed
+   passed = and assertEq (len s3) 11 "len"
+                passed
+   passed = and assertEq (numCodePoints s3) 7 "numCodePoints"
+                passed
+   passed = and assertEq (index s3 "世界") 0 "index 2"
+                passed
+   passed = and assertEq (index s3 "界") 3 "index 3"  
+                passed
+
+   passed = and assertEq (lower "HELL NO!") "hell no!" "lower"
+                passed
+   passed = and assertEq (upper "Yahoo!") "YAHOO!" "upper"
+                passed
+   passed = and assertEq (title "not on my watch!") "Not On My Watch!" "title"
+                passed
+   passed = and assertEq cat ">" (trimSpace "  some important stuff   ") "<"
+                         ">some important stuff<"
+                         "trimSpace"
+                passed
+   passed = and assertEq (base64Hash s3) "yAxatoTdyKHZret2bkhrHOZy_ldvTRUoux7Gl_F_pgE=" "base64Hash"
+                passed
+
+   passed = and assertEq (hexHash s3) "c80c5ab684ddc8a1d9adeb766e486b1ce672fe576f4d1528bb1ec697f17fa601" "hexHash"
+                passed
+
+
+
+   // Type-Casting constructors
+
+   passed = and assertEq (String 45.6) "45.6" "String"
+                passed
+   passed = and assertEq String lt 3 4 
+                         "true" 
+                         "String 2"
+                passed
+                
+   i err = Int "45"
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq i 45 "Int"
+                   passed   
+   i err = Int "-45"
+   if err
+      passed = false
+      print err
+   else
+      passed = and assertEq i -45 "Int 2"
+                   passed      
+   flt err = Float "45.659"
+   if err
+      passed = false   
+      print err
+   else
+      passed = and assertEq flt 45.659 "Float"
+                   passed  
+   b err = Bool "Y"
+   if err
+      passed = false      
+      print err
+   else
+      passed = and assert b "Bool"
+                   passed 
+
+   b err = Bool 1
+   if err
+      passed = false      
+      print err
+   else
+      passed = and assert b "Bool 2"
+                   passed   
+
+
+   s = "I am going to be transmogrified.\nAre you?"
+   // print s
+   b = Bytes s
+               
+   passed = and assertEq (String b) s "String Bytes"
+                passed
+                
+   if passed
+      print "PASSED"
+

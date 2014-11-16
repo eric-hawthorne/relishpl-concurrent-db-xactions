@@ -1,0 +1,202 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>
+csv - the relish programming language
+</title>
+
+<meta name="keywords" content="relish programming language web application development framework persistence" />
+ <meta name="description" content="Home page for relish(TM), an application programming language which includes a simple full-stack web application framework and transparent persistence. Focus is on simplicity and minimalism via very strict enforcement of conventions. The name comes from the language's inbuilt construct of relations between datatypes. A programmer can express an entity-relation model of the application domain directly in the language then associate instances. Methods are owned by tuples of datatypes, and are dispatched by multi-argument multimethod dispatch.
+relish is implemented in Go, and inherits/wraps some Go features like goroutine concurrency and channels, but is almost entirely unlike Go in language constructs and philosophy." />
+ 
+
+ <link rel="stylesheet" type="text/css" id="stylesheet"
+       href="/styles/default.css" />
+
+
+</head>
+<body>
+  <div id="header">	
+  <table>
+	<tr>
+	  <td>	
+        <a href="/"><img src="/relish_logo4_small.png"></a>
+      </td>
+	  <td>	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h1><a href="/">relish<span class="trademark">&#8482;</span></a></h1>
+      </td>
+	  <td style="width: 4em">	
+         &nbsp; &nbsp;
+      </td>
+	  <td>	
+        <h2>Package csv</h2>
+
+      </td>
+    </tr>
+  </table>
+  </div>
+  <a id="tutorials_button" class="menubutton" href="/tutorials/">
+	Tutorials
+  </a>
+  <a id="references_button" class="menubutton" href="/references/">
+	References
+  </a>
+  <a id="packages_button" class="menubutton" href="/packages/">
+	Packages
+  </a>
+  <a id="shared_button" class="menubutton" href="http://shared.relish.pl">
+	Artifacts
+  </a>  
+  <a id="download_button" class="menubutton" href="/download/">
+	DOWNLOAD
+  </a>	
+<div id="index">
+	<a href="#Summary">Summary</a><br/>	
+	<a href="#csvRead">csvRead</a><br/>	
+	<a href="#csvWrite" class="alt">csvWrite</a><br/>
+</div>  
+<div id="content_manual">
+<a name="Summary"><h3>Summary</h3></a>
+<p>
+Methods to read and write text/csv data.
+Currently, reads from or writes to a String, so only works for data sets small enough to reasonably
+fit in memory in the application.
+Current pattern of use would be e.g.
+<code><pre>
+content err = httpGet "http://example.com/data.csv"
+
+records err = csvRead content
+
+outputContent err = csvWrite records
+
+response err = httpPost "http://example.com/data.csv" "text/csv" outputContent
+
+</pre></code>
+</p>	
+	<center>
+<table>
+<tr>	
+	<td><a href="#csvRead">csvRead</a></td><td> - read from a String containing CSV-encoded data - produce a list of data-row records</td>
+</tr>
+<tr>
+    <td><a href="#csvWrite">csvWrite</a></td><td> - write a list of data-row records out to a string in CSV encoded form.</td>
+</tr>
+</table>	
+</center>
+
+	
+	
+	
+<br/>
+<h3>Methods</h3>
+<code><pre>
+
+<a name="csvRead">csvRead</a>
+   content String 
+> 
+   records [] [] String
+   err String
+"""
+ See below. 
+"""
+
+
+csvRead
+   content String 
+   trimSpace Bool
+> 
+   records [] [] String
+   err String
+"""
+ See below. 
+"""
+
+
+csvRead
+   content String 
+   trimSpace Bool
+   fieldsPerRecord Int
+> 
+   records [] [] String
+   err String
+"""
+ content should contain one or more lines (rows) of CSV-formatted data.
+ Reads the CSV-formatted data and returns a list of data-row records. Each
+ data-row record is a list of Strings; one String per field.
+
+ See description of ReadAll method in Go "encoding/csv" package for details of operation
+ and data accepted.
+
+ If trimSpace is supplied and true, leading and trailing space is trimmed from each field value.
+
+ If fieldsPerRecord is supplied and negative, no check is made and each row (each record) can
+ have a different number of fields.
+
+ If fieldsPerRecord is 0 (the default) each record must have same number of fields
+ as the first record (first row)
+
+ If fieldsPerRecord is supplied and is a positive integer, it specifies the required number 
+ of fields per record
+"""
+
+
+<a name="csvWrite">csvWrite</a>
+   records [] [] String 
+> 
+   content String 
+   err String
+"""
+ See below. 
+"""
+
+
+csvWrite
+   records [] [] String 
+   useCrLf Bool
+> 
+   content String 
+   err String
+"""
+ Each record (i.e. data row) is a list of Strings, one String per field.
+ Writes the records out in CSV format, into the content String.
+
+ See description of WriteAll method in Go "encoding/csv" package for details of operation
+ and data accepted.
+
+ If there is an error, the returned content string will be incomplete and
+ the second return value will contain an error message.
+ If no error, the second return value will be the empty String ""  
+
+ If useCrLf is supplied and true, each line terminates with \r\n instead of
+ the default \n.  \r\n is the Windows-compatible text file line ending,
+ whereas the default \n is the linux and macosx compatible text file format.
+"""
+
+
+
+
+
+
+
+</pre></code>
+
+
+</div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-1258183-3', 'auto');
+  ga('send', 'pageview');
+
+</script>
+</body>
+</html>
+
