@@ -1,0 +1,38 @@
+# Contributors to the relish free and open source (FOSS) project:
+#
+# This is the official list of people who can contribute
+# (and typically have contributed) code to the relish repository.
+# The AUTHORS file lists the copyright holders; this file
+# lists people.  For example, employees of a company or organization are listed here
+# but not in AUTHORS, because the company or organization holds the copyright.
+#
+# The submission process automatically checks to make sure
+# that people submitting code are listed in this file (by email address).
+#
+# Names should be added to this file only after verifying that
+# the individual or the individual's organization has agreed to
+# the appropriate Contributor License Agreement, found here:
+#
+#     http://relish.pl/legal/individual-cla-v1.0.html
+#     http://relish.pl/legal/corporate-cla-v1.0.html
+#
+# The agreement for individuals can be filled out on the web.
+#
+# When adding J Random Contributor's name to this file,
+# either J's name or J's organization's name should be
+# added to the AUTHORS file, depending on whether the
+# individual or corporate CLA was used.
+
+# Names should be added to this file like so:
+#     Name <email address>
+#
+# An entry with two email addresses specifies that the
+# first address should be used in the submit logs and
+# that the second address should be recognized as the
+# same person.
+
+# Please keep the list sorted.
+
+Eric Hawthorne <relishpl@gmail.com>
+
+
