@@ -16,4 +16,10 @@ var GcForceIntervalSeconds = 600  // 10 minutes
 
 
 // Maximum connection pool size
-var DbMaxConnections = 2  // 20
+var DbMaxConnections = 1  
+
+// Maximum read-connection pool size
+var DbMaxReadConnections = -1  
+
+// Maximum write-connection pool size
+var DbMaxWriteConnections = -1  
