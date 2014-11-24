@@ -205,16 +205,6 @@ func (t *Thread) PopBase() {
 	if t.Base == -2 {
 		t.ExecutingMethod = nil
 		t.ExecutingPackage = nil
-// TODO Trying to figure out evaluating methods during constant generation - not there yet!		
-//	} else if t.Base == -1 {
-//		meth, isMeth := t.Stack[t.Base+1].(*RMethod)
-//		if isMeth {
-//	       t.ExecutingMethod = meth
-//	       t.ExecutingPackage = t.ExecutingMethod.Pkg			
-//		} else {	
-//		   t.ExecutingMethod = nil
-//		   t.ExecutingPackage = nil
-//		}		
 	} else {		
 	    t.ExecutingMethod = t.Stack[t.Base+1].(*RMethod)
 	    t.ExecutingPackage = t.ExecutingMethod.Pkg
