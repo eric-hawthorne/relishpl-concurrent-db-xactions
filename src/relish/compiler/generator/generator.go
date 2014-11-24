@@ -901,6 +901,80 @@ func (g *Generator) generateMethods() {
 }
 
 
+
+
+
+
+
+
+/*
+  Generate a special method just to be a context for executing the constant assignment expressions of a package. 
+  This method has no code.
+*/
+func (g *Generator) generatePackageInitMethod() (rMethod *data.RMethod) {
+
+   var methodName string = g.packagePath + "__init__"	
+
+   var parameterNames []string
+   var nilArgAllowed []bool
+   var parameterTypes []string
+
+
+   var wildcardKeywordsParameterName string
+   var wildcardKeywordsParameterType string		
+   var variadicParameterName string
+   var variadicParameterType string	
+
+   var returnValTypes []string
+   var returnArgsAreNamed bool		   
+
+   var err error
+
+   allowRedefinition := false	
+
+   isTraitAbstractMethod := false
+
+   numLocalVars := 0
+
+   isExported := false
+
+   rMethod, err = data.RT.CreateMethodV(g.packageName,
+   	                                   nil,  // file
+   	                                   methodName,
+   	                                   parameterNames, 
+   	                                   nilArgAllowed,
+	                                   parameterTypes, 
+									   wildcardKeywordsParameterName,
+									   wildcardKeywordsParameterType,				
+									   variadicParameterName,
+									   variadicParameterType,				
+	                                   returnValTypes,
+	                                   returnArgsAreNamed,
+	                                   numLocalVars,
+                                       isTraitAbstractMethod,
+	                                   allowRedefinition,
+	                                   isExported )
+   
+
+   if err != nil {
+       // panic(err)
+	   rterr.Stopf("Error creating method %s: %s", methodName, err.Error())	
+   }
+   Logln(GENERATE__, rMethod)		
+
+   return
+}	
+
+
+
+
+
+
+
+
+
+
+
 /*
 If the const name is unqualified (has no package path), prefixes it with the current package path.
 A little bit inefficient.
@@ -914,6 +988,9 @@ func (g *Generator) qualifyConstName(constName string) string {
 
 
 func (g *Generator) generateConstants () {
+	
+	var packageInitMethod *data.RMethod = nil	
+	
 	var privateConstPackage *data.RPackage
 	for file, fileNameRoot := range g.files {	
 		g.SetCodeFile(file)	
@@ -924,9 +1001,18 @@ func (g *Generator) generateConstants () {
 		} else {
 			privateConstPackage = nil
 		}
+
 		for _,constDeclaration := range file.ConstantDecls {
 		
+           if packageInitMethod == nil {
+           	  packageInitMethod = g.generatePackageInitMethod()
+           	  g.th.Push(packageInitMethod)
+           	  g.th.ExecutingMethod = packageInitMethod
+           	  g.th.ExecutingPackage = g.pkg
+           }
 		   constantName := g.qualifyConstName(constDeclaration.Name.Name)
+
+
 		   g.Interp.EvalExpr(g.th,constDeclaration.Value)
 		   obj := g.th.Pop()
 
