@@ -327,6 +327,7 @@ var n_runits_ever uint64 = 0
 var n_rsets_ever uint64 = 0
 var n_rsortedsets_ever uint64 = 0
 var n_rlists_ever uint64 = 0
+var n_rbiglists_ever uint64 = 0
 var n_maps_ever uint64 = 0
 
 var mappingMemory bool = false

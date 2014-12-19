@@ -119,7 +119,7 @@ func (i *Interpreter) RunMain(fullUnversionedPackagePath string, quiet bool) {
 
 	args := []RObject{}
 	
-	defer methodCallErrHandle(t,nil)	
+	// defer methodCallErrHandle(t,nil)	
 
 	// TODO Figure out a way to pass command line args (or maybe just keyword ones) to the main program 
 	

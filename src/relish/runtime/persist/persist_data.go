@@ -794,7 +794,18 @@ func (db *SqliteDBThread) persistCollection(th InterpreterThread, collection RCo
 		   		stmt.ClearArgs()
 			   	stmt.Args(valParts)	
 	  		   	stmt.Arg(collection.DBID())	                			   	
-			   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		   	   		          
+			   	stmt.Arg(int(key.(Int32)))   // val is actually the map key		
+
+
+
+/*
+		   	case FloatType:
+		   		stmt.ClearArgs()
+			   	stmt.Args(valParts)	
+	  		   	stmt.Arg(collection.DBID())	                			   	
+			   	stmt.Arg(float64(key.(Float)))   // val is actually the map key	
+*/
+
 	         default:
 	         	stmt.ClearArgs()
 			   	stmt.Args(valParts)				   	
