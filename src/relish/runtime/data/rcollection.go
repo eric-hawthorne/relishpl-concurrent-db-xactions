@@ -1833,6 +1833,593 @@ func (o rlist) IsZero() bool {
 
 
 
+
+
+
+//////////////////////////////////////////////////////////////////////////
+
+
+
+/*
+A list of relish objects constrained to be of some type.
+Implements RCollection
+An rbiglist is designed to represent a very large list of elements.
+As such, it has no in-memory array-based list, but only uses a database representation of the
+list, with metadata in memory.
+
+
+*/
+type rbiglist struct {
+	rcollection
+	len int64
+
+	v *RVector   // TODO DELETE THIS FIELD
+
+
+}
+
+/*
+Return the underlying collection.
+TODO DELETE THIS
+*/
+func (s *rbiglist) Vector() *RVector {
+	return s.v
+}
+
+
+func (o *rbiglist) String() string {
+   s := ""
+   if o.Length() > 4 {
+	   sep := "\n   ["
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "\n      "
+	   }
+	   s += "\n   ]"
+   	} else { // Horizontal layout
+	   s = "["
+	   sep := ""
+	   for obj := range o.Iter(nil) {
+	      s += sep + obj.String()
+	      sep = "   "
+	   }
+	   s += "]"
+   }
+   return s
+}
+
+func (o *rbiglist) Debug() string {
+	return fmt.Sprintf("%s len:%d\n%s",  (&(o.rcollection)).Debug() , o.Length(),o.String())
+}
+
+/*
+TODO: Reconsider the kludge of accepting a nil interpreterThread.
+Currently used in String method to list the elements.
+TODO biglist not sure if works if nil interpreterThread
+*/
+func (c *rbiglist) Iter(th InterpreterThread) <-chan RObject {
+
+	ch := make(chan RObject)
+	go func() {
+		var obj RObject
+		var length int = int(c.len)
+		for i := 0; i < length ; i++ {
+			obj = c.At(th, i)  // TODO What happens if th is nil???
+			ch <- obj
+		}
+		close(ch)
+	}()
+	return ch
+}
+
+
+
+
+func (c *rbiglist) Slice(th InterpreterThread, start int, end int) (slice List) {
+	slice = c.Type().Prototype().(List)
+	length := int(c.Length())	
+	if end < 0 {
+		end = length + end
+	}
+
+	defer sliceErrHandle(start,end, length)		
+
+	var obj RObject
+
+    for i := start; i < end; i++ {
+    	obj = c.At(th, i)                // AtProxy(th, i) method ???
+    }
+
+    slice.AddSimple(obj) 
+
+    // What is the status of setMayContainProxies
+
+	return	
+}	
+
+
+	
+
+
+
+
+	    // substring or slice
+	/*
+		slice s String start Int end Int > String
+		
+		slice s String start Int > String		
+
+Counts in bytes.
+
+func builtinStringSlice(th InterpreterThread, objects []RObject) []RObject {
+	s := string(objects[0].(String))
+	start := int(objects[1].(Int))
+	length := len(s)
+	end := length
+	if len(objects) == 3 {
+		end = int(objects[2].(Int))
+		if end < 0 {
+			end = length + end
+		}
+	}
+	substr := s[start:end]
+    return []RObject{String(substr)}
+}
+*/
+
+
+/*
+If the object is not already marked as reachable, flag it as reachable.
+Return whether we had to flag it as reachable. false if was already marked reachable.
+Does not mark elements, since they are not wholesale fetched.
+*/
+func (o *rbiglist) Mark() bool { 
+   if ! (&(o.rcollection.robject)).Mark() {
+      return false
+   }
+   return true
+}
+
+/*
+Insert the element at the specified index. Shift elements from that index on to have
+the next higher index.
+TODO: DOES NOT HANDLE PERSISTENCE YET !!!!
+*/
+func (s *rbiglist)	Insert(i int, val RObject) (newLen int) {
+	if s.IsSorting() {
+        rterr.Stop("Cannot insert at specified index into a sorting list.")				
+	}
+	if s.v == nil {
+		if i != 0 {
+           rterr.Stopf("Error in list-element insert: index %d is out of range.",i)			
+		}
+		newLen = s.AddSimple(val)
+	} else {
+
+       s.v.Insert(i, val)
+       newLen = len(*(s.v))
+	}
+	return
+}
+
+/*
+Set the element at index i to be the specified value.
+Note: It is illegal to call this on a IsSorting() == true list. Not enforced. Watch out!
+
+TODO: Note that the current use of this e.g. Interpreter.go 2662 is not persisting the set operation.
+*/
+func (s *rbiglist) Set(i int, val RObject) {	
+   if s.v == nil {
+      rterr.Stopf("Error in list-element set: index %d is out of range.",i)
+   }   
+   s.v.Set(i, val)
+}
+
+
+func (s *rbiglist) ReplaceContents(objs []RObject) {
+
+	var rv RVector = RVector(objs)
+	s.v = &rv
+}
+
+func (s *rbiglist) AsSlice(th InterpreterThread) []RObject {
+	// s.deproxify(th)
+	if s.v == nil {
+		return []RObject{}
+	}
+	return []RObject(*(s.v))
+}
+
+func (s *rbiglist) Contains(th InterpreterThread, obj RObject) bool {
+	if s.v == nil {
+		return false
+	} 
+	for _,element := range s.AsSlice(th) {
+       if obj == element {
+       	   return true
+       }
+	}
+    return false
+}
+
+
+
+
+func (s *rbiglist) Iterable() (interface{},error) {
+	var fakeThread FakeInterpreterThread
+	return s.AsSlice(fakeThread),nil
+}
+
+// RT.SetEvalContext(obj, context)
+// defer RT.UnsetEvalContext(obj)
+// context := RT.GetEvalContext(obj)	
+
+func (s *rbiglist) Add(obj RObject, context MethodEvaluationContext) (added bool, newLen int) {	
+
+	if s.v == nil {
+		s.v = new(RVector)
+	}
+	s.v.Push(obj)
+
+	if s.IsSorting() && ! s.IsSortingDeferred() {
+		RT.SetEvalContext(s, context)
+		defer RT.UnsetEvalContext(s)
+		// s.deproxify(context.InterpThread())
+		sort.Sort(s)
+	}
+	added = true
+	newLen = s.v.Len()
+	return
+}
+
+func (s *rbiglist) AddSimple(obj RObject) (newLen int) {
+
+	if s.v == nil {
+		s.v = new(RVector)
+	}
+	s.v.Push(obj)
+	newLen = s.v.Len()
+	return
+}
+
+func (s *rbiglist) At(th InterpreterThread, i int) RObject {
+
+    defer vectorAtErrHandle(i, s.v)
+	obj := s.v.At(i).(RObject)
+	if obj.IsProxy() {
+		var err error
+		proxy := obj.(Proxy)
+		obj, err = th.DBT().Fetch(int64(proxy), 0)
+		if err != nil {
+			panic(fmt.Sprintf("Error fetching list element [%v]: %s", i, err))
+		}
+		(*(s.v))[i] = obj		
+	}
+	return obj
+}
+
+func (s *rbiglist) IsInsertable() bool {
+   return ! s.IsSorting()
+}
+
+func (s *rbiglist) IsIndexSettable() bool {
+    return ! s.IsSorting()
+}
+
+func (s *rbiglist) Len() int {
+	return s.v.Len()
+}
+
+func (s *rbiglist) Less(i, j int) bool {
+
+	var evalContext MethodEvaluationContext = RT.GetEvalContext(s)
+	th := evalContext.InterpThread()
+
+	var goLess bool
+
+	if s.sortWith == nil { // Not a sorted list. 
+
+		val1 := s.At(th, i)
+
+		val2 := s.At(th, j)
+
+	    switch val1.(type) {
+	        case RTime:
+	        	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+	        case String:
+	        	goLess = string(val1.(String)) < string(val2.(String))
+	        case Int:
+	        	goLess = int64(val1.(Int)) < int64(val2.(Int))
+	        case Float:
+	        	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+	        case Bool: 
+	        	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+	        default:
+				// Use the "less" multimethod to compare them.
+
+			    lessMethod, _ := th.CallingPackage().MultiMethods["lt"]
+			    //lessMethod, _ := RT.InbuiltFunctionsPackage.MultiMethods["lt"]
+
+				isLess := evalContext.EvalMultiMethodCall(lessMethod, []RObject{val1, val2})        
+				goLess = ! isLess.IsZero()       
+	    }
+	    return goLess
+	}
+
+	//var isLess RObject
+
+	if s.sortWith.attr != nil {
+
+		// Get attr value of both list members
+
+		obj1 := s.At(th, i)
+		val1, found := RT.AttrVal(th, obj1, s.sortWith.attr)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj1, s.sortWith.attr.Part.Name))
+		}
+
+		obj2 := s.At(th, j)
+		val2, found := RT.AttrVal(th, obj2, s.sortWith.attr)
+		if !found {
+			panic(fmt.Sprintf("Object %v has no value for attribute %s", obj2, s.sortWith.attr.Part.Name))
+		}
+
+        // depending on the type of the values to compare, use an optimized sorting method.
+
+        // TODO - Does not currently permit mixed-type numbers in a sorted collection
+
+        switch val1.(type) {
+            case RTime:
+            	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+            case String:
+            	goLess = string(val1.(String)) < string(val2.(String))
+            case Int:
+            	goLess = int64(val1.(Int)) < int64(val2.(Int))
+            case Float:
+            	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+            case Bool: 
+            	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+            default:
+				// Use the "less" multimethod to compare them.
+
+				// Assumes that the sortWith has been given the "less" multimethod. TODO!
+				// 
+				isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+				goLess = ! isLess.IsZero()       
+        }
+
+		if s.sortWith.descending {
+			return ! goLess
+		}
+		return goLess
+
+	} else if s.sortWith.unaryFunction != nil {
+
+		// Evaluate the unary function separately on both list members
+
+		obj1 := s.At(th, i)
+		val1 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj1})
+
+		obj2 := s.At(th, j)
+		val2 := evalContext.EvalMultiMethodCall(s.sortWith.unaryFunction, []RObject{obj2})
+
+
+        switch val1.(type) {
+            case RTime:
+            	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+            case String:
+            	goLess = string(val1.(String)) < string(val2.(String))
+            case Int:
+            	goLess = int64(val1.(Int)) < int64(val2.(Int))
+            case Float:
+            	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+            case Bool: 
+            	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+            default:
+				// Use the "less" multimethod to compare them.
+
+				// Assumes that the sortWith has been given the "less" multimethod. TODO!
+				// 
+				isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+				goLess = ! isLess.IsZero()       
+        }
+
+		if s.sortWith.descending {
+			return ! goLess
+		}
+		return goLess
+	}
+	// else ... lessFunction
+
+	// Apply the multi-method to the two list members. It may be just the "less" multimethod.
+
+	// Get attr value of both list members
+
+	val1 := s.At(th, i)
+
+	val2 := s.At(th, j)
+
+    switch val1.(type) {
+        case RTime:
+        	goLess = time.Time(val1.(RTime)).Before(time.Time(val2.(RTime)))
+        case String:
+        	goLess = string(val1.(String)) < string(val2.(String))
+        case Int:
+        	goLess = int64(val1.(Int)) < int64(val2.(Int))
+        case Float:
+        	goLess = float64(val1.(Float)) < float64(val2.(Float))            	
+        case Bool: 
+        	goLess = (bool(val1.(Bool)) == false) && (bool(val2.(Bool)) == true)     
+        default:
+			// Use the "less" multimethod to compare them.
+
+			// Assumes that the sortWith has been given the "less" multimethod. TODO!
+			// 
+			isLess := evalContext.EvalMultiMethodCall(s.sortWith.lessFunction, []RObject{val1, val2})        
+			goLess = ! isLess.IsZero()       
+    }
+
+	if s.sortWith.descending {
+		return ! goLess
+	}
+	return goLess
+}
+
+/*
+type sortOp {
+	attr *AttributeSpec
+	unaryFunction *RMultiMethod
+	lessFunction *RMultiMethod
+	descending bool
+}
+*/
+
+/*
+Not valid to call on indexes >= the length of the collection.
+*/
+func (s *rbiglist) Swap(i, j int) {
+	s.v.Swap(i, j)
+}
+
+/*
+Returns the index of the first-found occurrence of the argument object with the search beginning at the start index.
+*/
+func (s *rbiglist) Index(obj RObject, start int) int {
+	if s.v != nil {
+		ln := len(*(s.v))
+		for i := start; i < ln; i++ {
+			if obj == s.v.At(i) {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+func (s *rbiglist) Remove(obj RObject) (removed bool, removedIndex int) {
+	
+	if s.v == nil {
+		removedIndex = -1
+	} else {
+		// s.deproxify(nil)
+		removedIndex = s.Index(obj, 0)
+		if removedIndex >= 0 {
+			s.v.Delete(removedIndex)
+			removed = true
+		}
+	}
+	return
+}
+
+func (s *rbiglist) ClearInMemory() {
+
+	if s.v != nil {
+		s.v = s.v.Resize(0, s.v.Cap())
+	}
+}
+
+
+/*
+*/
+func (c *rbiglist) FromMapListTree(th InterpreterThread, tree interface{}) (obj RObject, err error) {
+	var relishVal RObject
+	switch tree.(type) {
+	case []interface{}:
+		slice := tree.([]interface{})
+		for _,val := range slice {
+			prototypeObj := c.ElementType().Prototype()
+			relishVal, err = prototypeObj.FromMapListTree(th, val)
+			if err != nil {
+				return
+			}
+			c.AddSimple(relishVal)
+		}
+	default:
+	   err = errors.New("When unmarshalling into a List, a JSON list is expected.")		
+	}
+	obj = c
+	return 
+}
+
+
+/*
+   Constructor
+*/
+func (rt *RuntimeEnv) Newrbiglist(elementType *RType, minCardinality, maxCardinality int64, owner RObject, attr *AttributeSpec, sortWith *sortOp) (coll List, err error) {
+	typ, err := rt.GetListType(elementType)
+	if err != nil {
+		return nil, err
+	}
+	if maxCardinality == -1 {
+		maxCardinality = MAX_CARDINALITY
+	}
+	lst := &rbiglist{rcollection{robject{rtype: typ}, minCardinality, maxCardinality, elementType, owner, attr, sortWith, false, nil}, 0, nil}
+	lst.rcollection.robject.this = lst
+	coll = lst	
+	if ! markSense {
+	    coll.SetMarked()
+	}	
+
+    if Logging(GC_) {
+       n_rbiglists_ever ++
+	   Logln(GC3_,"Newrbiglist: IsMarked",coll.IsMarked())	
+    }	
+	
+	return
+}
+
+func (s rbiglist) Length() int64   { return s.len }
+func (s rbiglist) Cap() int64      { if s.v == nil { return 0}; return int64(s.v.Cap()) }
+func (s rbiglist) IsMap() bool     { return false }
+func (s rbiglist) IsSet() bool     { return false }
+func (s rbiglist) IsList() bool    { return true }
+func (s rbiglist) IsOrdered() bool { return true } // This may change!! Depends on presence of an ordering function
+func (s rbiglist) IsSorting() bool { return s.sortWith != nil }
+func (s rbiglist) IsCardOk() bool  { return s.Length() >= s.MinCard() && s.Length() <= s.MaxCard() }
+
+func (o rbiglist) IsZero() bool {
+	return o.Length() == 0
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*
    Constructor - decides which kind of map to use depending on the keyType
 */
